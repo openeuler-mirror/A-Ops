@@ -1,0 +1,14 @@
+version = "1.0.0"
+
+measurements:
+(
+    {
+        name: "example",
+        fields:
+        (
+            "cpu_usage",
+            "memory_usage",
+            "tcp_connection_num",
+        )
+    }
+)

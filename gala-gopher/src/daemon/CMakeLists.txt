@@ -1,0 +1,27 @@
+CMAKE_MINIMUM_REQUIRED(VERSION 3.12.1)
+PROJECT(gala-gopher)
+
+MESSAGE("ENV PROBES_LIST:\n"  ${PROBES_LIST})
+MESSAGE("ENV PROBES_C_LIST:\n"  ${PROBES_C_LIST})
+MESSAGE("ENV PROBES_META_LIST:\n"  ${PROBES_META_LIST})
+
+SET(EXECUTABLE_OUTPUT_PATH ../../../)
+
+SET(PROBE_DIR ../probe)
+SET(CMAKE_C_FLAGS "-rdynamic -g -fno-builtin-fprintf -Wl,--wrap=fprintf   \
+    -DPROBES_LIST=\"${PROBES_LIST}\"                        \
+    -DPROBES_META_LIST=\"${PROBES_META_LIST}\" "
+)
+
+SET(SOURCES main.c
+    ../probe/probe.c
+    ../lib/mock/mock.c
+)
+FOREACH(FILE ${PROBES_C_LIST})
+    SET(SOURCES ${SOURCES} ${FILE})
+ENDFOREACH()
+MESSAGE("SOURCES:\n" ${SOURCES})
+
+ADD_EXECUTABLE(gala-gopher ${SOURCES})
+TARGET_LINK_LIBRARIES(gala-gopher PRIVATE config pthread dl)
+TARGET_INCLUDE_DIRECTORIES(gala-gopher PRIVATE ${PROBE_DIR})
