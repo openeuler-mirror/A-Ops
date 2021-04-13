@@ -1,0 +1,20 @@
+version = "1.0.0"
+
+measurements:
+(
+    {
+        name: "meminfo",
+        fields:
+        (
+            "nr_free_pages",
+            "nr_zone_inactive_anon",
+            "nr_zone_active_anon",
+            "nr_zone_active_file",
+            "nr_zone_unevictable",
+            "nr_zone_write_pending",
+            "nr_mlock",
+            "nr_page_table_pages",
+        )
+    }
+)
+

@@ -1,0 +1,20 @@
+version = "1.0.0"
+
+measurements:
+(
+    {
+        name: "meminfo",
+        fields:
+        (
+            "MemTotal",
+            "MemFree",
+            "MemAvailable",
+            "Buffers",
+            "Cached",
+            "SwapCached",
+            "Active",
+            "Inactive",
+        )
+    }
+)
+
