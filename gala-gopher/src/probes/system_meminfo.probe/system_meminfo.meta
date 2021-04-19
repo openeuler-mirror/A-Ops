@@ -1,9 +1,9 @@
-version = "1.0.0"
+version: "1.0.0"
 
 measurements:
 (
     {
-        name: "meminfo",
+        name: "system_meminfo",
         fields:
         (
             "MemTotal",
@@ -17,4 +17,3 @@ measurements:
         )
     }
 )
-

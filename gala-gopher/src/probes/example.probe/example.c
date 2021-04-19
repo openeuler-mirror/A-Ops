@@ -3,7 +3,7 @@
 
 void example_collect_data()
 {
-    fprintf(stdout, "%s %s %s %s\n",
+    fprintf(stdout, "|%s|%s|%s|%s|\n",
         "example",
         "high",
         "low",

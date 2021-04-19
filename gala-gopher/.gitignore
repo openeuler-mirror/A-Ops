@@ -53,3 +53,9 @@ dkms.conf
 
 # vscode
 *.vscode
+
+# gala-gopher bin
+gala-gopher
+
+# build tmp dir
+*build/

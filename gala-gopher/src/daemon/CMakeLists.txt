@@ -7,21 +7,51 @@ MESSAGE("ENV PROBES_META_LIST:\n"  ${PROBES_META_LIST})
 
 SET(EXECUTABLE_OUTPUT_PATH ../../../)
 
-SET(PROBE_DIR ../probe)
+SET(EGRESS_DIR ../egress)
+SET(INGRESS_DIR ../ingress)
+SET(FIFO_DIR ../lib/fifo)
+SET(META_DIR ../lib/meta)
+SET(KAFKA_DIR ../lib/kafka)
+SET(TAOSDATA_DIR ../lib/taosdata)
+SET(PROBE_DIR ../lib/probe)
+
+SET(LIBRDKAFKA_DIR /usr/include/librdkafka)
+
 SET(CMAKE_C_FLAGS "-rdynamic -g -fno-builtin-fprintf -Wl,--wrap=fprintf   \
     -DPROBES_LIST=\"${PROBES_LIST}\"                        \
     -DPROBES_META_LIST=\"${PROBES_META_LIST}\" "
 )
 
-SET(SOURCES main.c
-    ../probe/probe.c
-    ../lib/mock/mock.c
+SET(SOURCES main.c daemon.c
+    ${EGRESS_DIR}/egress.c
+    ${INGRESS_DIR}/ingress.c
+
+    ${FIFO_DIR}/fifo.c
+    ${META_DIR}/meta.c
+    ${KAFKA_DIR}/kafka.c
+    ${TAOSDATA_DIR}/taosdata.c
+
+    ${PROBE_DIR}/probe.c
+    ${PROBE_DIR}/probe_data.c
 )
+
 FOREACH(FILE ${PROBES_C_LIST})
     SET(SOURCES ${SOURCES} ${FILE})
 ENDFOREACH()
 MESSAGE("SOURCES:\n" ${SOURCES})
 
 ADD_EXECUTABLE(gala-gopher ${SOURCES})
-TARGET_LINK_LIBRARIES(gala-gopher PRIVATE config pthread dl)
-TARGET_INCLUDE_DIRECTORIES(gala-gopher PRIVATE ${PROBE_DIR})
+TARGET_INCLUDE_DIRECTORIES(gala-gopher PRIVATE 
+    ${EGRESS_DIR}
+    ${INGRESS_DIR}
+
+    ${FIFO_DIR}
+    ${META_DIR}
+    ${KAFKA_DIR}
+    ${TAOSDATA_DIR}
+
+    ${PROBE_DIR}
+    ${LIBRDKAFKA_DIR}
+)
+
+TARGET_LINK_LIBRARIES(gala-gopher PRIVATE config pthread dl rdkafka taos)

@@ -66,7 +66,7 @@ static int system_meminfo_set_field(char *key, char *val)
 
 static int system_meminfo_print_records()
 {
-    fprintf(stdout, "%s %s %s %s %s %s %s %s %s\n",
+    fprintf(stdout, "|%s|%s|%s|%s|%s|%s|%s|%s|%s|\n",
         "system_meminfo",
         g_system_meminfo_fields[0].val,
         g_system_meminfo_fields[1].val,

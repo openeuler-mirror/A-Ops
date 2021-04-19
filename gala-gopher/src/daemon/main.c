@@ -1,33 +1,37 @@
 #include <stdio.h>
-
-#include "probe.h"
+#include <pthread.h>
+#include "daemon.h"
 
 int main()
 {
-    int ret = 0;
+    uint32_t ret = 0;
 
-    struct probe_mgr *probe_mgr;
-    probe_mgr = create_probe_mgr();
-    if (probe_mgr == NULL) {
-        printf("[GOPHER_DEBUG] create probe mgr failed.\n");
+    ResourceMgr *mgr = NULL;
+
+    mgr = ResourceMgrCreate();
+    if (mgr == NULL) {
+        printf("[MAIN] create resource manager failed.\n");
         return 0;
     }
 
-    ret = load_probes(probe_mgr);
+    ret = DaemonInit(mgr);
     if (ret != 0) {
-        printf("[GOPHER_DEBUG] load probe mgr failed.\n");
+        printf("[MAIN] daemon init failed.\n");
         return 0;
     }
 
-    ret = run_probes(probe_mgr);
+    ret = DaemonRun(mgr);
     if (ret != 0) {
-        printf("[GOPHER_DEBUG] start probes failed.\n");
+        printf("[MAIN] daemon run failed.\n");
         return 0;
     }
-    printf("[GOPHER DEBUG] process start success.\n");
 
-    wait_probes_done(probe_mgr);
-    destroy_probe_mgr(probe_mgr);
+    ret = DaemonWaitDone(mgr);
+    if (ret != 0) {
+        printf("[MAIN] daemon wait done failed.\n");
+        return 0;
+    }
 
     return 0;
 }
+
