@@ -4,22 +4,14 @@
 #include <stdint.h>
 #include <taos.h>
 
+#include "base.h"
 #include "meta.h"
-#include "probe_data.h"
-
-#define MAX_TAO
-
-#define MAX_TAOS_IP_LEN 64
-#define MAX_TAOS_USER_LEN 64
-#define MAX_TAOS_PASS_LEN 64
-#define MAX_TAOS_DB_NAME_LEN 64
-#define MAX_TAOS_SUB_NUM 1024
 
 typedef struct {
-    char taosIp[MAX_TAOS_IP_LEN];
-    char taosUser[MAX_TAOS_USER_LEN];
-    char taosPass[MAX_TAOS_PASS_LEN];
-    char taosDbName[MAX_TAOS_DB_NAME_LEN];
+    char taosIp[MAX_TAOSDATA_IP_LEN];
+    char taosUser[MAX_TAOSDATA_USER_LEN];
+    char taosPass[MAX_TAOSDATA_PASS_LEN];
+    char taosDbName[MAX_TAOSDATA_DBNAME_LEN];
     uint16_t taosPort;
     TAOS *taos;
 

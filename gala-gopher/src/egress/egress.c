@@ -6,9 +6,6 @@
 
 #include "egress.h"
 
-#define DATA_CONSUME_INTERVAL_S 1
-#define DATA_RECENT_TIME_S 5
-
 EgressMgr *EgressMgrCreate()
 {
     EgressMgr *mgr;
@@ -51,7 +48,7 @@ static void EgressDataProcess(EgressMgr *mgr)
     MeasurementMgr *mmMgr = mgr->mmMgr;
 
     for (int i = 0; i < mmMgr->measurementsNum; i++) {
-        taosRes = TaosDbMgrGetRecentRecords(mmMgr->measurements[i]->name, DATA_RECENT_TIME_S, taosDbMgr);
+        taosRes = TaosDbMgrGetRecentRecords(mmMgr->measurements[i]->name, mgr->timeRange, taosDbMgr);
         if (taosRes == NULL) {
             continue;
         }
@@ -90,7 +87,7 @@ void EgressMain(EgressMgr *mgr)
 {
     for (;;) {
         EgressDataProcess(mgr);
-        sleep(DATA_CONSUME_INTERVAL_S);
+        sleep(mgr->interval);
     }
 }
 

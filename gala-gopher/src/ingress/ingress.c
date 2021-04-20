@@ -5,9 +5,6 @@
 #include <unistd.h>
 #include "ingress.h"
 
-#define MAX_EPOLL_SIZE 1024
-#define MAX_EPOLL_EVENTS_NUM 512
-
 IngressMgr *IngressMgrCreate(FifoMgr *fifoMgr, TaosDbMgr *taosDbMgr, MeasurementMgr *mmMgr)
 {
     IngressMgr *mgr = NULL;
@@ -63,11 +60,10 @@ static int IngressInit(IngressMgr *mgr)
 static int IngressDataProcesssInput(Fifo *fifo, TaosDbMgr *taosdbMgr)
 {
     // read data from fifo
-    ProbeData *elem;
-    char *dataStr;
-    int ret;
+    char *dataStr = NULL;
+    int ret = 0;
 
-    uint64_t val;
+    uint64_t val = 0;
     ret = read(fifo->triggerFd, &val, sizeof(val));
     if (ret < 0) {
         printf("[INGRESS] Read event from triggerfd failed.\n");
@@ -91,9 +87,9 @@ static int IngressDataProcesssInput(Fifo *fifo, TaosDbMgr *taosdbMgr)
 static int IngressDataProcesss(IngressMgr *mgr)
 {
     struct epoll_event events[MAX_EPOLL_EVENTS_NUM];
-    uint32_t events_num;
-    Fifo *fifo;
-    uint32_t ret;
+    uint32_t events_num = 0;
+    Fifo *fifo = NULL;
+    uint32_t ret = 0;
 
     events_num = epoll_wait(mgr->epoll_fd, events, MAX_EPOLL_EVENTS_NUM, -1);
     if (events_num < 0) {

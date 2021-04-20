@@ -4,17 +4,8 @@
 #include <stdint.h>
 #include <pthread.h>
 
+#include "base.h"
 #include "fifo.h"
-
-
-#define MAX_PROBE_FIFO_SIZE 1024
-
-#define MAX_PROBE_NAME_LEN 256
-#define MAX_META_PATH_LEN 4096
-#define MAX_THREAD_NAME 128
-
-#define MAX_PROBES_LIST_SIZE 2048
-
 
 typedef int (*ProbeMain)();
 
@@ -22,6 +13,8 @@ typedef struct {
     char name[MAX_PROBE_NAME_LEN];       // key
     char metaPath[MAX_META_PATH_LEN];
 
+    uint32_t interval;
+    ProbeSwitch probeSwitch;
     Fifo *fifo;
     ProbeMain func;
 
@@ -33,8 +26,6 @@ typedef struct {
     uint32_t probesNum;
     Probe **probes;
 } ProbeMgr;
-
-
 
 Probe *ProbeCreate();
 void ProbeDestroy(Probe *probe);

@@ -2,12 +2,7 @@
 #define __META_H__
 
 #include <stdint.h>
-
-#define MAX_FIELD_NAME_LEN 128
-#define MAX_FIELD_TYPE_LEN 128
-
-#define MAX_MEASUREMENT_NAME_LEN 128
-#define MAX_FIELDS_NUM_PER_MEASUREMENT 64
+#include "base.h"
 
 typedef struct {
     char name[MAX_FIELD_NAME_LEN];
@@ -17,7 +12,7 @@ typedef struct {
     char name[MAX_MEASUREMENT_NAME_LEN];
 
     uint32_t fieldsNum;
-    Field fields[MAX_FIELDS_NUM_PER_MEASUREMENT];
+    Field fields[MAX_FIELDS_NUM];
 } Measurement;
 
 typedef struct {
@@ -38,3 +33,4 @@ Measurement *MeasurementMgrGet(MeasurementMgr *mgr, const char *name);
 int MeasurementMgrLoad(MeasurementMgr *mgr, const char *metaPath);
 
 #endif
+

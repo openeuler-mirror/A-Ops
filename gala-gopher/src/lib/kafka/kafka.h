@@ -1,12 +1,9 @@
 #ifndef __KAFKA_H__
 #define __KAFKA_H__
 
-
 #include <stdint.h>
 #include <rdkafka.h>
-
-#define MAX_KAFKA_BROKER_LEN 128
-#define MAX_KAFKA_TOPIC_LEN  128
+#include "base.h"
 
 typedef struct {
     char kafkaBroker[MAX_KAFKA_BROKER_LEN];
@@ -16,7 +13,6 @@ typedef struct {
     rd_kafka_topic_t *rkt;
     rd_kafka_conf_t *conf;
 } KafkaMgr;
-
 
 KafkaMgr *KafkaMgrCreate(const char *broker, const char *topic);
 void KafkaMgrDestroy(KafkaMgr *mgr);

@@ -5,16 +5,12 @@
 #include <time.h>
 #include "taosdata.h"
 
-#define TAOS_MAX_RETRY_TIMES 5
-#define TAOS_MAX_SQL_LEN 1024
-#define TAOS_MAX_TOPIC_LEN 128
-
 static TAOS_RES *TaosExecute(const char *sql, TAOS *taos)
 {
     TAOS_RES *res = NULL;
     int t_errno = 0;
 
-    for (int i = 0; i < TAOS_MAX_RETRY_TIMES; i++) {
+    for (int i = 0; i < MAX_TAOS_SQL_RETRY_TIMES; i++) {
         if (res != NULL) {
             taos_free_result(res);
             res = NULL;
@@ -41,8 +37,8 @@ static TAOS_RES *TaosExecute(const char *sql, TAOS *taos)
 int TaosCreateDb(const char *dbName, TAOS *taos)
 {
     TAOS_RES *res = NULL;
-    char sql[TAOS_MAX_SQL_LEN];
-    snprintf(sql, TAOS_MAX_SQL_LEN, "create database %s", dbName);
+    char sql[MAX_TAOS_SQL_LEN];
+    snprintf(sql, MAX_TAOS_SQL_LEN, "create database %s", dbName);
 
     res = TaosExecute(sql, taos);
     if (res == NULL) {
@@ -56,8 +52,8 @@ int TaosCreateDb(const char *dbName, TAOS *taos)
 int TaosDropDb(const char *dbName, TAOS *taos)
 {
     TAOS_RES *res = NULL;
-    char sql[TAOS_MAX_SQL_LEN];
-    snprintf(sql, TAOS_MAX_SQL_LEN, "drop database if exists %s", dbName);
+    char sql[MAX_TAOS_SQL_LEN];
+    snprintf(sql, MAX_TAOS_SQL_LEN, "drop database if exists %s", dbName);
 
     res = TaosExecute(sql, taos);
     if (res == NULL) {
@@ -71,8 +67,8 @@ int TaosDropDb(const char *dbName, TAOS *taos)
 int TaosSwitchDb(const char *dbName, TAOS *taos)
 {
     TAOS_RES *res = NULL;
-    char sql[TAOS_MAX_SQL_LEN];
-    snprintf(sql, TAOS_MAX_SQL_LEN, "use %s", dbName);
+    char sql[MAX_TAOS_SQL_LEN];
+    snprintf(sql, MAX_TAOS_SQL_LEN, "use %s", dbName);
 
     res = TaosExecute(sql, taos);
     if (res == NULL) {
@@ -88,8 +84,8 @@ int TaosSwitchDb(const char *dbName, TAOS *taos)
 int TaosCreateTable(const char *tableName, const char *metaStr, TAOS *taos)
 {
     TAOS_RES *res = NULL;
-    char sql[TAOS_MAX_SQL_LEN];
-    snprintf(sql, TAOS_MAX_SQL_LEN, "create table if not exists %s ( ts timestamp %s )", tableName, metaStr);
+    char sql[MAX_TAOS_SQL_LEN];
+    snprintf(sql, MAX_TAOS_SQL_LEN, "create table if not exists %s ( ts timestamp %s )", tableName, metaStr);
 
     res = TaosExecute(sql, taos);
     if (res == NULL) {
@@ -104,8 +100,8 @@ int TaosCreateTable(const char *tableName, const char *metaStr, TAOS *taos)
 int TaosDropTable(const char *tableName, TAOS *taos)
 {
     TAOS_RES *res = NULL;
-    char sql[TAOS_MAX_SQL_LEN];
-    snprintf(sql, TAOS_MAX_SQL_LEN, "drop database if exists %s", tableName);
+    char sql[MAX_TAOS_SQL_LEN];
+    snprintf(sql, MAX_TAOS_SQL_LEN, "drop database if exists %s", tableName);
 
     res = TaosExecute(sql, taos);
     if (res == NULL) {
@@ -121,8 +117,8 @@ int TaosDropTable(const char *tableName, TAOS *taos)
 int TaosInsertOneRecord(const char *tableName, const char *dataStr, TAOS *taos)
 {
     TAOS_RES *res = NULL;
-    char sql[TAOS_MAX_SQL_LEN];
-    snprintf(sql, TAOS_MAX_SQL_LEN, "insert into %s values ( now, %s )", tableName, dataStr);
+    char sql[MAX_TAOS_SQL_LEN];
+    snprintf(sql, MAX_TAOS_SQL_LEN, "insert into %s values ( now, %s )", tableName, dataStr);
 
     res = TaosExecute(sql, taos);
     if (res == NULL) {
@@ -202,10 +198,12 @@ void TaosDbMgrDestroy(TaosDbMgr *mgr)
 int TaosDbMgrCreateTable(Measurement *mm, TaosDbMgr *mgr)
 {
     int ret = 0;
-    char metaStr[TAOS_MAX_SQL_LEN] = "";
+    char metaStr[MAX_TAOS_SQL_LEN] = {0};
+    char metaStrTmp[MAX_TAOS_SQL_LEN] = {0};
     for (int i = 0; i < mm->fieldsNum; i++) {
         // generate create table meta data
-        sprintf(metaStr, " %s, %s binary(50)", metaStr, mm->fields[i].name);
+        snprintf(metaStr, MAX_TAOS_SQL_LEN, " %s, %s binary(50)", metaStrTmp, mm->fields[i].name);
+        snprintf(metaStrTmp, MAX_TAOS_SQL_LEN, " %s", metaStr);
     }
     
     ret = TaosCreateTable(mm->name, metaStr, mgr->taos);
@@ -222,9 +220,9 @@ int TaosDbMgrSubscribeTable(Measurement *mm, TaosDbMgr *mgr)
 {
     int ret = 0;
     TAOS_SUB *tSub = NULL;
-    char sql[TAOS_MAX_SQL_LEN] = "";
+    char sql[MAX_TAOS_SQL_LEN] = "";
 
-    sprintf(sql, "select * from %s;", mm->name);
+    snprintf(sql, MAX_TAOS_SQL_LEN, "select * from %s;", mm->name);
     tSub = taos_subscribe(mgr->taos, 0, mm->name, sql, NULL, NULL, 0);
     if (tSub == NULL) {
         printf("[TAOS] subscribe table %s failed.\n", mm->name);
@@ -243,7 +241,7 @@ int TaosDbMgrInsertOneRecord(const char *data, TaosDbMgr *mgr)
     int i = 0;
 
     // generate insert data meta data
-    char dataStr[TAOS_MAX_SQL_LEN] = {0};
+    char dataStr[MAX_TAOS_SQL_LEN] = {0};
     char mmName[MAX_MEASUREMENT_NAME_LEN];
     int size = strlen(data);
     int index = 0;
@@ -284,10 +282,10 @@ TAOS_RES *TaosDbMgrGetRecentRecords(const char *tableName, uint32_t time_s, Taos
 {
     time_t seconds;
     TAOS_RES *res = NULL;
-    char sql[TAOS_MAX_SQL_LEN];
+    char sql[MAX_TAOS_SQL_LEN];
 
     seconds = time(NULL); 
-    snprintf(sql, TAOS_MAX_SQL_LEN, "select * from %s where ts > %ld;", tableName, (seconds - time_s) * 1000);
+    snprintf(sql, MAX_TAOS_SQL_LEN, "select * from %s where ts > %ld;", tableName, (seconds - time_s) * 1000);
 
     res = TaosExecute(sql, mgr->taos);
     if (res == NULL) {

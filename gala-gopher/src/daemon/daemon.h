@@ -4,6 +4,8 @@
 #include <stdint.h>
 #include <stdio.h>
 
+#include "base.h"
+#include "config.h"
 #include "ingress.h"
 #include "egress.h"
 #include "fifo.h"
@@ -12,7 +14,6 @@
 #include "probe.h"
 #include "taosdata.h"
 #include "kafka.h"
-
 
 typedef struct {
     MeasurementMgr *mmMgr;
@@ -26,10 +27,10 @@ typedef struct {
     EgressMgr *egressMgr;
 } ResourceMgr;
 
-ResourceMgr *ResourceMgrCreate();
+ResourceMgr *ResourceMgrCreate(ConfigMgr *configMgr);
 void ResourceMgrDestroy(ResourceMgr *mgr);
 
-uint32_t DaemonInit(ResourceMgr *mgr);
+uint32_t DaemonInit(ResourceMgr *mgr, ConfigMgr *configMgr);
 uint32_t DaemonRun(ResourceMgr *mgr);
 uint32_t DaemonWaitDone(ResourceMgr *mgr);
 

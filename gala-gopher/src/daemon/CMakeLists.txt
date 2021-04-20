@@ -7,6 +7,8 @@ MESSAGE("ENV PROBES_META_LIST:\n"  ${PROBES_META_LIST})
 
 SET(EXECUTABLE_OUTPUT_PATH ../../../)
 
+SET(BASE_DIR ../lib)
+SET(CONFIG_DIR ../config)
 SET(EGRESS_DIR ../egress)
 SET(INGRESS_DIR ../ingress)
 SET(FIFO_DIR ../lib/fifo)
@@ -23,6 +25,7 @@ SET(CMAKE_C_FLAGS "-rdynamic -g -fno-builtin-fprintf -Wl,--wrap=fprintf   \
 )
 
 SET(SOURCES main.c daemon.c
+	${CONFIG_DIR}/config.c
     ${EGRESS_DIR}/egress.c
     ${INGRESS_DIR}/ingress.c
 
@@ -32,7 +35,6 @@ SET(SOURCES main.c daemon.c
     ${TAOSDATA_DIR}/taosdata.c
 
     ${PROBE_DIR}/probe.c
-    ${PROBE_DIR}/probe_data.c
 )
 
 FOREACH(FILE ${PROBES_C_LIST})
@@ -42,6 +44,8 @@ MESSAGE("SOURCES:\n" ${SOURCES})
 
 ADD_EXECUTABLE(gala-gopher ${SOURCES})
 TARGET_INCLUDE_DIRECTORIES(gala-gopher PRIVATE 
+	${BASE_DIR}
+	${CONFIG_DIR}
     ${EGRESS_DIR}
     ${INGRESS_DIR}
 
@@ -55,3 +59,4 @@ TARGET_INCLUDE_DIRECTORIES(gala-gopher PRIVATE
 )
 
 TARGET_LINK_LIBRARIES(gala-gopher PRIVATE config pthread dl rdkafka taos)
+

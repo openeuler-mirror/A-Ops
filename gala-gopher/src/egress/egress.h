@@ -12,9 +12,10 @@ typedef struct {
     TaosDbMgr *taosDbMgr;
     KafkaMgr *kafkaMgr;
 
+    uint32_t interval;
+    uint32_t timeRange;
     pthread_t tid;
 } EgressMgr;
-
 
 EgressMgr *EgressMgrCreate();
 void EgressMgrDestroy(EgressMgr *mgr);

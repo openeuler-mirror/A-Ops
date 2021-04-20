@@ -3,8 +3,6 @@
 #include <stdlib.h>
 #include "kafka.h"
 
-#define MAX_KAFKA_ERRSTR_SIZE 512
-
 static void dr_msg_cb(rd_kafka_t *rk, const rd_kafka_message_t *rkmessage, void *opaque){
     if(rkmessage->err) {
         fprintf(stderr, "%% Message delivery failed: %s\n", rd_kafka_err2str(rkmessage->err));

@@ -105,7 +105,7 @@ static int MeasurementLoad(Measurement *mm, config_setting_t *mmConfig)
     memcpy(mm->name, name, strlen(name));
     config_setting_t *fields = config_setting_lookup(mmConfig, "fields");
     int field_count = config_setting_length(fields);
-    if (field_count > MAX_FIELDS_NUM_PER_MEASUREMENT) {
+    if (field_count > MAX_FIELDS_NUM) {
         printf("Too many fields.\n");
         return -1;
     }
@@ -128,10 +128,10 @@ int MeasurementMgrLoad(MeasurementMgr *mgr, const char *metaPath)
 {
     int ret = 0;
     config_t cfg;
-    config_setting_t *measurements;
+    config_setting_t *measurements = NULL;
 
-    char *name;
-    char *field;
+    char *name = NULL;
+    char *field = NULL;
 
     config_init(&cfg);
     ret = config_read_file(&cfg, metaPath);
@@ -177,3 +177,4 @@ int MeasurementMgrLoad(MeasurementMgr *mgr, const char *metaPath)
     config_destroy(&cfg);
     return 0;    
 }
+

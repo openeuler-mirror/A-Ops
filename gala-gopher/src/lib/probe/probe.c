@@ -9,15 +9,11 @@
 #include <stdarg.h>
 
 #include "probe.h"
-#include "probe_data.h"
 
 #define MACRO2STR1(MACRO) #MACRO
 #define MACRO2STR2(MACRO) MACRO2STR1(MACRO)
 
-#define MAX_FIFO_SIZE 1024
-
 __thread Probe *g_probe;
-
 
 Probe *ProbeCreate()
 {
@@ -102,7 +98,6 @@ Probe *ProbeMgrGet(ProbeMgr *mgr, const char *probeName)
     return NULL;
 }
 
-
 int ProbeMgrLoadProbes(ProbeMgr *mgr)
 {
     int count = 0;
@@ -147,12 +142,12 @@ int ProbeMgrLoadProbes(ProbeMgr *mgr)
         return -1;
     }
 
-    printf("[GOPHER_DEBUG] get probes_num: %u\n", mgr->probesNum);
+    printf("[PROBE] get probes_num: %u\n", mgr->probesNum);
     for (int i = 0; i < mgr->probesNum; i++) {
         snprintf(probeMainStr, MAX_PROBE_NAME_LEN - 1, "probe_main_%s", mgr->probes[i]->name);
         mgr->probes[i]->func = dlsym(hdl, probeMainStr);
         if (mgr->probes[i]->func == NULL) {
-            printf("[GOPHER_DEBUG] Unknown func: %s\n", probeMainStr);
+            printf("[PROBE] Unknown func: %s\n", probeMainStr);
             dlclose(hdl);
             return -1;
         }
@@ -162,11 +157,10 @@ int ProbeMgrLoadProbes(ProbeMgr *mgr)
     return 0;
 }
 
-
 int __wrap_fprintf(FILE *stream, const char *format, ...)
 {
-    char ch;
-    char *pc;
+    char ch = 0;
+    char *pc = NULL;
     uint32_t ret = 0;
 
     uint32_t index = 0;

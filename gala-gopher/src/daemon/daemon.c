@@ -6,30 +6,15 @@
 
 #include "daemon.h"
 
-// configuration for taosdata
-#define TAOS_IP   "localhost"
-#define TAOS_USER "root"
-#define TAOS_PASS "taosdata"
-#define TAOS_DB   "gala_gopher"
-#define TAOS_PORT 0
-
-#define KAFKA_BROKER "localhost:9092"
-#define KAFKA_TOPIC  "gala_gopher"
-
-#define MAX_MEASUREMENTS_NUM 64
-#define MAX_PROBES_NUM 64
-#define MAX_FIFO_NUM MAX_PROBES_NUM
-
-
-ResourceMgr *ResourceMgrCreate()
+ResourceMgr *ResourceMgrCreate(ConfigMgr *configMgr)
 {
     ResourceMgr *mgr;
     mgr = (ResourceMgr *)malloc(sizeof(ResourceMgr));
     if (mgr == NULL) {
         return NULL;
     }
-
     memset(mgr, 0, sizeof(ResourceMgr));
+
     mgr->probeMgr = ProbeMgrCreate(MAX_PROBES_NUM);
     if (mgr->probeMgr == NULL) {
         printf("[DAEMON] create ProbeMgr failed.\n");
@@ -48,13 +33,14 @@ ResourceMgr *ResourceMgrCreate()
         goto ERR;
     }
 
-    mgr->kafkaMgr = KafkaMgrCreate(KAFKA_BROKER, KAFKA_TOPIC);
+    mgr->kafkaMgr = KafkaMgrCreate(configMgr->kafkaConfig->broker, configMgr->kafkaConfig->topic);
     if (mgr->kafkaMgr == NULL) {
         printf("[DAEMON] create kafkaMgr failed.\n");
         goto ERR;
     }
 
-    mgr->taosDbMgr = TaosDbMgrCreate(TAOS_IP, TAOS_USER, TAOS_PASS, TAOS_DB, TAOS_PORT);
+    mgr->taosDbMgr = TaosDbMgrCreate(configMgr->taosdataConfig->ip, configMgr->taosdataConfig->user,
+        configMgr->taosdataConfig->pass, configMgr->taosdataConfig->dbName, configMgr->taosdataConfig->port);
     if (mgr->taosDbMgr == NULL) {
         printf("[DAEMON] create taosDbMgr failed.\n");
         goto ERR;
@@ -78,6 +64,8 @@ ResourceMgr *ResourceMgrCreate()
     mgr->egressMgr->mmMgr = mgr->mmMgr;
     mgr->egressMgr->taosDbMgr = mgr->taosDbMgr;
     mgr->egressMgr->kafkaMgr = mgr->kafkaMgr;
+    mgr->egressMgr->interval = configMgr->egressConfig->interval;
+    mgr->egressMgr->timeRange = configMgr->egressConfig->timeRange;
 
     return mgr;
 ERR:
@@ -103,7 +91,7 @@ void ResourceMgrDestroy(ResourceMgr *mgr)
     return;
 }
 
-uint32_t DaemonInit(ResourceMgr *mgr)
+uint32_t DaemonInit(ResourceMgr *mgr, ConfigMgr *configMgr)
 {
     uint32_t ret = 0;
     // 0. load configuration
@@ -142,6 +130,19 @@ uint32_t DaemonInit(ResourceMgr *mgr)
     }
     printf("[DAEMON] create and subscribe all measurements success.\n");
 
+    // 4. refresh probe configuration
+    for (int i = 0; i < configMgr->probesConfig->probesNum; i++) {
+        ProbeConfig *_probeConfig = configMgr->probesConfig->probesConfig[i];
+        Probe *probe = ProbeMgrGet(mgr->probeMgr, _probeConfig->name);
+        if (probe == NULL) {
+            continue;
+        }
+
+        probe->interval = _probeConfig->interval;
+        probe->probeSwitch = _probeConfig->probeSwitch;
+    }
+    printf("[DAEMON] refresh probe configuration success.\n");
+    
     return 0;
 }
 
@@ -163,13 +164,13 @@ static void *DaemonRunSingleProbe(void *arg)
 {
     g_probe = (Probe *)arg;
 
-    char thread_name[MAX_THREAD_NAME];
-    snprintf(thread_name, MAX_THREAD_NAME - 1, "[PROBE]%s", g_probe->name);
+    char thread_name[MAX_THREAD_NAME_LEN];
+    snprintf(thread_name, MAX_THREAD_NAME_LEN - 1, "[PROBE]%s", g_probe->name);
     prctl(PR_SET_NAME, thread_name);
 
     for (;;) {
         g_probe->func();
-        sleep(1);
+        sleep(g_probe->interval);
     }
     return 0;
 }
@@ -184,7 +185,7 @@ uint32_t DaemonRun(ResourceMgr *mgr)
         printf("[DAEMON] create ingress thread failed. errno: %d\n", errno);
         return -1;
     }
-    printf("[DAEMON] create ingress thread success.\n", errno);
+    printf("[DAEMON] create ingress thread success.\n");
     // sleep(1);
 
     // 2. start egress thread
@@ -193,14 +194,19 @@ uint32_t DaemonRun(ResourceMgr *mgr)
         printf("[DAEMON] create egress thread failed. errno: %d\n", errno);
         return -1;
     }
-    printf("[DAEMON] create egress thread success.\n", errno);
+    printf("[DAEMON] create egress thread success.\n");
     // sleep(1);
 
     // 3. start probe thread
     for (int i = 0; i < mgr->probeMgr->probesNum; i++) {
-        ret = pthread_create(&mgr->probeMgr->probes[i]->tid, NULL, DaemonRunSingleProbe, mgr->probeMgr->probes[i]);
+        Probe *_probe = mgr->probeMgr->probes[i];
+        if (_probe->probeSwitch != PROBE_SWITCH_ON) {
+            printf("[DAEMON] probe %s switch is off, skip create thread for it.\n", _probe->name);
+            continue;
+        }
+        ret = pthread_create(&mgr->probeMgr->probes[i]->tid, NULL, DaemonRunSingleProbe, _probe);
         if (ret != 0) {
-            printf("[DAEMON] create probe thread failed. probe name: %s errno: %d\n", mgr->probeMgr->probes[i]->name, errno);
+            printf("[DAEMON] create probe thread failed. probe name: %s errno: %d\n", _probe->name, errno);
             return -1;
         }
         printf("[DAEMON] create probe %s thread success.\n", mgr->probeMgr->probes[i]->name);

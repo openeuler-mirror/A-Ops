@@ -6,6 +6,7 @@
 #include <stdio.h>
 #include <pthread.h>
 
+#include "base.h"
 #include "fifo.h"
 #include "taosdata.h"
 #include "meta.h"

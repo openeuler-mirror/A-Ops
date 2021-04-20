@@ -1,7 +1,6 @@
 #ifndef __FIFO_H__
 #define __FIFO_H__
 
-
 #include <stdint.h>
 
 typedef struct {
@@ -13,13 +12,11 @@ typedef struct {
     int triggerFd;
 } Fifo;
 
-
 typedef struct {
     uint32_t size;
     uint32_t fifoNum;
     Fifo **fifos;
 } FifoMgr;
-
 
 Fifo *FifoCreate(uint32_t size);
 void FifoDestroy(Fifo *fifo);
