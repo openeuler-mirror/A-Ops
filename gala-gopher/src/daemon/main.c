@@ -1,36 +1,21 @@
 #include <stdio.h>
 #include <pthread.h>
-#include "config.h"
 #include "daemon.h"
 
 int main()
 {
     uint32_t ret = 0;
-    ConfigMgr *configMgr = NULL;
     ResourceMgr *resourceMgr = NULL;
 
-    configMgr = ConfigMgrCreate();
-    if (configMgr == NULL) {
-        printf("[MAIN] create config mgr failed.\n");
-        return 0;
-    }
-
-    ret = ConfigMgrLoad(configMgr, GALA_CONF_PATH);
-    if (ret != 0) {
-        printf("[MAIN] load gala configuration failed.\n");
-        return -1;
-    }
-    printf("[MAIN] load gala configuration success.\n");
-
-    resourceMgr = ResourceMgrCreate(configMgr);
+    resourceMgr = ResourceMgrCreate();
     if (resourceMgr == NULL) {
         printf("[MAIN] create resource manager failed.\n");
         return 0;
     }
 
-    ret = DaemonInit(resourceMgr, configMgr);
+    ret = ResourceMgrInit(resourceMgr);
     if (ret != 0) {
-        printf("[MAIN] daemon init failed.\n");
+        printf("[MAIN] ResourceMgrInit failed.\n");
         return 0;
     }
 
@@ -46,8 +31,8 @@ int main()
         return 0;
     }
 
+    ResourceMgrDeinit(resourceMgr);
     ResourceMgrDestroy(resourceMgr);
-    ConfigMgrDestroy(configMgr);
     return 0;
 }
 

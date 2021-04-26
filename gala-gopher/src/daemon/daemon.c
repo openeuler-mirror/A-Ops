@@ -6,146 +6,13 @@
 
 #include "daemon.h"
 
-ResourceMgr *ResourceMgrCreate(ConfigMgr *configMgr)
-{
-    ResourceMgr *mgr;
-    mgr = (ResourceMgr *)malloc(sizeof(ResourceMgr));
-    if (mgr == NULL) {
-        return NULL;
-    }
-    memset(mgr, 0, sizeof(ResourceMgr));
+#if GALA_GOPHER_INFO("inner func declaration")
+static void *DaemonRunIngress(void *arg);
+static void *DaemonRunEgress(void *arg);
+static void *DaemonRunSingleProbe(void *arg);
+#endif
 
-    mgr->probeMgr = ProbeMgrCreate(MAX_PROBES_NUM);
-    if (mgr->probeMgr == NULL) {
-        printf("[DAEMON] create ProbeMgr failed.\n");
-        goto ERR;
-    }
-
-    mgr->mmMgr = MeasurementMgrCreate(MAX_MEASUREMENTS_NUM);
-    if (mgr->mmMgr == NULL) {
-        printf("[DAEMON] create MeasurementMgr failed.\n");
-        goto ERR;
-    }
-
-    mgr->fifoMgr = FifoMgrCreate(MAX_FIFO_NUM);
-    if (mgr->fifoMgr == NULL) {
-        printf("[DAEMON] create fifoMgr failed.\n");
-        goto ERR;
-    }
-
-    mgr->kafkaMgr = KafkaMgrCreate(configMgr->kafkaConfig->broker, configMgr->kafkaConfig->topic);
-    if (mgr->kafkaMgr == NULL) {
-        printf("[DAEMON] create kafkaMgr failed.\n");
-        goto ERR;
-    }
-
-    mgr->taosDbMgr = TaosDbMgrCreate(configMgr->taosdataConfig->ip, configMgr->taosdataConfig->user,
-        configMgr->taosdataConfig->pass, configMgr->taosdataConfig->dbName, configMgr->taosdataConfig->port);
-    if (mgr->taosDbMgr == NULL) {
-        printf("[DAEMON] create taosDbMgr failed.\n");
-        goto ERR;
-    }
-
-    mgr->ingressMgr = IngressMgrCreate();
-    if (mgr->ingressMgr == NULL) {
-        printf("[DAEMON] create ingressMgr failed.\n");
-        goto ERR;
-    }
-    mgr->ingressMgr->fifoMgr = mgr->fifoMgr;
-    mgr->ingressMgr->mmMgr = mgr->mmMgr;
-    mgr->ingressMgr->probeMgr = mgr->probeMgr;
-    mgr->ingressMgr->taosDbMgr = mgr->taosDbMgr;
-
-    mgr->egressMgr = EgressMgrCreate();
-    if (mgr->egressMgr == NULL) {
-        printf("[DAEMON] create egressMgr failed.\n");
-        goto ERR;
-    }
-    mgr->egressMgr->mmMgr = mgr->mmMgr;
-    mgr->egressMgr->taosDbMgr = mgr->taosDbMgr;
-    mgr->egressMgr->kafkaMgr = mgr->kafkaMgr;
-    mgr->egressMgr->interval = configMgr->egressConfig->interval;
-    mgr->egressMgr->timeRange = configMgr->egressConfig->timeRange;
-
-    return mgr;
-ERR:
-    ResourceMgrDestroy(mgr);
-    return NULL;
-}
-
-void ResourceMgrDestroy(ResourceMgr *mgr)
-{
-    if (mgr == NULL) {
-        return;
-    }
-
-    EgressMgrDestroy(mgr->egressMgr);
-    IngressMgrDestroy(mgr->ingressMgr);
-    TaosDbMgrDestroy(mgr->taosDbMgr);
-    KafkaMgrDestroy(mgr->kafkaMgr);
-    FifoMgrDestroy(mgr->fifoMgr);
-    MeasurementMgrDestroy(mgr->mmMgr);
-    ProbeMgrDestroy(mgr->probeMgr);
-
-    free(mgr);
-    return;
-}
-
-uint32_t DaemonInit(ResourceMgr *mgr, ConfigMgr *configMgr)
-{
-    uint32_t ret = 0;
-    // 0. load configuration
-
-    // 1. load probes
-    ret = ProbeMgrLoadProbes(mgr->probeMgr);
-    if (ret != 0) {
-        printf("[DAEMON] load probes failed.\n");
-        return -1;
-    }
-    printf("[DAEMON] load probes success.\n");
-
-    // 2. load table meta info
-    for (int i = 0; i < mgr->probeMgr->probesNum; i++) {
-        ret = MeasurementMgrLoad(mgr->mmMgr, mgr->probeMgr->probes[i]->metaPath);
-        if (ret != 0) {
-            printf("[DAEMON] load probe %s meta path failed.\n", mgr->probeMgr->probes[i]->name);
-            return -1;
-        }
-    }
-    printf("[DAEMON] load probes meta path success.\n");
-
-    // 3. create and subscribe tables in taosdata
-    for (int i = 0; i < mgr->mmMgr->measurementsNum; i++) {
-        ret = TaosDbMgrCreateTable(mgr->mmMgr->measurements[i], mgr->taosDbMgr);
-
-        if (ret != 0) {
-            printf("[DAEMON] create table %s failed.\n", mgr->mmMgr->measurements[i]->name);
-            return -1;
-        }
-        ret = TaosDbMgrSubscribeTable(mgr->mmMgr->measurements[i], mgr->taosDbMgr);
-        if (ret != 0) {
-            printf("[DAEMON] subscribe table %s failed.\n", mgr->mmMgr->measurements[i]->name);
-            return -1;
-        }
-    }
-    printf("[DAEMON] create and subscribe all measurements success.\n");
-
-    // 4. refresh probe configuration
-    for (int i = 0; i < configMgr->probesConfig->probesNum; i++) {
-        ProbeConfig *_probeConfig = configMgr->probesConfig->probesConfig[i];
-        Probe *probe = ProbeMgrGet(mgr->probeMgr, _probeConfig->name);
-        if (probe == NULL) {
-            continue;
-        }
-
-        probe->interval = _probeConfig->interval;
-        probe->probeSwitch = _probeConfig->probeSwitch;
-    }
-    printf("[DAEMON] refresh probe configuration success.\n");
-    
-    return 0;
-}
-
+#if GALA_GOPHER_INFO("inner func defination")
 static void *DaemonRunIngress(void *arg)
 {
     IngressMgr *mgr = (IngressMgr *)arg;
@@ -174,6 +41,7 @@ static void *DaemonRunSingleProbe(void *arg)
     }
     return 0;
 }
+#endif
 
 uint32_t DaemonRun(ResourceMgr *mgr)
 {
@@ -186,7 +54,6 @@ uint32_t DaemonRun(ResourceMgr *mgr)
         return -1;
     }
     printf("[DAEMON] create ingress thread success.\n");
-    // sleep(1);
 
     // 2. start egress thread
     ret = pthread_create(&mgr->egressMgr->tid, NULL, DaemonRunEgress, mgr->egressMgr);
@@ -195,7 +62,6 @@ uint32_t DaemonRun(ResourceMgr *mgr)
         return -1;
     }
     printf("[DAEMON] create egress thread success.\n");
-    // sleep(1);
 
     // 3. start probe thread
     for (int i = 0; i < mgr->probeMgr->probesNum; i++) {
@@ -210,7 +76,6 @@ uint32_t DaemonRun(ResourceMgr *mgr)
             return -1;
         }
         printf("[DAEMON] create probe %s thread success.\n", mgr->probeMgr->probes[i]->name);
-        // sleep(1);
     }
 
     return 0;

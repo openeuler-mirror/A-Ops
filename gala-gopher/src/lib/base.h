@@ -1,6 +1,8 @@
 #ifndef __BASE_H__
 #define __BASE_H__
 
+#define GALA_GOPHER_INFO(description)   1
+
 // ======== COMMON ========
 // probe
 #define MAX_PROBES_NUM        32

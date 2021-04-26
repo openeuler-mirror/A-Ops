@@ -6,16 +6,19 @@ MESSAGE("ENV PROBES_C_LIST:\n"  ${PROBES_C_LIST})
 MESSAGE("ENV PROBES_META_LIST:\n"  ${PROBES_META_LIST})
 
 SET(EXECUTABLE_OUTPUT_PATH ../../../)
+SET(EXECUTABLE_TARGET gala-gopher)
 
-SET(BASE_DIR ../lib)
-SET(CONFIG_DIR ../config)
-SET(EGRESS_DIR ../egress)
-SET(INGRESS_DIR ../ingress)
-SET(FIFO_DIR ../lib/fifo)
-SET(META_DIR ../lib/meta)
-SET(KAFKA_DIR ../lib/kafka)
-SET(TAOSDATA_DIR ../lib/taosdata)
-SET(PROBE_DIR ../lib/probe)
+SET(SRC_DIR         ../../src)
+SET(BASE_DIR        ${SRC_DIR}/lib)
+SET(RESOURCE_DIR    ${SRC_DIR}/resource)
+SET(CONFIG_DIR      ${SRC_DIR}/lib/config)
+SET(EGRESS_DIR      ${SRC_DIR}/egress)
+SET(INGRESS_DIR     ${SRC_DIR}/ingress)
+SET(FIFO_DIR        ${SRC_DIR}/lib/fifo)
+SET(META_DIR        ${SRC_DIR}/lib/meta)
+SET(KAFKA_DIR       ${SRC_DIR}/lib/kafka)
+SET(TAOSDATA_DIR    ${SRC_DIR}/lib/taosdata)
+SET(PROBE_DIR       ${SRC_DIR}/lib/probe)
 
 SET(LIBRDKAFKA_DIR /usr/include/librdkafka)
 
@@ -24,8 +27,9 @@ SET(CMAKE_C_FLAGS "-rdynamic -g -fno-builtin-fprintf -Wl,--wrap=fprintf   \
     -DPROBES_META_LIST=\"${PROBES_META_LIST}\" "
 )
 
-SET(SOURCES main.c daemon.c
-	${CONFIG_DIR}/config.c
+SET(SOURCES main.c daemon.c 
+    ${RESOURCE_DIR}/resource.c
+    ${CONFIG_DIR}/config.c
     ${EGRESS_DIR}/egress.c
     ${INGRESS_DIR}/ingress.c
 
@@ -42,10 +46,11 @@ FOREACH(FILE ${PROBES_C_LIST})
 ENDFOREACH()
 MESSAGE("SOURCES:\n" ${SOURCES})
 
-ADD_EXECUTABLE(gala-gopher ${SOURCES})
-TARGET_INCLUDE_DIRECTORIES(gala-gopher PRIVATE 
-	${BASE_DIR}
-	${CONFIG_DIR}
+ADD_EXECUTABLE(${EXECUTABLE_TARGET} ${SOURCES})
+TARGET_INCLUDE_DIRECTORIES(${EXECUTABLE_TARGET} PRIVATE 
+    ${BASE_DIR}
+    ${RESOURCE_DIR}
+    ${CONFIG_DIR}
     ${EGRESS_DIR}
     ${INGRESS_DIR}
 
@@ -58,5 +63,5 @@ TARGET_INCLUDE_DIRECTORIES(gala-gopher PRIVATE
     ${LIBRDKAFKA_DIR}
 )
 
-TARGET_LINK_LIBRARIES(gala-gopher PRIVATE config pthread dl rdkafka taos)
+TARGET_LINK_LIBRARIES(${EXECUTABLE_TARGET} PRIVATE config pthread dl rdkafka taos)
 
