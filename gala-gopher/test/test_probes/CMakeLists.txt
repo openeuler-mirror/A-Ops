@@ -1,12 +1,12 @@
 CMAKE_MINIMUM_REQUIRED(VERSION 3.12.1)
-PROJECT(gala-gopher)
+PROJECT(gala-gopher-test)
 
 MESSAGE("ENV PROBES_LIST:\n"  ${PROBES_LIST})
 MESSAGE("ENV PROBES_C_LIST:\n"  ${PROBES_C_LIST})
 MESSAGE("ENV PROBES_META_LIST:\n"  ${PROBES_META_LIST})
 
-SET(EXECUTABLE_OUTPUT_PATH ../../../)
-SET(EXECUTABLE_TARGET gala-gopher)
+SET(EXECUTABLE_OUTPUT_PATH ../../)
+SET(EXECUTABLE_TARGET probes_test)
 
 SET(SRC_DIR         ../../src)
 SET(BASE_DIR        ${SRC_DIR}/lib)
@@ -27,7 +27,7 @@ SET(CMAKE_C_FLAGS "-rdynamic -g -fno-builtin-fprintf -Wl,--wrap=fprintf   \
     -DPROBES_META_LIST=\"${PROBES_META_LIST}\" "
 )
 
-SET(SOURCES main.c daemon.c 
+SET(SOURCES main.c test_probes.c 
     ${RESOURCE_DIR}/resource.c
     ${CONFIG_DIR}/config.c
     ${EGRESS_DIR}/egress.c
@@ -63,5 +63,5 @@ TARGET_INCLUDE_DIRECTORIES(${EXECUTABLE_TARGET} PRIVATE
     ${LIBRDKAFKA_DIR}
 )
 
-TARGET_LINK_LIBRARIES(${EXECUTABLE_TARGET} PRIVATE config pthread dl rdkafka taos)
+TARGET_LINK_LIBRARIES(${EXECUTABLE_TARGET} PRIVATE config dl rdkafka taos cunit)
 

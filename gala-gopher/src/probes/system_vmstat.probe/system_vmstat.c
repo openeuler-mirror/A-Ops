@@ -67,7 +67,7 @@ static int system_vmstat_set_field(char *key, char *val)
 
 static int system_vmstat_print_records()
 {
-    fprintf(stdout, "%s %s %s %s %s %s %s %s %s\n",
+    fprintf(stdout, "|%s|%s|%s|%s|%s|%s|%s|%s|%s|\n",
         "system_vmstat",
         g_system_vmstat_fields[0].val,
         g_system_vmstat_fields[1].val,

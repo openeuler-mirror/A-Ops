@@ -4,27 +4,23 @@
 #include <stdint.h>
 #include <pthread.h>
 
-#include "egress_kafka.h"
-#include "egress_mongodb.h"
+#include "taosdata.h"
+#include "kafka.h"
 
-enum egress_mode {
-    EGRESS_KAFKA = 0,
-    EGRESS_MONGODB,
-    EGRESS_MAX,
-};
+typedef struct {
+    MeasurementMgr *mmMgr;
+    TaosDbMgr *taosDbMgr;
+    KafkaMgr *kafkaMgr;
 
-struct egress {
-    enum egress_mode mode;
-
-    union egress_cfg
-    {
-        /* data */
-        struct egress_kafka kafka;
-        struct egress_mongodb mongodb;
-    } cfg;
-    
-    void *msg_queue;
+    uint32_t interval;
+    uint32_t timeRange;
     pthread_t tid;
-};
+} EgressMgr;
+
+EgressMgr *EgressMgrCreate();
+void EgressMgrDestroy(EgressMgr *mgr);
+
+void EgressMain(EgressMgr *mgr);
 
 #endif
+

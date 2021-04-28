@@ -3,13 +3,13 @@
 PROGRAM=$0
 PROJECT_FOLDER=$(dirname $(readlink -f "$0"))
 
-PROBES_FOLDER=${PROJECT_FOLDER}/src/probes
-PROBES_PATH_LIST=`find ${PROJECT_FOLDER}/src/probes -maxdepth 1 | grep ".probe\>"`
+PROBES_FOLDER=${PROJECT_FOLDER}/../src/probes
+PROBES_PATH_LIST=`find ${PROJECT_FOLDER}/../src/probes -maxdepth 1 | grep ".probe\>"`
 PROBES_LIST=""
 PROBES_C_LIST=""
 PROBES_META_LIST=""
 
-DAEMON_FOLDER=${PROJECT_FOLDER}/src/daemon
+TEST_FOLDER=${PROJECT_FOLDER}
 
 echo "PROJECT_FOLDER:"
 echo ${PROJECT_FOLDER}
@@ -53,9 +53,10 @@ function prepare_probes()
     cd -
 }
 
-function compile_daemon()
+function compile_test()
 {
-    cd ${DAEMON_FOLDER}
+    cd ${TEST_FOLDER}
+    cd test_probes
     rm -rf build
     mkdir build
     cd build
@@ -76,7 +77,14 @@ function clean_env()
     done
 }
 
+function run_test()
+{
+    cd ${TEST_FOLDER}
+    ./probes_test
+}
+
 prepare_probes
-compile_daemon
+compile_test
 clean_env
+run_test
 

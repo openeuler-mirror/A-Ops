@@ -1,0 +1,99 @@
+#include <errno.h>
+#include <stdlib.h>
+#include <string.h>
+#include <sys/prctl.h>
+#include <unistd.h>
+
+#include "daemon.h"
+
+#if GALA_GOPHER_INFO("inner func declaration")
+static void *DaemonRunIngress(void *arg);
+static void *DaemonRunEgress(void *arg);
+static void *DaemonRunSingleProbe(void *arg);
+#endif
+
+#if GALA_GOPHER_INFO("inner func defination")
+static void *DaemonRunIngress(void *arg)
+{
+    IngressMgr *mgr = (IngressMgr *)arg;
+    prctl(PR_SET_NAME, "[INGRESS]");
+    IngressMain(mgr);
+}
+
+static void *DaemonRunEgress(void *arg)
+{
+    EgressMgr *mgr = (EgressMgr *)arg;
+    prctl(PR_SET_NAME, "[EGRESS]");
+    EgressMain(mgr);
+}
+
+static void *DaemonRunSingleProbe(void *arg)
+{
+    g_probe = (Probe *)arg;
+
+    char thread_name[MAX_THREAD_NAME_LEN];
+    snprintf(thread_name, MAX_THREAD_NAME_LEN - 1, "[PROBE]%s", g_probe->name);
+    prctl(PR_SET_NAME, thread_name);
+
+    for (;;) {
+        g_probe->func();
+        sleep(g_probe->interval);
+    }
+    return 0;
+}
+#endif
+
+uint32_t DaemonRun(ResourceMgr *mgr)
+{
+    uint32_t ret;
+
+    // 1. start ingress thread
+    ret = pthread_create(&mgr->ingressMgr->tid, NULL, DaemonRunIngress, mgr->ingressMgr);
+    if (ret != 0) {
+        printf("[DAEMON] create ingress thread failed. errno: %d\n", errno);
+        return -1;
+    }
+    printf("[DAEMON] create ingress thread success.\n");
+
+    // 2. start egress thread
+    ret = pthread_create(&mgr->egressMgr->tid, NULL, DaemonRunEgress, mgr->egressMgr);
+    if (ret != 0) {
+        printf("[DAEMON] create egress thread failed. errno: %d\n", errno);
+        return -1;
+    }
+    printf("[DAEMON] create egress thread success.\n");
+
+    // 3. start probe thread
+    for (int i = 0; i < mgr->probeMgr->probesNum; i++) {
+        Probe *_probe = mgr->probeMgr->probes[i];
+        if (_probe->probeSwitch != PROBE_SWITCH_ON) {
+            printf("[DAEMON] probe %s switch is off, skip create thread for it.\n", _probe->name);
+            continue;
+        }
+        ret = pthread_create(&mgr->probeMgr->probes[i]->tid, NULL, DaemonRunSingleProbe, _probe);
+        if (ret != 0) {
+            printf("[DAEMON] create probe thread failed. probe name: %s errno: %d\n", _probe->name, errno);
+            return -1;
+        }
+        printf("[DAEMON] create probe %s thread success.\n", mgr->probeMgr->probes[i]->name);
+    }
+
+    return 0;
+}
+
+uint32_t DaemonWaitDone(ResourceMgr *mgr)
+{
+    // 1. wait ingress done
+    pthread_join(mgr->ingressMgr->tid, NULL);
+    
+    // 2. wait egress done
+    pthread_join(mgr->egressMgr->tid, NULL);
+    
+    // 3. wait probe done
+    for (int i = 0; i < mgr->probeMgr->probesNum; i++) {
+        pthread_join(mgr->probeMgr->probes[i]->tid, NULL);
+    }
+
+    return 0;
+}
+

@@ -3,7 +3,7 @@ version = "1.0.0"
 measurements:
 (
     {
-        name: "meminfo",
+        name: "system_vmstat",
         fields:
         (
             "nr_free_pages",
