@@ -1,0 +1,18 @@
+version = "1.0.0"
+
+measurements:
+(
+    {
+        name: "system_tcp",
+        fields:
+        (
+            "local_address",
+            "local_port",
+            "rem_address",
+            "rem_port",
+            "st",
+            "retrnsmt",
+        )
+    }
+)
+

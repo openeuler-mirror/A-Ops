@@ -1,0 +1,16 @@
+version = "1.0.0"
+
+measurements:
+(
+    {
+        name: "system_inode",
+        fields:
+        (
+            "Inodes",
+            "IUsed",
+            "IFree",
+            "IUse",
+        )
+    }
+)
+
