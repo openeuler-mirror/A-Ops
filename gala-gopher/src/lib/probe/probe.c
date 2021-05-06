@@ -70,6 +70,9 @@ void ProbeMgrDestroy(ProbeMgr *mgr)
     }
 
     if (mgr->probes != NULL) {
+        for (int i = 0; i < mgr->probesNum; i++) {
+            ProbeDestroy(mgr->probes[i]);
+        }
         free(mgr->probes);
     }
 

@@ -9,6 +9,5 @@
 
 extern void TestKafkaMain(CU_pSuite suite);
 
-
 #endif
 

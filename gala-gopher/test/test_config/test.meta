@@ -1,0 +1,20 @@
+version: "1.0.0"
+
+measurements:
+(
+    {
+        name: "test",
+        fields:
+        (
+            "TestMemTotal",
+            "TestMemFree",
+            "TestMemAvailable",
+            "TestBuffers",
+            "TestCached",
+            "TestSwapCached",
+            "TestActive",
+            "TestInactive",
+        )
+    }
+)
+

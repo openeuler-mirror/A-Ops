@@ -6,6 +6,13 @@
 #include <libconfig.h>
 #include "meta.h"
 
+#if GALA_GOPHER_INFO("inner func")
+Measurement *MeasurementCreate();
+void MeasurementDestroy(Measurement *mm);
+int MeasurementMgrAdd(MeasurementMgr *mgr, Measurement *measurement);
+Measurement *MeasurementMgrGet(MeasurementMgr *mgr, const char *name);
+#endif
+
 Measurement *MeasurementCreate()
 {
     Measurement *mm = NULL;

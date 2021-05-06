@@ -17,6 +17,10 @@ typedef struct {
 
 TestSuite gTestSuites[] = {
     TEST_SUITE_FIFO,
+    TEST_SUITE_KAFKA,
+    TEST_SUITE_META,
+    TEST_SUITE_PROBE,
+    TEST_SUITE_TAOSDATA
 };
 
 int main(int argc, char *argv[])
