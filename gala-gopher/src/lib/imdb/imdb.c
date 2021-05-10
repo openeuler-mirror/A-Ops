@@ -104,7 +104,7 @@ void IMDB_RecordDestroy(IMDB_Record *record)
     return;
 }
 
-IMDB_Table *IMDB_TableCreate(uint32_t capacity)
+IMDB_Table *IMDB_TableCreate(char *name, uint32_t capacity)
 {
     IMDB_Table *table = NULL;
     table = (IMDB_Table *)malloc(sizeof(IMDB_Table));
@@ -120,7 +120,8 @@ IMDB_Table *IMDB_TableCreate(uint32_t capacity)
     }
     memset(table->records, 0, sizeof(IMDB_Record *) * capacity);
 
-    table->capacity = capacity;
+    table->recordsCapacity = capacity;
+    memcpy(table->name, name, strlen(name));
     return table;
 }
 
@@ -203,6 +204,12 @@ int IMDB_DataBaseMgrAddTable(IMDB_DataBaseMgr *mgr, IMDB_Table* table)
 {
     if (mgr->tablesNum == mgr->capacity) {
         return -1;
+    }
+
+    for (int i = 0; i < mgr->tablesNum; i++) {
+        if (strcmp(mgr->tables[i]->name, table->name) == 0) {
+            return -1;
+        }
     }
 
     mgr->tables[mgr->tablesNum] = table;

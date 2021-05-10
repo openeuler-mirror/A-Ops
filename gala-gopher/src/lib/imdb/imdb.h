@@ -66,7 +66,7 @@ IMDB_Record *IMDB_RecordCreate(uint32_t capacity);
 int IMDB_RecordAddMetric(IMDB_Record *record, IMDB_Metric *metric);
 void IMDB_RecordDestroy(IMDB_Record *record);
 
-IMDB_Table *IMDB_TableCreate(uint32_t capacity);
+IMDB_Table *IMDB_TableCreate(char *name, uint32_t capacity);
 int IMDB_TableSetMeta(IMDB_Table *table, IMDB_Record *metaRecord);
 int IMDB_TableAddRecord(IMDB_Table *table, IMDB_Record *record);
 void IMDB_TableDestroy(IMDB_Table *table);

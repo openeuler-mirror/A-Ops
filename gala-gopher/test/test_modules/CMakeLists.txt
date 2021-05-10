@@ -15,6 +15,7 @@ SET(META_DIR        ${SRC_DIR}/lib/meta)
 SET(KAFKA_DIR       ${SRC_DIR}/lib/kafka)
 SET(TAOSDATA_DIR    ${SRC_DIR}/lib/taosdata)
 SET(PROBE_DIR       ${SRC_DIR}/lib/probe)
+SET(IMDB_DIR        $(SRC_DIR)/lib/imdb)
 
 SET(LIBRDKAFKA_DIR /usr/include/librdkafka)
 
@@ -25,6 +26,7 @@ ADD_EXECUTABLE(${EXECUTABLE_TARGET}
     test_meta.c
     test_probe.c
     test_taosdata.c
+    test_imdb.c
 
     ${RESOURCE_DIR}/resource.c
     ${CONFIG_DIR}/config.c
@@ -35,6 +37,7 @@ ADD_EXECUTABLE(${EXECUTABLE_TARGET}
     ${KAFKA_DIR}/kafka.c
     ${TAOSDATA_DIR}/taosdata.c
     ${PROBE_DIR}/probe.c
+    ${IMDB_DIR}/imdb.c
 )
 
 TARGET_INCLUDE_DIRECTORIES(${EXECUTABLE_TARGET} PRIVATE ${BASE_DIR}
@@ -47,7 +50,8 @@ TARGET_INCLUDE_DIRECTORIES(${EXECUTABLE_TARGET} PRIVATE ${BASE_DIR}
     ${KAFKA_DIR}
     ${TAOSDATA_DIR}
     ${PROBE_DIR}
-    ${LIBRDKAFKA_DIR} 
+    ${IMDB_DIR}
+    ${LIBRDKAFKA_DIR}
 )
 
 TARGET_LINK_LIBRARIES(${EXECUTABLE_TARGET} PRIVATE config dl rdkafka taos cunit)
