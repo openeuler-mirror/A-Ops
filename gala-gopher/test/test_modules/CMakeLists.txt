@@ -15,9 +15,11 @@ SET(META_DIR        ${SRC_DIR}/lib/meta)
 SET(KAFKA_DIR       ${SRC_DIR}/lib/kafka)
 SET(TAOSDATA_DIR    ${SRC_DIR}/lib/taosdata)
 SET(PROBE_DIR       ${SRC_DIR}/lib/probe)
-SET(IMDB_DIR        $(SRC_DIR)/lib/imdb)
+SET(IMDB_DIR        ${SRC_DIR}/lib/imdb)
 
 SET(LIBRDKAFKA_DIR /usr/include/librdkafka)
+
+SET(CMAKE_C_FLAGS "-g")
 
 ADD_EXECUTABLE(${EXECUTABLE_TARGET}
     main.c

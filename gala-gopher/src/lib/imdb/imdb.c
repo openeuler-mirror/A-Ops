@@ -50,7 +50,7 @@ int IMDB_MetricSetValue(IMDB_Metric *metric, char *val)
 void IMDB_MetricDestroy(IMDB_Metric *metric)
 {
     if (metric == NULL) {
-        return 0;
+        return;
     }
 
     free(metric);
@@ -238,11 +238,18 @@ int IMDB_DataBaseMgrAddRecord(IMDB_DataBaseMgr *mgr, char *recordStr, int len)
     int index = -1;
     char *token = NULL;
     char delim[] = "|";
-    char buffer[MAX_DATA_STR_LEN] = {0};
-    memcpy(buffer, recordStr, len);
+    char *buffer = NULL;
+    char *buffer_head = NULL;;
+
+    buffer = strdup(recordStr);
+    if (buffer == NULL) {
+        goto ERR;
+    }
+    buffer_head = buffer;
 
     record = IMDB_RecordCreate(MAX_IMDB_RECORD_CAPACITY);
     if (record == NULL) {
+        free(buffer_head);
         goto ERR;
     }
 
@@ -258,9 +265,11 @@ int IMDB_DataBaseMgrAddRecord(IMDB_DataBaseMgr *mgr, char *recordStr, int len)
             table = IMDB_DataBaseMgrFindTable(mgr, token);
             if (table == NULL) {
                 printf("[IMDB] Can not find table named %s.\n", token);
+                free(buffer_head);
                 goto ERR;
             }
             index += 1;
+            continue;
         }
 
         // fill record by the rest substrings
@@ -269,16 +278,19 @@ int IMDB_DataBaseMgrAddRecord(IMDB_DataBaseMgr *mgr, char *recordStr, int len)
                                    table->meta->metrics[index]->type);
         if (metric == NULL) {
             printf("[IMDB] Can't create metrics.\n");
+            free(buffer_head);
             goto ERR;
         }
 
         ret = IMDB_MetricSetValue(metric, token);
         if (ret != 0) {
+            free(buffer_head);
             goto ERR;
         }
 
         ret = IMDB_RecordAddMetric(record, metric);
         if (ret != 0) {
+            free(buffer_head);
             goto ERR;
         }
 
@@ -287,11 +299,14 @@ int IMDB_DataBaseMgrAddRecord(IMDB_DataBaseMgr *mgr, char *recordStr, int len)
 
     ret = IMDB_TableAddRecord(table, record);
     if (ret != 0) {
+        free(buffer_head);
         goto ERR;
     }
 
     printf("[IMDB] Add Record success.\n");
+    free(buffer_head);
     return 0;
+
 ERR:
     IMDB_RecordDestroy(record);
     return -1;
@@ -379,12 +394,11 @@ int IMDB_DataBaseMgrData2String(IMDB_DataBaseMgr *mgr, char *buffer, int maxLen)
 {
     int ret = 0;
     char *cursor = buffer;
-    memset(cursor, 0, len);
+    memset(cursor, 0, maxLen);
 
-    int ret = 0;
     int total = 0;
     for (int i = 0; i < mgr->tablesNum; i++) {
-        ret = IMDB_Record2String(mgr->tables[i], buffer, maxLen);
+        ret = IMDB_Table2String(mgr->tables[i], buffer, maxLen);
         if (ret < 0) {
             return -1;
         }

@@ -192,11 +192,11 @@ void TestIMDB_DataBaseMgrAddRecord()
     CU_ASSERT(ret == 0);
     IMDB_Metric *metric2 = IMDB_MetricCreate("metric2", "desc2", "type2");
     CU_ASSERT(metric2 != NULL);
-    ret = IMDB_RecordAddMetric(meta, metric1);
+    ret = IMDB_RecordAddMetric(meta, metric2);
     CU_ASSERT(ret == 0);
     IMDB_Metric *metric3 = IMDB_MetricCreate("metric3", "desc3", "type3");
     CU_ASSERT(metric3 != NULL);
-    ret = IMDB_RecordAddMetric(meta, metric1);
+    ret = IMDB_RecordAddMetric(meta, metric3);
     CU_ASSERT(ret == 0);
 
     ret = IMDB_TableSetMeta(table, meta);
@@ -225,7 +225,6 @@ void TestIMDB_DataBaseMgrAddRecord()
     CU_ASSERT(strcmp(table->records[0]->metrics[2]->val, "value3") == 0);
 
     IMDB_DataBaseMgrDestroy(mgr);
-
 }
 
 void TestIMDB_DataBaseMgrData2String()
@@ -245,7 +244,7 @@ void TestIMDB_DataBaseMgrData2String()
     CU_ASSERT(ret == 0);
     IMDB_Metric *metric2 = IMDB_MetricCreate("metric2", "desc2", "type2");
     CU_ASSERT(metric2 != NULL);
-    ret = IMDB_RecordAddMetric(meta, metric1);
+    ret = IMDB_RecordAddMetric(meta, metric2);
     CU_ASSERT(ret == 0);
 
     ret = IMDB_TableSetMeta(table, meta);
@@ -260,7 +259,7 @@ void TestIMDB_DataBaseMgrData2String()
 
     char buffer[2048] = {0};
     ret = IMDB_DataBaseMgrData2String(mgr, buffer, 2048);
-    CU_ASSERT(ret == 0);
+    CU_ASSERT(ret >= 0);
     printf("DatabaseMgr2String: \n");
     printf(buffer);
 
