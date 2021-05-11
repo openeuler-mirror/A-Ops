@@ -389,7 +389,7 @@ static int MetricTypeSatisfyPrometheus(IMDB_Metric *metric)
 
     int size = sizeof(prometheusTypes) / sizeof(prometheusTypes[0]);
     for (int i = 0; i < size; i++) {
-        if (strcmp(metric->name, prometheusTypes[i]) == 0) {
+        if (strcmp(metric->type, prometheusTypes[i]) == 0) {
             return 0;
         }
     }
