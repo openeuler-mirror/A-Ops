@@ -16,6 +16,7 @@ SET(KAFKA_DIR       ${SRC_DIR}/lib/kafka)
 SET(TAOSDATA_DIR    ${SRC_DIR}/lib/taosdata)
 SET(PROBE_DIR       ${SRC_DIR}/lib/probe)
 SET(IMDB_DIR        ${SRC_DIR}/lib/imdb)
+SET(WEBSERVER_DIR  ${SRC_DIR}/web_server)
 
 SET(LIBRDKAFKA_DIR /usr/include/librdkafka)
 
@@ -40,6 +41,7 @@ ADD_EXECUTABLE(${EXECUTABLE_TARGET}
     ${TAOSDATA_DIR}/taosdata.c
     ${PROBE_DIR}/probe.c
     ${IMDB_DIR}/imdb.c
+    ${WEBSERVER_DIR}/web_server.c
 )
 
 TARGET_INCLUDE_DIRECTORIES(${EXECUTABLE_TARGET} PRIVATE ${BASE_DIR}
@@ -53,8 +55,9 @@ TARGET_INCLUDE_DIRECTORIES(${EXECUTABLE_TARGET} PRIVATE ${BASE_DIR}
     ${TAOSDATA_DIR}
     ${PROBE_DIR}
     ${IMDB_DIR}
+    ${WEBSERVER_DIR}
     ${LIBRDKAFKA_DIR}
 )
 
-TARGET_LINK_LIBRARIES(${EXECUTABLE_TARGET} PRIVATE config dl rdkafka taos cunit)
+TARGET_LINK_LIBRARIES(${EXECUTABLE_TARGET} PRIVATE cunit config pthread dl rdkafka taos microhttpd)
 

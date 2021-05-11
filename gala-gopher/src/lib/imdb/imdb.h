@@ -2,6 +2,7 @@
 #define __IMDB_H__
 
 #include <stdint.h>
+#include <pthread.h>
 #include "base.h"
 
 #define MAX_IMDB_DATABASEMGR_CAPACITY   256
@@ -56,6 +57,8 @@ typedef struct {
     uint32_t tablesNum;
 
     IMDB_Table **tables;
+
+    pthread_rwlock_t rwlock;
 } IMDB_DataBaseMgr;
 
 IMDB_Metric *IMDB_MetricCreate(char *name, char *description, char *type);

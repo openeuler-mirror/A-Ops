@@ -98,6 +98,36 @@ Measurement *MeasurementMgrGet(MeasurementMgr *mgr, const char *name)
     return NULL;
 }
 
+static int FieldLoad(Field *field, config_setting_t *fieldConfig)
+{
+    int ret = 0;
+    const char *token;
+
+    memset(field, 0, sizeof(Field));
+    ret = config_setting_lookup_string(fieldConfig, "description", &token);
+    if (ret == 0) {
+        printf("load field description failed.\n");
+        return -1;
+    }
+    memcpy(field->description, token, strlen(token));
+
+    ret = config_setting_lookup_string(fieldConfig, "type", &token);
+    if (ret == 0) {
+        printf("load field type failed.\n");
+        return -1;
+    }
+    memcpy(field->type, token, strlen(token));
+
+    ret = config_setting_lookup_string(fieldConfig, "name", &token);
+    if (ret == 0) {
+        printf("load field name failed.\n");
+        return -1;
+    }
+    memcpy(field->name, token, strlen(token));
+
+    return 0;
+}
+
 static int MeasurementLoad(Measurement *mm, config_setting_t *mmConfig)
 {
     int ret = 0;
@@ -111,20 +141,20 @@ static int MeasurementLoad(Measurement *mm, config_setting_t *mmConfig)
 
     memcpy(mm->name, name, strlen(name));
     config_setting_t *fields = config_setting_lookup(mmConfig, "fields");
-    int field_count = config_setting_length(fields);
-    if (field_count > MAX_FIELDS_NUM) {
+    int fieldsCount = config_setting_length(fields);
+    if (fieldsCount > MAX_FIELDS_NUM) {
         printf("Too many fields.\n");
         return -1;
     }
 
-    for (int j = 0; j < field_count; j++) {
-        field = config_setting_get_string_elem(fields, j);
-        if (field == NULL) {
-            printf("load measurement field failed.\n");
-            return -1;
+    for (int i = 0; i < fieldsCount; i++) {
+        config_setting_t *fieldConfig = config_setting_get_elem(fields, i);
+
+        ret = FieldLoad(&mm->fields[i], fieldConfig);
+        if (ret != 0) {
+            printf("[META] load measurement field failed.\n");
         }
 
-        memcpy(mm->fields[j].name, field, strlen(field));
         mm->fieldsNum++;
     }
 
@@ -158,14 +188,14 @@ int MeasurementMgrLoad(MeasurementMgr *mgr, const char *metaPath)
     int count = config_setting_length(measurements);
     for (int i = 0; i < count; i++) {
         config_setting_t *measurement = config_setting_get_elem(measurements, i);
-        
+
         Measurement *mm = MeasurementCreate();
         if (mm == NULL) {
             printf("malloc measurement failed.\n");
             config_destroy(&cfg);
             return -1;
         }
-        
+
         ret = MeasurementLoad(mm, measurement);
         if (ret != 0) {
             printf("load_measurement failed.\n");
@@ -182,6 +212,6 @@ int MeasurementMgrLoad(MeasurementMgr *mgr, const char *metaPath)
     }
 
     config_destroy(&cfg);
-    return 0;    
+    return 0;
 }
 

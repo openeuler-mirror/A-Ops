@@ -3,7 +3,7 @@
 
 #define TEST_SUITE_IMDB \
     {   \
-        .suiteName = "TEST_META",   \
+        .suiteName = "TEST_IMDB",   \
         .suiteMain = TestIMDBMain   \
     }
 

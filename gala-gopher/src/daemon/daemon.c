@@ -43,9 +43,9 @@ static void *DaemonRunSingleProbe(void *arg)
 }
 #endif
 
-uint32_t DaemonRun(ResourceMgr *mgr)
+int DaemonRun(ResourceMgr *mgr)
 {
-    uint32_t ret;
+    int ret;
 
     // 1. start ingress thread
     ret = pthread_create(&mgr->ingressMgr->tid, NULL, DaemonRunIngress, mgr->ingressMgr);
@@ -56,14 +56,22 @@ uint32_t DaemonRun(ResourceMgr *mgr)
     printf("[DAEMON] create ingress thread success.\n");
 
     // 2. start egress thread
-    ret = pthread_create(&mgr->egressMgr->tid, NULL, DaemonRunEgress, mgr->egressMgr);
+    // ret = pthread_create(&mgr->egressMgr->tid, NULL, DaemonRunEgress, mgr->egressMgr);
+    // if (ret != 0) {
+    //     printf("[DAEMON] create egress thread failed. errno: %d\n", errno);
+    //     return -1;
+    // }
+    // printf("[DAEMON] create egress thread success.\n");
+
+    // 3. start web_server thread
+    ret = WebServerStartDaemon(mgr->webServer);
     if (ret != 0) {
-        printf("[DAEMON] create egress thread failed. errno: %d\n", errno);
+        printf("[DAEMON] create web_server daemon failed. errno: %d\n", errno);
         return -1;
     }
-    printf("[DAEMON] create egress thread success.\n");
+    printf("[DAEMON] create web_server daemon success.\n");
 
-    // 3. start probe thread
+    // 4. start probe thread
     for (int i = 0; i < mgr->probeMgr->probesNum; i++) {
         Probe *_probe = mgr->probeMgr->probes[i];
         if (_probe->probeSwitch != PROBE_SWITCH_ON) {
@@ -81,14 +89,14 @@ uint32_t DaemonRun(ResourceMgr *mgr)
     return 0;
 }
 
-uint32_t DaemonWaitDone(ResourceMgr *mgr)
+int DaemonWaitDone(ResourceMgr *mgr)
 {
     // 1. wait ingress done
     pthread_join(mgr->ingressMgr->tid, NULL);
-    
+
     // 2. wait egress done
     pthread_join(mgr->egressMgr->tid, NULL);
-    
+
     // 3. wait probe done
     for (int i = 0; i < mgr->probeMgr->probesNum; i++) {
         pthread_join(mgr->probeMgr->probes[i]->tid, NULL);

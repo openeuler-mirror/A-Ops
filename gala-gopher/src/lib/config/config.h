@@ -50,6 +50,16 @@ typedef struct {
     ProbeConfig *probesConfig[MAX_PROBES_NUM];
 } ProbesConfig;
 
+typedef struct  {
+    uint32_t maxTablesNum;
+    uint32_t maxRecordsNum;
+    uint32_t maxMetricsNum;
+} IMDBConfig;
+
+typedef struct {
+    uint16_t port;
+} WebServerConfig;
+
 typedef struct {
     GlobalConfig *globalConfig;
     IngressConfig *ingressConfig;
@@ -57,6 +67,8 @@ typedef struct {
     TaosdataConfig *taosdataConfig;
     KafkaConfig *kafkaConfig;
     ProbesConfig *probesConfig;
+    IMDBConfig *imdbConfig;
+    WebServerConfig *webServerConfig;
 } ConfigMgr;
 
 ConfigMgr *ConfigMgrCreate();

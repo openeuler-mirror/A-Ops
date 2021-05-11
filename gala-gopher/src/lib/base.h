@@ -12,11 +12,13 @@
 #define MAX_FIFO_SIZE         1024
 
 // meta
-#define MAX_META_PATH_LEN        2048
-#define MAX_FIELD_NAME_LEN       64
-#define MAX_MEASUREMENTS_NUM     64
-#define MAX_MEASUREMENT_NAME_LEN 64
-#define MAX_FIELDS_NUM           64
+#define MAX_META_PATH_LEN           2048
+#define MAX_FIELD_DESCRIPTION_LEN   256
+#define MAX_FIELD_TYPE_LEN          64
+#define MAX_FIELD_NAME_LEN          64
+#define MAX_MEASUREMENTS_NUM        64
+#define MAX_MEASUREMENT_NAME_LEN    64
+#define MAX_FIELDS_NUM              64
 
 // ingress
 #define MAX_EPOLL_SIZE        1024

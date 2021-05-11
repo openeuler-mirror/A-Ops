@@ -5,6 +5,8 @@
 #include "base.h"
 
 typedef struct {
+    char description[MAX_FIELD_DESCRIPTION_LEN];
+    char type[MAX_FIELD_TYPE_LEN];
     char name[MAX_FIELD_NAME_LEN];
 } Field;
 

@@ -165,6 +165,7 @@ void IMDB_TableDestroy(IMDB_Table *table)
 
 IMDB_DataBaseMgr *IMDB_DataBaseMgrCreate(uint32_t capacity)
 {
+    int ret = 0;
     IMDB_DataBaseMgr *mgr = NULL;
     mgr = (IMDB_DataBaseMgr *)malloc(sizeof(IMDB_DataBaseMgr));
     if (mgr == NULL) {
@@ -180,6 +181,13 @@ IMDB_DataBaseMgr *IMDB_DataBaseMgrCreate(uint32_t capacity)
     memset(mgr->tables, 0, sizeof(IMDB_Table *) * capacity);
 
     mgr->capacity = capacity;
+    ret = pthread_rwlock_init(&mgr->rwlock, NULL);
+    if (ret != 0) {
+        free(mgr->tables);
+        free(mgr);
+        return NULL;
+    }
+
     return mgr;
 }
 
@@ -230,6 +238,8 @@ IMDB_Table *IMDB_DataBaseMgrFindTable(IMDB_DataBaseMgr *mgr, char *tableName)
 
 int IMDB_DataBaseMgrAddRecord(IMDB_DataBaseMgr *mgr, char *recordStr, int len)
 {
+    pthread_rwlock_wrlock(&mgr->rwlock);
+
     int ret = 0;
     IMDB_Table *table = NULL;
     IMDB_Record *record = NULL;
@@ -305,9 +315,11 @@ int IMDB_DataBaseMgrAddRecord(IMDB_DataBaseMgr *mgr, char *recordStr, int len)
 
     printf("[IMDB] Add Record success.\n");
     free(buffer_head);
-    return 0;
 
+    pthread_rwlock_unlock(&mgr->rwlock);
+    return 0;
 ERR:
+    pthread_rwlock_unlock(&mgr->rwlock);
     IMDB_RecordDestroy(record);
     return -1;
 }
@@ -392,21 +404,26 @@ static int IMDB_Table2String(IMDB_Table *table, char *buffer, int maxLen)
 
 int IMDB_DataBaseMgrData2String(IMDB_DataBaseMgr *mgr, char *buffer, int maxLen)
 {
+    pthread_rwlock_rdlock(&mgr->rwlock);
+
     int ret = 0;
     char *cursor = buffer;
     memset(cursor, 0, maxLen);
 
-    int total = 0;
     for (int i = 0; i < mgr->tablesNum; i++) {
         ret = IMDB_Table2String(mgr->tables[i], buffer, maxLen);
         if (ret < 0) {
-            return -1;
+            goto ERR;
         }
         buffer += ret;
         maxLen -= ret;
-        total += ret;
     }
 
-    return total;
+    pthread_rwlock_unlock(&mgr->rwlock);
+    return 0;
+ERR:
+
+    pthread_rwlock_unlock(&mgr->rwlock);
+    return -1;
 }
 

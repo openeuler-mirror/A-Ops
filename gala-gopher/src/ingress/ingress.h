@@ -11,12 +11,15 @@
 #include "taosdata.h"
 #include "meta.h"
 #include "probe.h"
+#include "imdb.h"
 
 typedef struct {
     FifoMgr *fifoMgr;
     TaosDbMgr *taosDbMgr;
     MeasurementMgr *mmMgr;
     ProbeMgr *probeMgr;
+
+    IMDB_DataBaseMgr *imdbMgr;
 
     int epoll_fd;
     pthread_t tid;

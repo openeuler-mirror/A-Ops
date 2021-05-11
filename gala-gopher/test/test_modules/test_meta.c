@@ -5,7 +5,7 @@
 #include "test_meta.h"
 
 #define MEASUREMENT_MGR_SIZE    1024
-#define META_PATH   "test_config/test.meta"
+#define META_PATH   "test_modules/test.meta"
 
 void TestMeasurementMgrCreate()
 {

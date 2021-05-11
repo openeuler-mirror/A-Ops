@@ -6,8 +6,8 @@
 
 #include "resource.h"
 
-uint32_t DaemonRun(ResourceMgr *mgr);
-uint32_t DaemonWaitDone(ResourceMgr *mgr);
+int DaemonRun(ResourceMgr *mgr);
+int DaemonWaitDone(ResourceMgr *mgr);
 
 #endif
 
