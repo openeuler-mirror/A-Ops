@@ -32,9 +32,9 @@
 #define MAX_TAOS_SQL_RETRY_TIMES 5
 #define MAX_TAOS_SQL_LEN         1024
 
-// data
-#define MAX_TABLE_NAME_LEN      32
-#define MAX_TABLE_RECORD_SIZE   1024
+// imdb
+#define MAX_IMDB_TABLE_CAPACITY         64
+#define MAX_IMDB_RECORD_CAPACITY        64
 
 // kafka
 #define MAX_KAFKA_ERRSTR_SIZE 512

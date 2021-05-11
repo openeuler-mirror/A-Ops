@@ -6,9 +6,6 @@
 #include "base.h"
 
 #define MAX_IMDB_DATABASEMGR_CAPACITY   256
-#define MAX_IMDB_TABLE_CAPACITY         64
-#define MAX_IMDB_RECORD_CAPACITY        64
-
 // metric specification
 #define MAX_IMDB_METRIC_DESC_LEN        1024
 #define MAX_IMDB_METRIC_TYPE_LEN        32

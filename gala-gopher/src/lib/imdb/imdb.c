@@ -268,6 +268,9 @@ int IMDB_DataBaseMgrAddRecord(IMDB_DataBaseMgr *mgr, char *recordStr, int len)
         if (strcmp(token, "") == 0) {
             continue;
         }
+        if (strcmp(token, "\n") == 0) {
+            continue;
+        }
 
         // mark table name as the -1 substring so that metrics start at 0
         // find table by the first substring

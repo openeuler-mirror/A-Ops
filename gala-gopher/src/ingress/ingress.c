@@ -71,10 +71,11 @@ static int IngressDataProcesssInput(Fifo *fifo, IngressMgr *mgr)
     }
 
     while (FifoGet(fifo, (void **)&dataStr) == 0) {
-        // save data to taosDb
+
         // memcpy(dataStr, elem + sizeof(uint32_t), elem->dataLen);
         printf("[INGRESS] Get data str: %s", dataStr);
 
+        // save data to taosDb
         /*
         ret = TaosDbMgrInsertOneRecord(dataStr, mgr->taosdbMgr);
         if (ret != 0) {
@@ -82,6 +83,7 @@ static int IngressDataProcesssInput(Fifo *fifo, IngressMgr *mgr)
         }
         */
 
+        // save data to imdb
         ret = IMDB_DataBaseMgrAddRecord(mgr->imdbMgr, dataStr, strlen(dataStr));
         if (ret != 0) {
             printf("[INGRESS] insert data into imdb failed.\n");

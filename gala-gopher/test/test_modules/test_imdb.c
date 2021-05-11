@@ -253,7 +253,7 @@ void TestIMDB_DataBaseMgrData2String()
     ret = IMDB_DataBaseMgrAddTable(mgr, table);
     CU_ASSERT(ret == 0);
 
-    char recordStr[] = "|table1|value1|value2|";
+    char recordStr[] = "|table1|value1|value2|\n";
     ret = IMDB_DataBaseMgrAddRecord(mgr, recordStr, strlen(recordStr));
     CU_ASSERT(ret == 0);
 

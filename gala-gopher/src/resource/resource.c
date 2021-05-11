@@ -36,11 +36,11 @@ SubModuleInitor gSubModuleInitorTbl[] = {
     { ProbeMgrInit,         ProbeMgrDeinit },
     { MeasurementMgrInit,   MeasurementMgrDeinit },
     { FifoMgrInit,          FifoMgrDeinit },
-    { KafkaMgrInit,         KafkaMgrDeinit },
+    // { KafkaMgrInit,         KafkaMgrDeinit },
     { IMDBMgrInit,          IMDBMgrDeinit },
     // { TaosMgrInit,          TaosMgrDeinit },
     { IngressMgrInit,       IngressMgrDeinit },
-    { EgressMgrInit,        EgressMgrDeinit },
+    // { EgressMgrInit,        EgressMgrDeinit },
     { WebServerInit,        WebServerDeinit }
 };
 
@@ -251,18 +251,77 @@ static void KafkaMgrDeinit(ResourceMgr *resourceMgr)
     return;
 }
 
-static int IMDBMgrTableInit(IMDB_DataBaseMgr *imdbMgr, MeasurementMgr *mmMgr)
+static int IMDBMgrTableLoad(IMDB_Table *table, Measurement *mm)
 {
+    int ret = 0;
+    IMDB_Record *meta = IMDB_RecordCreate(MAX_IMDB_RECORD_CAPACITY);
+    if (meta == NULL) {
+        return -1;
+    }
 
+    IMDB_Metric *metric;
+    for (int i = 0; i < mm->fieldsNum; i++) {
+        metric = IMDB_MetricCreate(mm->fields[i].name, mm->fields[i].description, mm->fields[i].type);
+        if (metric == NULL) {
+            goto ERR;
+        }
+
+        ret = IMDB_RecordAddMetric(meta, metric);
+        if (ret != 0) {
+            goto ERR;
+        }
+    }
+
+    ret = IMDB_TableSetMeta(table, meta);
+    if (ret != 0) {
+        goto ERR;
+    }
+
+    return 0;
+ERR:
+    IMDB_RecordDestroy(meta);
+    return -1;
+}
+
+static int IMDBMgrDatabaseLoad(IMDB_DataBaseMgr *imdbMgr, MeasurementMgr *mmMgr)
+{
+    int ret = 0;
+
+    IMDB_Table *table;
+    for (int i = 0; i < mmMgr->measurementsNum; i++) {
+        table = IMDB_TableCreate(mmMgr->measurements[i]->name, MAX_IMDB_TABLE_CAPACITY);
+        if (table == NULL) {
+            return -1;
+        }
+
+        ret = IMDBMgrTableLoad(table, mmMgr->measurements[i]);
+        if (ret != 0) {
+            return -1;
+        }
+
+        ret = IMDB_DataBaseMgrAddTable(imdbMgr, table);
+        if (ret != 0) {
+            return -1;
+        }
+    }
+
+    return 0;
 }
 
 static int IMDBMgrInit(ResourceMgr *resourceMgr)
 {
+    int ret = 0;
     ConfigMgr *configMgr = resourceMgr->configMgr;
     IMDB_DataBaseMgr *imdbMgr = NULL;
     imdbMgr = IMDB_DataBaseMgrCreate(configMgr->imdbConfig->maxTablesNum);
     if (imdbMgr == NULL) {
         printf("[RESOURCE] create IMDB database mgr failed.\n");
+        return -1;
+    }
+
+    ret = IMDBMgrDatabaseLoad(imdbMgr, resourceMgr->mmMgr);
+    if (ret != 0) {
+        IMDB_DataBaseMgrDestroy(imdbMgr);
         return -1;
     }
 
