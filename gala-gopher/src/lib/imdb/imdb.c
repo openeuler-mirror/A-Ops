@@ -2,6 +2,7 @@
 #include <stdint.h>
 #include <stdlib.h>
 #include <string.h>
+#include <time.h>
 
 #include "imdb.h"
 
@@ -329,17 +330,19 @@ ERR:
 
 static int IMDB_MetricDescription2String(IMDB_Metric *metric, char *buffer, int maxLen)
 {
-    return snprintf(buffer, maxLen, "# HELP %s %s\n", metric->name, metric->description);
+    return snprintf(buffer, maxLen, "# HELP gala_%s %s\n", metric->name, metric->description);
 }
 
 static int IMDB_MetricType2String(IMDB_Metric *metric, char *buffer, int maxLen)
 {
-    return snprintf(buffer, maxLen, "# TYPE %s %s\n", metric->name, metric->type);
+    return snprintf(buffer, maxLen, "# TYPE gala_%s %s\n", metric->name, metric->type);
 }
 
 static int IMDB_MetricValue2String(IMDB_Metric *metric, char *buffer, int maxLen)
 {
-    return snprintf(buffer, maxLen, "%s %s\n", metric->name, metric->val);
+    time_t now;
+    time(&now);
+    return snprintf(buffer, maxLen, "gala_%s %s %lld\n", metric->name, metric->val, now * 1000);
 }
 
 static int IMDB_Metric2String(IMDB_Metric *metric, char *buffer, int maxLen)
