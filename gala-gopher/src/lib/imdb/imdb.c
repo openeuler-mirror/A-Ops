@@ -392,6 +392,8 @@ static int IMDB_Table2String(IMDB_Table *table, char *buffer, int maxLen)
 {
     int ret = 0;
     int total = 0;
+
+    /*
     for (int i = 0; i < table->recordsNum; i++) {
         ret = IMDB_Record2String(table->records[i], buffer, maxLen);
         if (ret < 0) {
@@ -401,6 +403,17 @@ static int IMDB_Table2String(IMDB_Table *table, char *buffer, int maxLen)
         maxLen -= ret;
         total += ret;
     }
+    */
+
+    // only the latest record
+    int index = table->recordsNum - 1;
+    ret = IMDB_Record2String(table->records[index], buffer, maxLen);
+    if (ret < 0) {
+        return -1;
+    }
+    buffer += ret;
+    maxLen -= ret;
+    total += ret;
 
     return total;
 }

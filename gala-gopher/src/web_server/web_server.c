@@ -51,7 +51,7 @@ static int WebRequestCallback(void *cls,
     if (ret < 0) {
         return MHD_NO;
     }
-    response = MHD_create_response_from_buffer(MAX_WEBPAGE_BUFFER_SIZE, (void *)buffer, MHD_RESPMEM_PERSISTENT);
+    response = MHD_create_response_from_buffer(strlen(buffer), (void *)buffer, MHD_RESPMEM_PERSISTENT);
     if (response == NULL) {
         return MHD_NO;
     }
