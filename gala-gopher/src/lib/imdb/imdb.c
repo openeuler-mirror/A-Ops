@@ -436,6 +436,10 @@ static int IMDB_Table2String(IMDB_Table *table, char *buffer, int maxLen)
     }
     */
 
+    if (table->recordsCursor == 0) {
+        // empty table, just skip it
+        return 0;
+    }
     // only the latest record
     int index = table->recordsCursor - 1;
     ret = IMDB_Record2String(table->records[index], buffer, maxLen, table->name);
