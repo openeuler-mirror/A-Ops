@@ -72,9 +72,7 @@ static int IngressDataProcesssInput(Fifo *fifo, IngressMgr *mgr)
 
     while (FifoGet(fifo, (void **)&dataStr) == 0) {
 
-        // memcpy(dataStr, elem + sizeof(uint32_t), elem->dataLen);
         printf("[INGRESS] Get data str: %s", dataStr);
-
         // save data to taosDb
         /*
         ret = TaosDbMgrInsertOneRecord(dataStr, mgr->taosdbMgr);
@@ -107,7 +105,7 @@ static int IngressDataProcesss(IngressMgr *mgr)
         return -1;
     }
 
-    printf("[INGRESS] Get epoll event.\n");
+    // printf("[INGRESS] Get epoll event.\n");
     for (int i = 0; i < events_num; i++) {
         fifo = (Fifo *)events[i].data.ptr;
         ret = IngressDataProcesssInput(fifo, mgr);

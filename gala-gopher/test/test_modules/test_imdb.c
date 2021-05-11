@@ -77,7 +77,7 @@ void TestIMDB_TableCreate()
     CU_ASSERT(table != NULL);
     CU_ASSERT(table->records != NULL);
     CU_ASSERT(table->recordsCapacity == 1024);
-    CU_ASSERT(table->recordsNum == 0);
+    CU_ASSERT(table->recordCursor == 0);
     CU_ASSERT(strcmp(table->name, "table1") == 0);
     CU_ASSERT(table->meta == NULL);
 
@@ -123,7 +123,7 @@ void TestIMDB_TableAddRecord()
 
     ret = IMDB_TableAddRecord(table, record);
     CU_ASSERT(ret == 0);
-    CU_ASSERT(table->recordsNum == 1);
+    CU_ASSERT(table->recordsCursor == 1);
     CU_ASSERT(table->records[0] == record);
 
     IMDB_TableDestroy(table);

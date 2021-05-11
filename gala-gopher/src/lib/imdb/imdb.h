@@ -45,7 +45,7 @@ typedef struct {
     IMDB_Record *meta;
 
     uint32_t recordsCapacity;      // capacity for records in one table
-    uint32_t recordsNum;
+    uint32_t recordsCursor;
     IMDB_Record **records;
 } IMDB_Table;
 

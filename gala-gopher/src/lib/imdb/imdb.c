@@ -134,12 +134,15 @@ int IMDB_TableSetMeta(IMDB_Table *table, IMDB_Record *metaRecord)
 
 int IMDB_TableAddRecord(IMDB_Table *table, IMDB_Record *record)
 {
-    if (table->recordsNum == table->recordsCapacity) {
-        return -1;
+    // new record will cover old one if already have one record in old position
+    int recordIndex = table->recordsCursor % table->recordsCapacity;
+    if (table->records[recordIndex] != NULL) {
+        IMDB_RecordDestroy(table->records[recordIndex]);
+        table->records[recordIndex] = NULL;
     }
 
-    table->records[table->recordsNum] = record;
-    table->recordsNum++;
+    table->records[recordIndex] = record;
+    table->recordsCursor = recordIndex + 1;
     return 0;
 }
 
@@ -150,7 +153,7 @@ void IMDB_TableDestroy(IMDB_Table *table)
     }
 
     if (table->records != NULL) {
-        for (int i = 0; i < table->recordsNum; i++) {
+        for (int i = 0; i < table->recordsCapacity; i++) {
             IMDB_RecordDestroy(table->records[i]);
         }
         free(table->records);
@@ -317,7 +320,7 @@ int IMDB_DataBaseMgrAddRecord(IMDB_DataBaseMgr *mgr, char *recordStr, int len)
         goto ERR;
     }
 
-    printf("[IMDB] Add Record success.\n");
+    // printf("[IMDB] Add Record success.\n");
     free(buffer_head);
 
     pthread_rwlock_unlock(&mgr->rwlock);
@@ -328,28 +331,28 @@ ERR:
     return -1;
 }
 
-static int IMDB_MetricDescription2String(IMDB_Metric *metric, char *buffer, int maxLen)
+static int IMDB_MetricDescription2String(IMDB_Metric *metric, char *buffer, int maxLen, char *tableName)
 {
-    return snprintf(buffer, maxLen, "# HELP gala_%s %s\n", metric->name, metric->description);
+    return snprintf(buffer, maxLen, "# HELP gala_gopher_%s_%s %s\n", tableName, metric->name, metric->description);
 }
 
-static int IMDB_MetricType2String(IMDB_Metric *metric, char *buffer, int maxLen)
+static int IMDB_MetricType2String(IMDB_Metric *metric, char *buffer, int maxLen, char *tableName)
 {
-    return snprintf(buffer, maxLen, "# TYPE gala_%s %s\n", metric->name, metric->type);
+    return snprintf(buffer, maxLen, "# TYPE gala_gopher_%s_%s %s\n", tableName, metric->name, metric->type);
 }
 
-static int IMDB_MetricValue2String(IMDB_Metric *metric, char *buffer, int maxLen)
+static int IMDB_MetricValue2String(IMDB_Metric *metric, char *buffer, int maxLen, char *tableName)
 {
     time_t now;
     time(&now);
-    return snprintf(buffer, maxLen, "gala_%s %s %lld\n", metric->name, metric->val, now * 1000);
+    return snprintf(buffer, maxLen, "gala_gopher_%s_%s %s %lld\n", tableName, metric->name, metric->val, now * 1000);
 }
 
-static int IMDB_Metric2String(IMDB_Metric *metric, char *buffer, int maxLen)
+static int IMDB_Metric2String(IMDB_Metric *metric, char *buffer, int maxLen, char *tableName)
 {
     int ret = 0;
     int total = 0;
-    ret = IMDB_MetricDescription2String(metric, buffer, maxLen);
+    ret = IMDB_MetricDescription2String(metric, buffer, maxLen, tableName);
     if (ret < 0) {
         return -1;
     }
@@ -357,7 +360,7 @@ static int IMDB_Metric2String(IMDB_Metric *metric, char *buffer, int maxLen)
     maxLen -= ret;
     total += ret;
 
-    ret = IMDB_MetricType2String(metric, buffer, maxLen);
+    ret = IMDB_MetricType2String(metric, buffer, maxLen, tableName);
     if (ret < 0) {
         return -1;
     }
@@ -365,7 +368,7 @@ static int IMDB_Metric2String(IMDB_Metric *metric, char *buffer, int maxLen)
     maxLen -= ret;
     total += ret;
 
-    ret = IMDB_MetricValue2String(metric, buffer, maxLen);
+    ret = IMDB_MetricValue2String(metric, buffer, maxLen, tableName);
     if (ret < 0) {
         return -1;
     }
@@ -374,12 +377,12 @@ static int IMDB_Metric2String(IMDB_Metric *metric, char *buffer, int maxLen)
     return total;
 }
 
-static int IMDB_Record2String(IMDB_Record *record, char *buffer, int maxLen)
+static int IMDB_Record2String(IMDB_Record *record, char *buffer, int maxLen, char *tableName)
 {
     int ret = 0;
     int total = 0;
     for (int i = 0; i < record->metricsNum; i++) {
-        ret = IMDB_Metric2String(record->metrics[i], buffer, maxLen);
+        ret = IMDB_Metric2String(record->metrics[i], buffer, maxLen, tableName);
         if (ret < 0) {
             return -1;
         }
@@ -409,14 +412,22 @@ static int IMDB_Table2String(IMDB_Table *table, char *buffer, int maxLen)
     */
 
     // only the latest record
-    int index = table->recordsNum - 1;
-    ret = IMDB_Record2String(table->records[index], buffer, maxLen);
+    int index = table->recordsCursor - 1;
+    ret = IMDB_Record2String(table->records[index], buffer, maxLen, table->name);
     if (ret < 0) {
         return -1;
     }
     buffer += ret;
     maxLen -= ret;
     total += ret;
+
+    ret = snprintf(buffer, maxLen, "\n");
+    if (ret < 0) {
+        return -1;
+    }
+    buffer += 1;
+    maxLen -= 1;
+    total += 1;
 
     return total;
 }

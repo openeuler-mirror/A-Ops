@@ -7,17 +7,17 @@ measurements:
         fields:
         (
             {
-                description: "cpu usage",
+                description: "example cpu usage",
                 type: "gauge",
                 name: "cpu_usage",
             },
             {
-                description: "memory usage",
+                description: "example memory usage",
                 type: "gauge",
                 name: "memory_usage",
             },
             {
-                description: "tcp connection num",
+                description: "example tcp connection num",
                 type: "counter",
                 name: "tcp_connection_num",
             },

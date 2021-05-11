@@ -1,0 +1,32 @@
+version = "1.0.0"
+
+measurements:
+(
+    {
+        name: "system_inode",
+        fields:
+        (
+            {
+                description: "Inodes",
+                type: "Unknown",
+                name: "Inodes",
+            },
+            {
+                description: "IUsed",
+                type: "Unknown",
+                name: "IUsed",
+            },
+            {
+                description: "IFree",
+                type: "Unknown",
+                name: "IFree",
+            },
+            {
+                description: "IUse",
+                type: "Unknown",
+                name: "IUse",
+            },
+        )
+    }
+)
+
