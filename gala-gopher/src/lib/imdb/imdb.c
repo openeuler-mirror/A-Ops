@@ -377,11 +377,36 @@ static int IMDB_Metric2String(IMDB_Metric *metric, char *buffer, int maxLen, cha
     return total;
 }
 
+// return 0 if satisfy, return -1 if not
+static int MetricTypeSatisfyPrometheus(IMDB_Metric *metric)
+{
+    const char prometheusTypes[][MAX_IMDB_METRIC_TYPE_LEN] = {
+        "counter",
+        "gauge",
+        "histogram",
+        "summary"
+    };
+
+    int size = sizeof(prometheusTypes) / sizeof(prometheusTypes[0]);
+    for (int i = 0; i < size; i++) {
+        if (strcmp(metric->name, prometheusTypes[i]) == 0) {
+            return 0;
+        }
+    }
+
+    return -1;
+}
+
 static int IMDB_Record2String(IMDB_Record *record, char *buffer, int maxLen, char *tableName)
 {
     int ret = 0;
     int total = 0;
     for (int i = 0; i < record->metricsNum; i++) {
+        ret = MetricTypeSatisfyPrometheus(record->metrics[i]);
+        if (ret != 0) {
+            continue;
+        }
+
         ret = IMDB_Metric2String(record->metrics[i], buffer, maxLen, tableName);
         if (ret < 0) {
             return -1;
