@@ -6,10 +6,26 @@ measurements:
         name: "system_inode",
         fields:
         (
-            "Inodes",
-            "IUsed",
-            "IFree",
-            "IUse",
+            {
+                description: "Inodes",
+                type: "Unknown",
+                name: "Inodes",
+            },
+            {
+                description: "IUsed",
+                type: "Unknown",
+                name: "IUsed",
+            },
+            {
+                description: "IFree",
+                type: "Unknown",
+                name: "IFree",
+            },
+            {
+                description: "IUse",
+                type: "Unknown",
+                name: "IUse",
+            },
         )
     }
 )

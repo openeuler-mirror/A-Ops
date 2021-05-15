@@ -4,7 +4,7 @@
 
 int main()
 {
-    uint32_t ret = 0;
+    int ret = 0;
     ResourceMgr *resourceMgr = NULL;
 
     resourceMgr = ResourceMgrCreate();

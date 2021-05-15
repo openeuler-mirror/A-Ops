@@ -6,12 +6,36 @@ measurements:
         name: "system_tcp",
         fields:
         (
-            "local_address",
-            "local_port",
-            "rem_address",
-            "rem_port",
-            "st",
-            "retrnsmt",
+            {
+                description: "local_address",
+                type: "Unknown",
+                name: "local_address",
+            },
+            {
+                description: "local_port",
+                type: "Unknown",
+                name: "local_port",
+            },
+            {
+                description: "rem_address",
+                type: "Unknown",
+                name: "rem_address",
+            },
+            {
+                description: "rem_port",
+                type: "Unknown",
+                name: "rem_port",
+            },
+            {
+                description: "st",
+                type: "Unknown",
+                name: "st",
+            },
+            {
+                description: "retrnsmt",
+                type: "Unknown",
+                name: "retrnsmt",
+            },
         )
     }
 )

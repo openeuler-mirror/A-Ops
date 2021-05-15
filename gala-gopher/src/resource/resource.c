@@ -4,26 +4,30 @@
 #include "resource.h"
 
 #if GALA_GOPHER_INFO("inner func")
-static uint32_t ConfigMgrInit(ResourceMgr *resourceMgr);
+static int ConfigMgrInit(ResourceMgr *resourceMgr);
 static void ConfigMgrDeinit(ResourceMgr *resourceMgr);
-static uint32_t ProbeMgrInit(ResourceMgr *resourceMgr);
+static int ProbeMgrInit(ResourceMgr *resourceMgr);
 static void ProbeMgrDeinit(ResourceMgr *resourceMgr);
-static uint32_t MeasurementMgrInit(ResourceMgr *resourceMgr);
+static int MeasurementMgrInit(ResourceMgr *resourceMgr);
 static void MeasurementMgrDeinit(ResourceMgr *resourceMgr);
-static uint32_t FifoMgrInit(ResourceMgr *resourceMgr);
+static int FifoMgrInit(ResourceMgr *resourceMgr);
 static void FifoMgrDeinit(ResourceMgr *resourceMgr);
-static uint32_t KafkaMgrInit(ResourceMgr *resourceMgr);
+static int KafkaMgrInit(ResourceMgr *resourceMgr);
 static void KafkaMgrDeinit(ResourceMgr *resourceMgr);
-static uint32_t TaosMgrInit(ResourceMgr *resourceMgr);
+static int IMDBMgrInit(ResourceMgr *resourceMgr);
+static void IMDBMgrDeinit(ResourceMgr *resourceMgr);
+static int TaosMgrInit(ResourceMgr *resourceMgr);
 static void TaosMgrDeinit(ResourceMgr *resourceMgr);
-static uint32_t IngressMgrInit(ResourceMgr *resourceMgr);
+static int IngressMgrInit(ResourceMgr *resourceMgr);
 static void IngressMgrDeinit(ResourceMgr *resourceMgr);
-static uint32_t EgressMgrInit(ResourceMgr *resourceMgr);
+static int EgressMgrInit(ResourceMgr *resourceMgr);
 static void EgressMgrDeinit(ResourceMgr *resourceMgr);
+static int WebServerInit(ResourceMgr *resourceMgr);
+static void WebServerDeinit(ResourceMgr *resourceMgr);
 #endif
 
-typedef struct {
-    uint32_t (*subModuleInitFunc)(ResourceMgr *);
+typedef struct tagSubModuleInitor{
+    int (*subModuleInitFunc)(ResourceMgr *);
     void (*subModuleDeinitFunc)(ResourceMgr *);
 } SubModuleInitor;
 
@@ -32,10 +36,12 @@ SubModuleInitor gSubModuleInitorTbl[] = {
     { ProbeMgrInit,         ProbeMgrDeinit },
     { MeasurementMgrInit,   MeasurementMgrDeinit },
     { FifoMgrInit,          FifoMgrDeinit },
-    { KafkaMgrInit,         KafkaMgrDeinit },
-    { TaosMgrInit,          TaosMgrDeinit },
+    // { KafkaMgrInit,         KafkaMgrDeinit },
+    { IMDBMgrInit,          IMDBMgrDeinit },
+    // { TaosMgrInit,          TaosMgrDeinit },
     { IngressMgrInit,       IngressMgrDeinit },
-    { EgressMgrInit,        EgressMgrDeinit }
+    // { EgressMgrInit,        EgressMgrDeinit },
+    { WebServerInit,        WebServerDeinit }
 };
 
 ResourceMgr *ResourceMgrCreate()
@@ -58,13 +64,13 @@ void ResourceMgrDestroy(ResourceMgr *resourceMgr)
     return;
 }
 
-uint32_t ResourceMgrInit(ResourceMgr *resourceMgr)
+int ResourceMgrInit(ResourceMgr *resourceMgr)
 {
     if (resourceMgr == NULL) {
         return -1;
     }
 
-    uint32_t ret = 0;
+    int ret = 0;
     uint32_t initTblSize = sizeof(gSubModuleInitorTbl) / sizeof(gSubModuleInitorTbl[0]);
     for (int i = 0; i < initTblSize; i++) {
         ret = gSubModuleInitorTbl[i].subModuleInitFunc(resourceMgr);
@@ -90,9 +96,9 @@ void ResourceMgrDeinit(ResourceMgr *resourceMgr)
 }
 
 #if GALA_GOPHER_INFO("inner func")
-static uint32_t ConfigMgrInit(ResourceMgr *resourceMgr)
+static int ConfigMgrInit(ResourceMgr *resourceMgr)
 {
-    uint32_t ret = 0;
+    int ret = 0;
     ConfigMgr *configMgr = NULL;
 
     configMgr = ConfigMgrCreate();
@@ -107,7 +113,7 @@ static uint32_t ConfigMgrInit(ResourceMgr *resourceMgr)
         printf("[RESOURCE] load gala configuration failed.\n");
         return -1;
     }
-    
+
     resourceMgr->configMgr = configMgr;
     return 0;
 }
@@ -119,12 +125,12 @@ static void ConfigMgrDeinit(ResourceMgr *resourceMgr)
     return;
 }
 
-static uint32_t ProbeMgrInit(ResourceMgr *resourceMgr)
+static int ProbeMgrInit(ResourceMgr *resourceMgr)
 {
-    uint32_t ret = 0;
+    int ret = 0;
     ConfigMgr *configMgr = NULL;
     ProbeMgr *probeMgr = NULL;
-    
+
     probeMgr = ProbeMgrCreate(MAX_PROBES_NUM);
     if (probeMgr == NULL) {
         printf("[RESOURCE] create probe mgr failed.\n");
@@ -166,12 +172,12 @@ static void ProbeMgrDeinit(ResourceMgr *resourceMgr)
     return;
 }
 
-static uint32_t MeasurementMgrInit(ResourceMgr *resourceMgr)
+static int MeasurementMgrInit(ResourceMgr *resourceMgr)
 {
-    uint32_t ret = 0;
+    int ret = 0;
     ProbeMgr *probeMgr = NULL;
     MeasurementMgr *mmMgr = NULL;
-    
+
     mmMgr = MeasurementMgrCreate(MAX_MEASUREMENTS_NUM);
     if (mmMgr == NULL) {
         printf("[RESOURCE] create mmMgr failed.\n");
@@ -201,11 +207,10 @@ static void MeasurementMgrDeinit(ResourceMgr *resourceMgr)
     return;
 }
 
-static uint32_t FifoMgrInit(ResourceMgr *resourceMgr)
+static int FifoMgrInit(ResourceMgr *resourceMgr)
 {
-    uint32_t ret = 0;
     FifoMgr *fifoMgr = NULL;
-    
+
     fifoMgr = FifoMgrCreate(MAX_FIFO_NUM);
     if (fifoMgr == NULL) {
         printf("[RESOURCE] create fifoMgr failed.\n");
@@ -223,9 +228,8 @@ static void FifoMgrDeinit(ResourceMgr *resourceMgr)
     return;
 }
 
-static uint32_t KafkaMgrInit(ResourceMgr *resourceMgr)
+static int KafkaMgrInit(ResourceMgr *resourceMgr)
 {
-    uint32_t ret = 0;
     ConfigMgr *configMgr = NULL;
     KafkaMgr *kafkaMgr = NULL;
 
@@ -247,9 +251,94 @@ static void KafkaMgrDeinit(ResourceMgr *resourceMgr)
     return;
 }
 
-static uint32_t TaosMgrInit(ResourceMgr *resourceMgr)
+static int IMDBMgrTableLoad(IMDB_Table *table, Measurement *mm)
 {
-    uint32_t ret = 0;
+    int ret = 0;
+    IMDB_Record *meta = IMDB_RecordCreate(MAX_IMDB_RECORD_CAPACITY);
+    if (meta == NULL) {
+        return -1;
+    }
+
+    IMDB_Metric *metric;
+    for (int i = 0; i < mm->fieldsNum; i++) {
+        metric = IMDB_MetricCreate(mm->fields[i].name, mm->fields[i].description, mm->fields[i].type);
+        if (metric == NULL) {
+            goto ERR;
+        }
+
+        ret = IMDB_RecordAddMetric(meta, metric);
+        if (ret != 0) {
+            goto ERR;
+        }
+    }
+
+    ret = IMDB_TableSetMeta(table, meta);
+    if (ret != 0) {
+        goto ERR;
+    }
+
+    return 0;
+ERR:
+    IMDB_RecordDestroy(meta);
+    return -1;
+}
+
+static int IMDBMgrDatabaseLoad(IMDB_DataBaseMgr *imdbMgr, MeasurementMgr *mmMgr)
+{
+    int ret = 0;
+
+    IMDB_Table *table;
+    for (int i = 0; i < mmMgr->measurementsNum; i++) {
+        table = IMDB_TableCreate(mmMgr->measurements[i]->name, MAX_IMDB_TABLE_CAPACITY);
+        if (table == NULL) {
+            return -1;
+        }
+
+        ret = IMDBMgrTableLoad(table, mmMgr->measurements[i]);
+        if (ret != 0) {
+            return -1;
+        }
+
+        ret = IMDB_DataBaseMgrAddTable(imdbMgr, table);
+        if (ret != 0) {
+            return -1;
+        }
+    }
+
+    return 0;
+}
+
+static int IMDBMgrInit(ResourceMgr *resourceMgr)
+{
+    int ret = 0;
+    ConfigMgr *configMgr = resourceMgr->configMgr;
+    IMDB_DataBaseMgr *imdbMgr = NULL;
+    imdbMgr = IMDB_DataBaseMgrCreate(configMgr->imdbConfig->maxTablesNum);
+    if (imdbMgr == NULL) {
+        printf("[RESOURCE] create IMDB database mgr failed.\n");
+        return -1;
+    }
+
+    ret = IMDBMgrDatabaseLoad(imdbMgr, resourceMgr->mmMgr);
+    if (ret != 0) {
+        IMDB_DataBaseMgrDestroy(imdbMgr);
+        return -1;
+    }
+
+    resourceMgr->imdbMgr = imdbMgr;
+    return 0;
+}
+
+static void IMDBMgrDeinit(ResourceMgr *resourceMgr)
+{
+    IMDB_DataBaseMgrDestroy(resourceMgr->imdbMgr);
+    resourceMgr->imdbMgr = NULL;
+    return;
+}
+
+static int TaosMgrInit(ResourceMgr *resourceMgr)
+{
+    int ret = 0;
     ConfigMgr *configMgr = NULL;
     MeasurementMgr *mmMgr = NULL;
     TaosDbMgr *taosDbMgr = NULL;
@@ -292,9 +381,8 @@ static void TaosMgrDeinit(ResourceMgr *resourceMgr)
     return;
 }
 
-static uint32_t IngressMgrInit(ResourceMgr *resourceMgr)
+static int IngressMgrInit(ResourceMgr *resourceMgr)
 {
-    uint32_t ret = 0;
     IngressMgr *ingressMgr = NULL;
 
     ingressMgr = IngressMgrCreate();
@@ -307,6 +395,7 @@ static uint32_t IngressMgrInit(ResourceMgr *resourceMgr)
     ingressMgr->mmMgr = resourceMgr->mmMgr;
     ingressMgr->probeMgr = resourceMgr->probeMgr;
     ingressMgr->taosDbMgr = resourceMgr->taosDbMgr;
+    ingressMgr->imdbMgr = resourceMgr->imdbMgr;
 
     resourceMgr->ingressMgr = ingressMgr;
     return 0;
@@ -319,9 +408,8 @@ static void IngressMgrDeinit(ResourceMgr *resourceMgr)
     return;
 }
 
-static uint32_t EgressMgrInit(ResourceMgr *resourceMgr)
+static int EgressMgrInit(ResourceMgr *resourceMgr)
 {
-    uint32_t ret = 0;
     EgressMgr *egressMgr = NULL;
 
     egressMgr = EgressMgrCreate();
@@ -344,6 +432,28 @@ static void EgressMgrDeinit(ResourceMgr *resourceMgr)
 {
     EgressMgrDestroy(resourceMgr->egressMgr);
     resourceMgr->egressMgr = NULL;
+    return;
+}
+
+static int WebServerInit(ResourceMgr *resourceMgr)
+{
+    ConfigMgr *configMgr = resourceMgr->configMgr;
+    WebServer *webServer = NULL;
+    webServer = WebServerCreate(configMgr->webServerConfig->port);
+    if (webServer == NULL) {
+        printf("[RESOURCE] create webServer failed.\n");
+        return -1;
+    }
+
+    webServer->imdbMgr = resourceMgr->imdbMgr;
+    resourceMgr->webServer = webServer;
+    return 0;
+}
+
+static void WebServerDeinit(ResourceMgr *resourceMgr)
+{
+    WebServerDestroy(resourceMgr->webServer);
+    resourceMgr->webServer = NULL;
     return;
 }
 

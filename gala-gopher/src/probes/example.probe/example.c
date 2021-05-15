@@ -5,8 +5,8 @@ void example_collect_data()
 {
     fprintf(stdout, "|%s|%s|%s|%s|\n",
         "example",
-        "high",
-        "low",
+        "10",
+        "88",
         "15"
     );
 }

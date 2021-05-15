@@ -5,6 +5,8 @@
 #include "base.h"
 
 typedef struct {
+    char description[MAX_FIELD_DESCRIPTION_LEN];
+    char type[MAX_FIELD_TYPE_LEN];
     char name[MAX_FIELD_NAME_LEN];
 } Field;
 
@@ -21,14 +23,8 @@ typedef struct {
     Measurement **measurements;
 } MeasurementMgr;
 
-Measurement *MeasurementCreate();
-void MeasurementDestroy(Measurement *mm);
-
 MeasurementMgr *MeasurementMgrCreate(uint32_t size);
 void MeasurementMgrDestroy(MeasurementMgr *mgr);
-
-int MeasurementMgrAdd(MeasurementMgr *mgr, Measurement *measurement);
-Measurement *MeasurementMgrGet(MeasurementMgr *mgr, const char *name);
 
 int MeasurementMgrLoad(MeasurementMgr *mgr, const char *metaPath);
 

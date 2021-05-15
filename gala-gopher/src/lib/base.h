@@ -12,11 +12,13 @@
 #define MAX_FIFO_SIZE         1024
 
 // meta
-#define MAX_META_PATH_LEN        2048
-#define MAX_FIELD_NAME_LEN       64
-#define MAX_MEASUREMENTS_NUM     64
-#define MAX_MEASUREMENT_NAME_LEN 64
-#define MAX_FIELDS_NUM           64
+#define MAX_META_PATH_LEN           2048
+#define MAX_FIELD_DESCRIPTION_LEN   256
+#define MAX_FIELD_TYPE_LEN          64
+#define MAX_FIELD_NAME_LEN          64
+#define MAX_MEASUREMENTS_NUM        64
+#define MAX_MEASUREMENT_NAME_LEN    64
+#define MAX_FIELDS_NUM              64
 
 // ingress
 #define MAX_EPOLL_SIZE        1024
@@ -29,6 +31,10 @@
 #define MAX_TAOS_SUB_NUM         1024
 #define MAX_TAOS_SQL_RETRY_TIMES 5
 #define MAX_TAOS_SQL_LEN         1024
+
+// imdb
+#define MAX_IMDB_TABLE_CAPACITY         64
+#define MAX_IMDB_RECORD_CAPACITY        64
 
 // kafka
 #define MAX_KAFKA_ERRSTR_SIZE 512

@@ -27,18 +27,18 @@ void IngressMgrDestroy(IngressMgr *mgr)
 }
 
 static int IngressInit(IngressMgr *mgr)
-{ 
+{
     struct epoll_event event;
     uint32_t ret = 0;
 
     ProbeMgr *probeMgr = NULL;
     probeMgr = mgr->probeMgr;
-    
+
     mgr->epoll_fd = epoll_create(MAX_EPOLL_SIZE);
     if (mgr->epoll_fd < 0) {
         return -1;
     }
-    
+
     // add all triggerFd into mgr->epoll_fd
     for (int i = 0; i < probeMgr->probesNum; i++) {
         Probe *probe = probeMgr->probes[i];
@@ -57,7 +57,7 @@ static int IngressInit(IngressMgr *mgr)
     return 0;
 }
 
-static int IngressDataProcesssInput(Fifo *fifo, TaosDbMgr *taosdbMgr)
+static int IngressDataProcesssInput(Fifo *fifo, IngressMgr *mgr)
 {
     // read data from fifo
     char *dataStr = NULL;
@@ -71,13 +71,22 @@ static int IngressDataProcesssInput(Fifo *fifo, TaosDbMgr *taosdbMgr)
     }
 
     while (FifoGet(fifo, (void **)&dataStr) == 0) {
-        // save data to taosDb
-        // memcpy(dataStr, elem + sizeof(uint32_t), elem->dataLen);
+
         printf("[INGRESS] Get data str: %s", dataStr);
-        ret = TaosDbMgrInsertOneRecord(dataStr, taosdbMgr);
+        // save data to taosDb
+        /*
+        ret = TaosDbMgrInsertOneRecord(dataStr, mgr->taosdbMgr);
         if (ret != 0) {
             printf("[INGRESS] insert data into taosdb failed.\n");
         }
+        */
+
+        // save data to imdb
+        ret = IMDB_DataBaseMgrAddRecord(mgr->imdbMgr, dataStr, strlen(dataStr));
+        if (ret != 0) {
+            printf("[INGRESS] insert data into imdb failed.\n");
+        }
+
         free(dataStr);
     }
 
@@ -96,10 +105,10 @@ static int IngressDataProcesss(IngressMgr *mgr)
         return -1;
     }
 
-    printf("[INGRESS] Get epoll event.\n");
+    // printf("[INGRESS] Get epoll event.\n");
     for (int i = 0; i < events_num; i++) {
         fifo = (Fifo *)events[i].data.ptr;
-        ret = IngressDataProcesssInput(fifo, mgr->taosDbMgr);
+        ret = IngressDataProcesssInput(fifo, mgr);
         if (ret != 0) {
             return -1;
         }

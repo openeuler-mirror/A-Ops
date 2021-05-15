@@ -6,14 +6,46 @@ measurements:
         name: "system_meminfo",
         fields:
         (
-            "MemTotal",
-            "MemFree",
-            "MemAvailable",
-            "Buffers",
-            "Cached",
-            "SwapCached",
-            "Active",
-            "Inactive",
+            {
+                description: "MemTotal",
+                type: "counter",
+                name: "MemTotal",
+            },
+            {
+                description: "MemFree",
+                type: "counter",
+                name: "MemFree",
+            },
+            {
+                description: "MemAvailable",
+                type: "counter",
+                name: "MemAvailable",
+            },
+            {
+                description: "Buffers",
+                type: "counter",
+                name: "Buffers",
+            },
+            {
+                description: "Cached",
+                type: "counter",
+                name: "Cached",
+            },
+            {
+                description: "SwapCached",
+                type: "counter",
+                name: "SwapCached",
+            },
+            {
+                description: "Active",
+                type: "counter",
+                name: "Active",
+            },
+            {
+                description: "Inactive",
+                type: "counter",
+                name: "Inactive",
+            },
         )
     }
 )

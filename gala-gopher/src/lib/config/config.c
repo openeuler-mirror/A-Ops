@@ -31,7 +31,7 @@ ConfigMgr *ConfigMgrCreate()
         goto ERR;
     }
     memset(mgr->egressConfig, 0, sizeof(EgressConfig));
-    
+
     mgr->taosdataConfig = (TaosdataConfig *)malloc(sizeof(TaosdataConfig));
     if (mgr->taosdataConfig == NULL) {
         goto ERR;
@@ -49,6 +49,18 @@ ConfigMgr *ConfigMgrCreate()
         goto ERR;
     }
     memset(mgr->probesConfig, 0, sizeof(ProbesConfig));
+
+    mgr->imdbConfig = (IMDBConfig *)malloc(sizeof(IMDBConfig));
+    if (mgr->imdbConfig == NULL) {
+        goto ERR;
+    }
+    memset(mgr->imdbConfig, 0, sizeof(IMDBConfig));
+
+    mgr->webServerConfig = (WebServerConfig *)malloc(sizeof(WebServerConfig));
+    if (mgr->webServerConfig == NULL) {
+        goto ERR;
+    }
+    memset(mgr->webServerConfig, 0, sizeof(WebServerConfig));
 
     return mgr;
 ERR:
@@ -83,6 +95,14 @@ void ConfigMgrDestroy(ConfigMgr *mgr)
         free(mgr->probesConfig);
     }
 
+    if (mgr->imdbConfig != NULL) {
+        free(mgr->imdbConfig);
+    }
+
+    if (mgr->webServerConfig != NULL) {
+        free(mgr->webServerConfig);
+    }
+
     free(mgr);
     return;
 }
@@ -115,7 +135,7 @@ static int ConfigMgrLoadIngressConfig(void *config, config_setting_t *settings)
         return -1;
     }
     ingressConfig->interval = intVal;
-        
+
     return 0;
 }
 
@@ -148,7 +168,7 @@ static int ConfigMgrLoadTaosdataConfig(void *config, config_setting_t *settings)
     uint32_t ret = 0;
     const char *strVal = NULL;
     int intVal = 0;
-    
+
     ret = config_setting_lookup_string(settings, "taosdata_ip", &strVal);
     if (ret == 0) {
         printf("[CONFIG] load config for taosdata_ip failed.\n");
@@ -183,7 +203,7 @@ static int ConfigMgrLoadTaosdataConfig(void *config, config_setting_t *settings)
         return -1;
     }
     taosConfig->port = intVal;
-    
+
     return 0;
 
 }
@@ -193,7 +213,7 @@ static int ConfigMgrLoadKafkaConfig(void *config, config_setting_t *settings)
     KafkaConfig *kafkaConfig = (KafkaConfig *)config;
     uint32_t ret = 0;
     const char *strVal = NULL;
-    
+
     ret = config_setting_lookup_string(settings, "kafka_broker", &strVal);
     if (ret == 0) {
         printf("[CONFIG] load config for kafka_broker failed.\n");
@@ -256,7 +276,7 @@ static int ConfigMgrLoadProbesConfig(void *config, config_setting_t *settings)
         } else {
             _probeConfig->probeSwitch = PROBE_SWITCH_OFF;
         }
-        
+
         ret = config_setting_lookup_int(_probe, "interval", &intVal);
         if (ret == 0) {
             printf("[CONFIG] load config for probe interval failed.\n");
@@ -265,6 +285,53 @@ static int ConfigMgrLoadProbesConfig(void *config, config_setting_t *settings)
         _probeConfig->interval = intVal;
 
     }
+
+    return 0;
+}
+
+static int ConfigMgrLoadIMDBConfig(void *config, config_setting_t *settings)
+{
+    IMDBConfig *imdbConfig = (IMDBConfig *)config;
+    uint32_t ret = 0;
+    int intVal = 0;
+
+    ret = config_setting_lookup_int(settings, "max_tables_num", &intVal);
+    if (ret == 0) {
+        printf("[CONFIG] load config for imdbConfig max_tables_num failed.\n");
+        return -1;
+    }
+    imdbConfig->maxTablesNum = intVal;
+
+    ret = config_setting_lookup_int(settings, "max_records_num", &intVal);
+    if (ret == 0) {
+        printf("[CONFIG] load config for imdbConfig max_records_num failed.\n");
+        return -1;
+    }
+    imdbConfig->maxRecordsNum = intVal;
+
+    ret = config_setting_lookup_int(settings, "max_metrics_num", &intVal);
+    if (ret == 0) {
+        printf("[CONFIG] load config for imdbConfig max_metrics_num failed.\n");
+        return -1;
+    }
+    imdbConfig->maxMetricsNum = intVal;
+
+    return 0;
+
+}
+
+static int ConfigMgrLoadWebServerConfig(void *config, config_setting_t *settings)
+{
+    WebServerConfig *webServerConfig = (WebServerConfig *)config;
+    uint32_t ret = 0;
+    int intVal = 0;
+
+    ret = config_setting_lookup_int(settings, "port", &intVal);
+    if (ret == 0) {
+        printf("[CONFIG] load config for webServerConfig port failed.\n");
+        return -1;
+    }
+    webServerConfig->port = intVal;
 
     return 0;
 }
@@ -285,7 +352,9 @@ int ConfigMgrLoad(ConfigMgr *mgr, const char *confPath)
         { (void *)mgr->egressConfig, "egress", ConfigMgrLoadEgressConfig},
         { (void *)mgr->taosdataConfig, "taosdata", ConfigMgrLoadTaosdataConfig},
         { (void *)mgr->kafkaConfig, "kafka", ConfigMgrLoadKafkaConfig},
-        { (void *)mgr->probesConfig, "probes", ConfigMgrLoadProbesConfig}
+        { (void *)mgr->probesConfig, "probes", ConfigMgrLoadProbesConfig},
+        { (void *)mgr->imdbConfig, "imdb", ConfigMgrLoadIMDBConfig},
+        { (void *)mgr->webServerConfig, "web_server", ConfigMgrLoadWebServerConfig}
     };
 
     int ret = 0;
