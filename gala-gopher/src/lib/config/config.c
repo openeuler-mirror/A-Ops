@@ -44,6 +44,12 @@ ConfigMgr *ConfigMgrCreate()
     }
     memset(mgr->probesConfig, 0, sizeof(ProbesConfig));
 
+    mgr->extendProbesConfig = (ExtendProbesConfig *)malloc(sizeof(ExtendProbesConfig));
+    if (mgr->extendProbesConfig == NULL) {
+        goto ERR;
+    }
+    memset(mgr->extendProbesConfig, 0, sizeof(ExtendProbesConfig));
+
     mgr->imdbConfig = (IMDBConfig *)malloc(sizeof(IMDBConfig));
     if (mgr->imdbConfig == NULL) {
         goto ERR;
@@ -83,6 +89,15 @@ void ConfigMgrDestroy(ConfigMgr *mgr)
             }
         }
         free(mgr->probesConfig);
+    }
+
+    if (mgr->extendProbesConfig != NULL) {
+        for (int i = 0; i < mgr->extendProbesConfig->probesNum; i++) {
+            if (mgr->extendProbesConfig->probesConfig[i] != NULL) {
+                free(mgr->extendProbesConfig->probesConfig[i]);
+            }
+        }
+        free(mgr->extendProbesConfig);
     }
 
     if (mgr->imdbConfig != NULL) {

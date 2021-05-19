@@ -86,6 +86,12 @@ static int IngressDataProcesssInput(Fifo *fifo, IngressMgr *mgr)
 
     while (FifoGet(fifo, (void **)&dataStr) == 0) {
 
+        // skip string not start with '|'
+        if(strncmp(recordStr, "|", 1) != 0) {
+            printf("[INGRESS] Get dirty data str: %s", dataStr);
+            continue;
+        }
+
         printf("[INGRESS] Get data str: %s", dataStr);
         // save data to imdb
         ret = IMDB_DataBaseMgrAddRecord(mgr->imdbMgr, dataStr, strlen(dataStr));

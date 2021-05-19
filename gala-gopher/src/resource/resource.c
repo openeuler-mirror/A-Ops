@@ -228,16 +228,13 @@ static int MeasurementMgrInit(ResourceMgr *resourceMgr)
     }
 
     // load table meta info
-    probeMgr = resourceMgr->probeMgr;
-    for (int i = 0; i < probeMgr->probesNum; i++) {
-        ret = MeasurementMgrLoad(mmMgr, probeMgr->probes[i]->metaPath);
-        if (ret != 0) {
-            MeasurementMgrDestroy(mmMgr);
-            printf("[RESOURCE] load probe %s meta path failed.\n", probeMgr->probes[i]->name);
-            return -1;
-        }
+    ret = MeasurementMgrLoad(mmMgr, GALA_META_DIR_PATH);
+    if (ret != 0) {
+        MeasurementMgrDestroy(mmMgr);
+        printf("[RESOURCE] load meta dir failed.\n");
+        return -1;
     }
-    printf("[RESOURCE] load probes meta path success.\n");
+    printf("[RESOURCE] load meta directory success.\n");
 
     resourceMgr->mmMgr = mmMgr;
     return 0;
@@ -392,6 +389,7 @@ static int IngressMgrInit(ResourceMgr *resourceMgr)
     ingressMgr->fifoMgr = resourceMgr->fifoMgr;
     ingressMgr->mmMgr = resourceMgr->mmMgr;
     ingressMgr->probeMgr = resourceMgr->probeMgr;
+    ingressMgr->extendProbeMgr = resourceMgr->extendProbeMgr;
     ingressMgr->imdbMgr = resourceMgr->imdbMgr;
 
     resourceMgr->ingressMgr = ingressMgr;

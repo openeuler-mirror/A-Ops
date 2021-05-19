@@ -3,44 +3,80 @@
 PROGRAM=$0
 PROJECT_FOLDER=$(dirname $(readlink -f "$0"))
 
-GOPHER_BIN_FILE=${PROJECT_FOLDER}/gala-gopher
-GOPHER_BIN_TARGET_DIR=/usr/bin
-GOPHER_CONF_FILE=${PROJECT_FOLDER}/config/gala-gopher.conf
-GOPHER_CONF_TARGET_DIR=/opt/gala-gopher
+function install_daemon_bin()
+{
+    GOPHER_BIN_FILE=${PROJECT_FOLDER}/gala-gopher
+    GOPHER_BIN_TARGET_DIR=/usr/bin
 
-cd ${PROJECT_FOLDER}
+    cd ${PROJECT_FOLDER}
+    if [ ! -f ${GOPHER_BIN_FILE} ]; then
+        echo "${GOPHER_BIN_FILE} not exist. please check if build success."
+        exit 1
+    fi
 
-if [ ! -f ${GOPHER_BIN_FILE} ]; then
-    echo "${GOPHER_BIN_FILE} not exist. please check if build success."
-    exit 1
-fi
+    # install gala-gopher bin
+    cp -f ${GOPHER_BIN_FILE} ${GOPHER_BIN_TARGET_DIR}
+    echo "install ${GOPHER_BIN_FILE} success."
 
-if [ ! -f ${GOPHER_CONF_FILE} ]; then
-    echo "${GOPHER_CONF_FILE} not exist. please check ./config dir."
-    exit 1
-fi
+}
 
-if [ ! -d ${GOPHER_CONF_TARGET_DIR} ]; then
-    mkdir ${GOPHER_CONF_TARGET_DIR}
-fi
+function install_conf()
+{
+    GOPHER_CONF_FILE=${PROJECT_FOLDER}/config/gala-gopher.conf
+    GOPHER_CONF_TARGET_DIR=/opt/gala-gopher
 
-# install gala-gopher bin
-cp -f ${GOPHER_BIN_FILE} ${GOPHER_BIN_TARGET_DIR}
-echo "install ${GOPHER_BIN_FILE} success."
+    cd ${PROJECT_FOLDER}
+    if [ ! -f ${GOPHER_CONF_FILE} ]; then
+        echo "${GOPHER_CONF_FILE} not exist. please check ./config dir."
+        exit 1
+    fi
 
-# install gala-gopher.conf
-cp -f ${GOPHER_CONF_FILE} ${GOPHER_CONF_TARGET_DIR}
-echo "install ${GOPHER_CONF_FILE} success."
+    # install gala-gopher.conf
+    if [ ! -d ${GOPHER_CONF_TARGET_DIR} ]; then
+        mkdir ${GOPHER_CONF_TARGET_DIR}
+    fi
+    cp -f ${GOPHER_CONF_FILE} ${GOPHER_CONF_TARGET_DIR}
+    echo "install ${GOPHER_CONF_FILE} success."
 
-# install meta files
-if [ ! -d ${GOPHER_CONF_TARGET_DIR}/meta ]; then
-    mkdir ${GOPHER_CONF_TARGET_DIR}/meta
-fi
+}
 
-META_FILES=`find ${PROJECT_FOLDER}/src -name "*.meta"`
-for file in ${META_FILES}
-do
-    cp ${file} ${GOPHER_CONF_TARGET_DIR}/meta
-done
-echo "install meta file success."
+function install_meta()
+{
+    GOPHER_META_DIR=/opt/gala-gopher/meta
+
+    cd ${PROJECT_FOLDER}
+
+    # install meta files
+    if [ ! -d ${GOPHER_META_DIR} ]; then
+        mkdir -p ${GOPHER_META_DIR}
+    fi
+    META_FILES=`find ${PROJECT_FOLDER}/src -name "*.meta"`
+    for file in ${META_FILES}
+    do
+        cp ${file} ${GOPHER_META_DIR}
+    done
+    echo "install meta file success."
+
+}
+
+function install_extend_probes()
+{
+    GOPHER_EXTEND_PROBE_DIR=/opt/gala-gopher/extend_probes
+    if [ ! -d ${GOPHER_EXTEND_PROBE_DIR} ]; then
+        mkdir -p ${GOPHER_EXTEND_PROBE_DIR}
+    fi
+
+    cd ${PROJECT_FOLDER}
+
+    # install redis probe
+    SRC_EXTEND_PROBE_DIR=${PROJECT_FOLDER}/src/probes/extends
+    cp -f ${SRC_EXTEND_PROBE_DIR}/python.probe/redis.probe/redis_probe.py ${GOPHER_EXTEND_PROBE_DIR}
+}
+
+# main process
+install_daemon_bin
+install_conf
+install_meta
+install_extend_probes
+
 

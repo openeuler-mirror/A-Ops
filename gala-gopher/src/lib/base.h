@@ -64,6 +64,7 @@ typedef enum {
 } ProbeSwitch;
 
 #define GALA_CONF_PATH "/opt/gala-gopher/gala-gopher.conf"
+#define GALA_META_DIR_PATH "/opt/gala-gopher/meta"
 
 #endif
 
