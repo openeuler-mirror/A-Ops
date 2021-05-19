@@ -17,7 +17,6 @@ SET(INGRESS_DIR     ${SRC_DIR}/ingress)
 SET(FIFO_DIR        ${SRC_DIR}/lib/fifo)
 SET(META_DIR        ${SRC_DIR}/lib/meta)
 SET(KAFKA_DIR       ${SRC_DIR}/lib/kafka)
-SET(TAOSDATA_DIR    ${SRC_DIR}/lib/taosdata)
 SET(PROBE_DIR       ${SRC_DIR}/lib/probe)
 
 SET(LIBRDKAFKA_DIR /usr/include/librdkafka)
@@ -27,7 +26,7 @@ SET(CMAKE_C_FLAGS "-rdynamic -g -fno-builtin-fprintf -Wl,--wrap=fprintf   \
     -DPROBES_META_LIST=\"${PROBES_META_LIST}\" "
 )
 
-SET(SOURCES main.c test_probes.c 
+SET(SOURCES main.c test_probes.c
     ${RESOURCE_DIR}/resource.c
     ${CONFIG_DIR}/config.c
     ${EGRESS_DIR}/egress.c
@@ -36,7 +35,6 @@ SET(SOURCES main.c test_probes.c
     ${FIFO_DIR}/fifo.c
     ${META_DIR}/meta.c
     ${KAFKA_DIR}/kafka.c
-    ${TAOSDATA_DIR}/taosdata.c
 
     ${PROBE_DIR}/probe.c
 )
@@ -47,7 +45,7 @@ ENDFOREACH()
 MESSAGE("SOURCES:\n" ${SOURCES})
 
 ADD_EXECUTABLE(${EXECUTABLE_TARGET} ${SOURCES})
-TARGET_INCLUDE_DIRECTORIES(${EXECUTABLE_TARGET} PRIVATE 
+TARGET_INCLUDE_DIRECTORIES(${EXECUTABLE_TARGET} PRIVATE
     ${BASE_DIR}
     ${RESOURCE_DIR}
     ${CONFIG_DIR}
@@ -57,11 +55,10 @@ TARGET_INCLUDE_DIRECTORIES(${EXECUTABLE_TARGET} PRIVATE
     ${FIFO_DIR}
     ${META_DIR}
     ${KAFKA_DIR}
-    ${TAOSDATA_DIR}
 
     ${PROBE_DIR}
     ${LIBRDKAFKA_DIR}
 )
 
-TARGET_LINK_LIBRARIES(${EXECUTABLE_TARGET} PRIVATE config dl rdkafka taos cunit)
+TARGET_LINK_LIBRARIES(${EXECUTABLE_TARGET} PRIVATE config dl rdkafka cunit)
 

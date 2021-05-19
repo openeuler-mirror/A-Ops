@@ -14,7 +14,6 @@
 #include "fifo.h"
 
 #include "kafka.h"
-#include "taosdata.h"
 
 #include "ingress.h"
 #include "egress.h"
@@ -37,7 +36,6 @@ typedef struct {
 
     // outer component
     KafkaMgr *kafkaMgr;
-    TaosDbMgr *taosDbMgr;
 
     // thread handler
     IngressMgr *ingressMgr;

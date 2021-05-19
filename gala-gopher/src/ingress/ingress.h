@@ -8,7 +8,6 @@
 
 #include "base.h"
 #include "fifo.h"
-#include "taosdata.h"
 #include "meta.h"
 #include "probe.h"
 #include "extend_probe.h"
@@ -16,7 +15,6 @@
 
 typedef struct {
     FifoMgr *fifoMgr;
-    TaosDbMgr *taosDbMgr;
     MeasurementMgr *mmMgr;
     ProbeMgr *probeMgr;
     ExtendProbeMgr *extendProbeMgr;

@@ -18,8 +18,6 @@ static int KafkaMgrInit(ResourceMgr *resourceMgr);
 static void KafkaMgrDeinit(ResourceMgr *resourceMgr);
 static int IMDBMgrInit(ResourceMgr *resourceMgr);
 static void IMDBMgrDeinit(ResourceMgr *resourceMgr);
-static int TaosMgrInit(ResourceMgr *resourceMgr);
-static void TaosMgrDeinit(ResourceMgr *resourceMgr);
 static int IngressMgrInit(ResourceMgr *resourceMgr);
 static void IngressMgrDeinit(ResourceMgr *resourceMgr);
 static int EgressMgrInit(ResourceMgr *resourceMgr);
@@ -41,7 +39,6 @@ SubModuleInitor gSubModuleInitorTbl[] = {
     { FifoMgrInit,          FifoMgrDeinit },
     // { KafkaMgrInit,         KafkaMgrDeinit },
     { IMDBMgrInit,          IMDBMgrDeinit },
-    // { TaosMgrInit,          TaosMgrDeinit },
     { IngressMgrInit,       IngressMgrDeinit },
     // { EgressMgrInit,        EgressMgrDeinit },
     { WebServerInit,        WebServerDeinit }
@@ -382,51 +379,6 @@ static void IMDBMgrDeinit(ResourceMgr *resourceMgr)
     return;
 }
 
-static int TaosMgrInit(ResourceMgr *resourceMgr)
-{
-    int ret = 0;
-    ConfigMgr *configMgr = NULL;
-    MeasurementMgr *mmMgr = NULL;
-    TaosDbMgr *taosDbMgr = NULL;
-
-    configMgr = resourceMgr->configMgr;
-    taosDbMgr = TaosDbMgrCreate(configMgr->taosdataConfig->ip, configMgr->taosdataConfig->user,
-        configMgr->taosdataConfig->pass, configMgr->taosdataConfig->dbName, configMgr->taosdataConfig->port);
-    if (taosDbMgr == NULL) {
-        printf("[RESOURCE] create taosDbMgr failed.\n");
-        return -1;
-    }
-
-    // 1. create tables in taosdata
-    mmMgr = resourceMgr->mmMgr;
-    for (int i = 0; i < mmMgr->measurementsNum; i++) {
-        ret = TaosDbMgrCreateTable(mmMgr->measurements[i], taosDbMgr);
-        if (ret != 0) {
-            printf("[DAEMON] create table %s failed.\n", mmMgr->measurements[i]->name);
-            TaosDbMgrDestroy(taosDbMgr);
-            return -1;
-        }
-        /*
-        ret = TaosDbMgrSubscribeTable(mmMgr->measurements[i], taosDbMgr);
-        if (ret != 0) {
-            printf("[DAEMON] subscribe table %s failed.\n", mmMgr->measurements[i]->name);
-            return -1;
-        }
-        */
-    }
-    printf("[DAEMON] create all measurements success.\n");
-
-    resourceMgr->taosDbMgr = taosDbMgr;
-    return 0;
-}
-
-static void TaosMgrDeinit(ResourceMgr *resourceMgr)
-{
-    TaosDbMgrDestroy(resourceMgr->taosDbMgr);
-    resourceMgr->taosDbMgr = NULL;
-    return;
-}
-
 static int IngressMgrInit(ResourceMgr *resourceMgr)
 {
     IngressMgr *ingressMgr = NULL;
@@ -440,7 +392,6 @@ static int IngressMgrInit(ResourceMgr *resourceMgr)
     ingressMgr->fifoMgr = resourceMgr->fifoMgr;
     ingressMgr->mmMgr = resourceMgr->mmMgr;
     ingressMgr->probeMgr = resourceMgr->probeMgr;
-    ingressMgr->taosDbMgr = resourceMgr->taosDbMgr;
     ingressMgr->imdbMgr = resourceMgr->imdbMgr;
 
     resourceMgr->ingressMgr = ingressMgr;
@@ -464,8 +415,6 @@ static int EgressMgrInit(ResourceMgr *resourceMgr)
         return -1;
     }
 
-    egressMgr->mmMgr = resourceMgr->mmMgr;
-    egressMgr->taosDbMgr = resourceMgr->taosDbMgr;
     egressMgr->kafkaMgr = resourceMgr->kafkaMgr;
     egressMgr->interval = resourceMgr->configMgr->egressConfig->interval;
     egressMgr->timeRange = resourceMgr->configMgr->egressConfig->timeRange;

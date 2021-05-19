@@ -29,11 +29,6 @@
 // egress
 #define MAX_DATA_STR_LEN      1024
 
-// taosdata
-#define MAX_TAOS_SUB_NUM         1024
-#define MAX_TAOS_SQL_RETRY_TIMES 5
-#define MAX_TAOS_SQL_LEN         1024
-
 // imdb
 #define MAX_IMDB_TABLE_CAPACITY         64
 #define MAX_IMDB_RECORD_CAPACITY        64
@@ -47,12 +42,6 @@
 // ======== CONFIG ========
 // global config
 #define MAX_LOG_DIRECTORY_LEN 128
-
-// taosdata config
-#define MAX_TAOSDATA_IP_LEN     32
-#define MAX_TAOSDATA_USER_LEN   32
-#define MAX_TAOSDATA_PASS_LEN   32
-#define MAX_TAOSDATA_DBNAME_LEN 32
 
 // kafka config
 #define MAX_KAFKA_BROKER_LEN  32

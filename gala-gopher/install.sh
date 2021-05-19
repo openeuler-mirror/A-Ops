@@ -42,4 +42,5 @@ for file in ${META_FILES}
 do
     cp ${file} ${GOPHER_CONF_TARGET_DIR}/meta
 done
+echo "install meta file success."
 

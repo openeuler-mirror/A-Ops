@@ -4,12 +4,9 @@
 #include <stdint.h>
 #include <pthread.h>
 
-#include "taosdata.h"
 #include "kafka.h"
 
 typedef struct {
-    MeasurementMgr *mmMgr;
-    TaosDbMgr *taosDbMgr;
     KafkaMgr *kafkaMgr;
 
     uint32_t interval;

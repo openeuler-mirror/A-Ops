@@ -37,50 +37,7 @@ static void EgressDataProcessOne(EgressMgr *mgr, const char *data)
 
 static void EgressDataProcess(EgressMgr *mgr)
 {
-    TAOS_SUB *tSub = NULL;
-    TAOS_ROW row = NULL;
-    TAOS_FIELD *fields = NULL;
-    TAOS_RES *taosRes = NULL;
-    int num_fields = 0;
-
-    char dataBuf[MAX_DATA_STR_LEN];
-    TaosDbMgr *taosDbMgr = mgr->taosDbMgr;
-    MeasurementMgr *mmMgr = mgr->mmMgr;
-
-    for (int i = 0; i < mmMgr->measurementsNum; i++) {
-        taosRes = TaosDbMgrGetRecentRecords(mmMgr->measurements[i]->name, mgr->timeRange, taosDbMgr);
-        if (taosRes == NULL) {
-            continue;
-        }
-
-        num_fields = taos_num_fields(taosRes);
-        fields = taos_fetch_fields(taosRes);
-        while ((row = taos_fetch_row(taosRes))) {
-            memset(dataBuf, 0, MAX_DATA_STR_LEN);
-            taos_print_row(dataBuf, row, fields, num_fields);
-            EgressDataProcessOne(mgr, dataBuf);
-        }
-        taos_free_result(taosRes);
-    }
-    
-
-    /*
-    for (int i = 0; i < taosDbMgr->taosSubNum; i++) {
-        TAOS_SUB *tSub = taosDbMgr->taosSubs[i];
-        TAOS_RES *res = taos_consume(tSub);
-        if (res == NULL) {
-            continue;
-        } else {
-            num_fields = taos_num_fields(res);
-            fields = taos_fetch_fields(res);
-            while ((row = taos_fetch_row(res))) {
-                memset(dataBuf, 0, MAX_DATA_STR_LEN);
-                taos_print_row(dataBuf, row, fields, num_fields);
-                EgressDataProcessOne(mgr, dataBuf);
-            }
-        }
-    }
-    */
+    return;
 }
 
 void EgressMain(EgressMgr *mgr)

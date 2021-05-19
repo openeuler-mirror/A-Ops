@@ -32,12 +32,6 @@ ConfigMgr *ConfigMgrCreate()
     }
     memset(mgr->egressConfig, 0, sizeof(EgressConfig));
 
-    mgr->taosdataConfig = (TaosdataConfig *)malloc(sizeof(TaosdataConfig));
-    if (mgr->taosdataConfig == NULL) {
-        goto ERR;
-    }
-    memset(mgr->taosdataConfig, 0, sizeof(TaosdataConfig));
-
     mgr->kafkaConfig = (KafkaConfig *)malloc(sizeof(KafkaConfig));
     if (mgr->kafkaConfig == NULL) {
         goto ERR;
@@ -76,10 +70,6 @@ void ConfigMgrDestroy(ConfigMgr *mgr)
 
     if (mgr->globalConfig != NULL) {
         free(mgr->globalConfig);
-    }
-
-    if (mgr->taosdataConfig != NULL) {
-        free(mgr->taosdataConfig);
     }
 
     if (mgr->kafkaConfig != NULL) {
@@ -160,52 +150,6 @@ static int ConfigMgrLoadEgressConfig(void *config, config_setting_t *settings)
     egressConfig->timeRange = intVal;
 
     return 0;
-}
-
-static int ConfigMgrLoadTaosdataConfig(void *config, config_setting_t *settings)
-{
-    TaosdataConfig *taosConfig = (TaosdataConfig *)config;
-    uint32_t ret = 0;
-    const char *strVal = NULL;
-    int intVal = 0;
-
-    ret = config_setting_lookup_string(settings, "taosdata_ip", &strVal);
-    if (ret == 0) {
-        printf("[CONFIG] load config for taosdata_ip failed.\n");
-        return -1;
-    }
-    memcpy(taosConfig->ip, strVal, strlen(strVal));
-
-    ret = config_setting_lookup_string(settings, "taosdata_user", &strVal);
-    if (ret == 0) {
-        printf("[CONFIG] load config for taosdata_user failed.\n");
-        return -1;
-    }
-    memcpy(taosConfig->user, strVal, strlen(strVal));
-
-    ret = config_setting_lookup_string(settings, "taosdata_pass", &strVal);
-    if (ret == 0) {
-        printf("[CONFIG] load config for taosdata_pass failed.\n");
-        return -1;
-    }
-    memcpy(taosConfig->pass, strVal, strlen(strVal));
-
-    ret = config_setting_lookup_string(settings, "taosdata_db", &strVal);
-    if (ret == 0) {
-        printf("[CONFIG] load config for taosdata_db failed.\n");
-        return -1;
-    }
-    memcpy(taosConfig->dbName, strVal, strlen(strVal));
-
-    ret = config_setting_lookup_int(settings, "taosdata_port", &intVal);
-    if (ret == 0) {
-        printf("[CONFIG] load config for taosdata_port failed.\n");
-        return -1;
-    }
-    taosConfig->port = intVal;
-
-    return 0;
-
 }
 
 static int ConfigMgrLoadKafkaConfig(void *config, config_setting_t *settings)
@@ -415,7 +359,6 @@ int ConfigMgrLoad(ConfigMgr *mgr, const char *confPath)
         { (void *)mgr->globalConfig, "global", ConfigMgrLoadGlobalConfig },
         { (void *)mgr->ingressConfig, "ingress", ConfigMgrLoadIngressConfig },
         { (void *)mgr->egressConfig, "egress", ConfigMgrLoadEgressConfig },
-        { (void *)mgr->taosdataConfig, "taosdata", ConfigMgrLoadTaosdataConfig },
         { (void *)mgr->kafkaConfig, "kafka", ConfigMgrLoadKafkaConfig },
         { (void *)mgr->probesConfig, "probes", ConfigMgrLoadProbesConfig },
         { (void *)mgr->extendProbesConfig, "extend_probes", ConfigMgrLoadExtendProbesConfig },

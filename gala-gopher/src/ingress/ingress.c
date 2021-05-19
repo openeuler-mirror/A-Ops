@@ -5,7 +5,7 @@
 #include <unistd.h>
 #include "ingress.h"
 
-IngressMgr *IngressMgrCreate(FifoMgr *fifoMgr, TaosDbMgr *taosDbMgr, MeasurementMgr *mmMgr)
+IngressMgr *IngressMgrCreate()
 {
     IngressMgr *mgr = NULL;
     mgr = (IngressMgr *)malloc(sizeof(IngressMgr));
@@ -87,14 +87,6 @@ static int IngressDataProcesssInput(Fifo *fifo, IngressMgr *mgr)
     while (FifoGet(fifo, (void **)&dataStr) == 0) {
 
         printf("[INGRESS] Get data str: %s", dataStr);
-        // save data to taosDb
-        /*
-        ret = TaosDbMgrInsertOneRecord(dataStr, mgr->taosdbMgr);
-        if (ret != 0) {
-            printf("[INGRESS] insert data into taosdb failed.\n");
-        }
-        */
-
         // save data to imdb
         ret = IMDB_DataBaseMgrAddRecord(mgr->imdbMgr, dataStr, strlen(dataStr));
         if (ret != 0) {

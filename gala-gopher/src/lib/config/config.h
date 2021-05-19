@@ -27,14 +27,6 @@ typedef struct {
 } EgressConfig;
 
 typedef struct {
-    char ip[MAX_TAOSDATA_IP_LEN];
-    char user[MAX_TAOSDATA_USER_LEN];
-    char pass[MAX_TAOSDATA_PASS_LEN];
-    char dbName[MAX_TAOSDATA_DBNAME_LEN];
-    uint16_t port;
-} TaosdataConfig;
-
-typedef struct {
     char broker[MAX_KAFKA_BROKER_LEN];
     char topic[MAX_KAFKA_TOPIC_LEN];
 } KafkaConfig;
@@ -76,7 +68,6 @@ typedef struct {
     GlobalConfig *globalConfig;
     IngressConfig *ingressConfig;
     EgressConfig *egressConfig;
-    TaosdataConfig *taosdataConfig;
     KafkaConfig *kafkaConfig;
     ProbesConfig *probesConfig;
     ExtendProbesConfig *extendProbesConfig;
