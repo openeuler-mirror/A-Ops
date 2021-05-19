@@ -50,6 +50,18 @@ typedef struct {
     ProbeConfig *probesConfig[MAX_PROBES_NUM];
 } ProbesConfig;
 
+typedef struct {
+    char name[MAX_PROBE_NAME_LEN];
+    char command[MAX_EXTEND_PROBE_COMMAND_LEN];
+    char param[MAX_EXTEND_PROBE_PARAM_LEN];
+    ProbeSwitch probeSwitch;
+} ExtendProbeConfig;
+
+typedef struct {
+    uint32_t probesNum;
+    ExtendProbeConfig *probesConfig[MAX_PROBES_NUM];
+} ExtendProbesConfig;
+
 typedef struct  {
     uint32_t maxTablesNum;
     uint32_t maxRecordsNum;
@@ -67,6 +79,7 @@ typedef struct {
     TaosdataConfig *taosdataConfig;
     KafkaConfig *kafkaConfig;
     ProbesConfig *probesConfig;
+    ExtendProbesConfig *extendProbesConfig;
     IMDBConfig *imdbConfig;
     WebServerConfig *webServerConfig;
 } ConfigMgr;

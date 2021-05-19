@@ -10,6 +10,7 @@
 static void *DaemonRunIngress(void *arg);
 static void *DaemonRunEgress(void *arg);
 static void *DaemonRunSingleProbe(void *arg);
+static void *DaemonRunSingleExtendProbe(void *arg);
 #endif
 
 #if GALA_GOPHER_INFO("inner func defination")
@@ -39,8 +40,20 @@ static void *DaemonRunSingleProbe(void *arg)
         g_probe->func();
         sleep(g_probe->interval);
     }
-    return 0;
 }
+
+static void *DaemonRunSingleExtendProbe(void *arg)
+{
+    int ret = 0;
+    ExtendProbe *probe = (ExtendProbe *)arg;
+
+    char thread_name[MAX_THREAD_NAME_LEN];
+    snprintf(thread_name, MAX_THREAD_NAME_LEN - 1, "[EXTEND PROBE]%s", probe->name);
+    prctl(PR_SET_NAME, thread_name);
+
+    (void)RunExtendProbe(probe);
+}
+
 #endif
 
 int DaemonRun(ResourceMgr *mgr)
@@ -86,6 +99,21 @@ int DaemonRun(ResourceMgr *mgr)
         printf("[DAEMON] create probe %s thread success.\n", mgr->probeMgr->probes[i]->name);
     }
 
+    // 5. start extend probe thread
+    for (int i = 0; i < mgr->extendProbeMgr->probesNum; i++) {
+        ExtendProbe *_extendProbe = mgr->extendProbeMgr->probes[i];
+        if (_extendProbe->probeSwitch != PROBE_SWITCH_ON) {
+            printf("[DAEMON] extend probe %s switch is off, skip create thread for it.\n", _extendProbe->name);
+            continue;
+        }
+        ret = pthread_create(&mgr->extendProbeMgr->probes[i]->tid, NULL, DaemonRunSingleExtendProbe, _extendProbe);
+        if (ret != 0) {
+            printf("[DAEMON] create extend probe thread failed. probe name: %s errno: %d\n", _extendProbe->name, errno);
+            return -1;
+        }
+        printf("[DAEMON] create extend probe %s thread success.\n", mgr->extendProbeMgr->probes[i]->name);
+    }
+
     return 0;
 }
 
@@ -100,6 +128,11 @@ int DaemonWaitDone(ResourceMgr *mgr)
     // 3. wait probe done
     for (int i = 0; i < mgr->probeMgr->probesNum; i++) {
         pthread_join(mgr->probeMgr->probes[i]->tid, NULL);
+    }
+
+    // 4. wait extend probe done
+    for (int i = 0; i < mgr->extendProbeMgr->probesNum; i++) {
+        pthread_join(mgr->extendProbeMgr->probes[i]->tid, NULL);
     }
 
     return 0;

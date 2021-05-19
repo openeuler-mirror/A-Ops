@@ -289,6 +289,71 @@ static int ConfigMgrLoadProbesConfig(void *config, config_setting_t *settings)
     return 0;
 }
 
+static int ConfigMgrLoadExtendProbesConfig(void *config, config_setting_t *settings)
+{
+    ExtendProbesConfig *probesConfig = (ExtendProbesConfig *)config;
+    uint32_t ret = 0;
+    int count = 0;
+    const char *strVal = NULL;
+    int intVal = 0;
+
+    count = config_setting_length(settings);
+    for (int i = 0; i < count; i++) {
+        if (probesConfig->probesNum == MAX_EXTEND_PROBES_NUM) {
+            printf("[CONFIG] extendProbesConfig list full.\n");
+            return -1;
+        }
+        config_setting_t *_probe = config_setting_get_elem(settings, i);
+
+        ExtendProbeConfig *_probeConfig = (ExtendProbeConfig *)malloc(sizeof(ExtendProbeConfig));
+        if (_probeConfig == NULL) {
+            printf("[CONFIG] failed to malloc memory for ExtendProbeConfig \n");
+            return -1;
+        }
+        memset(_probeConfig, 0, sizeof(ExtendProbeConfig));
+        probesConfig->probesConfig[probesConfig->probesNum] = _probeConfig;
+        probesConfig->probesNum++;
+
+        ret = config_setting_lookup_string(_probe, "name", &strVal);
+        if (ret == 0) {
+            printf("[CONFIG] load config for extend probe name failed.\n");
+            return -1;
+        }
+        memcpy(_probeConfig->name, strVal, strlen(strVal));
+
+        ret = config_setting_lookup_string(_probe, "command", &strVal);
+        if (ret == 0) {
+            printf("[CONFIG] load config for extend probe command failed.\n");
+            return -1;
+        }
+        memcpy(_probeConfig->command, strVal, strlen(strVal));
+
+        ret = config_setting_lookup_string(_probe, "param", &strVal);
+        if (ret == 0) {
+            printf("[CONFIG] load config for extend probe param failed.\n");
+            return -1;
+        }
+        memcpy(_probeConfig->param, strVal, strlen(strVal));
+
+        ret = config_setting_lookup_string(_probe, "switch", &strVal);
+        if (ret == 0) {
+            printf("[CONFIG] load config for extend probe switch failed.\n");
+            return -1;
+        }
+        if (strcmp(strVal, "auto") == 0) {
+            _probeConfig->probeSwitch = PROBE_SWITCH_AUTO;
+        } else if (strcmp(strVal, "on") == 0) {
+            _probeConfig->probeSwitch = PROBE_SWITCH_ON;
+        } else {
+            _probeConfig->probeSwitch = PROBE_SWITCH_OFF;
+        }
+
+    }
+
+    return 0;
+}
+
+
 static int ConfigMgrLoadIMDBConfig(void *config, config_setting_t *settings)
 {
     IMDBConfig *imdbConfig = (IMDBConfig *)config;
@@ -347,14 +412,15 @@ typedef struct {
 int ConfigMgrLoad(ConfigMgr *mgr, const char *confPath)
 {
     ConfigLoadHandle configLoadHandles[] = {
-        { (void *)mgr->globalConfig, "global", ConfigMgrLoadGlobalConfig},
-        { (void *)mgr->ingressConfig, "ingress", ConfigMgrLoadIngressConfig},
-        { (void *)mgr->egressConfig, "egress", ConfigMgrLoadEgressConfig},
-        { (void *)mgr->taosdataConfig, "taosdata", ConfigMgrLoadTaosdataConfig},
-        { (void *)mgr->kafkaConfig, "kafka", ConfigMgrLoadKafkaConfig},
-        { (void *)mgr->probesConfig, "probes", ConfigMgrLoadProbesConfig},
-        { (void *)mgr->imdbConfig, "imdb", ConfigMgrLoadIMDBConfig},
-        { (void *)mgr->webServerConfig, "web_server", ConfigMgrLoadWebServerConfig}
+        { (void *)mgr->globalConfig, "global", ConfigMgrLoadGlobalConfig },
+        { (void *)mgr->ingressConfig, "ingress", ConfigMgrLoadIngressConfig },
+        { (void *)mgr->egressConfig, "egress", ConfigMgrLoadEgressConfig },
+        { (void *)mgr->taosdataConfig, "taosdata", ConfigMgrLoadTaosdataConfig },
+        { (void *)mgr->kafkaConfig, "kafka", ConfigMgrLoadKafkaConfig },
+        { (void *)mgr->probesConfig, "probes", ConfigMgrLoadProbesConfig },
+        { (void *)mgr->extendProbesConfig, "extend_probes", ConfigMgrLoadExtendProbesConfig },
+        { (void *)mgr->imdbConfig, "imdb", ConfigMgrLoadIMDBConfig },
+        { (void *)mgr->webServerConfig, "web_server", ConfigMgrLoadWebServerConfig }
     };
 
     int ret = 0;

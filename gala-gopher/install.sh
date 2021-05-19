@@ -24,8 +24,22 @@ if [ ! -d ${GOPHER_CONF_TARGET_DIR} ]; then
     mkdir ${GOPHER_CONF_TARGET_DIR}
 fi
 
+# install gala-gopher bin
 cp -f ${GOPHER_BIN_FILE} ${GOPHER_BIN_TARGET_DIR}
-cp -f ${GOPHER_CONF_FILE} ${GOPHER_CONF_TARGET_DIR}
-
 echo "install ${GOPHER_BIN_FILE} success."
+
+# install gala-gopher.conf
+cp -f ${GOPHER_CONF_FILE} ${GOPHER_CONF_TARGET_DIR}
 echo "install ${GOPHER_CONF_FILE} success."
+
+# install meta files
+if [ ! -d ${GOPHER_CONF_TARGET_DIR}/meta ]; then
+    mkdir ${GOPHER_CONF_TARGET_DIR}/meta
+fi
+
+META_FILES=`find ${PROJECT_FOLDER}/src -name "*.meta"`
+for file in ${META_FILES}
+do
+    cp ${file} ${GOPHER_CONF_TARGET_DIR}/meta
+done
+

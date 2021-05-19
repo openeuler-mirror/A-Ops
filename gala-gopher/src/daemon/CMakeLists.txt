@@ -42,6 +42,7 @@ SET(SOURCES main.c daemon.c
     ${TAOSDATA_DIR}/taosdata.c
 
     ${PROBE_DIR}/probe.c
+    ${PROBE_DIR}/extend_probe.c
     ${IMDB_DIR}/imdb.c
 )
 

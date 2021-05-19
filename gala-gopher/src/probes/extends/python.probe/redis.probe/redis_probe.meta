@@ -1,0 +1,159 @@
+version = "1.0.0"
+
+measurements:
+(
+    {
+        name: "redis_server",
+        fields:
+        (
+            {
+                description: "redis_version",
+                type: "Unknown",
+                name: "redis_version",
+            },
+            {
+                description: "tcp_port",
+                type: "Unknown",
+                name: "tcp_port",
+            },
+            {
+                description: "hz",
+                type: "Unknown",
+                name: "hz",
+            },
+            {
+                description: "io_threads_active",
+                type: "Unknown",
+                name: "io_threads_active",
+            },
+        )
+    },
+    {
+        name: "redis_clients",
+        fields:
+        (
+            {
+                description: "connected_clients",
+                type: "Unknown",
+                name: "connected_clients",
+            },
+            {
+                description: "cluster_connections",
+                type: "Unknown",
+                name: "cluster_connections",
+            },
+            {
+                description: "maxclients",
+                type: "Unknown",
+                name: "maxclients",
+            },
+            {
+                description: "client_recent_max_input_buffer",
+                type: "Unknown",
+                name: "client_recent_max_input_buffer",
+            },
+            {
+                description: "client_recent_max_output_buffer",
+                type: "Unknown",
+                name: "client_recent_max_output_buffer",
+            },
+            {
+                description: "blocked_clients",
+                type: "Unknown",
+                name: "blocked_clients",
+            },
+            {
+                description: "tracking_clients",
+                type: "Unknown",
+                name: "tracking_clients",
+            },
+            {
+                description: "clients_in_timeout_table",
+                type: "Unknown",
+                name: "clients_in_timeout_table",
+            },
+            
+        )
+    },
+    {
+        name: "redis_memory",
+        fields:
+        (
+            {
+                description: "used_memory",
+                type: "Unknown",
+                name: "used_memory",
+            },
+            {
+                description: "used_memory_rss",
+                type: "Unknown",
+                name: "used_memory_rss",
+            },
+            {
+                description: "used_memory_peak",
+                type: "Unknown",
+                name: "used_memory_peak",
+            },
+            {
+                description: "used_memory_overhead",
+                type: "Unknown",
+                name: "used_memory_overhead",
+            },
+            {
+                description: "used_memory_startup",
+                type: "Unknown",
+                name: "used_memory_startup",
+            },
+            {
+                description: "used_memory_dataset",
+                type: "Unknown",
+                name: "used_memory_dataset",
+            },
+            {
+                description: "allocator_allocated",
+                type: "Unknown",
+                name: "allocator_allocated",
+            },
+            {
+                description: "allocator_active",
+                type: "Unknown",
+                name: "allocator_active",
+            },
+        )
+    },
+    {
+        name: "redis_stats",
+        fields:
+        (
+            {
+                description: "total_connections_received",
+                type: "Unknown",
+                name: "total_connections_received",
+            },
+            {
+                description: "total_commands_processed",
+                type: "Unknown",
+                name: "total_commands_processed",
+            },
+            {
+                description: "instantaneous_ops_per_sec",
+                type: "Unknown",
+                name: "instantaneous_ops_per_sec",
+            },
+            
+        )
+    },
+
+    {
+        name: "redis_lantency",
+        fields:
+        (
+            {
+                description: "intrinsic_lantency",
+                type: "Unknown",
+                name: "intrinsic_lantency",
+            }
+        )
+    }
+)
+

@@ -8,6 +8,8 @@ static int ConfigMgrInit(ResourceMgr *resourceMgr);
 static void ConfigMgrDeinit(ResourceMgr *resourceMgr);
 static int ProbeMgrInit(ResourceMgr *resourceMgr);
 static void ProbeMgrDeinit(ResourceMgr *resourceMgr);
+static int ExtendProbeMgrInit(ResourceMgr *resourceMgr);
+static void ExtendProbeMgrDeinit(ResourceMgr *resourceMgr);
 static int MeasurementMgrInit(ResourceMgr *resourceMgr);
 static void MeasurementMgrDeinit(ResourceMgr *resourceMgr);
 static int FifoMgrInit(ResourceMgr *resourceMgr);
@@ -34,6 +36,7 @@ typedef struct tagSubModuleInitor{
 SubModuleInitor gSubModuleInitorTbl[] = {
     { ConfigMgrInit,        ConfigMgrDeinit },      // config must be the first
     { ProbeMgrInit,         ProbeMgrDeinit },
+    { ExtendProbeMgrInit,   ExtendProbeMgrDeinit },
     { MeasurementMgrInit,   MeasurementMgrDeinit },
     { FifoMgrInit,          FifoMgrDeinit },
     // { KafkaMgrInit,         KafkaMgrDeinit },
@@ -168,6 +171,49 @@ static int ProbeMgrInit(ResourceMgr *resourceMgr)
 static void ProbeMgrDeinit(ResourceMgr *resourceMgr)
 {
     ProbeMgrDestroy(resourceMgr->probeMgr);
+    resourceMgr->probeMgr = NULL;
+    return;
+}
+
+static int ExtendProbeMgrInit(ResourceMgr *resourceMgr)
+{
+    int ret = 0;
+    ConfigMgr *configMgr = resourceMgr->configMgr;
+    ExtendProbeMgr *extendProbeMgr = NULL;
+
+    extendProbeMgr = ExtendProbeMgrCreate(MAX_EXTEND_PROBES_NUM);
+    if (extendProbeMgr == NULL) {
+        printf("[RESOURCE] create extend probe mgr failed. \n");
+        return -1;
+    }
+
+    for (int i = 0; i < configMgr->extendProbesConfig->probesNum; i++) {
+        ExtendProbeConfig *_extendProbeConfig = configMgr->extendProbesConfig->probesConfig[i];
+        ExtendProbe *_extendProbe = ExtendProbeCreate();
+        if (_extendProbe == NULL) {
+            printf("[RESOURCE] create extend probe failed. \n");
+            return -1;
+        }
+
+        memcpy(_extendProbe->name, _extendProbeConfig->name, strlen(_extendProbeConfig->name));
+        memcpy(_extendProbe->executeCommand, _extendProbeConfig->command, strlen(_extendProbeConfig->command));
+        memcpy(_extendProbe->executeParam, _extendProbeConfig->param, strlen(_extendProbeConfig->param));
+        _extendProbe->probeSwitch = _extendProbeConfig->probeSwitch;
+
+        ret = ExtendProbeMgrPut(extendProbeMgr, _extendProbe);
+        if (ret != 0) {
+            printf("[RESOURCE] Add extend probe into extend probe mgr failed. \n");
+            return -1;
+        }
+    }
+    printf("[RESOURCE] load extend probes success.\n");
+    resourceMgr->extendProbeMgr = extendProbeMgr;
+    return 0;
+}
+
+static void ExtendProbeMgrDeinit(ResourceMgr *resourceMgr)
+{
+    ExtendProbeMgrDestroy(resourceMgr->extendProbeMgr);
     resourceMgr->probeMgr = NULL;
     return;
 }

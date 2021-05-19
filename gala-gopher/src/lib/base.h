@@ -6,6 +6,8 @@
 // ======== COMMON ========
 // probe
 #define MAX_PROBES_NUM        32
+// extend probe
+#define MAX_EXTEND_PROBES_NUM   32
 
 // fifo
 #define MAX_FIFO_NUM          MAX_PROBES_NUM
@@ -58,6 +60,11 @@
 
 // probe config
 #define MAX_PROBE_NAME_LEN    32
+
+// extend probe config
+#define MAX_EXTEND_PROBE_COMMAND_LEN 128
+#define MAX_EXTEND_PROBE_PARAM_LEN 128
+#define MAX_COMMAND_LEN 1024
 
 // probe status
 typedef enum {

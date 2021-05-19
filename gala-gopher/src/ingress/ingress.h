@@ -11,6 +11,7 @@
 #include "taosdata.h"
 #include "meta.h"
 #include "probe.h"
+#include "extend_probe.h"
 #include "imdb.h"
 
 typedef struct {
@@ -18,6 +19,7 @@ typedef struct {
     TaosDbMgr *taosDbMgr;
     MeasurementMgr *mmMgr;
     ProbeMgr *probeMgr;
+    ExtendProbeMgr *extendProbeMgr;
 
     IMDB_DataBaseMgr *imdbMgr;
 

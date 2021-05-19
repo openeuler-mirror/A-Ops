@@ -9,6 +9,7 @@
 #include "imdb.h"
 
 #include "probe.h"
+#include "extend_probe.h"
 #include "meta.h"
 #include "fifo.h"
 
@@ -29,6 +30,8 @@ typedef struct {
 
     // inner component
     ProbeMgr *probeMgr;
+    ExtendProbeMgr *extendProbeMgr;
+
     MeasurementMgr *mmMgr;
     FifoMgr *fifoMgr;
 
