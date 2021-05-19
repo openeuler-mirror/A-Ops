@@ -88,7 +88,7 @@ static int IngressDataProcesssInput(Fifo *fifo, IngressMgr *mgr)
 
         // skip string not start with '|'
         if(strncmp(dataStr, "|", 1) != 0) {
-            printf("[INGRESS] Get dirty data str: %s", dataStr);
+            printf("[INGRESS] Get dirty data str: %s\n", dataStr);
             continue;
         }
 

@@ -39,35 +39,63 @@ int RunExtendProbe(ExtendProbe *probe)
 {
     int ret = 0;
     FILE *f = NULL;
-    char dataStr[MAX_DATA_STR_LEN];
+    char buffer[MAX_DATA_STR_LEN];
+    uint32_t bufferSize = 0;
+
+    char *dataStr = NULL;
+    uint32_t index = 0;
 
     char command[MAX_COMMAND_LEN];
     snprintf(command, MAX_COMMAND_LEN - 1, "%s %s", probe->executeCommand, probe->executeParam);
     f = popen(command, "r");
 
+    dataStr = (char *)malloc(MAX_DATA_STR_LEN);
+    if (dataStr == NULL) {
+        goto ERR2;
+    }
+    memset(dataStr, 0, sizeof(MAX_DATA_STR_LEN));
+
     while (!feof(f) && !ferror(f)) {
-        memset(dataStr, 0, sizeof(MAX_DATA_STR_LEN));
-        fgets(dataStr, sizeof(dataStr), f);
-        printf("[EXTEND PROBE %s] Get data str: %s", probe->name, dataStr);
+        fgets(buffer, sizeof(buffer), f);
+        bufferSize = strlen(buffer);
 
-        ret = FifoPut(probe->fifo, (void *)dataStr);
-        if (ret != 0) {
-            printf("[EXTEND PROBE %s] fifo full.\n", probe->name);
-            fclose(f);
-            return -1;
+        for (int i = 0; i < bufferSize; i++) {
+            if (buffer[i] == '\n') {
+                dataStr[index] = buffer[i];
+                ret = FifoPut(probe->fifo, (void *)dataStr);
+                if (ret != 0) {
+                    printf("[EXTEND PROBE %s] fifo full.\n", probe->name);
+                    goto ERR1;
+                }
+
+                uint64_t msg = 1;
+                ret = write(probe->fifo->triggerFd, &msg, sizeof(uint64_t));
+                if (ret != sizeof(uint64_t)) {
+                    printf("[EXTEND PROBE %s] send trigger msg to eventfd failed.\n", probe->name);
+                    goto ERR1;
+                }
+
+                dataStr = (char *)malloc(MAX_DATA_STR_LEN);
+                if (dataStr == NULL) {
+                    goto ERR2;
+                }
+                memset(dataStr, 0, sizeof(MAX_DATA_STR_LEN));
+                index = 0;
+            } else {
+                dataStr[index] = buffer[i];
+                index++;
+            }
         }
 
-        uint64_t msg = 1;
-        ret = write(probe->fifo->triggerFd, &msg, sizeof(uint64_t));
-        if (ret != sizeof(uint64_t)) {
-            printf("[EXTEND PROBE %s] send trigger msg to eventfd failed.\n", probe->name);
-            fclose(f);
-            return -1;
-        }
     }
 
     fclose(f);
     return 0;
+ERR1:
+    free(dataStr);
+ERR2:
+    fclose(f);
+    return -1;
 }
 
 ExtendProbeMgr *ExtendProbeMgrCreate(uint32_t size)

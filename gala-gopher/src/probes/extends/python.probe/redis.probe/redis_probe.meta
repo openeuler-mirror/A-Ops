@@ -34,45 +34,14 @@ measurements:
         (
             {
                 description: "connected_clients",
-                type: "Unknown",
+                type: "gauge",
                 name: "connected_clients",
             },
             {
                 description: "cluster_connections",
-                type: "Unknown",
+                type: "gauge",
                 name: "cluster_connections",
             },
-            {
-                description: "maxclients",
-                type: "Unknown",
-                name: "maxclients",
-            },
-            {
-                description: "client_recent_max_input_buffer",
-                type: "Unknown",
-                name: "client_recent_max_input_buffer",
-            },
-            {
-                description: "client_recent_max_output_buffer",
-                type: "Unknown",
-                name: "client_recent_max_output_buffer",
-            },
-            {
-                description: "blocked_clients",
-                type: "Unknown",
-                name: "blocked_clients",
-            },
-            {
-                description: "tracking_clients",
-                type: "Unknown",
-                name: "tracking_clients",
-            },
-            {
-                description: "clients_in_timeout_table",
-                type: "Unknown",
-                name: "clients_in_timeout_table",
-            },
-            
         )
     },
     {
@@ -81,43 +50,8 @@ measurements:
         (
             {
                 description: "used_memory",
-                type: "Unknown",
+                type: "gauge",
                 name: "used_memory",
-            },
-            {
-                description: "used_memory_rss",
-                type: "Unknown",
-                name: "used_memory_rss",
-            },
-            {
-                description: "used_memory_peak",
-                type: "Unknown",
-                name: "used_memory_peak",
-            },
-            {
-                description: "used_memory_overhead",
-                type: "Unknown",
-                name: "used_memory_overhead",
-            },
-            {
-                description: "used_memory_startup",
-                type: "Unknown",
-                name: "used_memory_startup",
-            },
-            {
-                description: "used_memory_dataset",
-                type: "Unknown",
-                name: "used_memory_dataset",
-            },
-            {
-                description: "allocator_allocated",
-                type: "Unknown",
-                name: "allocator_allocated",
-            },
-            {
-                description: "allocator_active",
-                type: "Unknown",
-                name: "allocator_active",
             },
         )
     },
@@ -127,31 +61,40 @@ measurements:
         (
             {
                 description: "total_connections_received",
-                type: "Unknown",
+                type: "gauge",
                 name: "total_connections_received",
             },
             {
                 description: "total_commands_processed",
-                type: "Unknown",
+                type: "gauge",
                 name: "total_commands_processed",
             },
             {
                 description: "instantaneous_ops_per_sec",
-                type: "Unknown",
+                type: "gauge",
                 name: "instantaneous_ops_per_sec",
             },
-            
+            {
+                description: "total_net_input_bytes",
+                type: "gauge",
+                name: "total_net_input_bytes",
+            },
+            {
+                description: "total_net_output_bytes",
+                type: "gauge",
+                name: "total_net_output_bytes",
+            },
         )
     },
 
     {
-        name: "redis_lantency",
+        name: "redis_latency",
         fields:
         (
             {
-                description: "intrinsic_lantency",
-                type: "Unknown",
-                name: "intrinsic_lantency",
+                description: "intrinsic_latency",
+                type: "gauge",
+                name: "intrinsic_latency",
             }
         )
     }
