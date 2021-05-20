@@ -49,17 +49,21 @@ int RunExtendProbe(ExtendProbe *probe)
     snprintf(command, MAX_COMMAND_LEN - 1, "%s %s", probe->executeCommand, probe->executeParam);
     f = popen(command, "r");
 
-    dataStr = (char *)malloc(MAX_DATA_STR_LEN);
-    if (dataStr == NULL) {
-        goto ERR2;
-    }
-    memset(dataStr, 0, sizeof(MAX_DATA_STR_LEN));
-
     while (!feof(f) && !ferror(f)) {
         fgets(buffer, sizeof(buffer), f);
         bufferSize = strlen(buffer);
 
         for (int i = 0; i < bufferSize; i++) {
+
+            if (dataStr == NULL) {
+                dataStr = (char *)malloc(MAX_DATA_STR_LEN);
+                if (dataStr == NULL) {
+                    goto ERR2;
+                }
+                memset(dataStr, 0, sizeof(MAX_DATA_STR_LEN));
+                index = 0;
+            }
+
             if (buffer[i] == '\n') {
                 dataStr[index] = buffer[i];
                 ret = FifoPut(probe->fifo, (void *)dataStr);
@@ -75,12 +79,8 @@ int RunExtendProbe(ExtendProbe *probe)
                     goto ERR1;
                 }
 
-                dataStr = (char *)malloc(MAX_DATA_STR_LEN);
-                if (dataStr == NULL) {
-                    goto ERR2;
-                }
-                memset(dataStr, 0, sizeof(MAX_DATA_STR_LEN));
-                index = 0;
+                // reset dataStr
+                dataStr = NULL;
             } else {
                 dataStr[index] = buffer[i];
                 index++;
