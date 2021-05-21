@@ -20,7 +20,6 @@ function gen_vmlinux_header_file()
 function compile_probe()
 {
     cd ${SRC_DIR}
-    make clean
     make
 }
 
@@ -33,8 +32,48 @@ function checkout_libbpf()
     fi
 }
 
-# checkout libbpf code
-#git submodule update --init --recursive
+function prepare_dep()
+{
+    yum install -y elfutils-devel
+    if [ $? -ne 0 ];then
+        echo "Error: elfutils-devel install failed"
+        return 1
+    fi
+
+    yum install -y clang
+    if [ $? -ne 0 ];then
+        echo "Error: clang install failed"
+        return 1
+    fi
+    V=`clang --version | grep version | awk -F ' ' '{print $3}' | awk -F . '{print $1}'`
+    if [ "$V" -lt 10 ];then
+        echo "Error: clange version need >= 10.x.x"
+	return 1
+    fi
+
+    yum install -y llvm
+    if [ $? -ne 0 ];then
+        echo "Error: llvm install failed"
+        return 1
+    fi
+    return 0
+}
+
+function compile_clean()
+{
+    cd ${SRC_DIR}
+    make clean
+}
+
+if [ "$1" = "clean" ];then
+    compile_clean
+    exit
+fi
+prepare_dep
+if [ $? -ne 0 ];then
+    echo "Error: prepare dependence softwares failed"
+    exit
+fi
 checkout_libbpf
 gen_vmlinux_header_file
 compile_probe
