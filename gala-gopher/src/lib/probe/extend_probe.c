@@ -53,6 +53,8 @@ int RunExtendProbe(ExtendProbe *probe)
         fgets(buffer, sizeof(buffer), f);
         bufferSize = strlen(buffer);
 
+        printf("[EXTEND PROBE] Get data str: %s\n", buffer);
+
         for (int i = 0; i < bufferSize; i++) {
 
             if (dataStr == NULL) {
@@ -65,7 +67,7 @@ int RunExtendProbe(ExtendProbe *probe)
             }
 
             if (buffer[i] == '\n') {
-                dataStr[index] = buffer[i];
+                dataStr[index] = '\0';
                 ret = FifoPut(probe->fifo, (void *)dataStr);
                 if (ret != 0) {
                     printf("[EXTEND PROBE %s] fifo full.\n", probe->name);

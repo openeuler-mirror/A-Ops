@@ -92,7 +92,7 @@ static int IngressDataProcesssInput(Fifo *fifo, IngressMgr *mgr)
             continue;
         }
 
-        printf("[INGRESS] Get data str: %s", dataStr);
+        printf("[INGRESS] Get data str: %s\n", dataStr);
         // save data to imdb
         ret = IMDB_DataBaseMgrAddRecord(mgr->imdbMgr, dataStr, strlen(dataStr));
         if (ret != 0) {
