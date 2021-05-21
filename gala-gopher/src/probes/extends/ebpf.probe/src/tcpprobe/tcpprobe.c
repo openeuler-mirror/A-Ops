@@ -306,6 +306,8 @@ void bpf_add_listen_port_map(int map_fd, char *listen_ports_str)
                 bpf_map_update_elem(map_fd, &port, &port, BPF_ANY);
             }
             s = e;
+        } else {
+            s++;
         }
     }
     return;
