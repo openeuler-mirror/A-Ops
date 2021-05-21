@@ -1,0 +1,75 @@
+version = "1.0.0"
+measurements:
+(
+    {
+        name: "tcp_link",
+        fields:
+        (
+            {
+                description: "pid of process",
+                type: "Unknown",
+                name: "pid",
+            },
+            {
+                description: "process name",
+                type: "Unknown",
+                name: "process_name",
+            },
+            {
+                description: "client ip",
+                type: "Unknown",
+                name: "client_ip",
+            },
+            {
+                description: "server ip",
+                type: "Unknown",
+                name: "server_ip",
+            },
+            {
+                description: "server port",
+                type: "Unknown",
+                name: "server_port",
+            },
+            {
+                description: "protocol",
+                type: "Unknown",
+                name: "protocol",
+            },
+            {
+                description: "link count",
+                type: "Unknown",
+                name: "link_count",
+            },
+            {
+                description: "rx bytes",
+                type: "Unknown",
+                name: "rx_bytes",
+            },
+            {
+                description: "packets in",
+                type: "Unknown",
+                name: "packets_in",
+            },
+            {
+                description: "packets out",
+                type: "Unknown",
+                name: "packets_out",
+            },
+            {
+                description: "retran packets",
+                type: "Unknown",
+                name: "retran_packets",
+            },
+            {
+                description: "lost packets",
+                type: "Unknown",
+                name: "lost_packets",
+            },
+            {
+                description: "rtt(us)",
+                type: "Unknown",
+                name: "rtt",
+            }
+        )
+    }
+)
