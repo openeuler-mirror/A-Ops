@@ -5,33 +5,12 @@
 #include <string.h>
 #include <sys/resource.h>
 #include <bpf/libbpf.h>
-#include <time.h>
 
 #include "tcpprobe.skel.h"
 #include "tcpprobe.h"
+#include "util.h"
 
 #define METRIC_NAME_TCP_LINK "tcp_link"
-
-char *get_cur_time()
-{
-    static char tm[TM_STR_LEN] = {0};
-    struct tm *tmp_ptr;
-    time_t t;
-
-    time(&t);
-
-    tmp_ptr = localtime(&t);
-    snprintf(tm,
-        TM_STR_LEN,
-        "%d/%d/%d %02d:%02d:%02d",
-        (1900 + tmp_ptr->tm_year),
-        (1 + tmp_ptr->tm_mon),
-        tmp_ptr->tm_mday,
-        tmp_ptr->tm_hour,
-        tmp_ptr->tm_min,
-        tmp_ptr->tm_sec);
-    return tm;
-}
 
 static int libbpf_print_fn(enum libbpf_print_level level, const char *format, va_list args)
 {
@@ -56,38 +35,6 @@ static volatile sig_atomic_t stop;
 static void sig_int(int signo)
 {
     stop = 1;
-}
-
-#define NIP6(addr)                                                                                  \
-    ntohs(addr[0]), ntohs(addr[1]), ntohs(addr[2]), ntohs(addr[3]), ntohs(addr[4]), ntohs(addr[5]), \
-        (ntohs(addr[6]) >> 8), (ntohs(addr[6]) & 0xff), (ntohs(addr[7]) >> 8), (ntohs(addr[7]) & 0xff)
-#define NIP6_FMT "%04x:%04x:%04x:%04x:%04x:%04x:%u.%u.%u.%u"
-
-void ip6_str(unsigned char *ip6, unsigned char *ip_str, unsigned int ip_str_size)
-{
-    unsigned short *addr = (unsigned short *)ip6;
-    snprintf(ip_str, ip_str_size, NIP6_FMT, NIP6(addr));
-}
-void ip_str(__u32 family, unsigned char *ip, unsigned char *ip_str, unsigned int ip_str_size)
-{
-    if (family == AF_INET6) {
-        (void)ip6_str(ip, ip_str, ip_str_size);
-        return;
-    }
-
-    snprintf(ip_str, ip_str_size, "%u.%u.%u.%u", ip[0], ip[1], ip[2], ip[3]);
-    return;
-}
-
-int is_valid_ip(unsigned char *ip)
-{
-    unsigned char i;
-    for (i = 0; i < IP6_LEN; i++) {
-        if (ip[i]) {
-            return 1;
-        }
-    }
-    return 0;
 }
 
 void update_link_metric_data(struct metric_data *dd, struct link_data *d)
@@ -313,6 +260,10 @@ void bpf_add_listen_port_map(int map_fd, char *listen_ports_str)
     return;
 }
 
+/* 输出间隔 xx s */
+#define BPF_MAX_OUTPUT_INTERVAL     (3600)
+#define BPF_MIN_OUTPUT_INTERVAL     (1)
+unsigned int g_output_interval_sec = 5;
 #define SS_LISTEN_PORT_FMT                                                                                            \
     "ss -anptl | awk '{print $4}' | awk -F ':' '{print $NF}' | sed 's/[^0-9]//g' | sort -n | uniq | xargs | sed 's/ " \
     "/|:/g' | sed 's/^/:/'"
@@ -367,11 +318,31 @@ void bpf_update_long_link_info_to_map(int long_link_map_fd, int listen_port_map_
 }
 #endif
 
+void tcpprobe_arg_parse(char opt, char *arg, int idx)
+{
+    if (opt != 't' || !arg) {
+        return;
+    }
+
+    unsigned int interval = (unsigned int)atoi(arg);
+    if (interval < BPF_MIN_OUTPUT_INTERVAL || interval > BPF_MAX_OUTPUT_INTERVAL) {
+        return;
+    }
+    g_output_interval_sec = interval;
+    return;
+}
 int main(int argc, char **argv)
 {
     struct tcpprobe_bpf *skel;
-    int err;
+    int err = -1;
     int metric_map_fd = -1;
+
+    err = args_parse(argc, argv, "t:", tcpprobe_arg_parse);
+    if (err != 0) {
+        return -1;
+    }
+
+    printf("arg parse interval time:%us\n", g_output_interval_sec);
 
     /* Set up libbpf errors and debug info callback */
     libbpf_set_print(libbpf_print_fn);
@@ -414,7 +385,7 @@ int main(int argc, char **argv)
     while (!stop) {
         pull_probe_data(bpf_map__fd(skel->maps.link_map), metric_map_fd);
         print_link_metric(metric_map_fd);
-        sleep(TCPPROBE_CYCLE_SEC);
+        sleep(g_output_interval_sec);
     }
 
 cleanup:

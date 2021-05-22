@@ -46,6 +46,11 @@ measurements:
                 name: "rx_bytes",
             },
             {
+                description: "tx bytes",
+                type: "Unknown",
+                name: "tx_bytes",
+            },
+            {
                 description: "packets in",
                 type: "Unknown",
                 name: "packets_in",

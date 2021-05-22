@@ -5,10 +5,14 @@ LLVM_STRIP ?= llvm-strip
 BPFTOOL ?= $(abspath ../tools/bpftool)
 LIBBPF_SRC := $(abspath ../libbpf/src)
 LIBBPF_OBJ := $(abspath $(OUTPUT)/libbpf.a)
-#INCLUDES := -I$(OUTPUT) 
+#INCLUDES := -I$(OUTPUT)
+UTIL_DIR ?= $(abspath ./lib)
 INCLUDES := -I$(OUTPUT) -I../libbpf/include/uapi \
 	    -Iinclude
 
+UTIL_SRC = $(wildcard $(UTIL_DIR)/*.c)
+UTIL_OBJ=$(patsubst %.c,%.o,$(UTIL_SRC))
+$(info $(UTIL_SRC))
 CFLAGS := -g -Wall
 INSTALL_DIR=/usr/bin/extends/ebpf.probe
 
@@ -46,7 +50,7 @@ all: $(APPS)
 .PHONY: clean
 clean:
 	$(call msg,CLEAN)
-	$(Q)rm -rf $(OUTPUT) $(APPS)
+	$(Q)rm -rf $(OUTPUT) $(APPS) $(UTIL_OBJ)
 
 OUT_DIR = $(OUTPUT) $(OUTPUT_APPS_DIR) $(OUTPUT)/libbpf
 $(info $(OUT_DIR))
@@ -54,9 +58,9 @@ $(OUT_DIR):
 	$(Q)mkdir -p $(OUT_DIR)
 
 # Build final application
-$(APPS): %: $(OUTPUT)/%.o $(LIBBPF_OBJ) | $(OUTPUT)
+$(APPS): %: $(OUTPUT)/%.o $(LIBBPF_OBJ) $(UTIL_OBJ) | $(OUTPUT)
 	$(call msg,BINARY,$@)
-	$(Q)$(CC) $(CFLAGS) $^ -lelf -lz -o $@
+	$(Q)$(CC) $(CFLAGS) $(INCLUDES) $^ -lelf -lz -o $@
 
 $(patsubst %,$(OUTPUT)/%.o,$(APPS)): %.o: %.skel.h
 
@@ -84,7 +88,8 @@ $(LIBBPF_OBJ): $(wildcard $(LIBBPF_SRC)/*.[ch] $(LIBBPF_SRC)/Makefile) | $(OUTPU
 		    OBJDIR=$(dir $@)/libbpf DESTDIR=$(dir $@)		      \
 		    INCLUDEDIR= LIBDIR= UAPIDIR=			      \
 		    install
-
+$(UTIL_OBJ): $(UTIL_SRC)
+	$(CC) $(CFLAGS) $(INCLUDES) -c $(filter %.c,$^) -o $@
 # delete failed targets
 .DELETE_ON_ERROR:
 
