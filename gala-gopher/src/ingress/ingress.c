@@ -37,7 +37,7 @@ static int IngressInit(IngressMgr *mgr)
     }
 
     // add all probe triggerFd into mgr->epoll_fd
-    ProbeMgr *probeMgr = probeMgr = mgr->probeMgr;
+    ProbeMgr *probeMgr = mgr->probeMgr;
     for (int i = 0; i < probeMgr->probesNum; i++) {
         Probe *probe = probeMgr->probes[i];
         event.events = EPOLLIN;
