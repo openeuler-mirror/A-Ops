@@ -1,0 +1,27 @@
+version = "1.0.0"
+
+measurements:
+(
+    {
+        name: "rabbitmq_probe",
+        fields:
+        (
+            {
+                description: "rabbitmq_server",
+                type: "Unknown",
+                name: "rabbitmq_server",
+            },
+            {
+                description: "productors",
+                type: "Unknown",
+                name: "productors",
+            },
+            {
+                description: "consumers",
+                type: "Unknown",
+                name: "consumers",
+            }
+        )
+    }
+)
+
