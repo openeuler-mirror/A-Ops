@@ -1,0 +1,67 @@
+#ifndef __LVSPROBE__H
+#define __LVSPROBE__H
+
+#define IP6_LEN         16
+
+#define INET_ADDRSTRLEN     16
+#define INET6_ADDRSTRLEN    48
+
+#define IPPROTO_IP      0   /* Dummy protocol for TCP */
+#define IPPROTO_TCP     6   /* Transmission Control Protocol */
+#define IPPROTO_UDP     17  /* User Datagram Protocol */
+#define IPPROTO_IPV6    41  /* IPv6-in-IPv4 tunnelling */
+
+#define TASK_COMM_LEN   16
+#define IPVS_MAX_ENTRIES      8192
+#define IPVS_MIN_ENTRIES      1024
+#define IPVS_FLAGS_KEY_VAL    0x10  /* be used to lvs_flag_map as key */
+
+#define IP_VS_TCP_S_CLOSE   6
+
+#define IP_VS_CONN_F_FWD_MASK   0x0007  /* mask for the fwd methods */
+#define IP_VS_CONN_F_LOCALNODE  0x0001  /* local node */
+#define IP_VS_CONN_FULLNAT      0x0005  /* full nat */
+
+struct ip {
+    union {
+        __u32 in;
+        unsigned char in6[IP6_LEN];
+    };
+};
+
+struct link_key {
+    struct ip   c_addr;
+    struct ip   v_addr;
+    struct ip   s_addr;
+    __u16       c_port;
+    __u16       v_port;
+    __u16       s_port;
+    __u16       family;
+};
+
+struct link_value {
+    __u32       pid;
+    char        comm[TASK_COMM_LEN];
+    __u16       protocol;
+    __u16       state;
+    __u64       ts;
+    __u64       close_ts;
+    __u64       link_count;
+};
+
+struct collect_key {
+    struct ip   c_addr;
+    struct ip   v_addr;
+    struct ip   s_addr;
+    __u16       v_port;
+    __u16       s_port;
+    __u16       family;
+};
+
+struct collect_value {
+    char        comm[TASK_COMM_LEN];
+    __u16       protocol;
+    __u64       link_count;
+};
+
+#endif /* __LVSPROBE__H */

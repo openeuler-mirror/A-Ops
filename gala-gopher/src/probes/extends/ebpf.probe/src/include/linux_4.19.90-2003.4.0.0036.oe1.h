@@ -260,4 +260,90 @@ struct socket {
     struct sock *sk;
     void *ops;
 };
+#if 1 /* Definition related to IPVS begin */
+struct in_addr {
+    u32     s_addr;
+};
+
+struct in6_addr {
+    union {
+        u8    u6_addr8[16];
+        u16   u6_addr16[8];
+        u32   u6_addr32[4];
+    } in6_u;
+};
+
+union nf_inet_addr {
+    struct in_addr  in;
+    struct in6_addr in6;
+};
+
+struct ip_vs_conn_param {
+    u8        temp1[8];
+    const union nf_inet_addr  *caddr;
+    const union nf_inet_addr  *vaddr;
+    u16       cport;
+    u16       vport;
+    u16       protocol;
+    u16       af;
+    //char            temp2[40];
+};
+
+struct timer_list {
+    char        temp1[32];
+    u32         flags;
+    char        temp2[32];
+};
+
+struct ip_vs_conn {
+    char        temp1[16];
+    u16         cport;
+    u16         dport;
+    u16         vport;
+    u16         af;         /* address family */
+    union nf_inet_addr  caddr; /* client address */
+    union nf_inet_addr  vaddr; /* virtual address */
+    union nf_inet_addr  daddr; /* destination address */
+    u32         flags;      /* status flags */
+    u16         protocol;   /* Which protocol (TCP/UDP) */
+    u16         temp2;
+    u64         temp3;
+    u64         temp4;
+    struct timer_list   timer; /* Expiration timer */
+};
+
+struct ip_vs_conn_fnat {
+    char        temp1[16];
+    u16         cport;
+    u16         dport;
+    u16         vport;
+    u16         lport;
+    u16         af;         /* address family */
+    union nf_inet_addr  caddr; /* client address */
+    union nf_inet_addr  vaddr; /* virtual address */
+    union nf_inet_addr  daddr; /* destination address */
+    union nf_inet_addr  laddr; /* local address */
+    u32         flags;      /* status flags */
+    u16         protocol;   /* Which protocol (TCP/UDP) */
+    u16         temp2;
+    u64         temp3;
+    u64         temp4;
+    struct timer_list   timer; /* Expiration timer */
+};
+
+typedef struct {
+    s32 counter;
+} atomic_t;
+
+struct ip_vs_dest_s {
+    u8      temp1[16];  /* for the dests in the service */
+    u8      temp2[16];  /* for table with all the dests */
+    u16     af;         /* address family */
+    u16     port;       /* port number of the server */
+    union nf_inet_addr addr; /* IP address of the server */
+    u32     flags;      /* dest status flags */
+    atomic_t    conn_flags;  /* flags to copy to conn */
+};
+#endif /* Definition related to IPVS end */
+
 #endif
