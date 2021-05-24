@@ -6,6 +6,8 @@
 // ======== COMMON ========
 // probe
 #define MAX_PROBES_NUM        32
+// extend probe
+#define MAX_EXTEND_PROBES_NUM   32
 
 // fifo
 #define MAX_FIFO_NUM          MAX_PROBES_NUM
@@ -27,11 +29,6 @@
 // egress
 #define MAX_DATA_STR_LEN      1024
 
-// taosdata
-#define MAX_TAOS_SUB_NUM         1024
-#define MAX_TAOS_SQL_RETRY_TIMES 5
-#define MAX_TAOS_SQL_LEN         1024
-
 // imdb
 #define MAX_IMDB_TABLE_CAPACITY         64
 #define MAX_IMDB_RECORD_CAPACITY        64
@@ -46,18 +43,17 @@
 // global config
 #define MAX_LOG_DIRECTORY_LEN 128
 
-// taosdata config
-#define MAX_TAOSDATA_IP_LEN     32
-#define MAX_TAOSDATA_USER_LEN   32
-#define MAX_TAOSDATA_PASS_LEN   32
-#define MAX_TAOSDATA_DBNAME_LEN 32
-
 // kafka config
 #define MAX_KAFKA_BROKER_LEN  32
 #define MAX_KAFKA_TOPIC_LEN   32
 
 // probe config
 #define MAX_PROBE_NAME_LEN    32
+
+// extend probe config
+#define MAX_EXTEND_PROBE_COMMAND_LEN 128
+#define MAX_EXTEND_PROBE_PARAM_LEN 128
+#define MAX_COMMAND_LEN 1024
 
 // probe status
 typedef enum {
@@ -68,6 +64,7 @@ typedef enum {
 } ProbeSwitch;
 
 #define GALA_CONF_PATH "/opt/gala-gopher/gala-gopher.conf"
+#define GALA_META_DIR_PATH "/opt/gala-gopher/meta"
 
 #endif
 

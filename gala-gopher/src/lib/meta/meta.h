@@ -26,7 +26,7 @@ typedef struct {
 MeasurementMgr *MeasurementMgrCreate(uint32_t size);
 void MeasurementMgrDestroy(MeasurementMgr *mgr);
 
-int MeasurementMgrLoad(MeasurementMgr *mgr, const char *metaPath);
+int MeasurementMgrLoad(MeasurementMgr *mgr, const char *metaDir);
 
 #endif
 

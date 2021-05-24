@@ -8,6 +8,8 @@ static int ConfigMgrInit(ResourceMgr *resourceMgr);
 static void ConfigMgrDeinit(ResourceMgr *resourceMgr);
 static int ProbeMgrInit(ResourceMgr *resourceMgr);
 static void ProbeMgrDeinit(ResourceMgr *resourceMgr);
+static int ExtendProbeMgrInit(ResourceMgr *resourceMgr);
+static void ExtendProbeMgrDeinit(ResourceMgr *resourceMgr);
 static int MeasurementMgrInit(ResourceMgr *resourceMgr);
 static void MeasurementMgrDeinit(ResourceMgr *resourceMgr);
 static int FifoMgrInit(ResourceMgr *resourceMgr);
@@ -16,8 +18,6 @@ static int KafkaMgrInit(ResourceMgr *resourceMgr);
 static void KafkaMgrDeinit(ResourceMgr *resourceMgr);
 static int IMDBMgrInit(ResourceMgr *resourceMgr);
 static void IMDBMgrDeinit(ResourceMgr *resourceMgr);
-static int TaosMgrInit(ResourceMgr *resourceMgr);
-static void TaosMgrDeinit(ResourceMgr *resourceMgr);
 static int IngressMgrInit(ResourceMgr *resourceMgr);
 static void IngressMgrDeinit(ResourceMgr *resourceMgr);
 static int EgressMgrInit(ResourceMgr *resourceMgr);
@@ -34,11 +34,11 @@ typedef struct tagSubModuleInitor{
 SubModuleInitor gSubModuleInitorTbl[] = {
     { ConfigMgrInit,        ConfigMgrDeinit },      // config must be the first
     { ProbeMgrInit,         ProbeMgrDeinit },
+    { ExtendProbeMgrInit,   ExtendProbeMgrDeinit },
     { MeasurementMgrInit,   MeasurementMgrDeinit },
     { FifoMgrInit,          FifoMgrDeinit },
     // { KafkaMgrInit,         KafkaMgrDeinit },
     { IMDBMgrInit,          IMDBMgrDeinit },
-    // { TaosMgrInit,          TaosMgrDeinit },
     { IngressMgrInit,       IngressMgrDeinit },
     // { EgressMgrInit,        EgressMgrDeinit },
     { WebServerInit,        WebServerDeinit }
@@ -172,6 +172,49 @@ static void ProbeMgrDeinit(ResourceMgr *resourceMgr)
     return;
 }
 
+static int ExtendProbeMgrInit(ResourceMgr *resourceMgr)
+{
+    int ret = 0;
+    ConfigMgr *configMgr = resourceMgr->configMgr;
+    ExtendProbeMgr *extendProbeMgr = NULL;
+
+    extendProbeMgr = ExtendProbeMgrCreate(MAX_EXTEND_PROBES_NUM);
+    if (extendProbeMgr == NULL) {
+        printf("[RESOURCE] create extend probe mgr failed. \n");
+        return -1;
+    }
+
+    for (int i = 0; i < configMgr->extendProbesConfig->probesNum; i++) {
+        ExtendProbeConfig *_extendProbeConfig = configMgr->extendProbesConfig->probesConfig[i];
+        ExtendProbe *_extendProbe = ExtendProbeCreate();
+        if (_extendProbe == NULL) {
+            printf("[RESOURCE] create extend probe failed. \n");
+            return -1;
+        }
+
+        memcpy(_extendProbe->name, _extendProbeConfig->name, strlen(_extendProbeConfig->name));
+        memcpy(_extendProbe->executeCommand, _extendProbeConfig->command, strlen(_extendProbeConfig->command));
+        memcpy(_extendProbe->executeParam, _extendProbeConfig->param, strlen(_extendProbeConfig->param));
+        _extendProbe->probeSwitch = _extendProbeConfig->probeSwitch;
+
+        ret = ExtendProbeMgrPut(extendProbeMgr, _extendProbe);
+        if (ret != 0) {
+            printf("[RESOURCE] Add extend probe into extend probe mgr failed. \n");
+            return -1;
+        }
+    }
+    printf("[RESOURCE] load extend probes success.\n");
+    resourceMgr->extendProbeMgr = extendProbeMgr;
+    return 0;
+}
+
+static void ExtendProbeMgrDeinit(ResourceMgr *resourceMgr)
+{
+    ExtendProbeMgrDestroy(resourceMgr->extendProbeMgr);
+    resourceMgr->probeMgr = NULL;
+    return;
+}
+
 static int MeasurementMgrInit(ResourceMgr *resourceMgr)
 {
     int ret = 0;
@@ -185,16 +228,13 @@ static int MeasurementMgrInit(ResourceMgr *resourceMgr)
     }
 
     // load table meta info
-    probeMgr = resourceMgr->probeMgr;
-    for (int i = 0; i < probeMgr->probesNum; i++) {
-        ret = MeasurementMgrLoad(mmMgr, probeMgr->probes[i]->metaPath);
-        if (ret != 0) {
-            MeasurementMgrDestroy(mmMgr);
-            printf("[RESOURCE] load probe %s meta path failed.\n", probeMgr->probes[i]->name);
-            return -1;
-        }
+    ret = MeasurementMgrLoad(mmMgr, GALA_META_DIR_PATH);
+    if (ret != 0) {
+        MeasurementMgrDestroy(mmMgr);
+        printf("[RESOURCE] load meta dir failed.\n");
+        return -1;
     }
-    printf("[RESOURCE] load probes meta path success.\n");
+    printf("[RESOURCE] load meta directory success.\n");
 
     resourceMgr->mmMgr = mmMgr;
     return 0;
@@ -336,51 +376,6 @@ static void IMDBMgrDeinit(ResourceMgr *resourceMgr)
     return;
 }
 
-static int TaosMgrInit(ResourceMgr *resourceMgr)
-{
-    int ret = 0;
-    ConfigMgr *configMgr = NULL;
-    MeasurementMgr *mmMgr = NULL;
-    TaosDbMgr *taosDbMgr = NULL;
-
-    configMgr = resourceMgr->configMgr;
-    taosDbMgr = TaosDbMgrCreate(configMgr->taosdataConfig->ip, configMgr->taosdataConfig->user,
-        configMgr->taosdataConfig->pass, configMgr->taosdataConfig->dbName, configMgr->taosdataConfig->port);
-    if (taosDbMgr == NULL) {
-        printf("[RESOURCE] create taosDbMgr failed.\n");
-        return -1;
-    }
-
-    // 1. create tables in taosdata
-    mmMgr = resourceMgr->mmMgr;
-    for (int i = 0; i < mmMgr->measurementsNum; i++) {
-        ret = TaosDbMgrCreateTable(mmMgr->measurements[i], taosDbMgr);
-        if (ret != 0) {
-            printf("[DAEMON] create table %s failed.\n", mmMgr->measurements[i]->name);
-            TaosDbMgrDestroy(taosDbMgr);
-            return -1;
-        }
-        /*
-        ret = TaosDbMgrSubscribeTable(mmMgr->measurements[i], taosDbMgr);
-        if (ret != 0) {
-            printf("[DAEMON] subscribe table %s failed.\n", mmMgr->measurements[i]->name);
-            return -1;
-        }
-        */
-    }
-    printf("[DAEMON] create all measurements success.\n");
-
-    resourceMgr->taosDbMgr = taosDbMgr;
-    return 0;
-}
-
-static void TaosMgrDeinit(ResourceMgr *resourceMgr)
-{
-    TaosDbMgrDestroy(resourceMgr->taosDbMgr);
-    resourceMgr->taosDbMgr = NULL;
-    return;
-}
-
 static int IngressMgrInit(ResourceMgr *resourceMgr)
 {
     IngressMgr *ingressMgr = NULL;
@@ -394,7 +389,7 @@ static int IngressMgrInit(ResourceMgr *resourceMgr)
     ingressMgr->fifoMgr = resourceMgr->fifoMgr;
     ingressMgr->mmMgr = resourceMgr->mmMgr;
     ingressMgr->probeMgr = resourceMgr->probeMgr;
-    ingressMgr->taosDbMgr = resourceMgr->taosDbMgr;
+    ingressMgr->extendProbeMgr = resourceMgr->extendProbeMgr;
     ingressMgr->imdbMgr = resourceMgr->imdbMgr;
 
     resourceMgr->ingressMgr = ingressMgr;
@@ -418,8 +413,6 @@ static int EgressMgrInit(ResourceMgr *resourceMgr)
         return -1;
     }
 
-    egressMgr->mmMgr = resourceMgr->mmMgr;
-    egressMgr->taosDbMgr = resourceMgr->taosDbMgr;
     egressMgr->kafkaMgr = resourceMgr->kafkaMgr;
     egressMgr->interval = resourceMgr->configMgr->egressConfig->interval;
     egressMgr->timeRange = resourceMgr->configMgr->egressConfig->timeRange;

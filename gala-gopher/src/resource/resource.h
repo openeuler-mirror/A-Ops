@@ -9,11 +9,11 @@
 #include "imdb.h"
 
 #include "probe.h"
+#include "extend_probe.h"
 #include "meta.h"
 #include "fifo.h"
 
 #include "kafka.h"
-#include "taosdata.h"
 
 #include "ingress.h"
 #include "egress.h"
@@ -29,12 +29,13 @@ typedef struct {
 
     // inner component
     ProbeMgr *probeMgr;
+    ExtendProbeMgr *extendProbeMgr;
+
     MeasurementMgr *mmMgr;
     FifoMgr *fifoMgr;
 
     // outer component
     KafkaMgr *kafkaMgr;
-    TaosDbMgr *taosDbMgr;
 
     // thread handler
     IngressMgr *ingressMgr;

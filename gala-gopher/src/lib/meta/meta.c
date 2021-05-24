@@ -2,6 +2,7 @@
 #include <stdint.h>
 #include <stdlib.h>
 #include <string.h>
+#include <dirent.h>
 
 #include <libconfig.h>
 #include "meta.h"
@@ -161,7 +162,7 @@ static int MeasurementLoad(Measurement *mm, config_setting_t *mmConfig)
     return 0;
 }
 
-int MeasurementMgrLoad(MeasurementMgr *mgr, const char *metaPath)
+static int MeasurementMgrLoadSingleMeta(MeasurementMgr *mgr, const char *metaPath)
 {
     int ret = 0;
     config_t cfg;
@@ -170,17 +171,19 @@ int MeasurementMgrLoad(MeasurementMgr *mgr, const char *metaPath)
     char *name = NULL;
     char *field = NULL;
 
+    printf("[META] begin load meta: %s.\n", metaPath);
+
     config_init(&cfg);
     ret = config_read_file(&cfg, metaPath);
     if (ret == 0) {
-        printf("config read file %s failed.\n", metaPath);
+        printf("[META] config read file %s failed.\n", metaPath);
         config_destroy(&cfg);
         return -1;
     }
 
     measurements = config_lookup(&cfg, "measurements");
     if (measurements == NULL) {
-        printf("get measurements failed.\n");
+        printf("[META] get measurements failed.\n");
         config_destroy(&cfg);
         return -1;
     }
@@ -191,21 +194,21 @@ int MeasurementMgrLoad(MeasurementMgr *mgr, const char *metaPath)
 
         Measurement *mm = MeasurementCreate();
         if (mm == NULL) {
-            printf("malloc measurement failed.\n");
+            printf("[META] malloc measurement failed.\n");
             config_destroy(&cfg);
             return -1;
         }
 
         ret = MeasurementLoad(mm, measurement);
         if (ret != 0) {
-            printf("load_measurement failed.\n");
+            printf("[META] load_measurement failed.\n");
             config_destroy(&cfg);
             return -1;
         }
 
         ret = MeasurementMgrAdd(mgr, mm);
         if (ret != 0) {
-            printf("Add measurements failed.\n");
+            printf("[META] Add measurements failed.\n");
             config_destroy(&cfg);
             return -1;
         }
@@ -214,4 +217,42 @@ int MeasurementMgrLoad(MeasurementMgr *mgr, const char *metaPath)
     config_destroy(&cfg);
     return 0;
 }
+
+
+int MeasurementMgrLoad(MeasurementMgr *mgr, const char *metaDir)
+{
+    int ret = 0;
+    DIR *d = NULL;
+    char metaPath[MAX_META_PATH_LEN] = {0};
+
+    d = opendir(metaDir);
+    if (d == NULL) {
+        printf("open meta directory failed.\n");
+        return -1;
+    }
+
+    struct dirent *file = readdir(d);
+    while (file != NULL) {
+        // skip current dir, parent dir and hidden files
+        if(strncmp(file->d_name, ".", 1) == 0) {
+            file = readdir(d);
+            continue;
+        }
+
+        memset(metaPath, 0, sizeof(metaPath));
+        snprintf(metaPath, MAX_META_PATH_LEN - 1, "%s/%s", metaDir, file->d_name);
+        ret = MeasurementMgrLoadSingleMeta(mgr, metaPath);
+        if (ret != 0) {
+            printf("[META] load single meta file failed. meta file: %s\n", metaPath);
+            closedir(d);
+            return -1;
+        }
+
+        file = readdir(d);
+    }
+
+    closedir(d);
+    return 0;
+}
+
 

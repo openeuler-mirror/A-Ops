@@ -18,7 +18,6 @@ SET(WEB_SERVER_DIR  ${SRC_DIR}/web_server)
 SET(FIFO_DIR        ${SRC_DIR}/lib/fifo)
 SET(META_DIR        ${SRC_DIR}/lib/meta)
 SET(KAFKA_DIR       ${SRC_DIR}/lib/kafka)
-SET(TAOSDATA_DIR    ${SRC_DIR}/lib/taosdata)
 SET(PROBE_DIR       ${SRC_DIR}/lib/probe)
 SET(IMDB_DIR        ${SRC_DIR}/lib/imdb)
 
@@ -39,9 +38,9 @@ SET(SOURCES main.c daemon.c
     ${FIFO_DIR}/fifo.c
     ${META_DIR}/meta.c
     ${KAFKA_DIR}/kafka.c
-    ${TAOSDATA_DIR}/taosdata.c
 
     ${PROBE_DIR}/probe.c
+    ${PROBE_DIR}/extend_probe.c
     ${IMDB_DIR}/imdb.c
 )
 
@@ -62,12 +61,11 @@ TARGET_INCLUDE_DIRECTORIES(${EXECUTABLE_TARGET} PRIVATE
     ${FIFO_DIR}
     ${META_DIR}
     ${KAFKA_DIR}
-    ${TAOSDATA_DIR}
 
     ${PROBE_DIR}
     ${IMDB_DIR}
     ${LIBRDKAFKA_DIR}
 )
 
-TARGET_LINK_LIBRARIES(${EXECUTABLE_TARGET} PRIVATE config pthread dl rdkafka taos microhttpd)
+TARGET_LINK_LIBRARIES(${EXECUTABLE_TARGET} PRIVATE config pthread dl rdkafka microhttpd)
 

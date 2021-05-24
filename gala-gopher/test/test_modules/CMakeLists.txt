@@ -13,7 +13,6 @@ SET(INGRESS_DIR     ${SRC_DIR}/ingress)
 SET(FIFO_DIR        ${SRC_DIR}/lib/fifo)
 SET(META_DIR        ${SRC_DIR}/lib/meta)
 SET(KAFKA_DIR       ${SRC_DIR}/lib/kafka)
-SET(TAOSDATA_DIR    ${SRC_DIR}/lib/taosdata)
 SET(PROBE_DIR       ${SRC_DIR}/lib/probe)
 SET(IMDB_DIR        ${SRC_DIR}/lib/imdb)
 SET(WEBSERVER_DIR  ${SRC_DIR}/web_server)
@@ -28,7 +27,6 @@ ADD_EXECUTABLE(${EXECUTABLE_TARGET}
     test_kafka.c
     test_meta.c
     test_probe.c
-    test_taosdata.c
     test_imdb.c
 
     ${RESOURCE_DIR}/resource.c
@@ -38,7 +36,6 @@ ADD_EXECUTABLE(${EXECUTABLE_TARGET}
     ${FIFO_DIR}/fifo.c
     ${META_DIR}/meta.c
     ${KAFKA_DIR}/kafka.c
-    ${TAOSDATA_DIR}/taosdata.c
     ${PROBE_DIR}/probe.c
     ${IMDB_DIR}/imdb.c
     ${WEBSERVER_DIR}/web_server.c
@@ -52,12 +49,11 @@ TARGET_INCLUDE_DIRECTORIES(${EXECUTABLE_TARGET} PRIVATE ${BASE_DIR}
     ${FIFO_DIR}
     ${META_DIR}
     ${KAFKA_DIR}
-    ${TAOSDATA_DIR}
     ${PROBE_DIR}
     ${IMDB_DIR}
     ${WEBSERVER_DIR}
     ${LIBRDKAFKA_DIR}
 )
 
-TARGET_LINK_LIBRARIES(${EXECUTABLE_TARGET} PRIVATE cunit config pthread dl rdkafka taos microhttpd)
+TARGET_LINK_LIBRARIES(${EXECUTABLE_TARGET} PRIVATE cunit config pthread dl rdkafka microhttpd)
 

@@ -5,7 +5,7 @@
 #include <unistd.h>
 #include "ingress.h"
 
-IngressMgr *IngressMgrCreate(FifoMgr *fifoMgr, TaosDbMgr *taosDbMgr, MeasurementMgr *mmMgr)
+IngressMgr *IngressMgrCreate()
 {
     IngressMgr *mgr = NULL;
     mgr = (IngressMgr *)malloc(sizeof(IngressMgr));
@@ -31,15 +31,13 @@ static int IngressInit(IngressMgr *mgr)
     struct epoll_event event;
     uint32_t ret = 0;
 
-    ProbeMgr *probeMgr = NULL;
-    probeMgr = mgr->probeMgr;
-
     mgr->epoll_fd = epoll_create(MAX_EPOLL_SIZE);
     if (mgr->epoll_fd < 0) {
         return -1;
     }
 
-    // add all triggerFd into mgr->epoll_fd
+    // add all probe triggerFd into mgr->epoll_fd
+    ProbeMgr *probeMgr = mgr->probeMgr;
     for (int i = 0; i < probeMgr->probesNum; i++) {
         Probe *probe = probeMgr->probes[i];
         event.events = EPOLLIN;
@@ -52,6 +50,22 @@ static int IngressInit(IngressMgr *mgr)
         }
 
         printf("[INGRESS] Add EPOLLIN event success, probe %s.\n", probe->name);
+    }
+
+    // add all extend probe triggerfd into mgr->epoll_fd
+    ExtendProbeMgr *extendProbeMgr = mgr->extendProbeMgr;
+    for (int i = 0; i < extendProbeMgr->probesNum; i++) {
+        ExtendProbe *extendProbe = extendProbeMgr->probes[i];
+        event.events = EPOLLIN;
+        event.data.ptr = extendProbe->fifo;
+
+        ret = epoll_ctl(mgr->epoll_fd, EPOLL_CTL_ADD, extendProbe->fifo->triggerFd, &event);
+        if (ret < 0) {
+            printf("[INGRESS] add EPOLLIN event failed, extend probe %s.\n", extendProbe->name);
+            return -1;
+        }
+
+        printf("[INGRESS] Add EPOLLIN event success, extend probe %s.\n", extendProbe->name);
     }
 
     return 0;
@@ -72,15 +86,13 @@ static int IngressDataProcesssInput(Fifo *fifo, IngressMgr *mgr)
 
     while (FifoGet(fifo, (void **)&dataStr) == 0) {
 
-        printf("[INGRESS] Get data str: %s", dataStr);
-        // save data to taosDb
-        /*
-        ret = TaosDbMgrInsertOneRecord(dataStr, mgr->taosdbMgr);
-        if (ret != 0) {
-            printf("[INGRESS] insert data into taosdb failed.\n");
+        // skip string not start with '|'
+        if(strncmp(dataStr, "|", 1) != 0) {
+            printf("[INGRESS] Get dirty data str: %s\n", dataStr);
+            continue;
         }
-        */
 
+        printf("[INGRESS] Get data str: %s\n", dataStr);
         // save data to imdb
         ret = IMDB_DataBaseMgrAddRecord(mgr->imdbMgr, dataStr, strlen(dataStr));
         if (ret != 0) {

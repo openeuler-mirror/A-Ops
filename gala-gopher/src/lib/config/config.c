@@ -32,12 +32,6 @@ ConfigMgr *ConfigMgrCreate()
     }
     memset(mgr->egressConfig, 0, sizeof(EgressConfig));
 
-    mgr->taosdataConfig = (TaosdataConfig *)malloc(sizeof(TaosdataConfig));
-    if (mgr->taosdataConfig == NULL) {
-        goto ERR;
-    }
-    memset(mgr->taosdataConfig, 0, sizeof(TaosdataConfig));
-
     mgr->kafkaConfig = (KafkaConfig *)malloc(sizeof(KafkaConfig));
     if (mgr->kafkaConfig == NULL) {
         goto ERR;
@@ -49,6 +43,12 @@ ConfigMgr *ConfigMgrCreate()
         goto ERR;
     }
     memset(mgr->probesConfig, 0, sizeof(ProbesConfig));
+
+    mgr->extendProbesConfig = (ExtendProbesConfig *)malloc(sizeof(ExtendProbesConfig));
+    if (mgr->extendProbesConfig == NULL) {
+        goto ERR;
+    }
+    memset(mgr->extendProbesConfig, 0, sizeof(ExtendProbesConfig));
 
     mgr->imdbConfig = (IMDBConfig *)malloc(sizeof(IMDBConfig));
     if (mgr->imdbConfig == NULL) {
@@ -78,10 +78,6 @@ void ConfigMgrDestroy(ConfigMgr *mgr)
         free(mgr->globalConfig);
     }
 
-    if (mgr->taosdataConfig != NULL) {
-        free(mgr->taosdataConfig);
-    }
-
     if (mgr->kafkaConfig != NULL) {
         free(mgr->kafkaConfig);
     }
@@ -93,6 +89,15 @@ void ConfigMgrDestroy(ConfigMgr *mgr)
             }
         }
         free(mgr->probesConfig);
+    }
+
+    if (mgr->extendProbesConfig != NULL) {
+        for (int i = 0; i < mgr->extendProbesConfig->probesNum; i++) {
+            if (mgr->extendProbesConfig->probesConfig[i] != NULL) {
+                free(mgr->extendProbesConfig->probesConfig[i]);
+            }
+        }
+        free(mgr->extendProbesConfig);
     }
 
     if (mgr->imdbConfig != NULL) {
@@ -160,52 +165,6 @@ static int ConfigMgrLoadEgressConfig(void *config, config_setting_t *settings)
     egressConfig->timeRange = intVal;
 
     return 0;
-}
-
-static int ConfigMgrLoadTaosdataConfig(void *config, config_setting_t *settings)
-{
-    TaosdataConfig *taosConfig = (TaosdataConfig *)config;
-    uint32_t ret = 0;
-    const char *strVal = NULL;
-    int intVal = 0;
-
-    ret = config_setting_lookup_string(settings, "taosdata_ip", &strVal);
-    if (ret == 0) {
-        printf("[CONFIG] load config for taosdata_ip failed.\n");
-        return -1;
-    }
-    memcpy(taosConfig->ip, strVal, strlen(strVal));
-
-    ret = config_setting_lookup_string(settings, "taosdata_user", &strVal);
-    if (ret == 0) {
-        printf("[CONFIG] load config for taosdata_user failed.\n");
-        return -1;
-    }
-    memcpy(taosConfig->user, strVal, strlen(strVal));
-
-    ret = config_setting_lookup_string(settings, "taosdata_pass", &strVal);
-    if (ret == 0) {
-        printf("[CONFIG] load config for taosdata_pass failed.\n");
-        return -1;
-    }
-    memcpy(taosConfig->pass, strVal, strlen(strVal));
-
-    ret = config_setting_lookup_string(settings, "taosdata_db", &strVal);
-    if (ret == 0) {
-        printf("[CONFIG] load config for taosdata_db failed.\n");
-        return -1;
-    }
-    memcpy(taosConfig->dbName, strVal, strlen(strVal));
-
-    ret = config_setting_lookup_int(settings, "taosdata_port", &intVal);
-    if (ret == 0) {
-        printf("[CONFIG] load config for taosdata_port failed.\n");
-        return -1;
-    }
-    taosConfig->port = intVal;
-
-    return 0;
-
 }
 
 static int ConfigMgrLoadKafkaConfig(void *config, config_setting_t *settings)
@@ -289,6 +248,71 @@ static int ConfigMgrLoadProbesConfig(void *config, config_setting_t *settings)
     return 0;
 }
 
+static int ConfigMgrLoadExtendProbesConfig(void *config, config_setting_t *settings)
+{
+    ExtendProbesConfig *probesConfig = (ExtendProbesConfig *)config;
+    uint32_t ret = 0;
+    int count = 0;
+    const char *strVal = NULL;
+    int intVal = 0;
+
+    count = config_setting_length(settings);
+    for (int i = 0; i < count; i++) {
+        if (probesConfig->probesNum == MAX_EXTEND_PROBES_NUM) {
+            printf("[CONFIG] extendProbesConfig list full.\n");
+            return -1;
+        }
+        config_setting_t *_probe = config_setting_get_elem(settings, i);
+
+        ExtendProbeConfig *_probeConfig = (ExtendProbeConfig *)malloc(sizeof(ExtendProbeConfig));
+        if (_probeConfig == NULL) {
+            printf("[CONFIG] failed to malloc memory for ExtendProbeConfig \n");
+            return -1;
+        }
+        memset(_probeConfig, 0, sizeof(ExtendProbeConfig));
+        probesConfig->probesConfig[probesConfig->probesNum] = _probeConfig;
+        probesConfig->probesNum++;
+
+        ret = config_setting_lookup_string(_probe, "name", &strVal);
+        if (ret == 0) {
+            printf("[CONFIG] load config for extend probe name failed.\n");
+            return -1;
+        }
+        memcpy(_probeConfig->name, strVal, strlen(strVal));
+
+        ret = config_setting_lookup_string(_probe, "command", &strVal);
+        if (ret == 0) {
+            printf("[CONFIG] load config for extend probe command failed.\n");
+            return -1;
+        }
+        memcpy(_probeConfig->command, strVal, strlen(strVal));
+
+        ret = config_setting_lookup_string(_probe, "param", &strVal);
+        if (ret == 0) {
+            printf("[CONFIG] load config for extend probe param failed.\n");
+            return -1;
+        }
+        memcpy(_probeConfig->param, strVal, strlen(strVal));
+
+        ret = config_setting_lookup_string(_probe, "switch", &strVal);
+        if (ret == 0) {
+            printf("[CONFIG] load config for extend probe switch failed.\n");
+            return -1;
+        }
+        if (strcmp(strVal, "auto") == 0) {
+            _probeConfig->probeSwitch = PROBE_SWITCH_AUTO;
+        } else if (strcmp(strVal, "on") == 0) {
+            _probeConfig->probeSwitch = PROBE_SWITCH_ON;
+        } else {
+            _probeConfig->probeSwitch = PROBE_SWITCH_OFF;
+        }
+
+    }
+
+    return 0;
+}
+
+
 static int ConfigMgrLoadIMDBConfig(void *config, config_setting_t *settings)
 {
     IMDBConfig *imdbConfig = (IMDBConfig *)config;
@@ -347,14 +371,14 @@ typedef struct {
 int ConfigMgrLoad(ConfigMgr *mgr, const char *confPath)
 {
     ConfigLoadHandle configLoadHandles[] = {
-        { (void *)mgr->globalConfig, "global", ConfigMgrLoadGlobalConfig},
-        { (void *)mgr->ingressConfig, "ingress", ConfigMgrLoadIngressConfig},
-        { (void *)mgr->egressConfig, "egress", ConfigMgrLoadEgressConfig},
-        { (void *)mgr->taosdataConfig, "taosdata", ConfigMgrLoadTaosdataConfig},
-        { (void *)mgr->kafkaConfig, "kafka", ConfigMgrLoadKafkaConfig},
-        { (void *)mgr->probesConfig, "probes", ConfigMgrLoadProbesConfig},
-        { (void *)mgr->imdbConfig, "imdb", ConfigMgrLoadIMDBConfig},
-        { (void *)mgr->webServerConfig, "web_server", ConfigMgrLoadWebServerConfig}
+        { (void *)mgr->globalConfig, "global", ConfigMgrLoadGlobalConfig },
+        { (void *)mgr->ingressConfig, "ingress", ConfigMgrLoadIngressConfig },
+        { (void *)mgr->egressConfig, "egress", ConfigMgrLoadEgressConfig },
+        { (void *)mgr->kafkaConfig, "kafka", ConfigMgrLoadKafkaConfig },
+        { (void *)mgr->probesConfig, "probes", ConfigMgrLoadProbesConfig },
+        { (void *)mgr->extendProbesConfig, "extend_probes", ConfigMgrLoadExtendProbesConfig },
+        { (void *)mgr->imdbConfig, "imdb", ConfigMgrLoadIMDBConfig },
+        { (void *)mgr->webServerConfig, "web_server", ConfigMgrLoadWebServerConfig }
     };
 
     int ret = 0;

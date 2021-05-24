@@ -63,3 +63,6 @@ gala-gopher
 # gala-gopher test bin
 probes_test
 submodule_test
+
+# idea files
+*.idea

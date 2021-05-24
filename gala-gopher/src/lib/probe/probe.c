@@ -39,6 +39,10 @@ void ProbeDestroy(Probe *probe)
         return;
     }
 
+    if (probe->fifo != NULL) {
+        FifoDestroy(probe->fifo);
+    }
+
     free(probe);
     return;
 }
@@ -221,7 +225,7 @@ int __wrap_fprintf(FILE *stream, const char *format, ...)
         printf("[PROBE %s] send trigger msg to eventfd failed.\n", g_probe->name);
         return -1;
     }
-    
+
     return 0;
 }
 
