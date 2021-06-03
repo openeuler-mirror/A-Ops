@@ -1,10 +1,9 @@
 // SPDX-License-Identifier: GPL-2.0 OR BSD-3-Clause
 /* Copyright (c) 2021 Huawei */
-#include <linux/bpf.h>
-#include <linux/ptrace.h>
+#include "vmlinux.h"
 #include <bpf/bpf_helpers.h>
 #include <bpf/bpf_tracing.h>
-#include "vmlinux.h"
+#include <bpf/bpf_core_read.h>
 #include "trace_lvs.h"
 
 #if defined(__TARGET_ARCH_x86)

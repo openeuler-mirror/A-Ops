@@ -1,8 +1,7 @@
-#include <linux/bpf.h>
-#include <linux/ptrace.h>
+#include "vmlinux.h"
 #include <bpf/bpf_helpers.h>
 #include <bpf/bpf_tracing.h>
-#include "vmlinux.h"
+#include <bpf/bpf_core_read.h>
 #include "tcpprobe.h"
 
 char g_linsence[] SEC("license") = "GPL";
@@ -50,8 +49,8 @@ static void bpf_build_link_key(struct link_key *key, struct sock *sk)
         key->src_addr = _(sk->sk_rcv_saddr);
         key->dst_addr = _(sk->sk_daddr);
     } else {
-        bpf_probe_read_user(key->src_addr6, IP6_LEN, sk->sk_v6_rcv_saddr);
-        bpf_probe_read_user(key->dst_addr6, IP6_LEN, sk->sk_v6_daddr);
+        bpf_probe_read_user(key->src_addr6, IP6_LEN, &sk->sk_v6_rcv_saddr);
+        bpf_probe_read_user(key->dst_addr6, IP6_LEN, &sk->sk_v6_daddr);
     }
 
     key->src_port = _(sk->sk_num);
