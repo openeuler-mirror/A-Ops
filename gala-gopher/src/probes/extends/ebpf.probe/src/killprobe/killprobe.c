@@ -44,7 +44,7 @@ static void bump_memlock_rlimit(void)
 
 void read_probe_data(int map_fd)
 {
-    u32 key, next_key;
+    __u32 key, next_key;
     struct val_t data = {0};
 
     while (bpf_map_get_next_key(map_fd, &key, &next_key) != -1) {
