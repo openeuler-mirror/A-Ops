@@ -165,3 +165,17 @@ void ip_str(unsigned int family, unsigned char *ip, unsigned char *ip_str, unsig
     return;
 }
 #endif
+
+int set_memlock_rlimit(void)
+{
+    struct rlimit rlim_new = {
+        .rlim_cur	= EBPF_RLIM_INFINITY,
+        .rlim_max	= EBPF_RLIM_INFINITY,
+    };
+
+    if (setrlimit(RLIMIT_MEMLOCK, &rlim_new)) {
+        fprintf(stderr, "Failed to increase RLIMIT_MEMLOCK limit!\n");
+        return 0;
+    }
+	return 1;
+}

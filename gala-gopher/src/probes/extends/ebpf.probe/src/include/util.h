@@ -1,6 +1,15 @@
 #ifndef __EBPF_UTIL_H__
 #define __EBPF_UTIL_H__
 
+/* if eBPF probe need to be integrated by gala-gopher, should redefinition the macro*/
+#define UNIT_TESTING 1
+
+#if UNIT_TESTING
+#define EBPF_RLIM_INFINITY  RLIM_INFINITY
+#else
+#define EBPF_RLIM_INFINITY  100*1024*1024 // 100M
+#endif
+
 #define BPF_UTIL_DESC(desc) 1
 
 #define TM_STR_LEN 48
@@ -21,4 +30,5 @@ int get_func_offset(char *proc_name, char *binary_file_path, char *func_name);
 char *get_cur_time();
 
 void ip_str(unsigned int family, unsigned char *ip, unsigned char *ip_str, unsigned int ip_str_size);
+int set_memlock_rlimit(void);
 #endif
