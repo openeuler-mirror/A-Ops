@@ -8,6 +8,7 @@
 
 #include "killprobe.skel.h"
 #include "killprobe.h"
+#include "util.h"
 
 #define PROBE_NAME "kill_info"
 
@@ -26,19 +27,6 @@ static volatile sig_atomic_t stop;
 static void sig_int(int signo)
 {
     stop = 1;
-}
-
-static void bump_memlock_rlimit(void)
-{
-    struct rlimit rlim_new = {
-        .rlim_cur = RLIM_INFINITY,
-        .rlim_max = RLIM_INFINITY,
-    };
-
-    if (setrlimit(RLIMIT_MEMLOCK, &rlim_new)) {
-        fprintf(stderr, "Failed to increase RLIMIT_MEMLOCK limit!\n");
-        exit(1);
-    }
 }
 
 
@@ -87,8 +75,12 @@ struct killprobe_bpf* load_and_attach_progs()
     /* Set up libbpf errors and debug info callback */
     libbpf_set_print(libbpf_print_fn);
 
-    /* Bump RLIMIT_MEMLOCK to allow BPF sub-system to do anything */
-    bump_memlock_rlimit();
+	#if UNIT_TESTING
+    /* Bump RLIMIT_MEMLOCK  allow BPF sub-system to do anything */
+    if (set_memlock_rlimit() == 0) {
+		return NULL;
+	}
+	#endif
 
     /* Open load and verify BPF application */
     skel = killprobe_bpf__open_and_load();

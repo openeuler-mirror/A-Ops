@@ -9,6 +9,7 @@
 
 #include "fileprobe.skel.h"
 #include "fileprobe.h"
+#include "util.h"
 
 #define PROBE_NAME "file_snoop"
 #define FILE_TO_INODE "/usr/bin/ls -i %s | awk '{print $1}'"
@@ -31,19 +32,6 @@ static volatile sig_atomic_t stop;
 static void sig_int(int signo)
 {
     stop = 1;
-}
-
-static void bump_memlock_rlimit(void)
-{
-    struct rlimit rlim_new = {
-        .rlim_cur = RLIM_INFINITY,
-        .rlim_max = RLIM_INFINITY,
-    };
-
-    if (setrlimit(RLIMIT_MEMLOCK, &rlim_new)) {
-        fprintf(stderr, "Failed to increase RLIMIT_MEMLOCK limit!\n");
-        exit(1);
-    }
 }
 
 int get_file_name(const u32 inode, char *file_name, u32 max_len) {
@@ -138,8 +126,12 @@ struct fileprobe_bpf* load_and_attach_progs()
     /* Set up libbpf errors and debug info callback */
     libbpf_set_print(libbpf_print_fn);
 
+	#if UNIT_TESTING
     /* Bump RLIMIT_MEMLOCK to allow BPF sub-system to do anything */
-    bump_memlock_rlimit();
+    if (set_memlock_rlimit() == 0) {
+		return NULL;
+	}
+	#endif
 
     /* Open load and verify BPF application */
     skel = fileprobe_bpf__open_and_load();
