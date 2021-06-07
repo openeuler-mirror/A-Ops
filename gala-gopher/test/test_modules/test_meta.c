@@ -24,7 +24,7 @@ void TestMeasurementMgrLoad()
     MeasurementMgr *mgr = MeasurementMgrCreate(MEASUREMENT_MGR_SIZE);
     CU_ASSERT(mgr != NULL);
 
-    ret = MeasurementMgrLoad(mgr, META_PATH);
+    ret = MeasurementMgrLoadSingleMeta(mgr, META_PATH);
     CU_ASSERT(ret == 0);
     CU_ASSERT(mgr->measurementsNum == 1);
     CU_ASSERT(strcmp(mgr->measurements[0]->name, "test") == 0);
