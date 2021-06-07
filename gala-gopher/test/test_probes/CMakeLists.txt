@@ -18,6 +18,8 @@ SET(FIFO_DIR        ${SRC_DIR}/lib/fifo)
 SET(META_DIR        ${SRC_DIR}/lib/meta)
 SET(KAFKA_DIR       ${SRC_DIR}/lib/kafka)
 SET(PROBE_DIR       ${SRC_DIR}/lib/probe)
+SET(IMDB_DIR        ${SRC_DIR}/lib/imdb)
+SET(WEBSERVER_DIR   ${SRC_DIR}/web_server)
 
 SET(LIBRDKAFKA_DIR /usr/include/librdkafka)
 
@@ -37,6 +39,9 @@ SET(SOURCES main.c test_probes.c
     ${KAFKA_DIR}/kafka.c
 
     ${PROBE_DIR}/probe.c
+    ${PROBE_DIR}/extend_probe.c
+    ${IMDB_DIR}/imdb.c
+    ${WEBSERVER_DIR}/web_server.c
 )
 
 FOREACH(FILE ${PROBES_C_LIST})
@@ -58,7 +63,9 @@ TARGET_INCLUDE_DIRECTORIES(${EXECUTABLE_TARGET} PRIVATE
 
     ${PROBE_DIR}
     ${LIBRDKAFKA_DIR}
+    ${IMDB_DIR}
+    ${WEBSERVER_DIR}
 )
 
-TARGET_LINK_LIBRARIES(${EXECUTABLE_TARGET} PRIVATE config dl rdkafka cunit)
+TARGET_LINK_LIBRARIES(${EXECUTABLE_TARGET} PRIVATE config pthread dl rdkafka microhttpd cunit)
 

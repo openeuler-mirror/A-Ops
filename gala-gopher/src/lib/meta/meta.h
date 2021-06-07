@@ -27,6 +27,7 @@ MeasurementMgr *MeasurementMgrCreate(uint32_t size);
 void MeasurementMgrDestroy(MeasurementMgr *mgr);
 
 int MeasurementMgrLoad(MeasurementMgr *mgr, const char *metaDir);
+int MeasurementMgrLoadSingleMeta(MeasurementMgr *mgr, const char *metaPath);
 
 #endif
 

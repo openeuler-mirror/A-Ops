@@ -162,7 +162,7 @@ static int MeasurementLoad(Measurement *mm, config_setting_t *mmConfig)
     return 0;
 }
 
-static int MeasurementMgrLoadSingleMeta(MeasurementMgr *mgr, const char *metaPath)
+int MeasurementMgrLoadSingleMeta(MeasurementMgr *mgr, const char *metaPath)
 {
     int ret = 0;
     config_t cfg;

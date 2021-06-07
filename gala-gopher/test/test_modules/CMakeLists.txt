@@ -37,6 +37,7 @@ ADD_EXECUTABLE(${EXECUTABLE_TARGET}
     ${META_DIR}/meta.c
     ${KAFKA_DIR}/kafka.c
     ${PROBE_DIR}/probe.c
+    ${PROBE_DIR}/extend_probe.c
     ${IMDB_DIR}/imdb.c
     ${WEBSERVER_DIR}/web_server.c
 )
