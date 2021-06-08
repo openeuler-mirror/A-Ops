@@ -85,13 +85,40 @@ static long get_bin_base_addr(char *bin_name, int *pid)
     return -1;
 }
 
-static long get_bin_func_offset(char *bin_name, char *func_name)
+static long get_bin_file_path(char *bin_name, char *buf)
+{
+    int bin_pid;
+    char cmd_buf[BUF_TMP_LEN] = {0};
+    int res;
+
+    if (bin_name == NULL) {
+        fprintf(stderr, "get_bin_file_path input bin_name NULL\n");
+        return -1;
+    }
+
+    bin_pid = get_bin_process_id(bin_name);
+    if (bin_pid < 0) {
+        fprintf(stderr, "get_bin_process_id return error\n");
+        return -1;
+    }
+
+    snprintf(cmd_buf, BUF_TMP_LEN, "/proc/%d/exe", bin_pid);
+    res = readlink(cmd_buf, buf, BUF_TMP_LEN - 1);
+    if (res < 0 || res >= (BUF_TMP_LEN - 1)) {
+        fprintf(stderr, "get_bin_file_path readlink fail.\n");
+        return -1;
+    }
+    buf[res] = '\0';
+    return 0;
+}
+
+static long get_bin_func_offset(char *bin_file_path, char *func_name)
 {
     FILE *fp = NULL;
     char cmd[BUF_TMP_LEN] = {0};
     char buf[BUF_TMP_LEN] = {0};
 
-    snprintf(cmd, BUF_TMP_LEN, "objdump -t %s | grep -w %s | awk \'{print $1}\'", bin_name, func_name);
+    snprintf(cmd, BUF_TMP_LEN, "objdump -t %s | grep -w %s | awk \'{print $1}\'", bin_file_path, func_name);
     fp = popen(cmd, "r");
     while (NULL != fgets(buf, 32, fp)) {
         break;
@@ -101,11 +128,12 @@ static long get_bin_func_offset(char *bin_name, char *func_name)
 }
 
 /* get uprobe func offset */
-int get_func_offset(char *proc_name, char *binary_file_path, char *func_name)
+int get_func_offset(char *proc_name, char *func_name)
 {
     int pid;
     int err;
     long base_addr, func_offset;
+    char bin_file_path[BUF_TMP_LEN] = {0};
 
     if (!proc_name || !func_name) {
         return -1;
@@ -117,7 +145,13 @@ int get_func_offset(char *proc_name, char *binary_file_path, char *func_name)
         return -1;
     }
 
-    func_offset = get_bin_func_offset(binary_file_path, func_name);
+    err = get_bin_file_path(proc_name, bin_file_path);
+    if (err < 0) {
+        fprintf(stderr, "Failed to get bin file real path.\n");
+        return -1;
+    }
+
+    func_offset = get_bin_func_offset(bin_file_path, func_name);
     if (func_offset <= base_addr) {
         return -1;
     }
