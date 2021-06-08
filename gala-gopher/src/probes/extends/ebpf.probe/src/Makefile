@@ -24,7 +24,7 @@ else ifeq ($(ARCH), aarch64)
 endif
 
 # add probe
-APPS := tcpprobe/tcpprobe killprobe/killprobe lvsprobe/trace_lvs
+APPS := tcpprobe/tcpprobe killprobe/killprobe lvsprobe/trace_lvs haproxyprobe/trace_haproxy
 
 APPS_DIR = $(dir $(APPS))
 OUTPUT_APPS_DIR = $(addprefix $(OUTPUT)/, $(APPS_DIR))
