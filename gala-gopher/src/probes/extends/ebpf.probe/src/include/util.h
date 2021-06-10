@@ -25,7 +25,7 @@ typedef void (*arg_opt_proc_func)(char opt, char *arg, int idx);
 int args_parse(int argc, char **argv, char *opt_str, arg_opt_proc_func opt_proc);
 
 /* get uprobe func offset */
-int get_func_offset(char *proc_name, char *func_name);
+int get_func_offset(char *proc_name, char *func_name, char *bin_file_path);
 
 char *get_cur_time();
 

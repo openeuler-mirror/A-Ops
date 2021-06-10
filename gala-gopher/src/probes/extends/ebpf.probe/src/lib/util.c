@@ -128,14 +128,13 @@ static long get_bin_func_offset(char *bin_file_path, char *func_name)
 }
 
 /* get uprobe func offset */
-int get_func_offset(char *proc_name, char *func_name)
+int get_func_offset(char *proc_name, char *func_name, char *bin_file_path)
 {
     int pid;
     int err;
     long base_addr, func_offset;
-    char bin_file_path[BUF_TMP_LEN] = {0};
 
-    if (!proc_name || !func_name) {
+    if (!proc_name || !func_name || !bin_file_path) {
         return -1;
     }
 

@@ -60,14 +60,14 @@ static void get_host_ip(unsigned char *value, unsigned short family)
     return ;
 }
 
-void update_collect_count(struct collect_value *dd)
+static void update_collect_count(struct collect_value *dd)
 {
     dd->link_count++;
 
     return;
 }
 
-void update_haproxy_collect_map(struct link_key *k, struct link_value *v, int map_fd)
+static void update_haproxy_collect_map(struct link_key *k, struct link_value *v, int map_fd)
 {
     struct collect_key      key = {0};
     struct collect_value    val = {0};
@@ -132,7 +132,7 @@ static void pull_probe_data(int fd, int collect_fd)
     }
 }
 
-void print_haproxy_collect(int map_fd)
+static void print_haproxy_collect(int map_fd)
 {
     int ret = 0;
     struct collect_key  key = {0};
@@ -171,7 +171,7 @@ void print_haproxy_collect(int map_fd)
 #define BPF_MAX_OUTPUT_INTERVAL     (3600)
 #define BPF_MIN_OUTPUT_INTERVAL     (1)
 unsigned int g_output_interval_sec = 5;
-void haproxyprobe_arg_parse(char opt, char *arg, int idx)
+static void haproxyprobe_arg_parse(char opt, char *arg, int idx)
 {
     if (opt != 't' || !arg) {
         return;
@@ -192,6 +192,7 @@ int main(int argc, char **argv)
     long uprobe_offset2 = -1;
     int err = -1;
     int collect_map_fd = -1;
+    char bin_file_path[CMD_LEN] = {0};
 
     err = args_parse(argc, argv, "t:", haproxyprobe_arg_parse);
     if (err != 0) {
@@ -216,15 +217,15 @@ int main(int argc, char **argv)
         return 1;
     }
 
-    uprobe_offset1 = get_func_offset("haproxy", "back_establish");
-    uprobe_offset2 = get_func_offset("haproxy", "stream_free");
+    uprobe_offset1 = get_func_offset("haproxy", "back_establish", bin_file_path);
+    uprobe_offset2 = get_func_offset("haproxy", "stream_free", bin_file_path);
     //fprintf(stderr, "HAPROXY DEBUG GET OFFSET1 = %ld OFFSET2 = %ld\n", uprobe_offset1, uprobe_offset2);
 
     /* Attach tracepoint handler */
     skel->links.haproxy_probe_estabilsh = bpf_program__attach_uprobe(skel->progs.haproxy_probe_estabilsh,
                             false /* not uretprobe */,
                             -1 /* self pid */,
-                            "/usr/sbin/haproxy",
+                            bin_file_path,
                             uprobe_offset1);
     err = libbpf_get_error(skel->links.haproxy_probe_estabilsh);
     if (err) {
@@ -235,7 +236,7 @@ int main(int argc, char **argv)
     skel->links.haproxy_probe_close = bpf_program__attach_uprobe(skel->progs.haproxy_probe_close,
                             false /* not uretprobe */,
                             -1 /* self pid */,
-                            "/usr/sbin/haproxy",
+                            bin_file_path,
                             uprobe_offset2);
     err = libbpf_get_error(skel->links.haproxy_probe_close);
     if (err) {
