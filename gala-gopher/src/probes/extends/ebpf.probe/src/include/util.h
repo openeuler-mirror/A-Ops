@@ -13,8 +13,12 @@
 #define BPF_UTIL_DESC(desc) 1
 
 #define TM_STR_LEN 48
+#ifndef AF_INET
 #define AF_INET 2
+#endif
+#ifndef AF_INET6
 #define AF_INET6 10
+#endif
 
 #define NIP6(addr)                                                                                  \
     ntohs(addr[0]), ntohs(addr[1]), ntohs(addr[2]), ntohs(addr[3]), ntohs(addr[4]), ntohs(addr[5]), \
@@ -31,4 +35,7 @@ char *get_cur_time();
 
 void ip_str(unsigned int family, unsigned char *ip, unsigned char *ip_str, unsigned int ip_str_size);
 int set_memlock_rlimit(void);
+
+struct perf_buffer* create_pref_buffer(int map_fd, perf_buffer_sample_fn cb);
+void poll_pb(struct perf_buffer *pb, int timeout_ms);
 #endif

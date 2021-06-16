@@ -1,10 +1,12 @@
 #include <stdio.h>
+#include <stdlib.h>
 #include <getopt.h>
 #include <time.h>
 #include <errno.h>
 #include <signal.h>
 #include <unistd.h>
 #include <sys/resource.h>
+#include <bpf/libbpf.h>
 #include "util.h"
 
 #define BUF_TMP_LEN 256
@@ -184,7 +186,7 @@ char *get_cur_time()
 void ip6_str(unsigned char *ip6, unsigned char *ip_str, unsigned int ip_str_size)
 {
     unsigned short *addr = (unsigned short *)ip6;
-    snprintf(ip_str, ip_str_size, NIP6_FMT, NIP6(addr));
+    snprintf((char *)ip_str, ip_str_size, NIP6_FMT, NIP6(addr));
 }
 
 void ip_str(unsigned int family, unsigned char *ip, unsigned char *ip_str, unsigned int ip_str_size)
@@ -194,7 +196,7 @@ void ip_str(unsigned int family, unsigned char *ip, unsigned char *ip_str, unsig
         return;
     }
 
-    snprintf(ip_str, ip_str_size, "%u.%u.%u.%u", ip[0], ip[1], ip[2], ip[3]);
+    snprintf((char *)ip_str, ip_str_size, "%u.%u.%u.%u", ip[0], ip[1], ip[2], ip[3]);
     return;
 }
 #endif
@@ -212,3 +214,35 @@ int set_memlock_rlimit(void)
     }
 	return 1;
 }
+
+struct perf_buffer* create_pref_buffer(int map_fd, perf_buffer_sample_fn cb)
+{
+	struct perf_buffer_opts pb_opts = {};
+	struct perf_buffer *pb;
+    int ret;
+    
+	pb_opts.sample_cb = cb;
+	pb = perf_buffer__new(map_fd, 8, &pb_opts);
+    if (pb == NULL){
+		fprintf(stderr, "ERROR: perf buffer new failed\n");
+		return NULL;
+    }
+	ret = libbpf_get_error(pb);
+	if (ret) {
+		fprintf(stderr, "ERROR: failed to setup perf_buffer: %d\n", ret);
+		perf_buffer__free(pb);
+        return NULL;
+	}
+    return pb;
+}
+
+void poll_pb(struct perf_buffer *pb, int timeout_ms)
+{
+    int ret;
+    
+	while ((ret = perf_buffer__poll(pb, timeout_ms)) >= 0) {
+        ;
+	}
+    return;
+}
+
