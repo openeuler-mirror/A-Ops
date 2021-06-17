@@ -12,7 +12,6 @@
 
 #define PROBE_NAME "kill_info"
 
-
 static int libbpf_print_fn(enum libbpf_print_level level, const char *format, va_list args)
 {
     if (level == LIBBPF_WARN)
@@ -21,49 +20,19 @@ static int libbpf_print_fn(enum libbpf_print_level level, const char *format, va
     return 0;
 }
 
-
-static volatile sig_atomic_t stop;
-
-static void sig_int(int signo)
+static void print_bpf_output(void *ctx, int cpu, void *data, __u32 size)
 {
-    stop = 1;
-}
+    struct val_t *pv;
 
+    pv = (struct val_t *)data;
 
-void read_probe_data(int map_fd)
-{
-    __u32 key, next_key;
-    struct val_t data = {0};
-
-    while (bpf_map_get_next_key(map_fd, &key, &next_key) != -1) {
-        if (bpf_map_lookup_elem(map_fd, &next_key, &data) != 0) {
-            continue;
-        }
-
-        fprintf(stdout,
-            "|%s|%llu|%u|%u|%s|\n",
-            PROBE_NAME,
-            data.killer_pid,
-            data.signal,
-            data.killed_pid,
-            data.comm);
-        bpf_map_delete_elem(map_fd, &next_key);
-    }
-    return;
-}
-
-void run(struct killprobe_bpf *skel)
-{
-    if (signal(SIGINT, sig_int) == SIG_ERR) {
-        fprintf(stderr, "can't set signal handler: %s\n", strerror(errno));
-        return;
-    }
-
-    while (!stop) {
-        read_probe_data(bpf_map__fd(skel->maps.kill_info_map));
-        sleep(PROBE_CYCLE_SEC);
-    }
-    return;
+    fprintf(stdout,
+        "|%s|%llu|%u|%u|%s|\n",
+        PROBE_NAME,
+        pv->killer_pid,
+        pv->signal,
+        pv->killed_pid,
+        pv->comm);
 }
 
 
@@ -93,25 +62,43 @@ struct killprobe_bpf* load_and_attach_progs()
     err = killprobe_bpf__attach(skel);
     if (err) {
         fprintf(stderr, "Failed to attach killprobe BPF skeleton\n");
-        killprobe_bpf__destroy(skel);
-        return NULL;
+        goto err;
     }
     
     return skel;
+err:
+    killprobe_bpf__destroy(skel);
+    return NULL;
 }
 
 
 int main(int argc, char **argv)
 {
+    int map_fd;
     struct killprobe_bpf *skel;
+    struct perf_buffer* pb;
 
     skel = load_and_attach_progs();
     if (!skel) {
         return -1;
     }
-    
-    run(skel);
 
+	map_fd = bpf_map__fd(skel->maps.output);
+	if (map_fd < 0) {
+		fprintf(stderr, "ERROR: finding a map in obj file failed\n");
+		goto out;
+	}
+
+    pb = create_pref_buffer(map_fd, print_bpf_output);
+    if (!pb) {
+        fprintf(stderr, "ERROR: crate perf buffer failed\n");
+        goto out;
+    }
+
+    poll_pb(pb, 1000);
+
+    perf_buffer__free(pb);
+out:    
     killprobe_bpf__destroy(skel);
     return 0;
 }

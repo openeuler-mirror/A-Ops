@@ -8,12 +8,13 @@
 char g_linsence[] SEC("license") = "GPL";
 
 
-struct bpf_map_def SEC("maps") kill_info_map = {
-    .type = BPF_MAP_TYPE_HASH,
+struct bpf_map_def SEC("maps") output = {
+    .type = BPF_MAP_TYPE_PERF_EVENT_ARRAY,
     .key_size = sizeof(u32),
-    .value_size = sizeof(struct val_t),
-    .max_entries = KILL_INFO_MAX_NUM,
+    .value_size = sizeof(u32),
+    .max_entries = 64,
 };
+
 
 struct bpf_map_def SEC("maps") monitor_killer_map = {
     .type = BPF_MAP_TYPE_HASH,
@@ -43,6 +44,6 @@ void sys_kill_probe(struct pt_regs *ctx)
     if (bpf_get_current_comm(&val.comm, sizeof(val.comm)) == 0) {
         val.killed_pid = killed_pid;
         val.signal = signal;
-        bpf_map_update_elem(&kill_info_map, &killer_pid, &val, BPF_ANY);
+        bpf_perf_event_output(ctx, &output, 0, &val, sizeof(val));
     }
 }
