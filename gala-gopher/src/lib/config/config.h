@@ -46,6 +46,8 @@ typedef struct {
     char name[MAX_PROBE_NAME_LEN];
     char command[MAX_EXTEND_PROBE_COMMAND_LEN];
     char param[MAX_EXTEND_PROBE_PARAM_LEN];
+    char startChkCmd[MAX_EXTEND_PROBE_COMMAND_LEN];
+    ProbeStartCheckType startChkType;
     ProbeSwitch probeSwitch;
 } ExtendProbeConfig;
 

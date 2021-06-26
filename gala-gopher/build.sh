@@ -5,6 +5,8 @@ PROJECT_FOLDER=$(dirname $(readlink -f "$0"))
 
 PROBES_FOLDER=${PROJECT_FOLDER}/src/probes
 PROBES_PATH_LIST=`find ${PROJECT_FOLDER}/src/probes -maxdepth 1 | grep ".probe\>"`
+EXT_PROBE_FOLDER=${PROJECT_FOLDER}/src/probes/extends
+EXT_PROBE_BUILD_LIST=`find ${EXT_PROBE_FOLDER} -maxdepth 2 | grep "\<build.sh\>"`
 PROBES_LIST=""
 PROBES_C_LIST=""
 PROBES_META_LIST=""
@@ -76,7 +78,20 @@ function clean_env()
     done
 }
 
+function compile_extend_probes()
+{
+    # Search for build.sh in probe directory
+    echo "==== Begin to compile extend probes ===="
+    cd ${EXT_PROBE_FOLDER}
+    for BUILD_PATH in ${EXT_PROBE_BUILD_LIST}
+    do
+	echo "==== BUILD_PATH: " ${BUILD_PATH}
+        ${BUILD_PATH}
+    done
+}
+
 prepare_probes
 compile_daemon
+compile_extend_probes
 clean_env
 

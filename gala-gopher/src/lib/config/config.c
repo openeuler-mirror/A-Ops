@@ -307,6 +307,21 @@ static int ConfigMgrLoadExtendProbesConfig(void *config, config_setting_t *setti
             _probeConfig->probeSwitch = PROBE_SWITCH_OFF;
         }
 
+        if (_probeConfig->probeSwitch != PROBE_SWITCH_AUTO) {
+            continue;
+        }
+        /* probe satrt check param -- not necessary */
+        _probeConfig->startChkType = PROBE_CHK_MAX;
+        ret = config_setting_lookup_string(_probe, "start_check", &strVal);
+        if (ret == 0) {
+            continue;
+        }
+        memcpy(_probeConfig->startChkCmd, strVal, strlen(strVal));
+
+        ret = config_setting_lookup_string(_probe, "check_type", &strVal);
+        if (ret != 0 && strcmp(strVal, "count") == 0) {
+            _probeConfig->startChkType = PROBE_CHK_CNT;
+        }
     }
 
     return 0;

@@ -53,8 +53,12 @@ int RunExtendProbe(ExtendProbe *probe)
         fgets(buffer, sizeof(buffer), f);
         bufferSize = strlen(buffer);
 
-        printf("[EXTEND PROBE] Get data str: %s\n", buffer);
+        if (bufferSize && buffer[0] != '|') {
+            /* Filtering non metric data */
+            continue;
+        }
 
+        printf("[EXTEND PROBE] Get data str: %s\n", buffer);
         for (int i = 0; i < bufferSize; i++) {
 
             if (dataStr == NULL) {

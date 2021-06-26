@@ -2,6 +2,8 @@
 
 PROGRAM=$0
 PROJECT_FOLDER=$(dirname $(readlink -f "$0"))
+EXT_PROBE_FOLDER=${PROJECT_FOLDER}/src/probes/extends
+EXT_PROBE_INSTALL_LIST=`find ${EXT_PROBE_FOLDER} -maxdepth 2 | grep "\<install.sh\>"`
 
 function install_daemon_bin()
 {
@@ -68,9 +70,13 @@ function install_extend_probes()
 
     cd ${PROJECT_FOLDER}
 
-    # install redis probe
-    SRC_EXTEND_PROBE_DIR=${PROJECT_FOLDER}/src/probes/extends
-    cp -f ${SRC_EXTEND_PROBE_DIR}/python.probe/redis.probe/redis_probe.py ${GOPHER_EXTEND_PROBE_DIR}
+    # Search for install.sh in extend probe directory
+    cd ${EXT_PROBE_FOLDER}
+    for INSTALL_PATH in ${EXT_PROBE_INSTALL_LIST}
+    do
+        echo "install path:" ${INSTALL_PATH}
+        ${INSTALL_PATH} ${GOPHER_EXTEND_PROBE_DIR}
+    done
 }
 
 # main process

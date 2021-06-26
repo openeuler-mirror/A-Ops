@@ -71,7 +71,7 @@ function prepare_dep()
 
     yum download --source kernel
     if [ ! -f kernel*.src.rpm ]; then
-        echo "****Error: Failed to download kernel-*.src.rpm, please check yum.repo****"
+        echo "****Warnning: Failed to download kernel-*.src.rpm, please check yum.repo****"
         return 1
     fi
 

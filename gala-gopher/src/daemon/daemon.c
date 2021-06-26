@@ -54,6 +54,30 @@ static void *DaemonRunSingleExtendProbe(void *arg)
     (void)RunExtendProbe(probe);
 }
 
+static int DaemonCheckProbeNeedStart(char *check_cmd, ProbeStartCheckType chkType)
+{
+    /* ret val: 1 need start / 0 no need start */
+    if (!check_cmd || chkType != PROBE_CHK_CNT) {
+        return 0;
+    }
+
+    int cnt = 0;
+    FILE *fp = NULL;
+    char data[MAX_COMMAND_LEN] = {0};
+    fp = popen(check_cmd, "r");
+    if (fp == NULL) {
+        printf("popen error!\n");
+        return 0;
+    }
+
+    if (fgets(data, sizeof(data), fp) != NULL) {
+        cnt = atoi(data);
+    }
+    pclose(fp);
+
+    return (cnt > 0);
+}
+
 #endif
 
 int DaemonRun(ResourceMgr *mgr)
@@ -100,12 +124,22 @@ int DaemonRun(ResourceMgr *mgr)
     }
 
     // 5. start extend probe thread
+    printf("[DAEMON] start extend probe(%u) thread.\n", mgr->extendProbeMgr->probesNum);
     for (int i = 0; i < mgr->extendProbeMgr->probesNum; i++) {
         ExtendProbe *_extendProbe = mgr->extendProbeMgr->probes[i];
-        if (_extendProbe->probeSwitch != PROBE_SWITCH_ON) {
+        if (_extendProbe->probeSwitch == PROBE_SWITCH_OFF) {
             printf("[DAEMON] extend probe %s switch is off, skip create thread for it.\n", _extendProbe->name);
             continue;
         }
+
+        if (_extendProbe->probeSwitch == PROBE_SWITCH_AUTO) {
+            ret = DaemonCheckProbeNeedStart(_extendProbe->startChkCmd, _extendProbe->chkType);
+            if (ret != 1) {
+                printf("[DAEMON] extend probe %s start check failed, skip create thread for it.\n", _extendProbe->name);
+                continue;
+            }
+        }
+
         ret = pthread_create(&mgr->extendProbeMgr->probes[i]->tid, NULL, DaemonRunSingleExtendProbe, _extendProbe);
         if (ret != 0) {
             printf("[DAEMON] create extend probe thread failed. probe name: %s errno: %d\n", _extendProbe->name, errno);

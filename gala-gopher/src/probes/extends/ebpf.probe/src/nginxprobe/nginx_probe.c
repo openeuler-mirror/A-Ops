@@ -150,6 +150,7 @@ void print_statistic_map(int fd)
 
         bpf_map_delete_elem(fd, &nk);
     }
+    fflush(stdout);
     return;
 }
 

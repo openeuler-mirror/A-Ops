@@ -164,6 +164,7 @@ static void print_haproxy_collect(int map_fd)
         }
         bpf_map_delete_elem(map_fd, &next_key);
     }
+    fflush(stdout);
     return;
 }
 
