@@ -46,10 +46,29 @@ void update_link_metric_data(struct metric_data *dd, struct link_data *d)
     dd->lost += d->lost;
 }
 
+int filter_redundant_data(struct link_key *k, struct link_data *d)
+{
+    /*
+        redundant data
+        1 port == 0
+        2 rx/tx == 0
+    */
+    if (k->src_port == 0 || k->dst_port == 0 || d->rx == 0 || d->tx == 0) {
+        return 1;
+    }
+    return 0;
+}
+
 void update_link_metric_map(struct link_key *k, struct link_data *d, int map_fd)
 {
     struct metric_key key = {0};
     struct metric_data data = {0};
+
+    /* Filtering redundant data */
+    int ret = filter_redundant_data(k, d);
+    if (ret) {
+        return;
+    }
 
     /* build key */
     if (d->role == LINK_ROLE_CLIENT) {

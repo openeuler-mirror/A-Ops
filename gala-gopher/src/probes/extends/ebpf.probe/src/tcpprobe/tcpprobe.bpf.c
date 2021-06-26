@@ -99,8 +99,14 @@ static void bpf_add_link(struct sock *sk, int role)
     long ret;
     struct proc_info proc = {0};
 
-    proc.pid = bpf_get_current_pid_tgid() >> 32;
     bpf_get_current_comm(&proc.comm, sizeof(proc.comm));
+    if (proc.comm[0] == 's' && proc.comm[1] == 's' && proc.comm[2] == 'h' &&
+        (proc.comm[3] == '\0' || (proc.comm[3] == 'd' && proc.comm[4] == '\0'))) {
+        /* skip ssh sshd proc */
+        return;
+    }
+
+    proc.pid = bpf_get_current_pid_tgid() >> 32;
     proc.ts = bpf_ktime_get_ns();
     proc.role = role;
 
