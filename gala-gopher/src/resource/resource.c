@@ -195,7 +195,10 @@ static int ExtendProbeMgrInit(ResourceMgr *resourceMgr)
         memcpy(_extendProbe->name, _extendProbeConfig->name, strlen(_extendProbeConfig->name));
         memcpy(_extendProbe->executeCommand, _extendProbeConfig->command, strlen(_extendProbeConfig->command));
         memcpy(_extendProbe->executeParam, _extendProbeConfig->param, strlen(_extendProbeConfig->param));
+        memcpy(_extendProbe->startChkCmd, _extendProbeConfig->startChkCmd, strlen(_extendProbeConfig->startChkCmd));
+        
         _extendProbe->probeSwitch = _extendProbeConfig->probeSwitch;
+        _extendProbe->chkType = _extendProbeConfig->startChkType;
 
         ret = ExtendProbeMgrPut(extendProbeMgr, _extendProbe);
         if (ret != 0) {

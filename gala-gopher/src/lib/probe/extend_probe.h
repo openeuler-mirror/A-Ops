@@ -13,6 +13,8 @@ typedef struct {
     char executeCommand[MAX_EXTEND_PROBE_COMMAND_LEN];
     char executeParam[MAX_EXTEND_PROBE_PARAM_LEN];
 
+    char startChkCmd[MAX_EXTEND_PROBE_COMMAND_LEN];
+    ProbeStartCheckType chkType;
     ProbeSwitch probeSwitch;
     Fifo *fifo;
     pthread_t tid;

@@ -63,6 +63,11 @@ typedef enum {
     PROBE_SWITCH_MAX
 } ProbeSwitch;
 
+typedef enum {
+    PROBE_CHK_CNT = 0,
+    PROBE_CHK_MAX
+} ProbeStartCheckType;
+
 #define GALA_CONF_PATH "/opt/gala-gopher/gala-gopher.conf"
 #define GALA_META_DIR_PATH "/opt/gala-gopher/meta"
 

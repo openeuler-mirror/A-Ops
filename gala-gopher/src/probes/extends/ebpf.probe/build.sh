@@ -25,6 +25,7 @@ function compile_probe()
 
 function checkout_libbpf()
 {
+    cd ${PRJ_DIR}
     if [ ! -f "libbpf" ];then
 	git clone https://github.com/libbpf/libbpf.git
         cd libbpf

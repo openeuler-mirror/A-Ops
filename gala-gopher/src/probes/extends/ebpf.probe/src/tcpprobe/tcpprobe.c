@@ -174,6 +174,7 @@ void print_link_metric(int map_fd)
 
         bpf_map_delete_elem(map_fd, &next_key);
     }
+    fflush(stdout);
     return;
 }
 

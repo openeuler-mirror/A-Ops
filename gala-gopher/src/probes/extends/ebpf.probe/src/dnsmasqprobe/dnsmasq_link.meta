@@ -2,7 +2,7 @@ version = "1.0.0"
 measurements:
 (
     {
-        name: "haproxy_link",
+        name: "dnsmasq_link",
         fields:
         (
             {
