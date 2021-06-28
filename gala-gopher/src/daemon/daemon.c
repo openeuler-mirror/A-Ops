@@ -93,12 +93,12 @@ int DaemonRun(ResourceMgr *mgr)
     printf("[DAEMON] create ingress thread success.\n");
 
     // 2. start egress thread
-    // ret = pthread_create(&mgr->egressMgr->tid, NULL, DaemonRunEgress, mgr->egressMgr);
-    // if (ret != 0) {
-    //     printf("[DAEMON] create egress thread failed. errno: %d\n", errno);
-    //     return -1;
-    // }
-    // printf("[DAEMON] create egress thread success.\n");
+    ret = pthread_create(&mgr->egressMgr->tid, NULL, DaemonRunEgress, mgr->egressMgr);
+    if (ret != 0) {
+        printf("[DAEMON] create egress thread failed. errno: %d\n", errno);
+        return -1;
+    }
+    printf("[DAEMON] create egress thread success.\n");
 
     // 3. start web_server thread
     ret = WebServerStartDaemon(mgr->webServer);

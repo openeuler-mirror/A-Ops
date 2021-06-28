@@ -18,6 +18,12 @@
 // database specification
 #define MAX_IMDB_DATABASE_NAME_LEN      32
 
+#define MAX_IMDB_HOSTNAME_LEN           64
+
+typedef struct {
+    char hostName[MAX_IMDB_HOSTNAME_LEN];
+} IMDB_NodeInfo;
+
 // typedef enum {
 //     METRIC_TYPE_COUNTER = 0,
 //     METRIC_TYPE_GAUGE,
@@ -54,7 +60,7 @@ typedef struct {
     uint32_t tablesNum;
 
     IMDB_Table **tables;
-
+    IMDB_NodeInfo nodeInfo;
     pthread_rwlock_t rwlock;
 } IMDB_DataBaseMgr;
 
@@ -79,6 +85,8 @@ IMDB_Table *IMDB_DataBaseMgrFindTable(IMDB_DataBaseMgr *mgr, char *tableName);
 
 int IMDB_DataBaseMgrAddRecord(IMDB_DataBaseMgr *mgr, char *recordStr, int len);
 int IMDB_DataBaseMgrData2String(IMDB_DataBaseMgr *mgr, char *buffer, int maxLen);
+
+int IMDB_DataStr2Json(IMDB_DataBaseMgr *mgr, char *recordStr, int recordLen, char *jsonStr, int jsonStrLen);
 
 #endif
 

@@ -34,7 +34,7 @@ function prepare_probes()
         else
             PROBES_C_LIST=${PROBES_C_LIST}\;${PROBE_PATH}/${PROBE_NAME}_daemon.c
         fi
-        
+
         if [ x"$PROBES_LIST" = x ];then
             PROBES_LIST=${PROBE_NAME}
         else
@@ -92,6 +92,6 @@ function compile_extend_probes()
 
 prepare_probes
 compile_daemon
-compile_extend_probes
+#compile_extend_probes
 clean_env
 

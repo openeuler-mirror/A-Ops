@@ -3,6 +3,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <time.h>
+#include <unistd.h>
 
 #include "imdb.h"
 
@@ -176,6 +177,12 @@ IMDB_DataBaseMgr *IMDB_DataBaseMgrCreate(uint32_t capacity)
         return NULL;
     }
     memset(mgr, 0, sizeof(IMDB_DataBaseMgr));
+
+    ret = gethostname(mgr->nodeInfo.hostName, sizeof(mgr->nodeInfo.hostName));
+    if (ret != 0) {
+        free(mgr);
+        return NULL;
+    }
 
     mgr->tables = (IMDB_Table **)malloc(sizeof(IMDB_Table *) * capacity);
     if (mgr->tables == NULL) {
@@ -484,5 +491,148 @@ ERR:
 
     pthread_rwlock_unlock(&mgr->rwlock);
     return -1;
+}
+
+static int IMDB_Record2Json(IMDB_DataBaseMgr *mgr, IMDB_Table *table, IMDB_Record *record, char *jsonStr, int jsonStrLen)
+{
+    int ret = 0;
+    char buffer[MAX_DATA_STR_LEN];
+    char *json_cursor = jsonStr;
+    int maxLen = jsonStrLen;
+
+    time_t now;
+    time(&now);
+
+    memset(jsonStr, 0, jsonStrLen);
+    ret = snprintf(json_cursor, maxLen, "{\"timestamp\": %d", now * 1000);
+    if (ret < 0) {
+        return -1;
+    }
+    json_cursor += ret;
+    maxLen -= ret;
+
+    ret = snprintf(json_cursor, maxLen, ", \"hostname\": \"%s\"", mgr->nodeInfo.hostName);
+    if (ret < 0) {
+        return -1;
+    }
+    json_cursor += ret;
+    maxLen -= ret;
+
+    ret = snprintf(json_cursor, maxLen, ", \"table_name\": \"%s\"", table->name);
+    if (ret < 0) {
+        return -1;
+    }
+    json_cursor += ret;
+    maxLen -= ret;
+
+    for (int i = 0; i < record->metricsNum; i++) {
+        ret = snprintf(json_cursor, maxLen, ", \"%s\": \"%s\"", record->metrics[i]->name, record->metrics[i]->val);
+        if (ret < 0) {
+            return -1;
+        }
+        json_cursor += ret;
+        maxLen -= ret;
+    }
+
+    ret = snprintf(json_cursor, maxLen, "}");
+    if (ret < 0) {
+        return -1;
+    }
+    json_cursor += ret;
+    maxLen -= ret;
+
+    return 0;
+}
+
+int IMDB_DataStr2Json(IMDB_DataBaseMgr *mgr, char *recordStr, int recordLen, char *jsonStr, int jsonStrLen)
+{
+    pthread_rwlock_wrlock(&mgr->rwlock);
+
+    int ret = 0;
+    IMDB_Table *table = NULL;
+    IMDB_Record *record = NULL;
+    IMDB_Metric *metric = NULL;
+
+    int index = -1;
+    char *token = NULL;
+    char delim[] = "|";
+    char *buffer = NULL;
+    char *buffer_head = NULL;;
+
+    buffer = strdup(recordStr);
+    if (buffer == NULL) {
+        goto ERR;
+    }
+    buffer_head = buffer;
+
+    record = IMDB_RecordCreate(MAX_IMDB_RECORD_CAPACITY);
+    if (record == NULL) {
+        free(buffer_head);
+        goto ERR;
+    }
+
+    // start analyse record string
+    for (token = strsep(&buffer, delim); token != NULL; token = strsep(&buffer, delim)) {
+        if (strcmp(token, "") == 0) {
+            continue;
+        }
+        if (strcmp(token, "\n") == 0) {
+            continue;
+        }
+
+        // mark table name as the -1 substring so that metrics start at 0
+        // find table by the first substring
+        if (index == -1) {
+            table = IMDB_DataBaseMgrFindTable(mgr, token);
+            if (table == NULL) {
+                printf("[IMDB] Can not find table named %s.\n", token);
+                free(buffer_head);
+                goto ERR;
+            }
+            index += 1;
+            continue;
+        }
+
+        // fill record by the rest substrings
+        metric = IMDB_MetricCreate(table->meta->metrics[index]->name,
+                                   table->meta->metrics[index]->description,
+                                   table->meta->metrics[index]->type);
+        if (metric == NULL) {
+            printf("[IMDB] Can't create metrics.\n");
+            free(buffer_head);
+            goto ERR;
+        }
+
+        ret = IMDB_MetricSetValue(metric, token);
+        if (ret != 0) {
+            free(buffer_head);
+            goto ERR;
+        }
+
+        ret = IMDB_RecordAddMetric(record, metric);
+        if (ret != 0) {
+            free(buffer_head);
+            goto ERR;
+        }
+
+        index += 1;
+    }
+
+    ret = IMDB_Record2Json(mgr, table, record, jsonStr, jsonStrLen);
+    if (ret != 0) {
+        free(buffer_head);
+        goto ERR;
+    }
+
+    // printf("[IMDB] Add Record success.\n");
+    free(buffer_head);
+
+    pthread_rwlock_unlock(&mgr->rwlock);
+    return 0;
+ERR:
+    pthread_rwlock_unlock(&mgr->rwlock);
+    IMDB_RecordDestroy(record);
+    return -1;
+
 }
 

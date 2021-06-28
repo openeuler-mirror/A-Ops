@@ -55,6 +55,13 @@
 #define MAX_EXTEND_PROBE_PARAM_LEN 128
 #define MAX_COMMAND_LEN 1024
 
+// kafka switch
+typedef enum {
+    KAFKA_SWITCH_ON = 0,
+    KAFKA_SWITCH_OFF,
+    KAFKA_SWITCH_MAX
+} KafkaSwitch;
+
 // probe status
 typedef enum {
     PROBE_SWITCH_AUTO = 0,

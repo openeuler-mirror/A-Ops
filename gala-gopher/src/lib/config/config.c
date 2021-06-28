@@ -187,6 +187,16 @@ static int ConfigMgrLoadKafkaConfig(void *config, config_setting_t *settings)
     }
     memcpy(kafkaConfig->topic, strVal, strlen(strVal));
 
+    ret = config_setting_lookup_string(settings, "switch", &strVal);
+    if (ret == 0) {
+        printf("[CONFIG] load config for kafka switch failed.\n");
+        return -1;
+    }
+    if (strcmp(strVal, "on") == 0) {
+        kafkaConfig->kafkaSwitch = KAFKA_SWITCH_ON;
+    } else {
+        kafkaConfig->kafkaSwitch = KAFKA_SWITCH_OFF;
+    }
     return 0;
 
 }
