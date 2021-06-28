@@ -83,6 +83,6 @@ function install_extend_probes()
 install_daemon_bin
 install_conf
 install_meta
-install_extend_probes
+#install_extend_probes
 
 

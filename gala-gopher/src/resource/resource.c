@@ -37,10 +37,10 @@ SubModuleInitor gSubModuleInitorTbl[] = {
     { ExtendProbeMgrInit,   ExtendProbeMgrDeinit },
     { MeasurementMgrInit,   MeasurementMgrDeinit },
     { FifoMgrInit,          FifoMgrDeinit },
-    // { KafkaMgrInit,         KafkaMgrDeinit },
-    { IMDBMgrInit,          IMDBMgrDeinit },
+    { KafkaMgrInit,         KafkaMgrDeinit },       // kafka must precede egress
+    { IMDBMgrInit,          IMDBMgrDeinit },        // IMDB must precede ingress
+    { EgressMgrInit,        EgressMgrDeinit },      // egress must precede ingress
     { IngressMgrInit,       IngressMgrDeinit },
-    // { EgressMgrInit,        EgressMgrDeinit },
     { WebServerInit,        WebServerDeinit }
 };
 
@@ -196,7 +196,7 @@ static int ExtendProbeMgrInit(ResourceMgr *resourceMgr)
         memcpy(_extendProbe->executeCommand, _extendProbeConfig->command, strlen(_extendProbeConfig->command));
         memcpy(_extendProbe->executeParam, _extendProbeConfig->param, strlen(_extendProbeConfig->param));
         memcpy(_extendProbe->startChkCmd, _extendProbeConfig->startChkCmd, strlen(_extendProbeConfig->startChkCmd));
-        
+
         _extendProbe->probeSwitch = _extendProbeConfig->probeSwitch;
         _extendProbe->chkType = _extendProbeConfig->startChkType;
 
@@ -277,6 +277,12 @@ static int KafkaMgrInit(ResourceMgr *resourceMgr)
     KafkaMgr *kafkaMgr = NULL;
 
     configMgr = resourceMgr->configMgr;
+
+    if (configMgr->kafkaConfig->kafkaSwitch == KAFKA_SWITCH_OFF) {
+        printf("[RESOURCE] kafka switch off, skip kafka mgr create.\n");
+        return 0;
+    }
+
     kafkaMgr = KafkaMgrCreate(configMgr->kafkaConfig->broker, configMgr->kafkaConfig->topic);
     if (kafkaMgr == NULL) {
         printf("[RESOURCE] create kafkaMgr failed.\n");
@@ -394,6 +400,8 @@ static int IngressMgrInit(ResourceMgr *resourceMgr)
     ingressMgr->probeMgr = resourceMgr->probeMgr;
     ingressMgr->extendProbeMgr = resourceMgr->extendProbeMgr;
     ingressMgr->imdbMgr = resourceMgr->imdbMgr;
+
+    ingressMgr->egressMgr = resourceMgr->egressMgr;
 
     resourceMgr->ingressMgr = ingressMgr;
     return 0;

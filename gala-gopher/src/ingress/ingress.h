@@ -12,6 +12,7 @@
 #include "probe.h"
 #include "extend_probe.h"
 #include "imdb.h"
+#include "egress.h"
 
 typedef struct {
     FifoMgr *fifoMgr;
@@ -21,6 +22,8 @@ typedef struct {
 
     IMDB_DataBaseMgr *imdbMgr;
 
+    // data export
+    EgressMgr *egressMgr;
     int epoll_fd;
     pthread_t tid;
 } IngressMgr;

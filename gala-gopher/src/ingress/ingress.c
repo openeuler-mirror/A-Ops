@@ -71,6 +71,35 @@ static int IngressInit(IngressMgr *mgr)
     return 0;
 }
 
+static int IngressData2Egress(IngressMgr *mgr, char *dataStr, int dataStrLen)
+{
+    int ret = 0;
+
+    // format data to json
+    char *jsonStr = malloc(MAX_DATA_STR_LEN);
+    if (jsonStr == NULL) {
+        printf("[INGRESS] alloc jsonStr failed.\n");
+    }
+    ret = IMDB_DataStr2Json(mgr->imdbMgr, dataStr, strlen(dataStr), jsonStr, MAX_DATA_STR_LEN);
+    if (ret != 0) {
+        printf("[INGRESS] reformat dataStr to json failed.\n");
+    }
+    ret = FifoPut(mgr->egressMgr->fifo, (void *)jsonStr);
+    if (ret != 0) {
+        printf("[INGRESS] egress fifo full.\n");
+        return -1;
+    }
+
+    uint64_t msg = 1;
+    ret = write(mgr->egressMgr->fifo->triggerFd, &msg, sizeof(uint64_t));
+    if (ret != sizeof(uint64_t)) {
+        printf("[INGRESS] send trigger msg to egress eventfd failed.\n");
+        return -1;
+    }
+
+    return 0;
+}
+
 static int IngressDataProcesssInput(Fifo *fifo, IngressMgr *mgr)
 {
     // read data from fifo
@@ -97,6 +126,12 @@ static int IngressDataProcesssInput(Fifo *fifo, IngressMgr *mgr)
         ret = IMDB_DataBaseMgrAddRecord(mgr->imdbMgr, dataStr, strlen(dataStr));
         if (ret != 0) {
             printf("[INGRESS] insert data into imdb failed.\n");
+        }
+
+        // send data to egress
+        ret = IngressData2Egress(mgr, dataStr, strlen(dataStr));
+        if (ret != 0) {
+            printf("[INGRESS] send data to egress failed.\n");
         }
 
         free(dataStr);

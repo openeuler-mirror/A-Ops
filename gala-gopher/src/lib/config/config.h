@@ -29,6 +29,7 @@ typedef struct {
 typedef struct {
     char broker[MAX_KAFKA_BROKER_LEN];
     char topic[MAX_KAFKA_TOPIC_LEN];
+    KafkaSwitch kafkaSwitch;
 } KafkaConfig;
 
 typedef struct {

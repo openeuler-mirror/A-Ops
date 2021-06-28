@@ -4,6 +4,7 @@
 #include <stdint.h>
 #include <pthread.h>
 
+#include "fifo.h"
 #include "kafka.h"
 
 typedef struct {
@@ -11,6 +12,9 @@ typedef struct {
 
     uint32_t interval;
     uint32_t timeRange;
+
+    Fifo *fifo;
+    int epoll_fd;
     pthread_t tid;
 } EgressMgr;
 
