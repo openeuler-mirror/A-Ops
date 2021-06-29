@@ -5,6 +5,22 @@ PROJECT_FOLDER=$(dirname $(readlink -f "$0"))
 EXT_PROBE_FOLDER=${PROJECT_FOLDER}/src/probes/extends
 EXT_PROBE_INSTALL_LIST=`find ${EXT_PROBE_FOLDER} -maxdepth 2 | grep "\<install.sh\>"`
 
+TAILOR_PATH=${PROJECT_FOLDER}/tailor.conf
+TAILOR_PATH_TMP=${TAILOR_PATH}.tmp
+
+function load_tailor()
+{
+    if [ -f ${TAILOR_PATH} ];then
+        cp ${TAILOR_PATH} ${TAILOR_PATH_TMP}
+
+        sed -i '/^$/d' ${TAILOR_PATH_TMP}
+        sed -i 's/ //g' ${TAILOR_PATH_TMP}
+        sed -i 's/^/export /' ${TAILOR_PATH_TMP}
+        eval `cat ${TAILOR_PATH_TMP}`
+        rm -rf ${TAILOR_PATH_TMP}
+    fi
+}
+
 function install_daemon_bin()
 {
     GOPHER_BIN_FILE=${PROJECT_FOLDER}/gala-gopher
@@ -80,6 +96,7 @@ function install_extend_probes()
 }
 
 # main process
+load_tailor
 install_daemon_bin
 install_conf
 install_meta

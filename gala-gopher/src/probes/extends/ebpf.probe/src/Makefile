@@ -31,6 +31,12 @@ APPS := tcpprobe/tcpprobe \
 	dnsmasqprobe/trace_dnsmasq \
 	nginxprobe/nginx_probe
 
+$(info === org apps: $(APPS) EBPF_TAILOR: ${EBPF_PROBES})
+ifneq ($(EBPF_PROBES),)
+    APPS := $(shell  echo ${APPS} | sed 's/ /\n/g' | grep -Ev "${EBPF_PROBES}" | sed ':a;N;s/\n/ /g;ba')
+endif
+$(info === apps after tailor: $(APPS))
+
 APPS_DIR = $(dir $(APPS))
 OUTPUT_APPS_DIR = $(addprefix $(OUTPUT)/, $(APPS_DIR))
 APPS_INC = $(addprefix -I./, $(OUTPUT_APPS_DIR))

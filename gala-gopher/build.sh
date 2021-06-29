@@ -13,13 +13,36 @@ PROBES_META_LIST=""
 
 DAEMON_FOLDER=${PROJECT_FOLDER}/src/daemon
 
+TAILOR_PATH=${PROJECT_FOLDER}/tailor.conf
+TAILOR_PATH_TMP=${TAILOR_PATH}.tmp
+
 echo "PROJECT_FOLDER:"
 echo ${PROJECT_FOLDER}
 echo "PROBES_PATH_LIST:"
 echo ${PROBES_PATH_LIST}
 
+function load_tailor()
+{
+    if [ -f ${TAILOR_PATH} ]; then
+        cp ${TAILOR_PATH} ${TAILOR_PATH_TMP}
+
+        sed -i '/^$/d' ${TAILOR_PATH_TMP}
+        sed -i 's/ //g' ${TAILOR_PATH_TMP}
+        sed -i 's/^/export /' ${TAILOR_PATH_TMP}
+        eval `cat ${TAILOR_PATH_TMP}`
+
+        rm -rf ${TAILOR_PATH_TMP}
+    fi
+}
+
 function prepare_probes()
 {
+    if [ ${PROBES} ]; then
+        # check tailor env
+        PROBES_PATH_LIST=$(echo "$PROBES_PATH_LIST" | grep -Ev "$PROBES")
+        echo "prepare probes after tailor: " ${PROBES_PATH_LIST}
+    fi
+
     cd ${PROBES_FOLDER}
     for PROBE_PATH in ${PROBES_PATH_LIST}
     do
@@ -90,6 +113,7 @@ function compile_extend_probes()
     done
 }
 
+load_tailor
 prepare_probes
 compile_daemon
 #compile_extend_probes

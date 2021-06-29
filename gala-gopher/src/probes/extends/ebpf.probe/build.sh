@@ -20,6 +20,7 @@ function gen_vmlinux_header_file()
 function compile_probe()
 {
     cd ${SRC_DIR}
+    echo "=======compile_probe:" ${EBPF_PROBES}
     make
 }
 
