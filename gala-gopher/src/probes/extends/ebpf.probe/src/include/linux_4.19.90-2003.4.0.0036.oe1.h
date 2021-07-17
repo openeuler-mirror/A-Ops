@@ -97667,15 +97667,5 @@ struct ip_vs_conn_fnat {
     struct timer_list   timer; /* Expiration timer */
 };
 
-struct ip_vs_dest_s {
-    u8      temp1[16];  /* for the dests in the service */
-    u8      temp2[16];  /* for table with all the dests */
-    u16     af;         /* address family */
-    u16     port;       /* port number of the server */
-    union nf_inet_addr addr; /* IP address of the server */
-    u32     flags;      /* dest status flags */
-    atomic_t    conn_flags;  /* flags to copy to conn */
-};
-
 #endif
 #endif /* __VMLINUX_H__ */

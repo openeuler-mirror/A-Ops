@@ -42,6 +42,8 @@ struct link_key {
 struct link_value {
     __u32       pid;
     char        comm[TASK_COMM_LEN];
+    __u16       l_port;
+    struct ip   l_addr;
     __u16       protocol;
     __u16       state;
     __u64       ts;
@@ -53,6 +55,7 @@ struct collect_key {
     struct ip   c_addr;
     struct ip   v_addr;
     struct ip   s_addr;
+    struct ip   l_addr;
     __u16       v_port;
     __u16       s_port;
     __u16       family;
