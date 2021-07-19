@@ -50,7 +50,7 @@ void update_ipvs_collect_data(struct collect_value *dd)
     return;
 }
 
-void update_ipvs_collect_map(struct link_key *k, unsigned short protocol, int map_fd)
+void update_ipvs_collect_map(struct link_key *k, unsigned short protocol, struct ip *laddr, int map_fd)
 {
     struct collect_key      key = {0};
     struct collect_value    val = {0};
@@ -60,6 +60,7 @@ void update_ipvs_collect_map(struct link_key *k, unsigned short protocol, int ma
     memcpy((char *)&key.c_addr, (char *)&k->c_addr, sizeof(struct ip));
     memcpy((char *)&key.v_addr, (char *)&k->v_addr, sizeof(struct ip));
     memcpy((char *)&key.s_addr, (char *)&k->s_addr, sizeof(struct ip));
+    memcpy((char *)&key.l_addr, (char *)laddr, sizeof(struct ip));
     key.v_port = k->v_port;
     key.s_port = k->s_port;
 
@@ -80,6 +81,7 @@ static void pull_probe_data(int fd, int collect_fd)
     unsigned char ip_pro_str[16];
     unsigned char cli_ip_str[16];
     unsigned char vir_ip_str[16];
+    unsigned char loc_ip_str[16];
     unsigned char src_ip_str[16];
 
     while (bpf_map_get_next_key(fd, &key, &next_key) == 0) {
@@ -88,19 +90,22 @@ static void pull_probe_data(int fd, int collect_fd)
             ippro_to_str(value.protocol, ip_pro_str);
             ip_str(next_key.family, (unsigned char *)&(next_key.c_addr), cli_ip_str, INET6_ADDRSTRLEN);
             ip_str(next_key.family, (unsigned char *)&(next_key.v_addr), vir_ip_str, INET6_ADDRSTRLEN);
+            ip_str(next_key.family, (unsigned char *)&(value.l_addr), loc_ip_str, INET6_ADDRSTRLEN);
             ip_str(next_key.family, (unsigned char *)&(next_key.s_addr), src_ip_str, INET6_ADDRSTRLEN);
-            printf("LVS new connect protocol[%s] type[%s] c[%s:%d]--v[%s:%d]--s[%s:%d] state[%d]. \n",
+            printf("LVS new connect protocol[%s] type[%s] c[%s:%d]--v[%s:%d]--l[%s:%d]--s[%s:%d] state[%d]. \n",
                 ip_pro_str,
                 (next_key.family == AF_INET) ? "IPv4" : "IPv6",
                 cli_ip_str,
                 ntohs(next_key.c_port),
                 vir_ip_str,
                 ntohs(next_key.v_port),
+                loc_ip_str,
+                ntohs(value.l_port),
                 src_ip_str,
                 ntohs(next_key.s_port),
                 value.state);
             /* update collect map */
-            update_ipvs_collect_map(&next_key, value.protocol, collect_fd);
+            update_ipvs_collect_map(&next_key, value.protocol, &value.l_addr, collect_fd);
         }
         if (value.state == IP_VS_TCP_S_CLOSE) {
             bpf_map_delete_elem(fd, &next_key);
@@ -121,6 +126,7 @@ void print_ipvs_collect(int map_fd)
     unsigned char cli_ip_str[16];
     unsigned char vir_ip_str[16];
     unsigned char src_ip_str[16];
+    unsigned char loc_ip_str[16];
 
     while (bpf_map_get_next_key(map_fd, &key, &next_key) != -1) {
         ret = bpf_map_lookup_elem(map_fd, &next_key, &value);
@@ -128,21 +134,25 @@ void print_ipvs_collect(int map_fd)
             ip_str(next_key.family, (unsigned char *)&(next_key.c_addr), cli_ip_str, INET6_ADDRSTRLEN);
             ip_str(next_key.family, (unsigned char *)&(next_key.v_addr), vir_ip_str, INET6_ADDRSTRLEN);
             ip_str(next_key.family, (unsigned char *)&(next_key.s_addr), src_ip_str, INET6_ADDRSTRLEN);
+            ip_str(next_key.family, (unsigned char *)&(next_key.l_addr), loc_ip_str, INET6_ADDRSTRLEN);
             fprintf(stdout,
-                "|%s|%s|%s|%s|%u|%u|%u|%llu|\n",
+                "|%s|%s|%s|%s|%s|%s|%u|%u|%u|%llu|\n",
                 METRIC_NAME_LVS_LINK,
+                "ipvs",
                 cli_ip_str,
                 vir_ip_str,
+                loc_ip_str,
                 src_ip_str,
                 ntohs(next_key.v_port),
                 ntohs(next_key.s_port),
                 value.protocol,
                 value.link_count);
 
-            printf("collect c_ip[%s], v_ip[%s:%d] s_ip[%s:%d] link_count[%lld]. \n", 
+            printf("collect c_ip[%s], v_ip[%s:%d] l_ip[%s] s_ip[%s:%d] link_count[%lld]. \n", 
                 cli_ip_str,
                 vir_ip_str,
                 ntohs(next_key.v_port),
+                loc_ip_str,
                 src_ip_str,
                 ntohs(next_key.s_port),
                 value.link_count);

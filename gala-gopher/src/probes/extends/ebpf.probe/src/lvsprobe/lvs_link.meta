@@ -6,19 +6,29 @@ measurements:
         fields:
         (
             {
+                description: "process name",
+                type: "Unknown",
+                name: "process_name",
+            },
+            {
                 description: "client ip",
                 type: "Unknown",
                 name: "client_ip",
             },
             {
-                description: "server ip",
-                type: "Unknown",
-                name: "server_ip",
-            },
-            {
                 description: "virtual ip",
                 type: "Unknown",
                 name: "virtual_ip",
+            },
+            {
+                description: "local ip",
+                type: "Unknown",
+                name: "local_ip",
+            },
+            {
+                description: "server ip",
+                type: "Unknown",
+                name: "server_ip",
             },
             {
                 description: "server port",
