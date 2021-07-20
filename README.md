@@ -3,21 +3,15 @@
 #### 介绍
 the intelligent  ops toolkit for openEuler
 
-#### 软件架构
-软件架构说明
+#### 软件介绍
+- gala-gopher
+
+  gala-gopher是基于eBPF的低负载探针框架，致力于提供裸机/虚机/容器场景下的云原生观测引擎（cloud observation engine），帮助业务快速创新；详细介绍请[进入](gala-gopher/README.md)。
 
 
 #### 安装教程
 
-1.  xxxx
-2.  xxxx
-3.  xxxx
-
 #### 使用说明
-
-1.  xxxx
-2.  xxxx
-3.  xxxx
 
 #### 参与贡献
 
