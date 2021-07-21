@@ -96,8 +96,14 @@ static void bpf_update_link(struct sock *sk, u16 new_state)
 
 static void bpf_add_link(struct sock *sk, int role)
 {
-    long ret;
+    long ret = -1;
     struct proc_info proc = {0};
+    u16 src_port = _(sk->sk_num);
+    u16 dst_port = _(sk->sk_dport);
+    /* if port 0, break. */
+    if (dst_port == 0 || src_port == 0) {
+        return;
+    }
 
     bpf_get_current_comm(&proc.comm, sizeof(proc.comm));
     if (proc.comm[0] == 's' && proc.comm[1] == 's' && proc.comm[2] == 'h' &&
