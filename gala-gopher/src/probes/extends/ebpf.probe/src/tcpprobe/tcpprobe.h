@@ -70,6 +70,7 @@ struct metric_data {
     __u32 total_retrans;
     __u32 lost;
     __u32 srtt;
+    char role;
 };
 
 struct proc_info {

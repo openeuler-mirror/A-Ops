@@ -26,6 +26,10 @@ function install_daemon_bin()
     GOPHER_BIN_FILE=${PROJECT_FOLDER}/gala-gopher
     GOPHER_BIN_TARGET_DIR=/usr/bin
 
+    if [ $# -eq 1 ]; then
+        GOPHER_BIN_TARGET_DIR=$1
+    fi
+
     cd ${PROJECT_FOLDER}
     if [ ! -f ${GOPHER_BIN_FILE} ]; then
         echo "${GOPHER_BIN_FILE} not exist. please check if build success."
@@ -42,6 +46,10 @@ function install_conf()
 {
     GOPHER_CONF_FILE=${PROJECT_FOLDER}/config/gala-gopher.conf
     GOPHER_CONF_TARGET_DIR=/opt/gala-gopher
+
+    if [ $# -eq 1 ]; then
+        GOPHER_CONF_TARGET_DIR=$1
+    fi
 
     cd ${PROJECT_FOLDER}
     if [ ! -f ${GOPHER_CONF_FILE} ]; then
@@ -62,6 +70,10 @@ function install_meta()
 {
     GOPHER_META_DIR=/opt/gala-gopher/meta
 
+    if [ $# -eq 1 ]; then
+        GOPHER_META_DIR=$1/meta
+    fi
+
     cd ${PROJECT_FOLDER}
 
     # install meta files
@@ -80,6 +92,11 @@ function install_meta()
 function install_extend_probes()
 {
     GOPHER_EXTEND_PROBE_DIR=/opt/gala-gopher/extend_probes
+
+    if [ $# -eq 1 ]; then
+        GOPHER_EXTEND_PROBE_DIR=$1/extend_probes
+    fi
+
     if [ ! -d ${GOPHER_EXTEND_PROBE_DIR} ]; then
         mkdir -p ${GOPHER_EXTEND_PROBE_DIR}
     fi
@@ -97,9 +114,9 @@ function install_extend_probes()
 
 # main process
 load_tailor
-install_daemon_bin
-install_conf
-install_meta
-#install_extend_probes
+install_daemon_bin $1
+install_conf $2
+install_meta $2
+install_extend_probes $2
 
 

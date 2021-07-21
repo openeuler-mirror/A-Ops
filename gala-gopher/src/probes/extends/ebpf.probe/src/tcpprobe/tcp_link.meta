@@ -15,6 +15,11 @@ measurements:
                 type: "Unknown",
                 name: "process_name",
             },
+	    {
+                description: "role",
+                type: "Unknown",
+                name: "role",
+            },
             {
                 description: "client ip",
                 type: "Unknown",

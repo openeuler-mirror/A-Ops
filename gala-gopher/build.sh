@@ -109,13 +109,13 @@ function compile_extend_probes()
     for BUILD_PATH in ${EXT_PROBE_BUILD_LIST}
     do
 	echo "==== BUILD_PATH: " ${BUILD_PATH}
-        ${BUILD_PATH}
+        ${BUILD_PATH} $1
     done
 }
 
 load_tailor
 prepare_probes
 compile_daemon
-#compile_extend_probes
+compile_extend_probes $1
 clean_env
 

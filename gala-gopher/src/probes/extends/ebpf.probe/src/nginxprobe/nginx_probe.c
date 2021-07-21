@@ -58,9 +58,9 @@ void update_statistic_map(int map_fd, struct ngx_metric *data)
 
 void pull_probe_data(int map_fd, int statistic_map_fd)
 {
-    int ret;
-    struct sockaddr key = {0};
-    struct sockaddr next_key = {0};
+    int ret = -1;
+    struct ip_addr key = {0};
+    struct ip_addr next_key = {0};
     struct ngx_metric data;
     unsigned char c_ip_str[INET6_ADDRSTRLEN];
     unsigned char c_local_ip_str[INET6_ADDRSTRLEN];

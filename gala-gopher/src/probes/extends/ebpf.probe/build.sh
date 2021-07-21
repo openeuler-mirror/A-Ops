@@ -71,7 +71,9 @@ if [ "$1" = "clean" ];then
     compile_clean
     exit
 fi
-prepare_dep
+if [ "$1" != "package" ]; then
+    prepare_dep
+fi
 if [ $? -ne 0 ];then
     echo "Error: prepare dependence softwares failed"
     exit

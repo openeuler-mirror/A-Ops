@@ -53,7 +53,7 @@ int filter_redundant_data(struct link_key *k, struct link_data *d)
         1 port == 0
         2 rx/tx == 0
     */
-    if (k->src_port == 0 || k->dst_port == 0 || d->rx == 0 || d->tx == 0) {
+    if (strstr(d->comm, "sshd") || strstr(d->comm, "broker")) {
         return 1;
     }
     return 0;
@@ -82,6 +82,7 @@ void update_link_metric_map(struct link_key *k, struct link_data *d, int map_fd)
     }
     key.proto = k->family;
     key.pid = d->pid;
+    data.role = d->role;
 
     bpf_map_lookup_elem(map_fd, &key, &data);
     update_link_metric_data(&data, d);
@@ -155,10 +156,11 @@ void print_link_metric(int map_fd)
             ip_str(next_key.proto, (unsigned char *)&(next_key.c_ip), src_ip_str, INET6_ADDRSTRLEN);
             ip_str(next_key.proto, (unsigned char *)&(next_key.s_ip), dst_ip_str, INET6_ADDRSTRLEN);
             fprintf(stdout,
-                "|%s|%u|%s|%s|%s|%u|%u|%u|%llu|%llu|%u|%u|%u|%u|%u|\n",
+                "|%s|%u|%s|%d|%s|%s|%u|%u|%u|%llu|%llu|%u|%u|%u|%u|%u|\n",
                 METRIC_NAME_TCP_LINK,
                 next_key.pid,
                 data.comm,
+                data.role,
                 src_ip_str,
                 dst_ip_str,
                 next_key.s_port,
