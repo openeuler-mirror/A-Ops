@@ -69,7 +69,7 @@ $(OUT_DIR):
 	$(Q)mkdir -p $(OUT_DIR)
 
 # Build final application
-$(APPS): %: $(OUTPUT)/%.o $(LIBBPF_OBJ) $(UTIL_OBJ) | $(OUTPUT)
+$(APPS): %: $(OUTPUT)/%.o $(LIBBPF_OBJ) $(UTIL_SRC) | $(OUTPUT)
 	$(call msg,BINARY,$@)
 	$(Q)$(CC) $(CFLAGS) $(INCLUDES) $^ -lelf -lz -o $@
 
@@ -99,8 +99,6 @@ $(LIBBPF_OBJ): $(wildcard $(LIBBPF_SRC)/*.[ch] $(LIBBPF_SRC)/Makefile) | $(OUTPU
 		    OBJDIR=$(dir $@)/libbpf DESTDIR=$(dir $@)		      \
 		    INCLUDEDIR= LIBDIR= UAPIDIR=			      \
 		    install
-$(UTIL_OBJ): $(UTIL_SRC)
-	$(CC) $(CFLAGS) $(INCLUDES) -c $(filter %.c,$^) -o $@
 # delete failed targets
 .DELETE_ON_ERROR:
 
