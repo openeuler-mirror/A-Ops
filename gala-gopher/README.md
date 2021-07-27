@@ -1,7 +1,7 @@
 # gala-gopher
 
 ## 介绍
-gala-gopher是基于eBPF的低负载探针框架，致力于提供裸机/虚机/容器场景下的云原生观测引擎（cloud observation engine），帮助业务创新；
+gala-gopher是基于eBPF的低负载探针框架，致力于提供裸机/虚机/容器场景下的云原生观测引擎（cloud observation engine），帮助业务快速创新；
 
 ## 快速开始
 
@@ -89,11 +89,9 @@ gala-gopher是基于eBPF的低负载探针框架，并集成了常用的native�
 
 [配置文件介绍](doc/conf_introduction.md)
 
-### 如何开发一个native探针
+### 如何开发一个探针
 
-[如何开发一个native探针](doc/how_to_add_probe.md)
-
-### 如何开发一个三方探针
+[如何开发一个探针](doc/how_to_add_probe.md)
 
 ### eBPF探针开发指南
 
@@ -101,7 +99,11 @@ gala-gopher是基于eBPF的低负载探针框架，并集成了常用的native�
 
 ### 如何实现探针编译裁剪
 
-### 如何开发探针测试例
+[如何实现探针编译裁剪](doc/how_to_tail_probe.md)
+
+### 测试框架介绍
+
+[测试框架介绍](test/README.md)
 
 ## 负载测试
 
