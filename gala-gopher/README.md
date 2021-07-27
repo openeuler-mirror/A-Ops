@@ -107,6 +107,12 @@ gala-gopher是基于eBPF的低负载探针框架，并集成了常用的native�
 
 ## 负载测试
 
+## 系统演示
+
+基于CDN简化场景部署架构感知服务做了拓扑绘制的效果演示如下。
+
+![系统演示](doc/pic/demo.gif)
+
 ## gala-gopher路标
 
 ![roadmap](doc/roadmap.JPG)
