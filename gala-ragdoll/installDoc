@@ -1,0 +1,31 @@
+# 需要<pyconfig.h>
+yum install python3-devel python3-cffi gcc cmake pcre2-devel
+
+
+# 安装libyang模块
+git clone https://github.com/CESNET/libyang.git
+mkdir build
+cd build
+cmake ..
+make
+make install
+cp -r /usr/local/lib64/libyang* /usr/lib64
+
+如果中间出现cmake失败，问题总结如下：
+问题1：提示缺少pcre2的头文件
+错误提示：Could NOT find PCRE2: Found unsuitable version "", but required is at least
+解决方法：yum install pcre2-devel
+
+问题2：make过程中提示警告被看做error：
+cc1: all warnings being treated as errors
+error: command 'gcc' failed with exit status 1
+解决方法：在代码中搜索“Werror”字样，查看搜索结果：
+tests/style/CMakeLists.txt:12:target_compile_options(cpp_compat PUBLIC "-Werror=c++-compat")
+删除该行
+
+问题3：libyang社区已经发布2.0版本，动态库链接为：libyang.so.2
+如果想要获取so.1，则需要在原生社区中下载v1.0.225。构建方法相同，同时需要预先安装pcre-devel。
+
+
+# 安装libyang的python模块
+pip3 install libyang
