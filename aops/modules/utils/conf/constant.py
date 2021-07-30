@@ -5,8 +5,26 @@
 # You can use this software according to the terms and conditions of the Mulan PSL v2.
 # You may obtain a copy of Mulan PSL v2 at:
 #     http://license.coscl.org.cn/MulanPSL2
-# THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR
+# THIS SOFTWARE IS PROVIDED ON AN 'AS IS' BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR
 # IMPLIED, INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY OR FIT FOR A PARTICULAR
 # PURPOSE.
 # See the Mulan PSL v2 for more details.
 # ******************************************************************************/
+"""
+Time:
+Author:
+Description: constant
+"""
+import os
+
+BASE_CONFIG_PATH = '/etc/aops'
+
+# path of global configuration
+SYSTEM_CONFIG_PATH = os.path.join(BASE_CONFIG_PATH, 'system.ini')
+
+# url format
+URL_FORMAT = "http://%s:%s%s"
+
+# parameter
+MAX_PORT = 65535
+MIN_PORT = 0

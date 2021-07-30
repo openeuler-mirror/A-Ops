@@ -10,7 +10,3 @@
 # PURPOSE.
 # See the Mulan PSL v2 for more details.
 # ******************************************************************************/
-"""
-Description: log module.
-Class: Logger
-"""

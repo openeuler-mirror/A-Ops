@@ -10,3 +10,17 @@
 # PURPOSE.
 # See the Mulan PSL v2 for more details.
 # ******************************************************************************/
+"""
+Time:
+Author:
+Description: default config.
+"""
+import os
+
+# log configuration
+log = {
+    "LOG_DIR": os.path.join('/', 'var', 'log', 'aops'),
+    "LOG_LEVEL": 'INFO',
+    "MAX_BYTES": 31457280,
+    "BACKUP_COUNT": 30
+}
