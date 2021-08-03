@@ -42,6 +42,16 @@ module openEuler-logos-openEuler.repo {
     description "The real path corresponding to the repo file.";
   }
 
+  extension type{
+     argument "type";
+     description "The type of this configuration file.";
+  }
+
+  extension spacer{
+    argument "spacer";
+    description "Spacer between configuration item and configuration value.";
+  }
+
   container yum {
 
     description "the repo file in yum modules.";
@@ -51,14 +61,16 @@ module openEuler-logos-openEuler.repo {
       description "The file name is openEuler.repo.";
 
       repo:path "openEuler:/etc/yum.repos.d/openEuler.repo";
+      repo:type "ini";
+      repo:spacer "=";
 
-      list OS {
+      list session {
         key "name";
         description "The first configuration item in repo, and the name of the configuration item is OS.";
 
         leaf name {
           type string;
-          description "The name of the yum source of this OS.";
+          description "The name of the yum source of this session.";
         }
 
         leaf baseurl {
