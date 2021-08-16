@@ -10,3 +10,23 @@
 # PURPOSE.
 # See the Mulan PSL v2 for more details.
 # ******************************************************************************/
+"""
+Time:
+Author:
+Description:
+"""
+
+
+def compare_two_object(obj1, obj2):
+    """
+    compare two complex object, dict e.g.
+
+    Args:
+        obj1: object1
+        obj2: object2
+
+    Returns:
+        bool: whether equal
+    """
+    return obj1 == obj2 or (isinstance(obj1, type(obj2)) and
+                            "".join(sorted(str(obj1))) == "".join(sorted(str(obj2))))

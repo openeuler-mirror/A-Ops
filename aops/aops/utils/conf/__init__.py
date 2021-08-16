@@ -18,11 +18,11 @@ Description: global config.
 import os
 import configparser
 
-from . import default_config
-from .constant import SYSTEM_CONFIG_PATH
+from aops.utils.conf import default_config
+from aops.utils.conf.constant import SYSTEM_CONFIG_PATH
 
 
-class Config(object):
+class Config:
     """
     Merge system default configuration with configuration file.
     """
