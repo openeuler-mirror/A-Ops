@@ -18,13 +18,12 @@ Description: log module.
 import os
 import stat
 import logging
-
 from concurrent_log_handler import ConcurrentRotatingFileHandler
 
-from ..conf import configuration
+from aops.utils.conf import configuration
 
 
-class Logger(object):
+class Logger:
     """
     Logger class.
     """

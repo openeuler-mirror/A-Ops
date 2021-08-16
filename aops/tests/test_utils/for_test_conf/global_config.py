@@ -10,11 +10,11 @@
 # PURPOSE.
 # See the Mulan PSL v2 for more details.
 # ******************************************************************************/
-'''
+"""
 Time:
 Author:
 Description:
-'''
+"""
 test = {
     "TEST1": 1,
     "TEST2": 2
