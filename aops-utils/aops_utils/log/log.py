@@ -20,7 +20,7 @@ import stat
 import logging
 from concurrent_log_handler import ConcurrentRotatingFileHandler
 
-from aops.utils.conf import configuration
+from aops_utils.conf import configuration
 
 
 class Logger:
