@@ -1,0 +1,17 @@
+---
+- hosts: example_hosts # 此处需套填写所安装组件配置的主机名。（建议按照统一生成的名称来处理）
+  gather_facts: no
+  user: root
+  serial: 3
+  max_fail_percentage: 
+  vars_files: # 需要引用变量文件时，加入vars文件
+    - "../vars/example_vars.yml"
+  vars: # 定义安装步骤的变量，在安装过程中可以根据需要修改是否启用
+    install_example: true # 安装 example
+    config_example: true # 配置 example
+    start_example: true # 启动 example service
+    create_user: true # 创建新的用户和组
+  roles: # playbook中需要完成的角色剧本，可自定义，与顺序相关
+    - ../roles/user # （1）创建用户 playbook
+    - ../roles/example # （2） 安装 exampl playbook
+

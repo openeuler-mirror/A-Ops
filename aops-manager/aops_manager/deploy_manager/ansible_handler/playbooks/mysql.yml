@@ -1,0 +1,13 @@
+---
+- hosts: mysql_hosts # Define Execution Host Range
+  gather_facts: no # Do not collect facts during the execution to improve the execution speed.
+  user: aops # Execution user
+  vars_files:
+    - "../vars/mysql_vars.yml"
+  vars:
+    install_mysql: true # Install mysql
+    config_mysql: false # Config mysql
+    start_mysql: true # Auto start mysql service
+    create_user: false # Add mysql user
+  roles:
+    - ../roles/mysql # Install mysql

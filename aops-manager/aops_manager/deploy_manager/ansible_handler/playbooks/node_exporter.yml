@@ -1,0 +1,13 @@
+---
+- hosts: node_exporter_hosts # Define Execution Host Range
+  gather_facts: no # Do not collect facts during the execution to improve the execution speed.
+  user: aops # Execution user
+  vars_files:
+    - "../vars/node_exporter_vars.yml"
+  vars:
+    install_node_exporter: true # Install node_exporter
+    config_node_exporter: false # Config node_exporter
+    start_node_exporter: true # Auto start node_exporter service
+    create_user: Fasle # Add node_exporter user
+  roles:
+    - ../roles/node_exporter # Install node_exporter

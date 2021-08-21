@@ -1,0 +1,16 @@
+---
+# zookeeper user group
+user: "zookeeper"
+group: "zookeeper"
+
+# zookeeper data path
+data_dir: "data"
+# zookeeper log path
+zookeeper_log_path: "log"
+# zookeeper install path
+install_dir: "/opt/zookeeper"
+
+# zookeeper port config
+leader_port: 2888
+vote_port: 3888
+client_port: 2181

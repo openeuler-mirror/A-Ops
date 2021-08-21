@@ -1,0 +1,13 @@
+---
+- name: Check that if the file exists
+  stat:
+    path: "{{ item.src }}"
+  register: file_status
+  with_items: "{{ config_list }}"
+
+- name: Fetch file to src path
+  become: true
+  become_user: root
+  fetch: src={{ item.item.src }} dest={{ item.item.dest }}
+  loop: "{{ file_status.results }}"
+  when: item.stat.exists == true

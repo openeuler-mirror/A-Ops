@@ -1,0 +1,15 @@
+---
+- name: Install packages
+  become: true
+  become_user: root
+  dnf:
+    state: present
+    name:
+      - kafka
+
+- name: Create Data Dir
+  become: true
+  become_user: "{{ user }}"
+  file: path={{ item }} state=directory owner={{ user }} group={{ group }} mode=0755
+  with_items:
+    - "{{ install_dir }}/{{ kafka_log_path }}"

@@ -1,0 +1,16 @@
+---
+- name: Change owner of files
+  become: true
+  become_user: "{{ user }}"
+  file: dest={{ item }} owner={{ user }} group={{ group }}
+  with_items:
+    - "/usr/share/elasticsearch/"
+    - "/etc/sysconfig/elasticsearch"
+    - "{{ install_dir }} "
+    - "{{ elasticsearch_data_path }}"
+    - "{{ elasticsearch_log_path }}"
+
+- name: Deploy config file elastic.yml
+  become: true
+  become_user: "{{ user }}"
+  template: src=elasticsearch.j2 dest={{ install_dir }}elasticsearch.yml owner={{ user }} group={{ group }} mode=0644 backup=yes

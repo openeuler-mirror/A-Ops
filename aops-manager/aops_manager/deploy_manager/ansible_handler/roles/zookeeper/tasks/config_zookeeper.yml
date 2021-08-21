@@ -1,0 +1,30 @@
+---
+- name: Copy zoo.cfg
+  become: true
+  become_user: "{{ user }}"
+  template: src=zoo.cfg dest={{ install_dir }}/conf mode=644 owner={{ user }} group = {{ group }} backup=yes
+
+- name: Copy setId Shell
+  become: true
+  become_user: "{{ user }}"
+  template: src=setId.sh dest={{ install_dir }}/bin mode=644 owner={{ user }} group = {{ group }} backup=yes
+
+- name: Set Id
+  shell: "sh {{ install_dir }}/bin/setId.sh"
+  become: yes
+  become_user: "{{ user }}"
+
+- name: Open port of zookeeper
+  become: true
+  become_user: root
+  firewalld:
+    port: "{{ item }}/tcp"
+    zone: public
+    state: enabled
+    permanent: yes
+    immediate: yes
+  with_items:
+    - "{{ client_port }}"
+    - "{{ leader_port }}"
+    - "{{ vote_port }}"
+

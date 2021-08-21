@@ -1,0 +1,15 @@
+---
+- hosts: elasticsearch_hosts # Define Execution Host Range
+  gather_facts: no # Do not collect facts during the execution to improve the execution speed.
+  user: aops # Execution user
+  vars_files:
+    - "../vars/elasticsearch_vars.yml"
+  vars:
+    install_elasticsearch: true # Install elasticsearch
+    config_elasticsearch: true # Config elasticsearch
+    start_elasticsearch: true # Auto start elasticsearch service
+    create_user: False # Create user
+  roles:
+    # - ../roles/user # Create elasticsearch user
+    - ../roles/elasticsearch # Install elasticsearch
+

@@ -1,0 +1,45 @@
+---
+##  本文件中主要实现软件包的安装步骤，将软件包部署到目的位置
+##  新版本ansible中安装rpm包，建议使用dnf，而非yum
+
+###############################自己上传rpm软件包###########################
+# 1. 拷贝example_rpm到/tmp目录下， example_rpm为具体的文件名，定义在example_vars文件中
+- name: Copy rpm file to server
+  copy:
+    src: "{{ example_rpm }}"
+    dest: /tmp/{{example_rpm}}
+    mode: 755
+
+# 2. 安装/tmp/{{example_rpm}}软件包
+- name: install packages
+  become: true
+  become_user: root
+  dnf:
+    state: present #选择状态为present
+    disable_gpg_check: true # 本地包可关闭gpg检查
+    name: /tmp/{{example_rpm}}
+
+###############################直接使用dnf安装软件包###########################
+# 如果openEuler版本中已经发布了该软件包，配置repo源即可下载
+- name: install packages
+  become: true
+  become_user: root
+  async: 300
+  poll: 2
+  dnf:
+    state: present
+    name:
+      - example
+
+###############################自己上传源码包###########################
+# 创建安装目录
+- name: mkdir install_path
+  file: path={{install_path}} state=directory mode=0755
+
+# 复制软件包到目标目录
+- name: copy example
+  unarchive: src=example-{{version}}.tar.gz dest={{install_path}} copy=yes
+
+# 修改权限
+- name: chown
+  file: path={{install_path}} state=directory mode=0755 owner={{user}} group={{group}} recurse=yes

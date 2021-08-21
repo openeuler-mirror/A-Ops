@@ -1,0 +1,15 @@
+---
+- name: Install packages
+  become: true
+  become_user: root
+  dnf:
+    state: present
+    name:
+      - zookeeper
+
+- name: Create Data Dir
+  become: true
+  become_user: "{{ user }}"
+  file:  path={{ item }} state=directory owner={{ user }} group={{ group }} mode=755
+  with_items:
+    - "{{ install_dir }}/{{ data_dir }}"

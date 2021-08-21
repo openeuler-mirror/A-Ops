@@ -1,0 +1,17 @@
+---
+- name: Add User
+  become: true
+  become_user: root
+  group:
+    name: "{{ group }}"
+    state: present
+  when: create_user
+
+- name: Add User
+  become: true
+  become_user: root
+  user:
+    name: "{{ user }}"
+    group: "{{ group }}"
+    state: present
+  when: create_user

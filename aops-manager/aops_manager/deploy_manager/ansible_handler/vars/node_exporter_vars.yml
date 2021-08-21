@@ -1,0 +1,7 @@
+---
+# node_exporter user
+user: "node_exporter"
+group: "node_exporter"
+
+# Listening port
+node_exporter_listen_port: 9100

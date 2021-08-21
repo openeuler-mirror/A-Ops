@@ -1,0 +1,13 @@
+---
+# prometheus 用户 用户组
+user: "prometheus"
+group: "prometheus"
+
+# prometheus 监听端口
+prometheus_listen_port: 9090
+
+# node_exporter 监听端口
+node_exporter_listen_port: 9100
+
+# prometheus 配置文件路径
+prometheus_conf_dir: "/etc/prometheus"

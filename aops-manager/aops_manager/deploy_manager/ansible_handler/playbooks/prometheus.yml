@@ -1,0 +1,13 @@
+---
+- hosts: prometheus_hosts # Define Execution Host Range
+  gather_facts: no # Do not collect facts during the execution to improve the execution speed.
+  user: aops # Execution user
+  vars_files:
+    - "../vars/prometheus_vars.yml"
+  vars:
+    install_prometheus: true # Install prometheus
+    config_prometheus: true # Config prometheus
+    start_prometheus: true # Auto start prometheus service
+    create_user: Fasle # Add prometheus user
+  roles:
+    - ../roles/prometheus # prometheus
