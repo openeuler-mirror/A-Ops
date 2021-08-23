@@ -1,0 +1,11 @@
+# Checking the Service Status
+- name: Start prometheus
+  become: true
+  become_user: "{{ user }}"
+  service:
+    name: prometheus
+    state: started
+
+# Checking the Service Status
+- name: verify node_exporter is listening on {{ prometheus_listen_port }}
+  wait_for: port={{ prometheus_listen_port }} timeout=1

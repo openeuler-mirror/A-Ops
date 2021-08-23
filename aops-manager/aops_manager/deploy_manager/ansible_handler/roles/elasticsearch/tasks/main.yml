@@ -1,0 +1,12 @@
+---
+- name: Install elasticsearch
+  include: install_elasticsearch.yml
+  when: install_elasticsearch
+
+- name: Config elasticsearch
+  include: config_elasticsearch.yml
+  when: config_elasticsearch
+
+- name: Start elasticsearch
+  include: start_elasticsearch.yml
+  when: start_elasticsearch

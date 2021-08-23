@@ -1,0 +1,5 @@
+---
+step_list:
+ zookeeper:
+  enable: true
+  continue: false

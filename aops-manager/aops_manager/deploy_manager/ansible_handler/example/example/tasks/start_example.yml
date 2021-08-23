@@ -1,0 +1,40 @@
+## 本文件中主要用于启动组件
+
+## 1. 启动服务
+##############################systemctl 启动服务###############################
+# 服务类的组件可以直接使用systemctl控制，使用如下方式，设置state、enable等项来来拉起服务
+- name: Start example
+  become_user: "{{user}}"
+  service:
+    name: example
+    state: started
+
+##############################脚本启动服务###############################
+# 如果组件没有服务化，可以使用脚本拉起服务，并指定配置文件。
+- name: Start example
+  shell: "cd {{install_dir}}/bin && ./example-start.sh -daemon ../config/example.conf"
+  become: yes
+  become_user: "{{user}}"
+
+
+## 2. 启动状态检查
+################################所有服务状态采集##########################
+- name: collect facts about system services
+  service_facts:
+  register: services_state
+
+- name: Debug
+  debug:
+    var: services_state
+
+
+##################################自定义的检查##############################
+# 检查服务状态
+- name: verify example service
+  command: /usr/sbin/service example status
+  changed_when: false
+
+# 检查端口监听状态
+- name: verify example is listening on 1111
+  wait_for: port=111 timeout=1
+

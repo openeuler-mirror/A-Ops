@@ -1,0 +1,23 @@
+---
+step_list:
+ zookeeper:
+  enable: true
+  continue: false
+ kafka:
+  enable: false
+  continue: false
+ prometheus:
+  enable: false
+  continue: false
+ node_exporter:
+   enable: false
+   continue: false
+ mysql:
+   enable: false
+   continue: false
+ elasticsearch:
+   enable: false
+   continue: false
+ fluentd:
+   enable: false
+   continue: false

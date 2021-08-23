@@ -1,0 +1,13 @@
+---
+# 在本文件中主要定义需要配置的一些操作，包括配置文件修改，Service文件修改等
+
+# 使用jinja直接匹配模板中的配置文件。j2文件中的变量会自动替换，生成真实的配置。
+- name: Deploy elastic.yml
+  template: src=templates/example.j2 dest={{example_config}}/example.yml mode=0755
+
+
+# 直接使用shell命令修改配置，可以定义自己需要的修改命令或shell脚本，在此处调用执行
+- name: Modify config file
+  shell: |
+    echo "xxx" >> {{example_config}}/example.conf
+    echo "elasticsearch hard memlock unlimited" >> /etc/security/limits.conf

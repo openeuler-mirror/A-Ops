@@ -1,0 +1,19 @@
+---
+
+## 包含常规流程，如需要特出处理，可以自定义添加
+# step1 安装组件
+- name: Install example
+  include: install_example.yml
+  when: install_example
+
+# step2 修改配置
+- name: Config example
+  include: config_example.yml
+  when: config_example
+
+# step3 启动服务
+- name: Start example
+  include: start_example.yml
+  when: start_example
+
+

@@ -1,0 +1,13 @@
+---
+
+- name: Install Zookeeper
+  include: install_zookeeper.yml
+  when: install_zk
+
+- name: Config Zookeeper
+  include: config_zookeeper.yml
+  when: config_zk
+
+- name: Start Zookeeper
+  include: start_zookeeper.yml
+  when: start_service

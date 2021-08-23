@@ -1,0 +1,9 @@
+{
+  "elasticsearch_hosts": {
+    "192.168.1.2": {
+      "ansible_host": "192.168.1.2",
+      "elasticsearch_id":"elasticsearch_node1",
+      "ansible_python_interpreter": "/usr/bin/python3"
+    }
+  }
+}

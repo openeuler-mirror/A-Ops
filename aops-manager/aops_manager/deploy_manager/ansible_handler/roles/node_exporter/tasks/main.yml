@@ -1,0 +1,12 @@
+---
+- name: Install node_exporter
+  include: install_node_exporter.yml
+  when: install_node_exporter
+
+- name: Config node_exporter
+  include: config_node_exporter.yml
+  when: config_node_exporter
+
+- name: Start node_exporter
+  include: start_node_exporter.yml
+  when: start_node_exporter

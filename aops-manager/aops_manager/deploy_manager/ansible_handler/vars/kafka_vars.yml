@@ -1,0 +1,13 @@
+---
+# zookeeper user group
+user: "kafka"
+group: "kafka"
+
+# Log Path
+kafka_log_path: "log"
+
+# Install path
+install_dir: "/opt/kafka"
+
+# Default configuration for multiple host groups and roles
+zk_client_port: 2181
