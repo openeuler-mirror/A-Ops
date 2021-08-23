@@ -34,3 +34,22 @@ def make_datacenter_url(route):
     database_port = configuration.database.get("PORT")  # pylint: disable=E1101
     database_url = URL_FORMAT % (database_ip, database_port, route)
     return database_url
+
+
+def make_manager_url(route):
+    """
+    make manager center url
+
+    Args:
+        route(str)
+
+    Returns:
+        str: url
+    """
+    manager_ip = configuration.manager.get("IP")  # pylint: disable=E1101
+    manager_port = configuration.manager.get("PORT")  # pylint: disable=E1101
+    manager_url = URL_FORMAT % (manager_ip, manager_port, route)
+    manager_header = {
+        "Content-Type": "application/json; charset=UTF-8"
+    }
+    return manager_url, manager_header
