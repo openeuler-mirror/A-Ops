@@ -18,9 +18,9 @@ Description:
 import os
 import unittest
 
-from aops.utils.conf import Config
+from aops_utils.conf import Config
 from .for_test_conf import global_config
-from aops.utils.compare import compare_two_object
+from aops_utils.compare import compare_two_object
 
 
 class TestConf(unittest.TestCase):

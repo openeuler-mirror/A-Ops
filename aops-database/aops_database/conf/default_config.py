@@ -13,18 +13,18 @@
 """
 Time:
 Author:
-Description: constant
+Description: default config of database
 """
-import os
+database = {
+    "IP": "127.0.0.1",
+    "PORT": 11112
+}
 
-BASE_CONFIG_PATH = '/etc/aops'
-
-# path of global configuration
-SYSTEM_CONFIG_PATH = os.path.join(BASE_CONFIG_PATH, 'system.ini')
-
-# url format
-URL_FORMAT = "http://%s:%s%s"
-
-# parameter
-MAX_PORT = 65535
-MIN_PORT = 0
+mysql = {
+    "IP": "127.0.0.1",
+    "PORT": 3306,
+    "DATABASE_NAME": "aops",
+    "ENGINE_FORMAT": "mysql+pymysql://@%s:%s/%s",
+    "POOL_SIZE": 10000,
+    "POOL_RECYCLE": 7200
+}
