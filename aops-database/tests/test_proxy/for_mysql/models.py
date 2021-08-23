@@ -5,7 +5,7 @@
 # You can use this software according to the terms and conditions of the Mulan PSL v2.
 # You may obtain a copy of Mulan PSL v2 at:
 #     http://license.coscl.org.cn/MulanPSL2
-# THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR
+# THIS SOFTWARE IS PROVIDED ON AN 'AS IS' BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR
 # IMPLIED, INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY OR FIT FOR A PARTICULAR
 # PURPOSE.
 # See the Mulan PSL v2 for more details.
@@ -13,22 +13,17 @@
 """
 Time:
 Author:
-Description: Define bluepoint of manager
+Description:
 """
-from flask.blueprints import Blueprint
-from flask_restful import Api
+from sqlalchemy import Column
+from sqlalchemy.ext.declarative import declarative_base
+from sqlalchemy.sql.sqltypes import Integer, String
 
-from aops_manager.url import URLS
 
-# make blue point
-MANAGER = Blueprint('manager', __name__)
-API = Api()
+Base = declarative_base()
 
-for view, url in URLS:
-    API.add_resource(view, url)
-
-BLUE_POINT = [
-    (MANAGER, API)
-]
-
-__all__ = ['BLUE_POINT']
+class Test(Base):
+    __tablename__ = "test"
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    name = Column(String(20), nullable=False)
+    age = Column(Integer, nullable=False)

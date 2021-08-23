@@ -5,7 +5,7 @@
 # You can use this software according to the terms and conditions of the Mulan PSL v2.
 # You may obtain a copy of Mulan PSL v2 at:
 #     http://license.coscl.org.cn/MulanPSL2
-# THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR
+# THIS SOFTWARE IS PROVIDED ON AN 'AS IS' BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR
 # IMPLIED, INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY OR FIT FOR A PARTICULAR
 # PURPOSE.
 # See the Mulan PSL v2 for more details.
@@ -13,22 +13,10 @@
 """
 Time:
 Author:
-Description: Define bluepoint of manager
+Description: manager constant
 """
-from flask.blueprints import Blueprint
-from flask_restful import Api
+import os
+from aops_utils.conf.constant import BASE_CONFIG_PATH
 
-from aops_manager.url import URLS
-
-# make blue point
-MANAGER = Blueprint('manager', __name__)
-API = Api()
-
-for view, url in URLS:
-    API.add_resource(view, url)
-
-BLUE_POINT = [
-    (MANAGER, API)
-]
-
-__all__ = ['BLUE_POINT']
+# path of manager configuration
+MANAGER_CONFIG_PATH = os.path.join(BASE_CONFIG_PATH, 'manager.ini')

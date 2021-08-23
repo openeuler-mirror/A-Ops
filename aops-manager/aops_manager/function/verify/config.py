@@ -13,18 +13,16 @@
 """
 Time:
 Author:
-Description: constant
+Description: For host related interfaces
 """
-import os
+from marshmallow import Schema
+from marshmallow import fields
 
-BASE_CONFIG_PATH = '/etc/aops'
 
-# path of global configuration
-SYSTEM_CONFIG_PATH = os.path.join(BASE_CONFIG_PATH, 'system.ini')
+class CollectConfigSchema(Schema):
+    """
+    validators for parameter of /manage/config/collect
+    """
+    access_token = fields.String(required=True)
+    infos = fields.List(fields.Dict(), required=True)
 
-# url format
-URL_FORMAT = "http://%s:%s%s"
-
-# parameter
-MAX_PORT = 65535
-MIN_PORT = 0

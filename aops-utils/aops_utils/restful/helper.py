@@ -5,7 +5,7 @@
 # You can use this software according to the terms and conditions of the Mulan PSL v2.
 # You may obtain a copy of Mulan PSL v2 at:
 #     http://license.coscl.org.cn/MulanPSL2
-# THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR
+# THIS SOFTWARE IS PROVIDED ON AN 'AS IS' BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR
 # IMPLIED, INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY OR FIT FOR A PARTICULAR
 # PURPOSE.
 # See the Mulan PSL v2 for more details.
@@ -13,22 +13,24 @@
 """
 Time:
 Author:
-Description: Define bluepoint of manager
+Description: some helper function
 """
-from flask.blueprints import Blueprint
-from flask_restful import Api
+from aops_utils.conf import configuration
+from aops_utils.conf.constant import URL_FORMAT
 
-from aops_manager.url import URLS
 
-# make blue point
-MANAGER = Blueprint('manager', __name__)
-API = Api()
+def make_datacenter_url(route):
+    """
+    make database center url
 
-for view, url in URLS:
-    API.add_resource(view, url)
+    Args:
+        route(str)
 
-BLUE_POINT = [
-    (MANAGER, API)
-]
-
-__all__ = ['BLUE_POINT']
+    Returns:
+        str: url
+    """
+    # make database center url
+    database_ip = configuration.database.get("IP")  # pylint: disable=E1101
+    database_port = configuration.database.get("PORT")  # pylint: disable=E1101
+    database_url = URL_FORMAT % (database_ip, database_port, route)
+    return database_url
