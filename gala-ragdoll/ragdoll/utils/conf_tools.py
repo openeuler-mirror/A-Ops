@@ -1,9 +1,9 @@
-from dictdiffer import diff, patch, swap, revert
 import os
 import subprocess
 import sys
 import json
 import operator
+import configparser
 from enum import Enum
 
 from ragdoll.utils.git_tools import GitTools
@@ -48,6 +48,8 @@ SPERM = 0
 NOTFOUND = "NOT FOUND"
 NOTSYNCHRONIZE = "NOT SYNCHRONIZE"
 SYNCHRONIZED = "SYNCHRONIZED"
+
+CONFIG = "/etc/ragdoll/gala-ragdoll.conf"
 
 class SyncRes(Enum):
     SUCCESS = "SUCCESS"
@@ -117,7 +119,7 @@ class ConfTools(object):
 
         return res
 
-    def addFeatureInRealConf(self, realConfDict, featureList, domainName) -> {}:
+    def addFeatureInRealConf(self, realConfDict, featureList, domainName):
         """
         desc: Add feature information in the model to the actual configuration.
         """
@@ -132,7 +134,7 @@ class ConfTools(object):
         realConfWithFeature[domainName] = d_real_feature
         return realConfWithFeature
 
-    def realConfToExpectDict(self, realConfResText) -> []:
+    def realConfToExpectDict(self, realConfResText):
         """
         desc: Convert the actual configuration into a dict of the same format as the expected 
               configuration for easy comparison, using the model information.
@@ -211,9 +213,9 @@ class ConfTools(object):
     def compareManAndReal(self, real_conf, man_conf):
         """
         des: return a result of compare the manageConfs and realConfs.
-             manageConfs is a result of http://0.0.0.0:8080/management/getManagementConf
+             manageConfs is a result of http://0.0.0.0:9191/management/getManagementConf
              realConfs is a result of escaping through realConfToExpectDict interface after
-                       calling http://0.0.0.0:8080/confs/queryRealConfs
+                       calling http://0.0.0.0:9191/confs/queryRealConfs
         input:
             real_conf: {
                         "OS": {
@@ -258,13 +260,15 @@ class ConfTools(object):
         """
         res = ""
         if not os.path.exists(path):
-            return ERROR
+            return None
         cmd = "rpm -qf {}".format(path)
         gitTools = GitTools()
         package_string = gitTools.run_shell_return_output(cmd).decode()
         print("package_string is : {}".format(package_string))
         # lines = returnCode.rsplit(STRIKETHROUGH)
         # res = lines[0]
+        if 'not owned by any package' in package_string:
+            return None, None, None
         pkg, arch = Format.rsplit(package_string, Format._arch_sep(package_string))
         if arch not in KNOWN_ARCHITECTURES:
             pkg, arch = (package_string, None)
@@ -348,7 +352,7 @@ class ConfTools(object):
                 分数对照表为：r:4 w:2 x:1
         """
         if not os.path.exists(LS):
-            return null, null
+            return None, None
         cmd = LS + SPACE + LL + SPACE + path
         print("cmd is : {}".format(cmd))
         gitTools = GitTools()
@@ -384,7 +388,7 @@ class ConfTools(object):
         else:
             return SPERM
 
-    def getXpathInManagerConfs(self, manageConfs) -> []:
+    def getXpathInManagerConfs(self, manageConfs):
         """
         desc: 对获取到的配置项进行整合，生成配置项的xpath列表
         """
@@ -596,3 +600,33 @@ class ConfTools(object):
             res = True
 
         return res
+
+    def load_collect_by_conf(self):
+        """
+        desc: get the url of collect conf
+        """
+        cf = configparser.ConfigParser()
+        if os.path.exists(CONFIG):
+            cf.read(CONFIG, encoding="utf-8")
+        else:
+            parent = os.path.dirname(os.path.realpath(__file__))
+            conf_path = os.path.join(parent, "../../config/gala-ragdoll.conf")
+            cf.read(conf_path, encoding="utf-8")
+        git_dir = eval(cf.get("collect", "collect_address"))
+        git_user_name = eval(cf.get("collect", "collect_api"))
+        return git_dir + git_user_name
+
+    def load_port_by_conf(self):
+        """
+        desc: get the password of collect conf
+        """
+        cf = configparser.ConfigParser()
+        print("CONFIG is :{}".format(CONFIG))
+        if os.path.exists(CONFIG):
+            cf.read(CONFIG, encoding="utf-8")
+        else:
+            parent = os.path.dirname(os.path.realpath(__file__))
+            conf_path = os.path.join(parent, "../../config/gala-ragdoll.conf")
+            cf.read(conf_path, encoding="utf-8")
+        port = cf.get("ragdoll", "port")
+        return port

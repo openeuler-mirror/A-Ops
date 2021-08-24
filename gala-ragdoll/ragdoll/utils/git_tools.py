@@ -1,6 +1,7 @@
 import os
 import subprocess
 import sys
+import configparser
 from datetime import datetime
 from dateutil.parser import parse
 from ragdoll.models.git_log_message import GitLogMessage
@@ -8,13 +9,30 @@ from ragdoll.models.conf_base_info import ConfBaseInfo
 from ragdoll.controllers.format import Format
 from ragdoll import util
 
+CONFIG = "/etc/ragdoll/gala-ragdoll.conf"
+
 class GitTools(object):
-    def __init__(self):
-        self._target_dir = "/home/confTrace"
+    def __init__(self, target_dir = None):
+        if target_dir:
+            self._target_dir = target_dir
+        else:
+            self._target_dir = self.load_git_dir()
+
+    def load_git_dir(self):
+        cf = configparser.ConfigParser()
+        cf = configparser.ConfigParser()
+        if os.path.exists(CONFIG):
+            cf.read(CONFIG, encoding="utf-8")
+        else:
+            parent = os.path.dirname(os.path.realpath(__file__))
+            conf_path = os.path.join(parent, "../../config/gala-ragdoll.conf")
+            cf.read(conf_path, encoding="utf-8")
+        git_dir = eval(cf.get("git", "git_dir"))
+        return git_dir
 
     @property
     def target_dir(self):
-        return self._target_dir
+        return self.load_git_dir()
 
     @target_dir.setter
     def target_dir(self, target_dir):
@@ -28,6 +46,20 @@ class GitTools(object):
         os.chdir(cwdDir)
         return returncode
 
+    def git_create_user(self, username, useremail):
+        """
+        desc: Git initial configuration about add a user name and email
+        """
+        returncode = 1
+        cmd_add_user_name = "git config user.name {}".format(username)
+        gitTools = GitTools()
+        cmd_name_code = gitTools.run_shell_return_code(cmd_add_user_name)
+        cmd_add_user_email = "git config user.email {}".format(useremail)
+        cmd_email_code = gitTools.run_shell_return_code(cmd_add_user_email)
+        if cmd_name_code and cmd_email_code:
+            returncode = 0
+        return returncode
+
     def gitCommit(self, message):
         cwdDir = os.getcwd()
         os.chdir(self._target_dir)
@@ -38,21 +70,20 @@ class GitTools(object):
             returncode2 = self.run_shell_return_code(cmd2)
             returncode = returncode2
         else:
-                returncode = returncode1
+            returncode = returncode1
         os.chdir(cwdDir)
 
         return returncode
 
     def gitLog(self, path):
         cwdDir = os.getcwd()
-        os.chdir(path.rsplit("/", 1)[0])
-        print(os.getcwd())
+        os.chdir(self._target_dir)
         shell = ['git log {}'.format(path)]
         output = self.run_shell_return_output(shell)
         os.chdir(cwdDir)
         return output
 
-    # 执行shell命令, 并返回执行结果的状态码
+    # Execute the shell command and return the execution node
     def run_shell_return_code(self, shell):
         cmd = subprocess.Popen(shell, stdin=subprocess.PIPE, stderr=sys.stderr, close_fds=True,
                             stdout=sys.stdout, universal_newlines=True, shell=True, bufsize=1)
@@ -60,7 +91,7 @@ class GitTools(object):
         output, err = cmd.communicate()
         return cmd.returncode
 
-    # 执行shell命令，并返回执行结果和状态码
+    # Execute the shell command and return the execution node and output
     def run_shell_return_output(self, shell):
         cmd = subprocess.Popen(shell, stdout=subprocess.PIPE, shell=True)
         print("################# shell cmd ################")
@@ -75,12 +106,12 @@ class GitTools(object):
             return "the logMessage is null"
         print("AAAA path is : {}".format(path))
         cwdDir = os.getcwd()
-        os.chdir(path.rsplit("/", 1)[0])
+        os.chdir(self._target_dir)
         print(os.getcwd())
         print("logMessage is : {}".format(logMessage))
         gitLogMessageList = []
         singleLogLen = 6
-        # message的个数采用count计数
+        # the count is num of message
         count = logMessage.count("commit")
         lines = logMessage.split('\n')
 
@@ -96,9 +127,8 @@ class GitTools(object):
                     gitMessage.author = value
                 if "Date" in line:
                     gitMessage._date = value[2:]
-            print("gitMessage is : {}".format(gitMessage))
             gitMessage.change_reason = lines[index * singleLogLen + 4]
-            xpath = path.split('/', 3)[-1]
+            print("gitMessage is : {}".format(gitMessage))
             gitLogMessageList.append(gitMessage)
 
         print("################# gitMessage start ################")
@@ -109,17 +139,18 @@ class GitTools(object):
             return gitLogMessageList
 
         for index in range(0, count - 1):
+            print("index is : {}".format(index))
             message = gitLogMessageList[index]
             next_message = gitLogMessageList[index + 1]
             message.post_value = Format.get_file_content_by_read(path)
             shell = ['git checkout {}'.format(next_message.change_id)]
             output = self.run_shell_return_output(shell)
             message.pre_value = Format.get_file_content_by_read(path)
-        # 最后一条changlog
+        # the last changlog
         first_message = gitLogMessageList[count - 1]
         first_message.post_value = Format.get_file_content_by_read(path)
 
-        # 切换回最后的状态
+        # git check to the first message
         shell = ['git checkout {}'.format(gitLogMessageList[0].change_id)]
         output = self.run_shell_return_output(shell)
         print("################# gitMessage end ################")

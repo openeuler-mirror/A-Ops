@@ -1,8 +1,11 @@
 import os
+import configparser
+
+CONFIG = "/etc/ragdoll/gala-ragdoll.conf"
 
 class HostTools(object):
     def __init__(self):
-        self._target_dir = "/home/confTrace"
+        self._target_dir = self.load_git_dir()
         self._host_file = "hostRecord.txt"
 
     @property
@@ -77,3 +80,14 @@ class HostTools(object):
             res.append(d_host)
 
         return res
+
+    def load_git_dir(self):
+        cf = configparser.ConfigParser()
+        if os.path.exists(CONFIG):
+            cf.read(CONFIG, encoding="utf-8")
+        else:
+            parent = os.path.dirname(os.path.realpath(__file__))
+            conf_path = os.path.join(parent, "../../config/gala-ragdoll.conf")
+            cf.read(conf_path, encoding="utf-8")
+        git_dir = eval(cf.get("git", "git_dir"))
+        return git_dir

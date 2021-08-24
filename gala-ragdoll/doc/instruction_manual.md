@@ -31,6 +31,27 @@ gpgcheck = 0
 
 ### 通过配置溯源创建域
 
+#### 查看配置配文件
+
+gala-ragdoll中存在配置溯源的配置文件
+
+```
+[root@openeuler-development-1-1drnd ~]# cat /etc/ragdoll/gala-ragdoll.conf
+[git]                                       // 定义当前的git信息：包括git仓的目录和用户信息
+git_dir = "/home/confTraceTestConf" 
+user_name = "songnannan"
+user_email = "songnannan2@huawei.com"
+
+[collect]                                  // A-OPS 对外提供的collect接口
+collect_address = "http://127.0.0.1:11111"
+collect_api = "/manage/config/collect"
+password = "123"                      // A-OPS的密码字段  --- 暂留，后续会删除
+
+[ragdoll]
+port = 9191
+
+```
+
 #### 创建配置域
 
 调用```domain/createDomain```接口。

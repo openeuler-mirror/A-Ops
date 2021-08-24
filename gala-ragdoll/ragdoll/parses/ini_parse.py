@@ -1,14 +1,15 @@
 
 from ragdoll.analy.ini_config_parser import IniConfigParser
-from ragdoll.analy.openEuler_repo import OpenEulerRepo
 
 import json
 
-class IniJsonParser:
+class IniJsonParse(object):
+    """
+    Class: 'IniJsonParse' parses the object which the type of IniConfigParser
+    """
+    def __init__(self):
+        self.data = ""
 
-    """
-    Class: 'IniJsonParser' parses the object which the type of IniConfigParser
-    """
     def parse_ini(self, obj):
         """
         desc: return an json from obj

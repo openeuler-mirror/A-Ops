@@ -1,0 +1,149 @@
+/******************************************************
+* Copyright (C) 2021 Huawei Technologies Co., Ltd. All rights reserved.
+* Module description & tree structure
+******************************************************/
+module openEuler-coremail.conf {
+  namespace "urn:huawei:yang:openEuler-coremail.conf";
+  prefix "coremail";
+
+  organization
+    "Huawei Technologies Co., Ltd.";
+
+  contact
+    "Huawei Industrial Base
+     Bantian, Longgang
+     Shenzhen 518129
+     People's Republic of China
+     Website: http://www.huawei.com
+     Email: support@huawei.com";
+
+  description
+    "This module contains a collection of YANG definitions for
+     coremail.conf in coremail system.
+     The real path is : /etc/coremail/coremail.conf";
+
+  revision 2021-08-04 {
+    description "Initial revision.";
+    reference "";
+  }
+
+  // extension statements
+  // feature statements
+  // identity statements
+  // typedef statements
+  // grouping statements
+  // data definition statements
+  // augment statements
+  // rpc statements
+  // notification statements
+
+  extension path {
+    argument "filePath";
+    description "The real path corresponding to the repo file.";
+  }
+
+  extension type {
+     argument "type";
+     description "The type of this configuration file.";
+  }
+
+  extension spacer {
+    argument "spacer";
+    description "Spacer between configuration item and configuration value.";
+  }
+
+  container coremail {
+
+    description "the conf file in coremail modules.";
+
+    container coremail.conf {
+
+      description "The file name is coremail.conf";
+
+      coremail:path "openEuler:/etc/coremail/coremail.conf";
+      coremail:type "ini";
+      coremail:spacer "=";
+
+      list Default {
+        key Hostid;
+        description "The first configuration item in repo.";
+
+        leaf BackupAdminSvrHost {
+          type string;
+          description "The ip of the back up admin svr host";
+        }
+
+        leaf Hostid {
+          type string;
+          description "The id of the back up admin svr host";
+        }
+
+        leaf MainAdminSvrHost {
+          type string;
+          description "The ip of the main admin svr host";
+        }
+
+        leaf MainAdminSvrPort {
+          type string;
+          description "The port of the main admin svr host";
+        }
+
+        leaf IamMainAdminSvr {
+          type string;
+          description "The Iam of the main admin svr host";
+        }
+
+        leaf ReloadEnvPrograms {
+          type string;
+          description "The reload env of programs";
+        }
+      }
+
+      list Environment{
+        key ORACLE_HOME;
+        description "The environment configuration item in conf.";
+
+        leaf ORACLE_HOME{
+          type string;
+          description "The oracle home of environment";
+        }
+
+        leaf ORACLE_BASE{
+          type string;
+          description "The oracle base of environment";
+        }
+
+        leaf NLS_LANG{
+          type string;
+          description "The nls lang of environment";
+        }
+
+        leaf ORA_NLS33{
+          type string;
+          description "The oracle msl33 of environment";
+        }
+      }
+
+      list ReloadEnvironment{
+        key LD_PRELOAD;
+        description "the reload environment of the coremail system";
+
+        leaf LD_PRELOAD{
+          type string;
+          description "The LD_PRELOAD of the reload environment";
+        }
+
+        leaf TCMALLOC_RELEASE_RATE{
+          type string;
+          description "The release rate of the reload environment";
+        }
+
+        leaf TCMALLOC_TRANSFER_NUM_OBJ{
+          type string;
+          description "The transfer object number of the reload environment";
+        }
+
+      }
+    }
+  }
+}

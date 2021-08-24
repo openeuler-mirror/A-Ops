@@ -8,9 +8,10 @@ from ragdoll.models.domain_name import DomainName  # noqa: E501
 from ragdoll.models.host import Host  # noqa: E501
 from ragdoll.models.host_infos import HostInfos  # noqa: E501
 from ragdoll import util
-from ragdoll.models.host import Host
 from ragdoll.controllers.format import Format
+from ragdoll.utils.git_tools import GitTools
 
+TARGETDIR = GitTools().target_dir
 
 def add_host_in_domain(body=None):  # noqa: E501
     """add host in the configuration domain
@@ -28,23 +29,22 @@ def add_host_in_domain(body=None):  # noqa: E501
     domain = body.domain_name
     host_infos = body.host_infos
 
-    # 确认输入的host不为空 -》 后续可删除
+    # check whether host_infos is empty
     if len(host_infos) == 0:
         base_rsp = BaseResponse(400, "The entered host is empty")
         return base_rsp
 
-    # 需要提前check domain是否存在
+    #  check whether the domain exists
     isExist = Format.isDomainExist(domain)
     if not isExist:
         base_rsp = BaseResponse(400, "The current domain does not exist, please create the domain first.")
         return base_rsp
 
-    # 用来记录成功与失败的Host
     successHost = []
     failedHost = []
-    domainPath = os.path.join("/home/confTrace", domain)
+    domainPath = os.path.join(TARGETDIR, domain)
 
-    # 判断当前host是否已经存在domain域的管理范围内：
+    # Check whether the current host exists in the domain.
     for host in host_infos:
         hostPath = os.path.join(domainPath, "hostRecord.txt")
         if os.path.isfile(hostPath):
@@ -65,7 +65,7 @@ def add_host_in_domain(body=None):  # noqa: E501
         base_rsp = BaseResponse(codeNum, "The all host already exists in the administrative scope of the domain.")
         return base_rsp, codeNum
 
-    # 拼接返回的codenum codeMessage
+    # Joining together the returned codenum codeMessage
     if len(failedHost) == 0:
         codeNum = 200
         codeString = Format.spliceAllSuccString("host", "add hosts", successHost)
@@ -73,8 +73,13 @@ def add_host_in_domain(body=None):  # noqa: E501
         codeNum = 202
         codeString = Format.splicErrorString("host", "add hosts", successHost, failedHost)
 
+    # git commit maessage
+    if len(host_infos) > 0:
+        git_tools = GitTools()
+        commit_code = git_tools.gitCommit("Add the host in {} domian, ".format(domain) +
+                                "the host including : {}".format(successHost))
+
     base_rsp = BaseResponse(codeNum, codeString)
-    # logging.info('add host in {domain}'.format(domain=domain))
 
     return base_rsp, codeNum
 
@@ -95,15 +100,15 @@ def delete_host_in_domain(body=None):  # noqa: E501
     domain = body.domain_name
     hostInfos = body.host_infos
 
-    # 需要提前check domain是否存在
+    #  check whether the domain exists
     isExist = Format.isDomainExist(domain)
     if not isExist:
         codeNum = 400
         base_rsp = BaseResponse(codeNum, "The current domain does not exist, please create the domain first.")
         return base_rsp, codeNum
 
-    # domain存在，当前domain域内添加的host信息是否为空
-    domainPath = os.path.join("/home/confTrace", domain)
+    # Whether the host information added within the current domain is empty while ain exists
+    domainPath = os.path.join(TARGETDIR, domain)
     hostPath = os.path.join(domainPath, "hostRecord.txt")
     if not os.path.isfile(hostPath) or (os.path.isfile(hostPath) and os.stat(hostPath).st_size == 0):
         codeNum = 400
@@ -111,18 +116,20 @@ def delete_host_in_domain(body=None):  # noqa: E501
                                           "Please add the host information first")
         return base_rsp, codeNum
 
-    # domain存在，输入的host信息为空，则清除整个domain域的host信息
+    # If the input host information is empty, the host information of the whole domain is cleared
     if len(hostInfos) == 0:
         if os.path.isfile(hostPath):
             try:
                 os.remove(hostPath)
             except OSError as ex:
-                logging.error("the host delete failed")
+                #logging.error("the host delete failed")
                 codeNum = 500
                 base_rsp = BaseResponse(codeNum, "The host delete failed.")
                 return base_rsp, codeNum
 
-    # domain存在，检测当前入参host是否归属在对应的domain内， 如果在domain内则删除，不再则不处理，添加到失败范围内
+    # If the domain exists, check whether the current input parameter host belongs to the corresponding
+    # domain. If the host is in the domain, the host is deleted. If the host is no longer in the domain, 
+    # the host is added to the failure range
     containedInHost = []
     notContainedInHost = []
     for hostInfo in hostInfos:
@@ -148,14 +155,14 @@ def delete_host_in_domain(body=None):  # noqa: E501
         else:
             notContainedInHost.append(hostId)
 
-    # 所有的host均不属于domain
+    # All hosts do not belong to the domain
     if len(notContainedInHost) == len(hostInfos):
         codeNum = 400
         base_rsp = BaseResponse(codeNum, "All the host does not belong to the domain control, " + 
                                          "please enter the host again")
         return base_rsp, codeNum
 
-    # 部分host属于domain， 部分host不属于domain
+    # Some hosts belong to domains, and some hosts do not belong to domains.
     if len(notContainedInHost) == 0:
         codeNum = 200
         codeString = Format.spliceAllSuccString("host", "delete", containedInHost)
@@ -163,8 +170,13 @@ def delete_host_in_domain(body=None):  # noqa: E501
         codeNum = 400
         codeString = Format.splicErrorString("host", "delete", containedInHost, notContainedInHost)
 
+    # git commit message
+    if len(containedInHost) > 0:
+        git_tools = GitTools()
+        commit_code = git_tools.gitCommit("Delet the host in {} domian, ".format(domain) +
+                                "the host including : {}".format(containedInHost))
+
     base_rsp = BaseResponse(codeNum, codeString)
-    # logging.info('delete host')
 
     return base_rsp, codeNum
 
@@ -184,15 +196,15 @@ def get_host_by_domain_name(body=None):  # noqa: E501
 
     domain = body.domain_name
 
-    # 需要提前check domain是否存在
+    #  check whether the domain exists
     isExist = Format.isDomainExist(domain)
     if not isExist:
         codeNum = 400
         base_rsp = BaseResponse(codeNum, "The current domain does not exist, please create the domain first.")
         return base_rsp, codeNum
 
-    # domain存在，host信息是否为空
-    domainPath = os.path.join("/home/confTrace", domain)
+    # The domain exists, but the host information is empty
+    domainPath = os.path.join(TARGETDIR, domain)
     hostPath = os.path.join(domainPath, "hostRecord.txt")
     if not os.path.isfile(hostPath) or (os.path.isfile(hostPath) and os.stat(hostPath).st_size == 0):
         codeNum = 400
@@ -200,19 +212,18 @@ def get_host_by_domain_name(body=None):  # noqa: E501
                                           "Please add the host information first")
         return base_rsp, codeNum
 
-    print("&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&")
-    # domain存在，host信息也存在, 且不为空
+    # The domain exists, and the host information exists and is not empty
     hostlist = []
     print("hostPath is : {}".format(hostPath))
     try:
         with open(hostPath, 'r') as d_file:
             for line in d_file.readlines():
-                #每个字段之间采用",\n"作为间隔，最后一个字段需要去除尾部的"}"和首部的空格
+                # Each field is separated by ",\n", and the last field is separated by the trailing "}" and the leading space
                 hostInfo = line.split(",\\n")
-                # ip和host的string为: " 'xxxx'"，所以采取截取[2:-1]来获取实际值
+                # The string of IP and host is "XXXX", so take the interception [2:-1] to get the actual value
                 hostId = hostInfo[0].split(":")[1][2:-1]
                 ip = hostInfo[1].split(":")[1][2:-1]
-                #ipv6的string为：' None}"\n'
+                # The string of Ipv6 is: ' None}"\n'
                 ipv6 = hostInfo[2].split(":")[1][1:-3]
                 host = Host(host_id=hostId, ip=ip, ipv6=ipv6)
                 hostlist.append(host)
@@ -222,7 +233,7 @@ def get_host_by_domain_name(body=None):  # noqa: E501
         base_rsp = BaseResponse(codeNum, "OS error: {0}".format(err))
         return base_rsp, codeNum
 
-    # 拼接返回的codenum codeMessage
+    # Joining together the returned codenum codeMessag
     if len(hostlist) == 0:
         codeNum = 500
         base_rsp = BaseResponse(codeNum, "Some unknown problems.")
