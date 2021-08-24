@@ -10,18 +10,3 @@
 # PURPOSE.
 # See the Mulan PSL v2 for more details.
 # ******************************************************************************/
-"""
-Time:
-Author:
-Description: For host related interfaces
-"""
-from marshmallow import Schema
-from marshmallow import fields
-
-
-class CollectConfigSchema(Schema):
-    """
-    validators for parameter of /manage/config/collect
-    """
-    infos = fields.List(fields.Dict(), required=True)
-
