@@ -128,6 +128,17 @@ MAPPINGS = {
                 },
                 "description": {
                     "type": "text"
+                },
+                "data_list": {
+                    "type": "nested",
+                    "properties": {
+                        "name": {
+                            "type": "text"
+                        },
+                        "label": {
+                            "type": "object"
+                        }
+                    }
                 }
             }
         }
@@ -158,6 +169,17 @@ MAPPINGS = {
                 },
                 "value": {
                     "type": "text"
+                },
+                "data_list": {
+                    "type": "nested",
+                    "properties": {
+                        "name": {
+                            "type": "text"
+                        },
+                        "label": {
+                            "type": "object"
+                        }
+                    }
                 }
             }
         }

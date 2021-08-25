@@ -38,6 +38,7 @@ class AddTask(Resource):
             task_name(str)
             description(str)
             task_id(str)
+            template_name(list)
             username(str)
 
         Returns:

@@ -64,7 +64,7 @@ class GetHostSchema(Schema):
     host_group_list = fields.List(fields.String(), required=True)
     management = fields.Boolean(required=False)
     sort = fields.String(required=False, validate=validate.OneOf(
-        ["host_name", "host_group_name"]))
+        ["host_name", "host_group_name", ""]))
     direction = fields.String(
         required=False, validate=validate.OneOf(["desc", "asc"]))
     page = fields.Integer(required=False, validate=lambda s: s > 0)
@@ -92,7 +92,7 @@ class GetHostGroupSchema(Schema):
     validators for parameter of /manage/host/get_host_group
     """
     sort = fields.String(required=False, validate=validate.OneOf(
-        ["host_count", "host_group_name"]))
+        ["host_count", "host_group_name", ""]))
     direction = fields.String(
         required=False, validate=validate.OneOf(["desc", "asc"]))
     page = fields.Integer(required=False, validate=lambda s: s > 0)

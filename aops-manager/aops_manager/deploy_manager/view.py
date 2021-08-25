@@ -63,7 +63,6 @@ class GenerateTask(Resource):
         # generate task id
         task_id = str(uuid.uuid1()).replace('-', '')
         args['task_id'] = task_id
-        args.pop('template_name')
 
         # make database center url
         database_url = make_datacenter_url(DATA_ADD_TASK)
