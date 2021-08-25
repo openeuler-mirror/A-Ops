@@ -20,43 +20,43 @@ BuildRequires:	git python3-devel
 The intelligent ops toolkit for openEuler
 
 
-%package -n python3-aops-utils
+%package -n aops-utils
 Summary:	utils for A-Ops
 Requires:   python3-concurrent-log-handler python3-xmltodict python3-pyyaml python3-marshmallow >= 3.13.0
 Requires:   python3-requests python3-xlrd
 
-%description -n python3-aops-utils
+%description -n aops-utils
 utils for A-Ops
 
 
-%package -n python3-aops-cli
+%package -n aops-cli
 Summary:        cli of A-ops
-Requires: 	python3-aops-utils = %{version}-%{release}
+Requires: 	aops-utils = %{version}-%{release}
 
-%description -n python3-aops-cli
+%description -n aops-cli
 commandline tool of aops, offer commands for account management, host management,
 host group management, task and template management of ansible.
 
 
-%package -n python3-aops-manager
+%package -n aops-manager
 Summary:	manager of A-ops
-Requires:	python3-aops-utils = %{version}-%{release} ansible >= 2.9.0
+Requires:	aops-utils = %{version}-%{release} ansible >= 2.9.0
 Requires:   python3-pyyaml python3-marshmallow >= 3.13.0 python3-flask python3-flask-restful
 Requires:   python3-requests sshpass
 
-%description -n python3-aops-manager
+%description -n aops-manager
 manager of A-ops, support software deployment and installation, account management, host management,
 host group management, task and template management of ansible.
 
 
-%package -n python3-aops-database
+%package -n aops-database
 Summary:	database center of A-ops
-Requires:   python3-aops-utils = %{version}-%{release} python3-pyyaml
+Requires:   aops-utils = %{version}-%{release} python3-pyyaml
 Requires:   python3-elasticsearch >= 7 python3-requests python3-werkzeug python3-urllib3
 Requires:   python3-flask python3-flask-restful python3-PyMySQL python3-sqlalchemy
 Requires:   python3-prometheus-api-client
 
-%description -n python3-aops-database
+%description -n aops-database
 database center of A-ops, offer database proxy of mysql, elasticsearch and prometheus time series database.
 
 
@@ -164,7 +164,7 @@ install config/*.conf %{buildroot}/%{python3_sitelib}/ragdoll/config
 popd
 
 
-%files -n python3-aops-utils
+%files -n aops-utils
 %doc README.*
 %{python3_sitelib}/aops_utils*.egg-info
 %{python3_sitelib}/aops_utils/*
@@ -173,14 +173,14 @@ popd
 %attr(0755,root,root) %{_bindir}/aops-convert-diag-tree
 
 
-%files -n python3-aops-cli
+%files -n aops-cli
 %attr(0755,root,root) %{_bindir}/aops
 %attr(0644,root,root) %{_sysconfdir}/aops/system.ini
 %{python3_sitelib}/aops_cli*.egg-info
 %{python3_sitelib}/aops_cli/*
 
 
-%files -n python3-aops-manager
+%files -n aops-manager
 %attr(0644,root,root) %{_sysconfdir}/aops/manager.ini
 %attr(0755,root,root) %{_bindir}/aops-manager
 %attr(0755,root,root) %{_unitdir}/aops-manager.service
@@ -188,7 +188,7 @@ popd
 %{python3_sitelib}/aops_manager/*
 
 
-%files -n python3-aops-database
+%files -n aops-database
 %attr(0644,root,root) %{_sysconfdir}/aops/database.ini
 %attr(0644,root,root) %{_sysconfdir}/aops/collector.yml
 %attr(0755,root,root) %{_unitdir}/aops-database.service
