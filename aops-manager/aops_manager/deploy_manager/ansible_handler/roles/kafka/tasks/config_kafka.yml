@@ -10,3 +10,19 @@
   become: true
   become_user: "{{ user }}"
   template: src=server.properties.j2 dest={{ install_dir }}/config/server.properties owner={{ user }} group={{ group }} mode=0644 backup=yes
+
+- name: Check firewalld status
+  command: systemctl is-active firewalld
+  ignore_errors: yes
+  register: check_firewalld
+
+- name: Open firewall port of kafka
+  become: true
+  become_user: root
+  firewalld:
+    port: "{{ kafka_port }}/tcp"
+    zone: public
+    state: enabled
+    permanent: yes
+    immediate: yes
+  when: check_firewalld.rc == 0
