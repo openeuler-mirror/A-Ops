@@ -20,6 +20,10 @@ from aops_database.views.host import AddHost, DeleteHost, DeleteHostInfo, GetHos
     DeleteHostGroup, GetHostGroup, GetHostInfo, GetHostInfoByUser, SaveHostInfo, GetHostCount
 from aops_database.views.deploy import AddTemplate, DeleteTemplate, GetTemplate, AddTask,\
     DeleteTask, GetTask
+from aops_database.views.diag import AddDiagTree, DeleteDiagTree, GetDiagTree, SaveDiagReport,\
+    DeleteDiagReport, GetDiagReport, GetDiagReportList, GetDiagProcess
+from aops_database.views.check import AddCheckRule, DeleteCheckRule, GetCheckResultCount,\
+    GetCheckRule, GetCheckRuleCount, SaveCheckResult, DeleteCheckResult, GetCheckResult
 from aops_utils.conf.constant import DATA_ADD_HOST, DATA_DELETE_HOST, DATA_GET_HOST,\
     DATA_ADD_GROUP, DATA_DELETE_GROUP, DATA_GET_GROUP, DATA_GET_HOST_COUNT,\
     DATA_GET_HOST_INFO, DATA_SAVE_HOST_INFO, DATA_DELETE_HOST_INFO, DATA_GET_HOST_INFO_BY_USER,\
@@ -66,6 +70,26 @@ SPECIFIC_URLS = {
         (AddTask, DATA_ADD_TASK),
         (DeleteTask, DATA_DELETE_TASK),
         (GetTask, DATA_GET_TASK)
+    ],
+    "DIAG_URLS": [
+        (AddDiagTree, DATA_ADD_DIAG_TREE),
+        (DeleteDiagTree, DATA_DELETE_DIAG_TREE),
+        (GetDiagTree, DATA_GET_DIAG_TREE),
+        (SaveDiagReport, DATA_SAVE_DIAG_REPORT),
+        (DeleteDiagReport, DATA_DELETE_DIAG_REPORT),
+        (GetDiagReport, DATA_GET_DIAG_REPORT),
+        (GetDiagReportList, DATA_GET_DIAG_REPORT_LIST),
+        (GetDiagProcess, DATA_GET_DIAG_PROCESS)
+    ],
+    "CHECK_URLS": [
+        (AddCheckRule, DATA_ADD_CHECK_RULE),
+        (DeleteCheckRule, DATA_DELETE_CHECK_RULE),
+        (GetCheckRule, DATA_GET_CHECK_RULE),
+        (GetCheckRuleCount, DATA_GET_CHECK_RULE_COUNT),
+        (SaveCheckResult, DATA_SAVE_CHECK_RESULT),
+        (DeleteCheckResult, DATA_DELETE_CHECK_RESULT),
+        (GetCheckResult, DATA_GET_CHECK_RESULT),
+        (GetCheckResultCount, DATA_GET_CHECK_RESULT_COUNT)
     ]
 }
 

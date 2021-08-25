@@ -62,7 +62,7 @@ class TestDeployData(unittest.TestCase):
         # ==============get template===================
         with mock.patch("aops_database.views.deploy.operate") as mock_operate:
             mock_operate.return_value = SUCCEED
-            response = self.client.get(DATA_GET_TEMPLATE, json=args)
+            response = self.client.post(DATA_GET_TEMPLATE, json=args)
             res = response.json
             self.assertEqual(res, self.succeed_res)
             self.assertEqual(mock_operate.call_args_list[0][0][1], args)
@@ -90,7 +90,7 @@ class TestDeployData(unittest.TestCase):
         # ==============get task ===================
         with mock.patch("aops_database.views.deploy.operate") as mock_operate:
             mock_operate.return_value = SUCCEED
-            response = self.client.get(DATA_GET_TASK, json=args)
+            response = self.client.post(DATA_GET_TASK, json=args)
             res = response.json
             self.assertEqual(res, self.succeed_res)
             self.assertEqual(mock_operate.call_args_list[0][0][1], args)

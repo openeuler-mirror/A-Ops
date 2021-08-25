@@ -10,3 +10,36 @@
 # PURPOSE.
 # See the Mulan PSL v2 for more details.
 # ******************************************************************************/
+"""
+Time:
+Author:
+Description: Basic resource class
+"""
+from flask import jsonify
+from flask import request
+from flask_restful import Resource
+
+from aops_utils.restful.status import make_response
+from aops_database.function.helper import operate
+
+
+class BaseResource(Resource):
+    """
+    Offer a common action function
+    """
+    @staticmethod
+    def do_action(action, proxy):
+        """
+        Do operate and get response
+
+        Args:
+            action(str): function name
+            proxy(instance): API instance
+
+        Returns:
+            dict: response body
+        """
+        args = request.get_json()
+        status_code = operate(proxy, args, action)
+        response = make_response(status_code)
+        return jsonify(response)

@@ -337,7 +337,7 @@ class TestHostDatabase(unittest.TestCase):
         }
         expected_res = 5
         res = self.proxy.get_host_count(args)
-        self.assertEqual(expected_res, res[1]["total_count"])
+        self.assertEqual(expected_res, res[1]["host_count"])
 
         # ================get host info=================
         args = {

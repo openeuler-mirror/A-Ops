@@ -147,10 +147,10 @@ class DeleteHost(Resource):
 class GetHost(Resource):
     """
     Interface for get host.
-    Restful API: GET
+    Restful API: POST
     """
     @staticmethod
-    def get():
+    def post():
         """
         Get host
 
@@ -170,7 +170,7 @@ class GetHost(Resource):
         database_url = make_datacenter_url(DATA_GET_HOST)
         verify_res = MyResponse.verify_all(args, GetHostSchema, access_token)
         response = MyResponse.get_result(
-            verify_res, 'get', database_url, args)
+            verify_res, 'post', database_url, args)
 
         return jsonify(response)
 
@@ -178,10 +178,10 @@ class GetHost(Resource):
 class GetHostCount(Resource):
     """
     Interface for get host count.
-    Restful API: GET
+    Restful API: POST
     """
     @staticmethod
-    def get():
+    def post():
         """
         Get host
 
@@ -195,7 +195,7 @@ class GetHostCount(Resource):
         database_url = make_datacenter_url(DATA_GET_HOST_COUNT)
         verify_res = MyResponse.verify_token(access_token, args)
         response = MyResponse.get_result(
-            verify_res, 'get', database_url, args)
+            verify_res, 'post', database_url, args)
 
         return jsonify(response)
 
@@ -258,10 +258,10 @@ class DeleteHostGroup(Resource):
 class GetHostGroup(Resource):
     """
     Interface for get host group.
-    Restful API: GET
+    Restful API: POST
     """
     @staticmethod
-    def get():
+    def post():
         """
         Get host group
 
@@ -280,7 +280,7 @@ class GetHostGroup(Resource):
         verify_res = MyResponse.verify_all(
             args, GetHostGroupSchema, access_token)
         response = MyResponse.get_result(
-            verify_res, 'get', database_url, args)
+            verify_res, 'post', database_url, args)
 
         return jsonify(response)
 
@@ -288,10 +288,10 @@ class GetHostGroup(Resource):
 class GetHostInfo(Resource):
     """
     Interface for get host info.
-    Restful API: GET
+    Restful API: POST
     """
     @staticmethod
-    def get():
+    def post():
         """
         Get host info
 
@@ -308,6 +308,6 @@ class GetHostInfo(Resource):
         verify_res = MyResponse.verify_all(
             args, GetHostInfoSchema, access_token)
         response = MyResponse.get_result(
-            verify_res, 'get', database_url, args)
+            verify_res, 'post', database_url, args)
 
         return jsonify(response)

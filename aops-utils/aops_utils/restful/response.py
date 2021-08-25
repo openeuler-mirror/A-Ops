@@ -106,7 +106,7 @@ class MyResponse:
         return TOKEN_ERROR
 
     @classmethod
-    def verify_all(cls, args, schema, token):
+    def verify_all(cls, args, schema, token, load=False):
         """
         Verify args and token
 
@@ -114,11 +114,12 @@ class MyResponse:
             args(dict): parameter to be verified
             schema(class): verifier
             token(str)
+            load(bool)
 
         Returns:
             int: status code
         """
-        res = cls.verify_args(args, schema)
+        res = cls.verify_args(args, schema, load)
         if res != SUCCEED:
             return res
         res = cls.verify_token(token, args)
