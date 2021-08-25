@@ -36,7 +36,8 @@ class DeployDatabase(ElasticsearchProxy):
                 {
                     "task_id": "task1-121212",
                     "task_name": "task1",
-                    "description": "it's good."
+                    "description": "it's good.",
+                    "template_name": [],
                     "username": "admin"
                 }
         Returns:
@@ -117,7 +118,7 @@ class DeployDatabase(ElasticsearchProxy):
         total_count = count_res[1]
         total_page = self._make_es_paginate_body(data, total_count, query_body)
         res = self.query(TASK_INDEX, query_body, [
-                         "task_id", "task_name", "description", "host_list"])
+            "task_id", "task_name", "description", "host_list", "template_name"])
         if res[0]:
             LOGGER.info("query task %s succeed", task_list)
             result["total_page"] = total_page

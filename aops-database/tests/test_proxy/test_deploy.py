@@ -49,25 +49,29 @@ class TestDeployDatabase(unittest.TestCase):
                 "username": "aaa",
                 "task_id": "aaaa",
                 "task_name": "task1",
-                "description": "itsss "
+                "description": "itsss ",
+                "template_name": ["1", "2"]
             },
             {
                 "username": "aaa",
                 "task_id": "cccc",
                 "task_name": "task3",
-                "description": "itsss "
+                "description": "itsss ",
+                "template_name": ["1", "2"]
             },
             {
                 "username": "aaa",
                 "task_id": "bbbb",
                 "task_name": "task2",
-                "description": "itsss "
+                "description": "itsss ",
+                "template_name": []
             },
             {
                 "username": "aaa",
                 "task_id": "dddd",
                 "task_name": "task4",
-                "description": "itsss "
+                "description": "itsss ",
+                "template_name": ["1", "2"]
             }
         ]
         for task in data:
@@ -103,7 +107,8 @@ class TestDeployDatabase(unittest.TestCase):
                 {
                     "task_id": "aaaa",
                     "task_name": "task1",
-                    "description": "itsss "
+                    "description": "itsss ",
+                    "template_name": ["1", "2"]
                 }
             ]
         }

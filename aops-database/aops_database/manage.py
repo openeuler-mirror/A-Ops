@@ -15,9 +15,7 @@ Time:
 Author:
 Description: Manager that start aops-database
 """
-import argparse
 import sqlalchemy
-from flask import Flask
 
 from aops_database.function.helper import create_tables, ENGINE, SESSION
 from aops_database.factory.table import User
@@ -27,6 +25,7 @@ from aops_database.proxy.account import UserDatabase
 from aops_database.conf.constant import DEFAULT_TASK_INFO
 from aops_utils.log.log import LOGGER
 from aops_utils.restful.status import SUCCEED
+from aops_utils.manage import init_app
 
 
 def init_user():
@@ -67,7 +66,7 @@ def init_es():
         raise ValueError("connect to elasticsearch fail")
 
     for index_name, body in MAPPINGS.items():
-        # es.delete_index(index_name)
+        # proxy.delete_index(index_name)
         res = proxy.create_index(index_name, body)
         if not res:
             raise ValueError("create elasticsearch index %s fail", index_name)
@@ -96,33 +95,10 @@ def init_database():
     init_es()
 
 
-def run_app(name):
-    """
-    Run database server
-    """
-    if name == 'database':
-        init_database()
+init_database()
+app, config = init_app('database')
 
-    module_name = 'aops_' + name
-    app = Flask(module_name)
-
-    module = __import__(module_name, fromlist=[module_name])
-    for blue, api in module.BLUE_POINT:
-        api.init_app(app)
-        app.register_blueprint(blue)
-
-    try:
-        config = getattr(module.conf.configuration, name)
-    except AttributeError:
-        raise AttributeError("There is no config named %s" % name)
-
+if __name__ == "__main__":
     ip = config.get('IP')
     port = config.get('PORT')
     app.run(host=ip, port=port)
-
-
-if __name__ == "__main__":
-    argparser = argparse.ArgumentParser()
-    argparser.add_argument('--name', required=True)
-    args = argparser.parse_args()
-    run_app(args.name)

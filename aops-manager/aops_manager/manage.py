@@ -15,34 +15,11 @@ Time:
 Author:
 Description: Manager that start aops-manager
 """
-import argparse
-from flask import Flask
+from aops_utils.manage import init_app
 
+app, config = init_app('manager')
 
-def run_app(name):
-    """
-    Run manager server
-    """
-    module_name = 'aops_' + name
-    app = Flask(module_name)
-
-    module = __import__(module_name, fromlist=[module_name])
-    for blue, api in module.BLUE_POINT:
-        api.init_app(app)
-        app.register_blueprint(blue)
-
-    try:
-        config = getattr(module.conf.configuration, name)
-    except AttributeError:
-        raise AttributeError("There is no config named %s" % name)
-
+if __name__ == "__main__":
     ip = config.get('IP')
     port = config.get('PORT')
     app.run(host=ip, port=port)
-
-
-if __name__ == "__main__":
-    argparser = argparse.ArgumentParser()
-    argparser.add_argument('--name', required=True)
-    args = argparser.parse_args()
-    run_app(args.name)

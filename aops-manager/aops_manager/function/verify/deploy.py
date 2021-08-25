@@ -42,7 +42,7 @@ class GetTaskSchema(Schema):
     """
     task_list = fields.List(fields.String(), required=True)
     sort = fields.String(required=False, validate=validate.OneOf(
-        ["task_name"]))
+        ["task_name", ""]))
     direction = fields.String(
         required=False, validate=validate.OneOf(["desc", "asc"]))
     page = fields.Integer(required=False, validate=lambda s: s > 0)
@@ -78,7 +78,7 @@ class GetTemplateSchema(Schema):
     """
     template_list = fields.List(fields.String(), required=True)
     sort = fields.String(required=False, validate=validate.OneOf(
-        ["template_name"]))
+        ["template_name", ""]))
     direction = fields.String(
         required=False, validate=validate.OneOf(["desc", "asc"]))
     page = fields.Integer(required=False, validate=lambda s: s > 0)

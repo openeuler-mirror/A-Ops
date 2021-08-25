@@ -202,7 +202,7 @@ class HostDatabase(MysqlProxy):
         }
         if host_group_list:
             filters.add(Host.host_group_name.in_(host_group_list))
-        if management:
+        if management is not None:
             filters.add(Host.management == management)
 
         return filters
