@@ -14,7 +14,12 @@
   become: yes
   become_user: "{{ user }}"
 
-- name: Open port of zookeeper
+- name: Check firewalld status
+  command: systemctl is-active firewalld
+  ignore_errors: yes
+  register: check_firewalld
+
+- name: Open firewall port of zookeeper
   become: true
   become_user: root
   firewalld:
@@ -27,4 +32,5 @@
     - "{{ client_port }}"
     - "{{ leader_port }}"
     - "{{ vote_port }}"
+  when: check_firewalld.rc == 0
 
