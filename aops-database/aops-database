@@ -1,0 +1,73 @@
+#!/bin/bash
+. /usr/bin/aops-utils
+
+AOPS_CONSTANT="aops"
+DATABASE_CONSTANT="aops-database"
+DATABASE_CONFIG_FILE=$SYS_PATH/database.ini
+
+
+function check_es_installed() {
+  echo "[INFO] Elasticsearch check start"
+
+  es_ip=$(get_config "$DATABASE_CONFIG_FILE" "elasticsearch" "ip")
+  es_port=$(get_config "$DATABASE_CONFIG_FILE" "elasticsearch" "port")
+
+  if [ -z "${es_ip}" ] || [ -z "${es_port}" ]; then
+    echo "[ERROR] Can not find config name 'ip' or 'port' of elasticsearch in: $DATABASE_CONFIG_FILE,Please check the file"
+    echo "If you have installed ES, Please set correct 'ip' value and 'port' of elasticsearch value and re-execute '${DATABASE_CONSTANT} start' "
+    echo "If you have not installed ES, please execute the automatic installation script '/usr/bin/aops-basedatabase' under the root user "
+    exit 1
+  fi
+  check_num "${es_port}" "es_port"
+  # check whether to install Elasticsearch and started
+  visit_es_response=$(curl -s -XGET http://"${es_ip}:${es_port}")
+  if [ -z "${visit_es_response}" ]; then
+    echo "========================================================================="
+    echo "[ERROR] Elasticsearch connection FAILED,the following reason may cause failed:"
+    echo "[INFO] 1. You have not installed Elasticsearch,If you need to install, please execute the automatic installation script '/usr/bin/aops-basedatabase' under the root user"
+    echo "[INFO] 2. Elasticsearch configuration is incorrect,please update value of 'ip' and 'port' of elasticsearch in $DATABASE_CONFIG_FILE"
+    echo "[INFO] 3. Elasticsearch service not started,please start elasticsearch service."
+    exit 1
+  fi
+  echo "[INFO] Elasticsearch check ok"
+}
+
+function check_mysql_installed() {
+  echo "[INFO] mysql check start"
+
+  mysql_ip=$(get_config "$DATABASE_CONFIG_FILE" "mysql" "ip")
+  port=$(get_config "$DATABASE_CONFIG_FILE" "mysql" "port")
+
+  if [ -z "${mysql_ip}" ] || [ -z "${port}" ]; then
+    echo "[ERROR] Can not find config name 'ip' or 'port' of mysql in: $DATABASE_CONFIG_FILE,Please check the file"
+    echo "If you have installed mysql, Please set correct 'ip' value and 'port' value of mysql and re-execute '${DATABASE_CONSTANT} start' "
+    echo "If you have not installed mysql, please execute the automatic installation script '/usr/bin/aops-basedatabase' under the root user "
+    exit 1
+  fi
+  check_num "${port}" "port"
+
+  aops_database=$(get_config "$DATABASE_CONFIG_FILE" "mysql" "database_name")
+  create_aops_database=$(mysql -s -h "${mysql_ip}" -P ${port} -e "create database if not exists ${aops_database};" 2>&1)
+  if [ -n "${create_aops_database}" ]; then
+    echo "========================================================================="
+    echo "[ERROR] mysql connection FAILED,the following reason may cause failed:"
+    echo "[INFO] 1. You have not installed mysql,If you need to install, please execute the automatic installation script '/usr/bin/aops-basedatabase' under the root user"
+    echo "[INFO] 2. mysql configuration is incorrect,please update value of 'ip' and 'port' of mysql in $DATABASE_CONFIG_FILE"
+    echo "[INFO] 3. mysql service not started,please start mysql service."
+    exit 1
+  fi
+  echo "[INFO] mysql check ok"
+}
+
+
+function main() {
+  if [ "${OPERATION}" = "start" ]; then
+    create_config_file "${DATABASE_CONFIG_FILE}" "database"
+    check_mysql_installed
+    check_es_installed
+  fi
+  start_or_stop_service ${DATABASE_CONSTANT}
+  exit $?
+}
+
+main

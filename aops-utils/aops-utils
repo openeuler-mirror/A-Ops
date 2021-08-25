@@ -1,0 +1,107 @@
+#!/bin/bash
+SYS_PATH=/etc/aops
+OUT_PATH=/opt/aops/uwsgi
+UWSGI_LOG_DIR=/var/log/aops/uwsgi
+OPERATION=$1
+AOPS_CONSTANT="aops"
+
+function check_uwsgi_path() {
+  if [ ! -d "$1" ];then
+    mkdir -p $1
+  fi
+}
+
+function check_file() {
+  if [ ! -e "$1" ]; then
+    touch "$1"
+  fi
+}
+
+function get_config() {
+  INIFILE=$1
+  SECTION=$2
+  ITEM=$3
+  awk -F '=' '/\['"$SECTION"'\]/{a=1}a==1&&$1~/'"$ITEM"'/{print $2; exit}' "$INIFILE"
+}
+
+function create_config_file() {
+  check_uwsgi_path $OUT_PATH
+  check_uwsgi_path $UWSGI_LOG_DIR
+
+  echo "[INFO] start to create uwsgi file"
+  config_file=$1
+  service_type=$2
+
+  ip=$(get_config "${config_file}" "${service_type}" "ip")
+  port=$(get_config "${config_file}" "${service_type}" "port")
+  wsgi_file_name=$(get_config "${config_file}" "uwsgi" "wsgi-file")
+  wsgi_file=$(find /usr/lib -name "aops_"${service_type} | head -n 1)
+  daemonize=$(get_config "${config_file}" "uwsgi" "daemonize")
+  module_name="aops-"${service_type}
+  module="aops_"${service_type}
+
+  check_file $daemonize
+  echo "[INFO] run $module_name under path: $wsgi_file"
+
+  if [[ -z "$wsgi_file_name" ]] || [[ -z "$ip" ]] || [[ -z "$port" ]]; then
+    echo "[ERROR] can not find  all config name in: ${config_file}, Please check the file."
+    echo "[ERROR] The following config name is needed: ip, port and wsgi_file."
+    exit 1
+  fi
+  if [ -z "$wsgi_file" ]; then
+    echo "[ERROR] can not find the aops_${service_type} path under: /usr/lib/"
+    exit 1
+  fi
+
+  echo "[uwsgi]
+http=$ip:$port
+chdir=$wsgi_file
+module=${module}.manage
+uwsgi-file=${wsgi_file_name}
+pidfile=$OUT_PATH/${module_name}.pid
+callable=app
+daemonize=$daemonize" >"$OUT_PATH"/"${module_name}".ini
+  chown root: $OUT_PATH/"${module_name}".ini
+  chmod 750 $OUT_PATH/"${module_name}".ini
+  echo "[INFO] create ${module_name} uwsgi file ok,path is $OUT_PATH/${module_name}.ini"
+}
+
+function check_num() {
+  result=$(echo "$1" | grep '^[[:digit:]]*$')
+  if [ -z "${result}" ]; then
+    echo "[ERROR] $2 should be a number,please check this parameter "
+    exit 1
+  fi
+}
+
+function is_started() {
+  aops_version=$(aops -v)
+  if [[ -n ${aops_version} ]] && [[ ${aops_version} =~ "Version" ]]; then
+    return 0
+  else
+    return 1
+  fi
+}
+
+function start_service() {
+  module_name=$1
+  uwsgi -d --ini $OUT_PATH/"${module_name}".ini
+  echo "[INFO] start uwsgi service: ${module_name} success"
+  exit 0
+}
+
+function stop_service() {
+  module_name=$1
+  echo "[INFO] stop uwsgi service: ${module_name}"
+  uwsgi --stop $OUT_PATH/"${module_name}".pid
+  echo "[INFO] stop ${AOPS_CONSTANT} service success"
+  exit 0
+}
+
+function start_or_stop_service() {
+  if [ "${OPERATION}" = "start" ]; then
+    start_service $1
+  elif [ "${OPERATION}" = "stop" ]; then
+    stop_service $1
+  fi
+}
