@@ -144,7 +144,7 @@ def add_access_token(sub_parse):
             nargs='?',
             type=str,
             required=True
-        )
+    )
 
 
 class BaseCommand:
