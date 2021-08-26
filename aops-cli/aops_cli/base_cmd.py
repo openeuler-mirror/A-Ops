@@ -116,7 +116,7 @@ def add_query_args(sub_parse, item_list):
         nargs='?',
         type=str,
         default="",
-        choices=item_list.append
+        choices=item_list
     )
 
     sub_parse.add_argument(
