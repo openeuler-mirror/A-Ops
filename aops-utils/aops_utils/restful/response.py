@@ -51,10 +51,10 @@ class MyResponse:
         try:
             if header:
                 response = requests.request(
-                    method=method, url=url, json=data, headers=header)
+                    method=method, url=url, json=data, headers=header, timeout=600)
             else:
                 response = requests.request(
-                    method=method, url=url, json=data)
+                    method=method, url=url, json=data, timeout=600)
             if response.status_code != 200:
                 result = StatusCode.make_response(SERVER_ERROR)
             else:
