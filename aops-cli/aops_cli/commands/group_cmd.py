@@ -143,4 +143,4 @@ class GroupCommand(BaseCommand):
         pyload = {
                   }
 
-        return cli_request('GET', manager_url, pyload, header, params.access_token)
+        return cli_request('POST', manager_url, pyload, header, params.access_token)

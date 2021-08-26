@@ -39,7 +39,10 @@ def main():
             # get the all subclass of BaseCommand and register the subcommand one by one
             BaseCommand.register_command(sub_cls())
             # add all arguments' attribution into instance
-        sub_cls.args_parser() # pylint: disable=W0631
+        # The variable is supposed to be one of the BaseCommand's class,
+        # if not, the argparse module will notice the user to input a correct subcommand.
+        # Therefore, the situation of undifined loop variable will not exist.
+        sub_cls.args_parser()  # pylint: disable=W0631
     except Error:
         print('Command execution error please try again')
 

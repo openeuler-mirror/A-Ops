@@ -15,8 +15,8 @@ Description: acconut method's entrance for custom commands
 Class:AccountCommand
 """
 
-from aops_cli.base_cmd import BaseCommand
-from aops_utils.conf.constant import USER_LOGIN
+from aops_cli.base_cmd import BaseCommand, cli_request, add_access_token
+from aops_utils.conf.constant import USER_LOGIN, CHANGE_PASSSWORD
 from aops_utils.restful.helper import make_manager_url
 from aops_utils.restful.response import MyResponse
 
@@ -39,11 +39,11 @@ class AccountCommand(BaseCommand):
 
         self.sub_parse.add_argument(
             '--action',
-            help='account actions: login',
+            help='account actions: login, change password',
             nargs='?',
             type=str,
             required=True,
-            choices=['login']
+            choices=['login', 'change']
         )
 
         self.sub_parse.add_argument(
@@ -60,6 +60,8 @@ class AccountCommand(BaseCommand):
             type=str,
         )
 
+        add_access_token(self.sub_parse)
+
     def do_command(self, params):
         """
         Description: Executing command
@@ -70,6 +72,7 @@ class AccountCommand(BaseCommand):
         action = params.action
         action_dict = {
             'login': self.manage_requests_login,  # /account/login
+            'change': self.manage_requests_change  # /account/change
         }
         return action_dict.get(action)(params)
 
@@ -79,8 +82,7 @@ class AccountCommand(BaseCommand):
         Description: Executing login command
         Args:
             params{dict}: Command line parameters
-        Returns:
-            dict: response of the backend
+
         """
         manager_url, header = make_manager_url(USER_LOGIN)
 
@@ -91,4 +93,20 @@ class AccountCommand(BaseCommand):
 
         response = MyResponse.get_response('POST', manager_url, pyload, header)
         print(response)
-        return response
+
+    @staticmethod
+    def manage_requests_change(params):
+        """
+        Description: Executing change password command
+        Args:
+            params{dict}: Command line parameters
+        Returns:
+            dict: response of the backend
+        """
+        manager_url, header = make_manager_url(CHANGE_PASSSWORD)
+
+        pyload = {
+            "password": params.password
+        }
+
+        return cli_request('POST', manager_url, pyload, header, params.access_token)
