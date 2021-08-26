@@ -57,10 +57,15 @@ class AccountCommand(BaseCommand):
             '--password',
             help="the user's password",
             nargs='?',
-            type=str,
+            type=str
         )
 
-        add_access_token(self.sub_parse)
+        self.sub_parse.add_argument(
+            '--access_token',
+            help='The access token for operations',
+            nargs='?',
+            type=str
+        )
 
     def do_command(self, params):
         """

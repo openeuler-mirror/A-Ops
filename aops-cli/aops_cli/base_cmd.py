@@ -116,7 +116,7 @@ def add_query_args(sub_parse, item_list):
         nargs='?',
         type=str,
         default="",
-        choices=item_list
+        choices=item_list.append
     )
 
     sub_parse.add_argument(
@@ -144,7 +144,35 @@ def add_access_token(sub_parse):
             nargs='?',
             type=str,
             required=True
-        )
+    )
+
+
+def add_start_and_end(sub_parse):
+    """
+    Add start time and end time of the sub parse.
+    Args:
+        sub_parse(sub_parse): sub_parse of the command
+
+    Returns:
+
+    """
+    group_start_end = sub_parse.add_argument_group(
+        'group_start_end',
+        'The group for start and end')
+
+    group_start_end.add_argument(
+        '--start',
+        nargs='?',
+        type=str,
+        default="",
+        help='original date of raw data, default is 1 hour ago.')
+
+    group_start_end.add_argument(
+        '--end',
+        nargs='?',
+        type=str,
+        default="",
+        help='end date of raw data, default is now')
 
 
 class BaseCommand:

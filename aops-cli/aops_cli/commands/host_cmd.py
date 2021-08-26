@@ -73,7 +73,7 @@ class HostCommand(BaseCommand):
                  'is management node, default is False: monitor.',
             nargs='?',
             type=str,
-            default="False",
+            default="",
             choices=['True', 'False']
         )
 
@@ -90,7 +90,7 @@ class HostCommand(BaseCommand):
             type=str,
             default="False",
             choices=['True', 'False']
-            )
+        )
 
         self.sub_parse.add_argument(
             '--ssh_port',
@@ -189,19 +189,16 @@ class HostCommand(BaseCommand):
         """
 
         groups = str_split(params.host_group_name) if params.host_group_name is not None else []
-        management = True if params.management == "True" else False
-        if params.sort == "":
-            pyload = {
-                "host_group_list": groups,
-                "management": management
-            }
-        else:
-            pyload = {
-                "host_group_list": groups,
-                "sort": params.sort,
-                "direction": params.direction,
-                "management": management
-            }
+        pyload = {
+            "host_group_list": groups
+        }
+        if params.sort is not None:
+            pyload['sort'] = params.sort
+            pyload['direction'] = params.direction
+        if params.management == "True":
+            pyload['management'] = True
+        elif params.management == "False":
+            pyload['management'] = False
         manager_url, header = make_manager_url(QUERY_HOST)
         header['access_token'] = params.access_token
         result_basic = MyResponse.get_response('POST', manager_url, pyload, header)
