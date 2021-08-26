@@ -6,7 +6,7 @@
   with_items:
     - "/usr/share/elasticsearch/"
     - "/etc/sysconfig/elasticsearch"
-    - "{{ install_dir }} "
+    - "{{ install_dir }}"
     - "{{ elasticsearch_data_path }}"
     - "{{ elasticsearch_log_path }}"
 
@@ -14,3 +14,19 @@
   become: true
   become_user: "{{ user }}"
   template: src=elasticsearch.j2 dest={{ install_dir }}elasticsearch.yml owner={{ user }} group={{ group }} mode=0644 backup=yes
+
+- name: Check firewalld status
+  command: systemctl is-active firewalld
+  ignore_errors: yes
+  register: check_firewalld
+
+- name: Open firewall port of elasticsearch
+  become: true
+  become_user: root
+  firewalld:
+    port: "{{ elasticsearch_listen_port }}/tcp"
+    zone: public
+    state: enabled
+    permanent: yes
+    immediate: yes
+  when: check_firewalld.rc == 0
