@@ -7,5 +7,5 @@
     state: started
 
 # Checking the Service Status
-- name: verify node_exporter is listening on {{ prometheus_listen_port }}
+- name: verify prometheus is listening on {{ prometheus_listen_port }}
   wait_for: port={{ prometheus_listen_port }} timeout=1

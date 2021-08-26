@@ -6,7 +6,7 @@
     - "../vars/node_exporter_vars.yml"
   vars:
     install_node_exporter: true # Install node_exporter
-    config_node_exporter: false # Config node_exporter
+    config_node_exporter: true # Config node_exporter
     start_node_exporter: true # Auto start node_exporter service
     create_user: Fasle # Add node_exporter user
   roles:
