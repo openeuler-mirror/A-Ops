@@ -169,8 +169,6 @@ popd
 %{python3_sitelib}/aops_utils*.egg-info
 %{python3_sitelib}/aops_utils/*
 %attr(0755,root,root) %{_bindir}/aops-utils
-%attr(0755,root,root) %{_bindir}/aops-convert-check-rule
-%attr(0755,root,root) %{_bindir}/aops-convert-diag-tree
 
 
 %files -n aops-cli
@@ -190,7 +188,6 @@ popd
 
 %files -n aops-database
 %attr(0644,root,root) %{_sysconfdir}/aops/database.ini
-%attr(0644,root,root) %{_sysconfdir}/aops/collector.yml
 %attr(0755,root,root) %{_unitdir}/aops-database.service
 %attr(0755,root,root) %{_bindir}/aops-database
 %attr(0755,root,root) %{_bindir}/aops-basedatabase
