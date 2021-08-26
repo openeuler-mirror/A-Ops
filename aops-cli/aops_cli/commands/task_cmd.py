@@ -136,7 +136,7 @@ class TaskCommand(BaseCommand):
         url_dict = {
             'execute': [make_manager_url(EXECUTE_TASK), 'POST'],
             'delete': [make_manager_url(DELETE_TASK), 'DELETE'],
-            'query': [make_manager_url(GET_TASK), 'GET']
+            'query': [make_manager_url(GET_TASK), 'POST']
         }
 
         manager_url, header = url_dict.get(action)[0]

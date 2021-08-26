@@ -87,9 +87,9 @@ class TemplateCommand(BaseCommand):
         action = params.action
 
         action_dict = {
-            'import': self.manage_requests_import_template,  # 27.1.1.0/manage/import_template
-            'delete': self.manage_requests_delete_template,  # 27.1.1.0/manage/delete_template
-            'query': self.manage_requests_query_template  # 27.1.1.0/manage/get_template
+            'import': self.manage_requests_import_template,  # /manage/import_template
+            'delete': self.manage_requests_delete_template,  # /manage/delete_template
+            'query': self.manage_requests_query_template  # /manage/get_template
         }
 
         action_dict.get(action)(params)
@@ -108,7 +108,7 @@ class TemplateCommand(BaseCommand):
         yaml_path = params.template_content
         yaml_content = read_yaml_config_file(yaml_path)
         if not yaml_content:
-            LOGGER.info("Invalid yaml content, please retry with a valid file.")
+            LOGGER.error("Invalid yaml content, please retry with a valid file.")
             print("Invalid file: only yaml file can be accepted.")
             sys.exit(0)
         manager_url, header = make_manager_url(IMPORT_TEMPLATE)
@@ -154,11 +154,15 @@ class TemplateCommand(BaseCommand):
 
         templates = str_split(params.template_list) if params.template_list is not None else []
         manager_url, header = make_manager_url(GET_TEMPLATE)
+        if params.sort == "":
+            pyload = {
+                "template_list": templates
+            }
+        else:
+            pyload = {
+                "template_list": templates,
+                "sort": params.sort,
+                "direction": params.direction
+            }
 
-        pyload = {
-            "template_list": templates,
-            "sort": params.sort,
-            "direction": params.direction
-        }
-
-        return cli_request('GET', manager_url, pyload, header, params.access_token)
+        return cli_request('POST', manager_url, pyload, header, params.access_token)

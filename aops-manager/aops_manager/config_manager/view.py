@@ -89,7 +89,13 @@ def generate_output(host_infos):
         host_infos(list): host infos get from database
 
     Returns:
-
+        dict:
+            {
+                "succeed_list": succeed_list,
+                "fail_list": fail_list,
+                "resp": resp_list,
+                "is_par": is_par
+            }
     """
     succeed_list = []
     fail_list = []
@@ -244,7 +250,7 @@ class CollectConfig(Resource):
         }
         # make database center url
         database_url = make_datacenter_url(DATA_GET_HOST_INFO)
-        response = MyResponse.get_response("GET", database_url, pyload)
+        response = MyResponse.get_response("POST", database_url, pyload)
         if response.get('code') != SUCCEED:
             return LOGGER.error("Request database failed")
         inventory = InventoryBuilder()

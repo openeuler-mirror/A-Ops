@@ -44,7 +44,7 @@ def make_manager_url(route):
         route(str)
 
     Returns:
-        str: url
+        tuple: url, header
     """
     manager_ip = configuration.manager.get("IP")  # pylint: disable=E1101
     manager_port = configuration.manager.get("PORT")  # pylint: disable=E1101
@@ -53,3 +53,22 @@ def make_manager_url(route):
         "Content-Type": "application/json; charset=UTF-8"
     }
     return manager_url, manager_header
+
+
+def make_diag_url(route):
+    """
+    make diag url
+
+    Args:
+        route(str)
+
+    Returns:
+        tuple: url, header
+    """
+    diag_ip = configuration.diagnose.get("IP")  # pylint: disable=E1101
+    diag_port = configuration.diagnose.get("PORT")  # pylint: disable=E1101
+    diag_url = URL_FORMAT % (diag_ip, diag_port, route)
+    diag_header = {
+        "Content-Type": "application/json; charset=UTF-8"
+    }
+    return diag_url, diag_header

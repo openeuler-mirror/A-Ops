@@ -19,9 +19,9 @@ import sys
 from aops_cli.base_cmd import BaseCommand, str_split, cli_request, add_access_token, add_query_args
 from aops_utils.restful.response import MyResponse
 from aops_utils.restful.helper import make_manager_url
-from aops_utils.log.log import LOGGER
 from aops_utils.conf.constant import ADD_HOST, DELETE_HOST, QUERY_HOST, QUERY_HOST_DETAIL
 from aops_utils.restful.status import SUCCEED
+from aops_utils.log.log import LOGGER
 
 
 class HostCommand(BaseCommand):
@@ -72,7 +72,9 @@ class HostCommand(BaseCommand):
             help='show whether the host added or queried '
                  'is management node, default is False: monitor.',
             nargs='?',
-            type=bool
+            type=str,
+            default="False",
+            choices=['True', 'False']
         )
 
         self.sub_parse.add_argument(
@@ -85,8 +87,10 @@ class HostCommand(BaseCommand):
             '--verbose',
             help='verbose to show details of the host',
             nargs='?',
-            type=bool,
-            default=False)
+            type=str,
+            default="False",
+            choices=['True', 'False']
+            )
 
         self.sub_parse.add_argument(
             '--ssh_port',
@@ -151,6 +155,8 @@ class HostCommand(BaseCommand):
         """
 
         manager_url, header = make_manager_url(ADD_HOST)
+        management = True if params.management == "True" else False
+
         if params.management is None:
             params.management = False
         pyload = {
@@ -161,7 +167,7 @@ class HostCommand(BaseCommand):
                     "host_group_name": params.host_group_name,
                     "public_ip": params.public_ip,
                     "ssh_port": params.ssh_port,
-                    "management": params.management,
+                    "management": management,
                     "username": params.username,
                     "password": params.password,
                     "sudo_password": params.sudo_password
@@ -183,20 +189,28 @@ class HostCommand(BaseCommand):
         """
 
         groups = str_split(params.host_group_name) if params.host_group_name is not None else []
-
-        pyload = {
-            "host_group_list": groups,
-            "sort": params.sort,
-            "direction": params.direction
-        }
+        management = True if params.management == "True" else False
+        if params.sort == "":
+            pyload = {
+                "host_group_list": groups,
+                "management": management
+            }
+        else:
+            pyload = {
+                "host_group_list": groups,
+                "sort": params.sort,
+                "direction": params.direction,
+                "management": management
+            }
         manager_url, header = make_manager_url(QUERY_HOST)
         header['access_token'] = params.access_token
-        result_basic = MyResponse.get_response('GET', manager_url, pyload, header)
+        result_basic = MyResponse.get_response('POST', manager_url, pyload, header)
         if result_basic.get('code') != SUCCEED:
-            LOGGER.debug("Query request with bad response")
+            LOGGER.error("Query request with bad response.")
             print(result_basic)
             sys.exit(0)
-        if params.verbose:
+        verbose = True if params.verbose == "True" else False
+        if verbose:
             manager_url, header = make_manager_url(QUERY_HOST_DETAIL)
             hosts = []
             for info in result_basic['host_infos']:
@@ -204,9 +218,10 @@ class HostCommand(BaseCommand):
             pyload = {
                 "host_list": hosts,
             }
-            result_details = MyResponse.get_response('GET', manager_url, pyload, header)
+            header['access_token'] = params.access_token
+            result_details = MyResponse.get_response('POST', manager_url, pyload, header)
             if result_details.get('code') != SUCCEED:
-                LOGGER.debug("Detail Query request with bad response")
+                LOGGER.error("Query request with bad response.")
                 print(result_details)
                 sys.exit(0)
             for info in result_details['host_infos']:
