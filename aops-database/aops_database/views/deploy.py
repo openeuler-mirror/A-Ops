@@ -80,10 +80,10 @@ class DeleteTask(Resource):
 class GetTask(Resource):
     """
     Interface for get Task
-    Restful API: GET
+    Restful API: POST
     """
     @staticmethod
-    def get():
+    def post():
         """
         Get task
 
@@ -136,10 +136,10 @@ class AddTemplate(Resource):
 class GetTemplate(Resource):
     """
     Interface for get template info.
-    Restful API: GET
+    Restful API: POST
     """
     @staticmethod
-    def get():
+    def post():
         """
         Get template info
 

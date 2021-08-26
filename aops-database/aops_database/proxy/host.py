@@ -157,11 +157,11 @@ class HostDatabase(MysqlProxy):
             dict: query result
         """
         result = {}
-        result['total_count'] = 0
+        result['host_count'] = 0
         try:
             filters = self._get_host_filters(data)
             total_count = self._get_host_count(filters)
-            result['total_count'] = total_count
+            result['host_count'] = total_count
             self.session.commit()
             return SUCCEED, result
         except sqlalchemy.exc.SQLAlchemyError as error:
@@ -217,8 +217,11 @@ class HostDatabase(MysqlProxy):
         Returns:
             dict
         """
-        result = {}
-        temp_result = []
+        result = {
+            "total_count": 0,
+            "total_page": 0,
+            "host_infos": []
+        }
         sort = data.get('sort')
         direction = desc if data.get('direction') == 'desc' else asc
         page = data.get('page')
@@ -258,13 +261,10 @@ class HostDatabase(MysqlProxy):
                 "management": host.management,
                 "status": host.status
             }
-            temp_result.append(host_info)
+            result['host_infos'].append(host_info)
 
-        result = {
-            'total_page': total_page,
-            "total_count": total_count,
-            "host_infos": temp_result
-        }
+        result['total_page'] = total_page
+        result['total_count'] = total_count
 
         return result
 
@@ -481,8 +481,11 @@ class HostDatabase(MysqlProxy):
         Returns:
             dict
         """
-        result = {}
-        temp_result = []
+        result = {
+            "total_count": 0,
+            "total_page": 0,
+            "host_group_infos": []
+        }
         sort = data.get('sort')
         direction = desc if data.get('direction') == 'desc' else asc
         page = data.get('page')
@@ -516,17 +519,14 @@ class HostDatabase(MysqlProxy):
                     *query_fields).filter(*filters).all()
 
         for host_group in host_groups:
-            temp_result.append({
+            result['host_group_infos'].append({
                 "host_group_name": host_group.host_group_name,
                 "description": host_group.description,
                 "host_count": host_group.host_count
             })
 
-        result = {
-            'total_page': total_page,
-            "total_count": total_count,
-            "host_group_infos": temp_result
-        }
+        result['total_page'] = total_page
+        result['total_count'] = total_count
 
         return result
 

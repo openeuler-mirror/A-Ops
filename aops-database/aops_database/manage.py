@@ -66,7 +66,6 @@ def init_es():
         raise ValueError("connect to elasticsearch fail")
 
     for index_name, body in MAPPINGS.items():
-        # proxy.delete_index(index_name)
         res = proxy.create_index(index_name, body)
         if not res:
             raise ValueError("create elasticsearch index %s fail", index_name)

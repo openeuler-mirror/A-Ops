@@ -101,7 +101,7 @@ class TestDeployManage(unittest.TestCase):
                 "code": 200
             }
             mock_get_response.return_value = expected_res
-            self.client.get(GET_TASK, json=args, headers=header)
+            self.client.post(GET_TASK, json=args, headers=header)
             args['username'] = 'admin'
             self.assertEqual(args, mock_get_response.call_args_list[0][0][2])
         
@@ -111,7 +111,7 @@ class TestDeployManage(unittest.TestCase):
             "sssa": 1
         }
         expected_res = StatusCode.make_response(PARAM_ERROR)
-        response = self.client.get(GET_TASK, json=args, headers=header)
+        response = self.client.post(GET_TASK, json=args, headers=header)
         args['username'] = 'admin'
         res = response.json
         self.assertTrue(compare_two_object(res, expected_res))
@@ -153,7 +153,7 @@ class TestDeployManage(unittest.TestCase):
                 "code": 200
             }
             mock_get_response.return_value = expected_res
-            self.client.get(GET_TEMPLATE, json=args, headers=header)
+            self.client.post(GET_TEMPLATE, json=args, headers=header)
             args['username'] = 'admin'
             self.assertEqual(args, mock_get_response.call_args_list[0][0][2])
         
@@ -162,7 +162,7 @@ class TestDeployManage(unittest.TestCase):
             "template_list": [1, 2]
         }
         expected_res = StatusCode.make_response(PARAM_ERROR)
-        response = self.client.get(GET_TEMPLATE, json=args, headers=header)
+        response = self.client.post(GET_TEMPLATE, json=args, headers=header)
         args['username'] = 'admin'
         res = response.json
         self.assertTrue(compare_two_object(res, expected_res))

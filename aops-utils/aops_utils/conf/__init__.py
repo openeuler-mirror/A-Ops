@@ -18,8 +18,8 @@ Description: global config.
 import os
 import configparser
 
-from aops.utils.conf import default_config
-from aops.utils.conf.constant import SYSTEM_CONFIG_PATH
+from aops_utils.conf import default_config
+from aops_utils.conf.constant import SYSTEM_CONFIG_PATH
 
 
 class Config:

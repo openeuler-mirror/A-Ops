@@ -64,7 +64,7 @@ class TestHostData(unittest.TestCase):
         # ==============get host===================
         with mock.patch("aops_database.views.host.operate") as mock_operate:
             mock_operate.return_value = SUCCEED
-            response = self.client.get(DATA_GET_HOST, json=args)
+            response = self.client.post(DATA_GET_HOST, json=args)
             res = response.json
             self.assertEqual(res, self.succeed_res)
             self.assertEqual(mock_operate.call_args_list[0][0][1], args)
@@ -73,7 +73,7 @@ class TestHostData(unittest.TestCase):
         # ==============get host count===================
         with mock.patch("aops_database.views.host.operate") as mock_operate:
             mock_operate.return_value = SUCCEED
-            response = self.client.get(DATA_GET_HOST_COUNT, json=args)
+            response = self.client.post(DATA_GET_HOST_COUNT, json=args)
             res = response.json
             self.assertEqual(res, self.succeed_res)
             self.assertEqual(mock_operate.call_args_list[0][0][1], args)
@@ -100,7 +100,7 @@ class TestHostData(unittest.TestCase):
         # ==============get host group===================
         with mock.patch("aops_database.views.host.operate") as mock_operate:
             mock_operate.return_value = SUCCEED
-            response = self.client.get(DATA_GET_GROUP, json=args)
+            response = self.client.post(DATA_GET_GROUP, json=args)
             res = response.json
             self.assertEqual(res, self.succeed_res)
             self.assertEqual(mock_operate.call_args_list[0][0][1], args)
@@ -112,7 +112,7 @@ class TestHostData(unittest.TestCase):
             args = {
                 "basic": True
             }
-            response = self.client.get(DATA_GET_HOST_INFO, json=args)
+            response = self.client.post(DATA_GET_HOST_INFO, json=args)
             res = response.json
             self.assertEqual(res, self.succeed_res)
             self.assertEqual(mock_operate.call_args_list[0][0][1], args)
@@ -123,7 +123,7 @@ class TestHostData(unittest.TestCase):
             mock_operate.return_value = SUCCEED
             args = {
             }
-            response = self.client.get(DATA_GET_HOST_INFO, json=args)
+            response = self.client.post(DATA_GET_HOST_INFO, json=args)
             res = response.json
             self.assertEqual(res, self.succeed_res)
             self.assertEqual(mock_operate.call_args_list[0][0][1], args)
@@ -133,7 +133,7 @@ class TestHostData(unittest.TestCase):
         # ==============get host info by user===================
         with mock.patch("aops_database.views.host.operate") as mock_operate:
             mock_operate.return_value = SUCCEED
-            response = self.client.get(DATA_GET_HOST_INFO_BY_USER, json=args)
+            response = self.client.post(DATA_GET_HOST_INFO_BY_USER, json=args)
             res = response.json
             self.assertEqual(res, self.succeed_res)
             self.assertEqual(mock_operate.call_args_list[0][0][1], args)

@@ -81,10 +81,10 @@ class DeleteHost(Resource):
 class GetHost(Resource):
     """
     Interface for get host.
-    Restful API: GET
+    Restful API: POST
     """
     @staticmethod
-    def get():
+    def post():
         """
         Get host
 
@@ -111,10 +111,10 @@ class GetHost(Resource):
 class GetHostCount(Resource):
     """
     Interface for get host count
-    Restful API: GET
+    Restful API: POST
     """
     @staticmethod
-    def get():
+    def post():
         """
         Get host
 
@@ -186,10 +186,10 @@ class DeleteHostGroup(Resource):
 class GetHostGroup(Resource):
     """
     Interface for get host group.
-    Restful API: GET
+    Restful API: POST
     """
     @staticmethod
-    def get():
+    def post():
         """
         Get host
 
@@ -214,10 +214,10 @@ class GetHostGroup(Resource):
 class GetHostInfo(Resource):
     """
     Interface for get host info.
-    Restful API: GET
+    Restful API: POST
     """
     @staticmethod
-    def get():
+    def post():
         """
         Get host info
 
@@ -246,10 +246,10 @@ class GetHostInfo(Resource):
 class GetHostInfoByUser(Resource):
     """
     Interface for get host info by user.
-    Restful API: GET
+    Restful API: POST
     """
     @staticmethod
-    def get():
+    def post():
         """
         Get host info by user
 

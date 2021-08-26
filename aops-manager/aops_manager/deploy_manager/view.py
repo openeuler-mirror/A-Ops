@@ -104,10 +104,10 @@ class DeleteTask(Resource):
 class GetTask(Resource):
     """
     Interface for get Task
-    Restful API: get
+    Restful API: POST
     """
     @staticmethod
-    def get():
+    def post():
         """
         Get task
 
@@ -127,7 +127,7 @@ class GetTask(Resource):
         verify_res = MyResponse.verify_all(
             args, GetTaskSchema, access_token)
         response = MyResponse.get_result(
-            verify_res, 'get', database_url, args)
+            verify_res, 'post', database_url, args)
 
         return jsonify(response)
 
@@ -169,7 +169,7 @@ class ExecuteTask(Resource):
                 "username": "admin"
             }
 
-        response = MyResponse.get_result(verify_res, 'get', database_url, pyload)
+        response = MyResponse.get_result(verify_res, 'post', database_url, pyload)
         if response['code'] != SUCCEED:
             return jsonify(response)
         for task_info in response['task_infos']:
@@ -229,10 +229,10 @@ class ImportTemplate(Resource):
 class GetTemplate(Resource):
     """
     Interface for get template info.
-    Restful API: GET
+    Restful API: POST
     """
     @staticmethod
-    def get():
+    def post():
         """
         Get template info
 
@@ -248,7 +248,7 @@ class GetTemplate(Resource):
         verify_res = MyResponse.verify_all(
             args, GetTemplateSchema, access_token)
         response = MyResponse.get_result(
-            verify_res, 'get', database_url, args)
+            verify_res, 'post', database_url, args)
 
         return jsonify(response)
 
