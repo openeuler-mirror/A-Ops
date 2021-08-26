@@ -147,34 +147,6 @@ def add_access_token(sub_parse):
     )
 
 
-def add_start_and_end(sub_parse):
-    """
-    Add start time and end time of the sub parse.
-    Args:
-        sub_parse(sub_parse): sub_parse of the command
-
-    Returns:
-
-    """
-    group_start_end = sub_parse.add_argument_group(
-        'group_start_end',
-        'The group for start and end')
-
-    group_start_end.add_argument(
-        '--start',
-        nargs='?',
-        type=str,
-        default="",
-        help='original date of raw data, default is 1 hour ago.')
-
-    group_start_end.add_argument(
-        '--end',
-        nargs='?',
-        type=str,
-        default="",
-        help='end date of raw data, default is now')
-
-
 class BaseCommand:
     """
     Description: Basic attributes used for command invocation
