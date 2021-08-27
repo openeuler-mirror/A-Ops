@@ -147,6 +147,7 @@ class TestDeployDatabase(unittest.TestCase):
                 "template_name": "c",
                 "description": "itsss ",
                 "template_content": {
+                    "1": {"a": 2},
                     "3": 3
                 }
             },
@@ -163,7 +164,12 @@ class TestDeployDatabase(unittest.TestCase):
                 "template_name": "b",
                 "description": "itsss ",
                 "template_content": {
-                    "1": 1
+                    "1": 1,
+                    "4": {
+                        "a": {
+                            "a": [1]
+                        }
+                    }
                 }
             },
         ]
@@ -201,8 +207,13 @@ class TestDeployDatabase(unittest.TestCase):
                     "template_name": "b",
                     "description": "itsss ",
                     "template_content": {
-                        "1": 1
+                    "1": 1,
+                    "4": {
+                        "a": {
+                            "a": [1]
+                        }
                     }
+                }
                 }
             ]
         }

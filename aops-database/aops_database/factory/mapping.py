@@ -48,7 +48,7 @@ MAPPINGS = {
                     "ignore_above": 256
                 },
                 "template_content": {
-                    "type": "object"
+                    "type": "text"
                 },
                 "description": {
                     "type": "text"
@@ -68,7 +68,7 @@ MAPPINGS = {
                     "ignore_above": 256
                 },
                 "tree_content": {
-                    "type": "object"
+                    "type": "text"
                 },
                 "description": {
                     "type": "text"
@@ -99,7 +99,10 @@ MAPPINGS = {
                     "type": "keyword",
                     "ignore_above": 256
                 },
-                "time": {
+                "start": {
+                    "type": "long"
+                },
+                "end": {
                     "type": "long"
                 },
                 "username": {
@@ -107,7 +110,7 @@ MAPPINGS = {
                     "ignore_above": 256
                 },
                 "report": {
-                    "type": "object"
+                    "type": "text"
                 }
             }
         }

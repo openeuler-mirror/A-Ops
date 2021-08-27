@@ -15,6 +15,8 @@ Time:
 Author:
 Description:
 """
+import json
+
 from aops_database.proxy.proxy import ElasticsearchProxy
 from aops_database.conf.constant import TEMPLATE_INDEX, TASK_INDEX
 from aops_utils.log.log import LOGGER
@@ -146,6 +148,7 @@ class DeployDatabase(ElasticsearchProxy):
         Returns:
             int: status code
         """
+        data['template_content'] = json.dumps(data['template_content'])
         res = self.insert(TEMPLATE_INDEX, data)
         if res:
             LOGGER.info("add template [%s] succeed", data.get('template_name'))
@@ -203,6 +206,8 @@ class DeployDatabase(ElasticsearchProxy):
             result["total_page"] = total_page
             result["total_count"] = total_count
             for item in res[1]['hits']['hits']:
+                item['_source']['template_content'] = json.loads(
+                    item['_source']['template_content'])
                 result["template_infos"].append(item['_source'])
             return SUCCEED, result
 
@@ -227,7 +232,7 @@ class DeployDatabase(ElasticsearchProxy):
 
         body = self._general_body(data)
         body["query"]["bool"]["must"].append(
-                {"terms": {"template_name": template_list}})
+            {"terms": {"template_name": template_list}})
         res = self.delete(TEMPLATE_INDEX, body)
         if res:
             LOGGER.info("delete template %s succeed", template_list)
