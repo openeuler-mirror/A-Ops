@@ -15,22 +15,17 @@ Time:
 Author:
 Description:
 """
-from flask import request
-from flask import jsonify
-from flask_restful import Resource
-
 from aops_database.proxy.deploy import DeployDatabase
-from aops_database.function.helper import operate
-from aops_utils.restful.status import make_response
+from aops_database.views import BaseResource
 
 
-class AddTask(Resource):
+class AddTask(BaseResource):
     """
     Interface for add Task
     Restful API: POST
     """
-    @staticmethod
-    def post():
+
+    def post(self):
         """
         Add task
 
@@ -44,21 +39,16 @@ class AddTask(Resource):
         Returns:
             dict: response body
         """
-        args = request.get_json()
-        action = 'add_task'
-        deploy_proxy = DeployDatabase()
-        response = make_response(operate(deploy_proxy, args, action))
-
-        return jsonify(response)
+        return self.do_action('add_task', DeployDatabase())
 
 
-class DeleteTask(Resource):
+class DeleteTask(BaseResource):
     """
     Interface for delete Task
     Restful API: DELETE
     """
-    @staticmethod
-    def delete():
+
+    def delete(self):
         """
         Delete task
 
@@ -69,21 +59,16 @@ class DeleteTask(Resource):
         Returns:
             dict: response body
         """
-        args = request.get_json()
-        action = 'delete_task'
-        deploy_proxy = DeployDatabase()
-        response = make_response(operate(deploy_proxy, args, action))
-
-        return jsonify(response)
+        return self.do_action('delete_task', DeployDatabase())
 
 
-class GetTask(Resource):
+class GetTask(BaseResource):
     """
     Interface for get Task
     Restful API: POST
     """
-    @staticmethod
-    def post():
+
+    def post(self):
         """
         Get task
 
@@ -98,21 +83,16 @@ class GetTask(Resource):
         Returns:
             dict: response body
         """
-        args = request.get_json()
-        action = 'get_task'
-        deploy_proxy = DeployDatabase()
-        response = make_response(operate(deploy_proxy, args, action))
-
-        return jsonify(response)
+        return self.do_action('get_task', DeployDatabase())
 
 
-class AddTemplate(Resource):
+class AddTemplate(BaseResource):
     """
     Interface for add template
     Restful API: POST
     """
-    @staticmethod
-    def post():
+
+    def post(self):
         """
         Add template
 
@@ -125,21 +105,16 @@ class AddTemplate(Resource):
         Returns:
             dict: response body
         """
-        args = request.get_json()
-        action = 'add_template'
-        deploy_proxy = DeployDatabase()
-        response = make_response(operate(deploy_proxy, args, action))
-
-        return jsonify(response)
+        return self.do_action('add_template', DeployDatabase())
 
 
-class GetTemplate(Resource):
+class GetTemplate(BaseResource):
     """
     Interface for get template info.
     Restful API: POST
     """
-    @staticmethod
-    def post():
+
+    def post(self):
         """
         Get template info
 
@@ -154,21 +129,16 @@ class GetTemplate(Resource):
         Returns:
             dict: response body
         """
-        args = request.get_json()
-        action = 'get_template'
-        deploy_proxy = DeployDatabase()
-        response = make_response(operate(deploy_proxy, args, action))
-
-        return jsonify(response)
+        return self.do_action('get_template', DeployDatabase())
 
 
-class DeleteTemplate(Resource):
+class DeleteTemplate(BaseResource):
     """
     Interface for delete template.
     Restful API: DELETE
     """
-    @staticmethod
-    def delete():
+
+    def delete(self):
         """
         Delete template
 
@@ -178,9 +148,4 @@ class DeleteTemplate(Resource):
         Returns:
             dict: response body
         """
-        args = request.get_json()
-        action = 'delete_template'
-        deploy_proxy = DeployDatabase()
-        response = make_response(operate(deploy_proxy, args, action))
-
-        return jsonify(response)
+        return self.do_action('delete_template', DeployDatabase())

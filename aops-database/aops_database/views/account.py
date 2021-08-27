@@ -15,21 +15,18 @@ Time:
 Author:
 Description: Restful apis about account
 """
-from flask import request, jsonify
-from flask_restful import Resource
-
-from aops_database.function.helper import SESSION, operate
+from aops_database.function.helper import SESSION
 from aops_database.proxy.account import UserDatabase
-from aops_utils.restful.status import make_response
+from aops_database.views import BaseResource
 
 
-class AddUser(Resource):
+class AddUser(BaseResource):
     """
     Interface for register user.
     Restful API: post
     """
-    @staticmethod
-    def post():
+
+    def post(self):
         """
         Add user
 
@@ -40,21 +37,16 @@ class AddUser(Resource):
         Returns:
             dict: response body
         """
-        args = request.get_json()
-        proxy = UserDatabase()
-        action = 'add_user'
-        response = make_response(operate(proxy, args, action, SESSION))
-
-        return jsonify(response)
+        return self.do_action('add_user', UserDatabase(), SESSION)
 
 
-class Login(Resource):
+class Login(BaseResource):
     """
     Interface for user login.
     Restful API: post
     """
-    @staticmethod
-    def post():
+
+    def post(self):
         """
         User login
 
@@ -65,21 +57,16 @@ class Login(Resource):
         Returns:
             dict: response body
         """
-        args = request.get_json()
-        proxy = UserDatabase()
-        action = 'login'
-        response = make_response(operate(proxy, args, action, SESSION))
-
-        return jsonify(response)
+        return self.do_action('login', UserDatabase(), SESSION)
 
 
-class ChangePassword(Resource):
+class ChangePassword(BaseResource):
     """
     Interface for user change password.
     Restful API: post
     """
-    @staticmethod
-    def post():
+
+    def post(self):
         """
         Change password
 
@@ -90,9 +77,4 @@ class ChangePassword(Resource):
         Returns:
             dict: response body
         """
-        args = request.get_json()
-        proxy = UserDatabase()
-        action = 'change_password'
-        response = make_response(operate(proxy, args, action, SESSION))
-
-        return jsonify(response)
+        return self.do_action('change_password', UserDatabase(), SESSION)

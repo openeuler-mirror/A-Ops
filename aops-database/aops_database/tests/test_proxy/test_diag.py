@@ -112,7 +112,8 @@ class TestDiagDatabase(unittest.TestCase):
                     "tree_name": "tree1",
                     "task_id": "t1",
                     "report_id": "id1",
-                    "time": 12,
+                    "start": 12,
+                    "end": 14,
                     "report": {}
                 },
                 {
@@ -121,7 +122,8 @@ class TestDiagDatabase(unittest.TestCase):
                     "tree_name": "tree1",
                     "task_id": "t1",
                     "report_id": "id2",
-                    "time": 14,
+                    "start": 14,
+                    "end": 17,
                     "report": {}
                 },
                 {
@@ -130,7 +132,8 @@ class TestDiagDatabase(unittest.TestCase):
                     "tree_name": "tree2",
                     "task_id": "t1",
                     "report_id": "id3",
-                    "time": 19,
+                    "start": 19,
+                    "end": 23,
                     "report": {}
                 },
                 {
@@ -139,7 +142,8 @@ class TestDiagDatabase(unittest.TestCase):
                     "tree_name": "tree1",
                     "task_id": "t2",
                     "report_id": "id4",
-                    "time": 1,
+                    "start": 1,
+                    "end": 5,
                     "report": {}
                 },
                 {
@@ -148,7 +152,8 @@ class TestDiagDatabase(unittest.TestCase):
                     "tree_name": "tree1",
                     "task_id": "t2",
                     "report_id": "id5",
-                    "time": 1,
+                    "start": 1,
+                    "end": 5,
                     "report": {}
                 }
             ]
@@ -162,7 +167,7 @@ class TestDiagDatabase(unittest.TestCase):
             "time_range": [1, 20],
             "host_list": ["id1", "id2", "id3"],
             "tree_list": ["tree1", "tree2"],
-            "sort": "time",
+            "sort": "start",
             "direction": "desc",
             "page": 1,
             "per_page": 2
@@ -176,14 +181,16 @@ class TestDiagDatabase(unittest.TestCase):
                     "tree_name": "tree2",
                     "task_id": "t1",
                     "report_id": "id3",
-                    "time": 19
+                    "start": 19,
+                    "end": 23
                 },
                 {
                     "host_id": "id2",
                     "tree_name": "tree1",
                     "task_id": "t1",
                     "report_id": "id2",
-                    "time": 14
+                    "start": 14,
+                    "end": 17
                 }
             ]
         }
@@ -231,7 +238,8 @@ class TestDiagDatabase(unittest.TestCase):
                     "tree_name": "tree1",
                     "task_id": "t1",
                     "report_id": "id2",
-                    "time": 14,
+                    "start": 14,
+                    "end": 17,
                     "report": {}
                 },
                 {
@@ -239,7 +247,8 @@ class TestDiagDatabase(unittest.TestCase):
                     "tree_name": "tree2",
                     "task_id": "t1",
                     "report_id": "id3",
-                    "time": 19,
+                    "start": 19,
+                    "end": 23,
                     "report": {}
                 },
             ]

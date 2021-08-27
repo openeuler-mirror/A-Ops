@@ -21,15 +21,16 @@ from flask_restful import Resource
 from aops_database.function.helper import SESSION, operate
 from aops_database.proxy.host import HostDatabase, HostInfoDatabase
 from aops_utils.restful.status import make_response
+from aops_database.views import BaseResource
 
 
-class AddHost(Resource):
+class AddHost(BaseResource):
     """
     Interface for add host.
     Restful API: post
     """
-    @staticmethod
-    def post():
+
+    def post(self):
         """
         Add host
 
@@ -45,21 +46,16 @@ class AddHost(Resource):
         Returns:
             dict: response body
         """
-        args = request.get_json()
-        proxy = HostDatabase()
-        action = 'add_host'
-        response = make_response(operate(proxy, args, action, SESSION))
-
-        return jsonify(response)
+        return self.do_action('add_host', HostDatabase(), SESSION)
 
 
-class DeleteHost(Resource):
+class DeleteHost(BaseResource):
     """
     Interface for delete host.
     Restful API: DELETE
     """
-    @staticmethod
-    def delete():
+
+    def delete(self):
         """
         Delete host
 
@@ -70,21 +66,16 @@ class DeleteHost(Resource):
         Returns:
             dict: response body
         """
-        args = request.get_json()
-        proxy = HostDatabase()
-        action = 'delete_host'
-        response = make_response(operate(proxy, args, action, SESSION))
-
-        return jsonify(response)
+        return self.do_action('delete_host', HostDatabase(), SESSION)
 
 
-class GetHost(Resource):
+class GetHost(BaseResource):
     """
     Interface for get host.
     Restful API: POST
     """
-    @staticmethod
-    def post():
+
+    def post(self):
         """
         Get host
 
@@ -100,21 +91,16 @@ class GetHost(Resource):
         Returns:
             dict: response body
         """
-        args = request.get_json()
-        proxy = HostDatabase()
-        action = 'get_host'
-        response = make_response(operate(proxy, args, action, SESSION))
-
-        return jsonify(response)
+        return self.do_action('get_host', HostDatabase(), SESSION)
 
 
-class GetHostCount(Resource):
+class GetHostCount(BaseResource):
     """
     Interface for get host count
     Restful API: POST
     """
-    @staticmethod
-    def post():
+
+    def post(self):
         """
         Get host
 
@@ -124,21 +110,16 @@ class GetHostCount(Resource):
         Returns:
             dict: response body
         """
-        args = request.get_json()
-        proxy = HostDatabase()
-        action = 'get_host_count'
-        response = make_response(operate(proxy, args, action, SESSION))
-
-        return jsonify(response)
+        return self.do_action('get_host_count', HostDatabase(), SESSION)
 
 
-class AddHostGroup(Resource):
+class AddHostGroup(BaseResource):
     """
     Interface for add host group.
     Restful API: post
     """
-    @staticmethod
-    def post():
+
+    def post(self):
         """
         Add host group
 
@@ -150,21 +131,16 @@ class AddHostGroup(Resource):
         Returns:
             dict: response body
         """
-        args = request.get_json()
-        proxy = HostDatabase()
-        action = 'add_host_group'
-        response = make_response(operate(proxy, args, action, SESSION))
-
-        return jsonify(response)
+        return self.do_action('add_host_group', HostDatabase(), SESSION)
 
 
-class DeleteHostGroup(Resource):
+class DeleteHostGroup(BaseResource):
     """
     Interface for delete host group.
     Restful API: delete
     """
-    @staticmethod
-    def delete():
+
+    def delete(self):
         """
         Delete host group
 
@@ -175,21 +151,16 @@ class DeleteHostGroup(Resource):
         Returns:
             dict: response body
         """
-        args = request.get_json()
-        proxy = HostDatabase()
-        action = 'delete_host_group'
-        response = make_response(operate(proxy, args, action, SESSION))
-
-        return jsonify(response)
+        return self.do_action('delete_host_group', HostDatabase(), SESSION)
 
 
-class GetHostGroup(Resource):
+class GetHostGroup(BaseResource):
     """
     Interface for get host group.
     Restful API: POST
     """
-    @staticmethod
-    def post():
+
+    def post(self):
         """
         Get host
 
@@ -203,12 +174,7 @@ class GetHostGroup(Resource):
         Returns:
             dict: response body
         """
-        args = request.get_json()
-        proxy = HostDatabase()
-        action = 'get_host_group'
-        response = make_response(operate(proxy, args, action, SESSION))
-
-        return jsonify(response)
+        return self.do_action('get_host_group', HostDatabase(), SESSION)
 
 
 class GetHostInfo(Resource):
@@ -243,13 +209,13 @@ class GetHostInfo(Resource):
         return jsonify(response)
 
 
-class GetHostInfoByUser(Resource):
+class GetHostInfoByUser(BaseResource):
     """
     Interface for get host info by user.
     Restful API: POST
     """
-    @staticmethod
-    def post():
+
+    def post(self):
         """
         Get host info by user
 
@@ -259,21 +225,16 @@ class GetHostInfoByUser(Resource):
         Returns:
             dict: response body
         """
-        args = request.get_json()
-        proxy = HostDatabase()
-        action = 'get_total_host_info_by_user'
-        response = make_response(operate(proxy, args, action, SESSION))
-
-        return jsonify(response)
+        return self.do_action('get_total_host_info_by_user', HostDatabase(), SESSION)
 
 
-class SaveHostInfo(Resource):
+class SaveHostInfo(BaseResource):
     """
     Interface for save host info.
     Restful API: POST
     """
-    @staticmethod
-    def post():
+
+    def post(self):
         """
         Save host info
 
@@ -283,21 +244,16 @@ class SaveHostInfo(Resource):
         Returns:
             dict: response body
         """
-        args = request.get_json()
-        proxy = HostInfoDatabase()
-        action = 'save_host_info'
-        response = make_response(operate(proxy, args, action))
-
-        return jsonify(response)
+        return self.do_action('save_host_info', HostInfoDatabase())
 
 
-class DeleteHostInfo(Resource):
+class DeleteHostInfo(BaseResource):
     """
     Interface for delete host info.
     Restful API: DELETE
     """
-    @staticmethod
-    def delete():
+
+    def delete(self):
         """
         Delete host info
 
@@ -307,9 +263,4 @@ class DeleteHostInfo(Resource):
         Returns:
             dict: response body
         """
-        args = request.get_json()
-        proxy = HostInfoDatabase()
-        action = 'delete_host_info'
-        response = make_response(operate(proxy, args, action))
-
-        return jsonify(response)
+        return self.do_action('delete_host_info', HostInfoDatabase())
