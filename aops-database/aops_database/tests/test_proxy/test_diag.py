@@ -15,6 +15,7 @@ Time:
 Author:
 Description:
 """
+import json
 import time
 import unittest
 
@@ -42,7 +43,7 @@ class TestDiagDatabase(unittest.TestCase):
         self.proxy.delete_index(DIAG_REPORT_INDEX)
         self.proxy.close()
 
-    def test_api_daig_tree(self):
+    def test_api_diag_tree(self):
         # ==============import diag tree===================
         data = {
             "username": "test",
@@ -69,7 +70,9 @@ class TestDiagDatabase(unittest.TestCase):
                     "tree_name": "tree3",
                     "tree_content": {
                         "node1": 32,
-                        "node2": 41
+                        "node2": {
+                            "a": [1, 2]
+                        }
                     },
                     "description": "t22"
                 },
@@ -77,7 +80,9 @@ class TestDiagDatabase(unittest.TestCase):
                     "tree_name": "tree4",
                     "tree_content": {
                         "node1": 32,
-                        "node2": 41
+                        "node2": {
+                            "a": 1
+                        }
                     },
                     "description": "t22"
                 }
@@ -114,7 +119,7 @@ class TestDiagDatabase(unittest.TestCase):
                     "report_id": "id1",
                     "start": 12,
                     "end": 14,
-                    "report": {}
+                    "report": json.dumps({"a":1, "b":2})
                 },
                 {
                     "username": "test",
@@ -124,7 +129,7 @@ class TestDiagDatabase(unittest.TestCase):
                     "report_id": "id2",
                     "start": 14,
                     "end": 17,
-                    "report": {}
+                    "report": json.dumps({"a":{"b":1}})
                 },
                 {
                     "username": "test",
@@ -134,7 +139,7 @@ class TestDiagDatabase(unittest.TestCase):
                     "report_id": "id3",
                     "start": 19,
                     "end": 23,
-                    "report": {}
+                    "report": json.dumps({"a":[2,3]})
                 },
                 {
                     "username": "test",
@@ -144,7 +149,7 @@ class TestDiagDatabase(unittest.TestCase):
                     "report_id": "id4",
                     "start": 1,
                     "end": 5,
-                    "report": {}
+                    "report": json.dumps({"c":4})
                 },
                 {
                     "username": "test",
@@ -154,7 +159,7 @@ class TestDiagDatabase(unittest.TestCase):
                     "report_id": "id5",
                     "start": 1,
                     "end": 5,
-                    "report": {}
+                    "report": json.dumps({"a": {"2":1}})
                 }
             ]
         }
@@ -240,7 +245,7 @@ class TestDiagDatabase(unittest.TestCase):
                     "report_id": "id2",
                     "start": 14,
                     "end": 17,
-                    "report": {}
+                    "report": {"a":{"b":1}}
                 },
                 {
                     "host_id": "id1",
@@ -249,7 +254,7 @@ class TestDiagDatabase(unittest.TestCase):
                     "report_id": "id3",
                     "start": 19,
                     "end": 23,
-                    "report": {}
+                    "report": {"a":[2,3]}
                 },
             ]
         }

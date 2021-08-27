@@ -15,6 +15,8 @@ Time:
 Author:
 Description: Diag database operation
 """
+import json
+
 from aops_database.proxy.proxy import ElasticsearchProxy
 from aops_database.conf.constant import DIAG_TREE_INDEX, DIAG_REPORT_INDEX
 from aops_database.function.helper import judge_return_code
@@ -58,6 +60,8 @@ class DiagDatabase(ElasticsearchProxy):
         for tree in trees:
             tree_name = tree.get('tree_name')
             tree['username'] = username
+            # serialize
+            tree['tree_content'] = json.dumps(tree['tree_content'])
             res = self.insert(DIAG_TREE_INDEX, tree)
             if res:
                 LOGGER.info(
@@ -124,6 +128,9 @@ class DiagDatabase(ElasticsearchProxy):
                         'tree_name', 'tree_content', 'description', 'tag'])
         if res[0]:
             LOGGER.info("query diag tree %s succeed", tree_list)
+            # deserialize
+            for tree in res[1]:
+                tree['tree_content'] = json.loads(tree['tree_content'])
             result["trees"] = res[1]
             return SUCCEED, result
 
@@ -146,7 +153,7 @@ class DiagDatabase(ElasticsearchProxy):
                             "report_id": "xxxx",
                             "start": 11,
                             "end": 22,
-                            "report": {}
+                            "report": ""
                         }
                     ]
                 }
@@ -359,6 +366,7 @@ class DiagDatabase(ElasticsearchProxy):
         if res[0]:
             LOGGER.info("query report %s succeed", report_list)
             for item in res[1]['hits']['hits']:
+                item['_source']['report'] = json.loads(item['_source']['report'])
                 result["result"].append(item['_source'])
             return SUCCEED, result
 

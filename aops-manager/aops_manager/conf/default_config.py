@@ -20,8 +20,3 @@ manager = {
     "PORT": 11111,
     "HOST_VAULT_DIR": "/opt/aops"
 }
-
-database = {
-    "IP": "127.0.0.1",
-    "PORT": 11112
-}
