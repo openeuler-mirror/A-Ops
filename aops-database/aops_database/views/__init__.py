@@ -28,18 +28,19 @@ class BaseResource(Resource):
     Offer a common action function
     """
     @staticmethod
-    def do_action(action, proxy):
+    def do_action(action, proxy, session=None):
         """
         Do operate and get response
 
         Args:
             action(str): function name
             proxy(instance): API instance
+            session(session or None): some database use session
 
         Returns:
             dict: response body
         """
         args = request.get_json()
-        status_code = operate(proxy, args, action)
+        status_code = operate(proxy, args, action, session)
         response = make_response(status_code)
         return jsonify(response)

@@ -144,7 +144,8 @@ class DiagDatabase(ElasticsearchProxy):
                             "tree_name": "name1",
                             "task_id": "task1",
                             "report_id": "xxxx",
-                            "time": 11,
+                            "start": 11,
+                            "end": 22,
                             "report": {}
                         }
                     ]
@@ -229,7 +230,7 @@ class DiagDatabase(ElasticsearchProxy):
         total_count = count_res[1]
         total_page = self._make_es_paginate_body(data, total_count, query_body)
         res = self.query(DIAG_REPORT_INDEX, query_body, [
-            "host_id", "tree_name", "task_id", "report_id", "time"])
+            "host_id", "tree_name", "task_id", "report_id", "start", "end"])
         if res[0]:
             LOGGER.info("query diag report succeed")
             result["total_page"] = total_page
@@ -268,13 +269,26 @@ class DiagDatabase(ElasticsearchProxy):
                 query_body["query"]["bool"]["must"].append(
                     {"terms": {"tree_name": tree_list}})
             if time_range and len(time_range) == 2:
-                query_body["query"]["bool"]["must"].append(
+                query_body["query"]["bool"]["must"].extend(
+                    [{"range": {
+                        "end": {"gte": time_range[0]}
+                    }
+                    },
                     {"range": {
-                        "time": {
-                            "gte": time_range[0],
-                            "lte": time_range[1]
-                        }
-                    }})
+                        "start": {"lte": time_range[1]}
+                    }
+                    }
+                    ])
+                query_body["query"]["bool"]["should"] = [
+                    {"range": {
+                        "end": {"lte": time_range[1]}
+                    }
+                    },
+                    {"range": {
+                        "start": {"gte": time_range[0]}
+                    }
+                    }
+                ]
 
         return query_body
 
@@ -341,7 +355,7 @@ class DiagDatabase(ElasticsearchProxy):
             {"terms": {"report_id": report_list}})
 
         res = self.query(DIAG_REPORT_INDEX, query_body, [
-            "host_id", "tree_name", "task_id", "report_id", "time", "report"])
+            "host_id", "tree_name", "task_id", "report_id", "start", "end", "report"])
         if res[0]:
             LOGGER.info("query report %s succeed", report_list)
             for item in res[1]['hits']['hits']:

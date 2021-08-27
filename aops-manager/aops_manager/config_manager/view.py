@@ -204,11 +204,11 @@ def read_yaml_data(yaml_file):
 class CollectConfig(Resource):
     """
     Interface for collect config.
-    Restful API: GET
+    Restful API: POST
     """
 
     @staticmethod
-    def get():
+    def post():
         """
         Get config
 
