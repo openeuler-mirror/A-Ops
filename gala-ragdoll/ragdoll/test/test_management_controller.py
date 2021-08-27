@@ -22,66 +22,67 @@ from ragdoll.test import BaseTestCase
 class TestManagementController(BaseTestCase):
     """ManagementController integration test stubs"""
 
-    # def test_add_management_confs_in_domain(self):
-    #     """Test case for add_management_confs_in_domain
+    def test_add_management_confs_in_domain(self):
+        """Test case for add_management_confs_in_domain
 
-    #     add management configuration items and expected values in the domain
-    #     """
-    #     conf1 = Conf(file_path = "/etc/yum.repos.d/openEuler.repo",
-    #                  contents = """
-    #                     [OS]
-    #                     name = OS
-    #                     baseurl = https://repo.huaweicloud.com/openeuler/openEuler-20.03-LTS-SP1/everything/x86_64/
-    #                     enabled = 1
-    #                     gpgcheck = 0
-    #                     """)
+        add management configuration items and expected values in the domain
+        """
+        conf1 = Conf(file_path = "/etc/yum.repos.d/openEuler.repo",
+                     contents = """
+                          [snn]
+                          name=snn
+                          baseurl=https://repo.huaweicloud.com/openeuler/openEuler-20.03-LTS-SP1/everything/x86_64/
+                          enabled=1
+                          gpgcheck=0
+                          gpgkey=http://repo.openeuler.org/openEuler-20.03-LTS-SP1/OS/$basearch/RPM-GPG-KEY-openEuler
+                        """)
     
-    #     body = Confs(domain_name = "ll",
-    #                  conf_files = [conf1])
-    #     response = self.client.open(
-    #         '/management/addManagementConf',
-    #         method='POST',
-    #         data=json.dumps(body),
-    #         content_type='application/json')
-    #     print("response is : {}".format(response.data))
-    #     self.assert200(response,
-    #                    'Response body is : ' + response.data.decode('utf-8'))
+        body = Confs(domain_name = "dnf",
+                     conf_files = [conf1])
+        response = self.client.open(
+            '/management/addManagementConf',
+            method='POST',
+            data=json.dumps(body),
+            content_type='application/json')
+        print("response is : {}".format(response.data))
+        self.assert200(response,
+                       'Response body is : ' + response.data.decode('utf-8'))
 
-    # def test_add_management_confs_in_domain2(self):
-    #     """Test case for add_management_confs_in_domain
+    def test_add_management_confs_in_domain2(self):
+        """Test case for add_management_confs_in_domain
 
-    #     add management configuration items and expected values in the domain
-    #     """
-    #     conf1 = Conf(file_path = "/etc/yum.repos.d/openEuler.repo",
-    #                  host_id = "551d02da-7d8c-4357-b88d-15dc55ee22cc")
+        add management configuration items and expected values in the domain
+        """
+        conf1 = Conf(file_path = "/etc/coremail/coremail.conf",
+                     host_id = "551d02da-7d8c-4357-b88d-15dc55ee22ss")
     
-    #     body = Confs(domain_name = "OS",
-    #                  conf_files = [conf1])
-    #     response = self.client.open(
-    #         '/management/addManagementConf',
-    #         method='POST',
-    #         data=json.dumps(body),
-    #         content_type='application/json')
-    #     print("response is : {}".format(response.data))
-    #     self.assert200(response,
-    #                    'Response body is : ' + response.data.decode('utf-8'))
+        body = Confs(domain_name = "dnf",
+                     conf_files = [conf1])
+        response = self.client.open(
+            '/management/addManagementConf',
+            method='POST',
+            data=json.dumps(body),
+            content_type='application/json')
+        print("response is : {}".format(response.data))
+        self.assert200(response,
+                       'Response body is : ' + response.data.decode('utf-8'))
 
 
-    # def test_delete_management_confs_in_domain(self):
-    #     """Test case for delete_management_confs_in_domain
+    def test_delete_management_confs_in_domain(self):
+        """Test case for delete_management_confs_in_domain
 
-    #     delete management configuration items and expected values in the domain
-    #     """
-    #     conf = ManageConf(file_path="/etc/yum.repos.d/openEuler.repo")
-    #     body = ManageConfs(domain_name = "ll",
-    #                        conf_files = [conf])
-    #     response = self.client.open(
-    #         '/management/deleteManagementConf',
-    #         method='DELETE',
-    #         data=json.dumps(body),
-    #         content_type='application/json')
-    #     self.assert200(response,
-    #                    'Response body is : ' + response.data.decode('utf-8'))
+        delete management configuration items and expected values in the domain
+        """
+        conf = ManageConf(file_path="/etc/yum.repos.d/openEuler.repo")
+        body = ManageConfs(domain_name = "dnf",
+                           conf_files = [conf])
+        response = self.client.open(
+            '/management/deleteManagementConf',
+            method='DELETE',
+            data=json.dumps(body),
+            content_type='application/json')
+        self.assert200(response,
+                       'Response body is : ' + response.data.decode('utf-8'))
 
     def test_get_management_confs_in_domain(self):
         """Test case for get_management_confs_in_domain
@@ -115,6 +116,24 @@ class TestManagementController(BaseTestCase):
         text = response.text
         print(json.loads(text))
 
+    def test_query_changelog_of_management_confs_in_domain(self):
+        """Test case for query_changelog_of_management_confs_in_domain
+
+        query the change log of management config in domain
+        """
+        conf2 = ManageConf(file_path="/etc/yum.repos.d/openEuler.repo")
+        body = ManageConfs(domain_name = "dnf",
+                           conf_files = [conf2])
+        # body = ManageConfs(domain_name = "dnf",
+        #                    conf_files = [])
+        response = self.client.open(
+            '/management/queryManageConfChange',
+            method='GET',
+            data=json.dumps(body),
+            content_type='application/json')
+        print("response is : {}".format(response))
+        self.assert200(response,
+                       'Response body is : ' + response.data.decode('utf-8'))
 
 if __name__ == '__main__':
     import unittest

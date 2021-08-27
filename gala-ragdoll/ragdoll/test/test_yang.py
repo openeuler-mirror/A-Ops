@@ -12,68 +12,66 @@ from ragdoll.utils.yang_module import YangModule
 
 class TestYang(BaseTestCase):
 
-    yang_module = YangModule()
-
     def test_yang_module(self):
-        self.module_list = yang_module.loadYangModules()
-        if self.module_list >= 1:
-            self.assert200(module_list,
-                       'module_list is : ' + module_list)
-        else:
-            self.assert500(module_list,
-                       'module_list is : ' + module_list)
+        yang_module = YangModule()
+        yangdir = yang_module.yang_dir
+        print("yangdir is : {}".format(yangdir))
+        if not yangdir:
+            return False
+
+        failed_module = []
+        success_module = []
+        for root, dirs, files in os.walk(yangdir):
+            for d_file in files:
+                module_path = os.path.join(yangdir, d_file)
+                grammar_res = yang_module.check_yang_grammar(module_path)
+                if grammar_res:
+                    success_module.append(module_path)
+                else:
+                    failed_module.append(module_path)
+        print("\n")
+        print("The result of test_yang_module is : {}".format(success_module))
+        self.assertEqual(len(failed_module), 0)
+
+    def test_yang_extension(self):
+        res = {}
+        success_module = []
+        failed_module = []
+        yang_module = YangModule()
+        module_list = yang_module.module_list
+        path_list = yang_module.getFilePathInModdule(module_list)
+        d_type_list = yang_module.getTypeInModdule(module_list)
+        spacer_list = yang_module.getSpacerInModdule(module_list)
+        for d_module in module_list:
+            module_name = d_module.name()
+            ext = {}
+            ext['path'] = path_list[module_name]
+            ext['type'] = d_type_list[module_name]
+            ext['spacer'] = spacer_list[module_name]
+            res[module_name] = ext
+            if ext['path'] and ext['type'] and ext['spacer']:
+                success_module.append(module_name)
+            else:
+                failed_module.append(module_name)
+        print("\n")
+        print("The result of test_yang_extension is : {}".format(res))
+        self.assertEqual(len(failed_module), 0)
 
     def test_yang_xpath(self):
         xpath_list = []
-        for d_module in self.module_list:
+        failed_module = []
+        yang_module = YangModule()
+        module_list = yang_module.module_list
+        for d_module in module_list:
             xpath = yang_module.getXpathInModule(d_module)
-            xpath_list.append(xpath)
+            if xpath:
+                xpath_list.append(xpath)
+            else:
+                failed_module.append(xpath)
 
-        if len(xpaxpath_listth) == len(self.module_list):
-            self.assert200(xpath_list,
-                       'xpath_list is : ' + xpath_list)
-        else:
-            self.assert500(xpath_list,
-                       'xpath_list is : ' + xpath_list)
-
-    def test_yang_extension_path(self):
-        ext_path = []
-        for d_module in self.module_list:
-            path = yang_module.getFilePathInModdule(d_module)
-            ext_path.append(path)
-
-        if len(ext_path) == len(self.module_list):
-            self.assert200(ext_path,
-                       'ext_path is : ' + ext_path)
-        else:
-            self.assert500(ext_path,
-                       'ext_path is : ' + ext_path)
-
-    def test_yang_extension_type(self):
-        ext_type = []
-        for d_module in self.module_list:
-            d_type = yang_module.getTypeInModdule(d_module)
-            ext_type.append(d_type)
-
-        if len(ext_type) == len(self.module_list):
-            self.assert200(ext_type,
-                       'ext_type is : ' + ext_type)
-        else:
-            self.assert500(ext_types,
-                       'ext_type is : ' + ext_type)
-
-    def test_yang_extension_spacer(self):
-        ext_spacer = []
-        for d_module in self.module_list:
-            spacer = yang_module.getSpacerInModdule(d_module)
-            ext_type.append(spacer)
-
-        if len(ext_spacer) == len(self.module_list):
-            self.assert200(ext_spacer,
-                       'ext_spacer is : ' + ext_spacer)
-        else:
-            self.assert500(ext_type,
-                       'ext_spacer is : ' + ext_spacer)
+        print("\n")
+        print("The result of test_yang_xpath is : {}".format(xpath_list))
+        self.assertEqual(len(failed_module), 0)
 
 if __name__ == '__main__':
     import unittest

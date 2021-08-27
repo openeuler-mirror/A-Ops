@@ -379,6 +379,8 @@ Mulan PSL v2
 
 ```
 gala-ragdoll
+├── conf
+│	└── gala-ragdoll.conf  // 溯源配置文件
 ├── COPYRIGHT
 ├── develop_env.sh         // 环境预设
 ├── Dockerfile
@@ -695,154 +697,253 @@ OS上哪些配置支持配置溯源，需要建立yang模型，以openEuler.repo
 
  通过RPM包发布，安装目录如下：
 
-```shell
-/usr/bin/gala_ragdoll
-/usr/lib/python3.7/site-packages/gala_ragdoll -- 新增gala_ragdoll packages
-/usr/lib/python3.7/site-packages/gala_ragdoll-1.0.0-py3.7.egg-info
-/usr/lib/python3.7/site-packages/gala_ragdoll-1.0.0-py3.7.egg-info/PKG-INFO
-/usr/lib/python3.7/site-packages/gala_ragdoll-1.0.0-py3.7.egg-info/SOURCES.txt
-/usr/lib/python3.7/site-packages/gala_ragdoll-1.0.0-py3.7.egg-info/dependency_links.txt
-/usr/lib/python3.7/site-packages/gala_ragdoll-1.0.0-py3.7.egg-info/entry_points.txt
-/usr/lib/python3.7/site-packages/gala_ragdoll-1.0.0-py3.7.egg-info/requires.txt
-/usr/lib/python3.7/site-packages/gala_ragdoll-1.0.0-py3.7.egg-info/top_level.txt
-/usr/lib/python3.7/site-packages/gala_ragdoll/__init__.py
-/usr/lib/python3.7/site-packages/gala_ragdoll/__main__.py
-/usr/lib/python3.7/site-packages/gala_ragdoll/__pycache__
-/usr/lib/python3.7/site-packages/gala_ragdoll/__pycache__/__init__.cpython-37.opt-1.pyc
-/usr/lib/python3.7/site-packages/gala_ragdoll/__pycache__/__init__.cpython-37.pyc
-/usr/lib/python3.7/site-packages/gala_ragdoll/__pycache__/__main__.cpython-37.opt-1.pyc
-/usr/lib/python3.7/site-packages/gala_ragdoll/__pycache__/__main__.cpython-37.pyc
-/usr/lib/python3.7/site-packages/gala_ragdoll/__pycache__/encoder.cpython-37.opt-1.pyc
-/usr/lib/python3.7/site-packages/gala_ragdoll/__pycache__/encoder.cpython-37.pyc
-/usr/lib/python3.7/site-packages/gala_ragdoll/__pycache__/util.cpython-37.opt-1.pyc
-/usr/lib/python3.7/site-packages/gala_ragdoll/__pycache__/util.cpython-37.pyc
-/usr/lib/python3.7/site-packages/gala_ragdoll/controllers
-/usr/lib/python3.7/site-packages/gala_ragdoll/controllers/__init__.py
-/usr/lib/python3.7/site-packages/gala_ragdoll/controllers/__pycache__
-/usr/lib/python3.7/site-packages/gala_ragdoll/controllers/__pycache__/__init__.cpython-37.opt-1.pyc
-/usr/lib/python3.7/site-packages/gala_ragdoll/controllers/__pycache__/__init__.cpython-37.pyc
-/usr/lib/python3.7/site-packages/gala_ragdoll/controllers/__pycache__/confs_controller.cpython-37.opt-1.pyc
-/usr/lib/python3.7/site-packages/gala_ragdoll/controllers/__pycache__/confs_controller.cpython-37.pyc
-/usr/lib/python3.7/site-packages/gala_ragdoll/controllers/__pycache__/domain_controller.cpython-37.opt-1.pyc
-/usr/lib/python3.7/site-packages/gala_ragdoll/controllers/__pycache__/domain_controller.cpython-37.pyc
-/usr/lib/python3.7/site-packages/gala_ragdoll/controllers/__pycache__/format.cpython-37.opt-1.pyc
-/usr/lib/python3.7/site-packages/gala_ragdoll/controllers/__pycache__/format.cpython-37.pyc
-/usr/lib/python3.7/site-packages/gala_ragdoll/controllers/__pycache__/host_controller.cpython-37.opt-1.pyc
-/usr/lib/python3.7/site-packages/gala_ragdoll/controllers/__pycache__/host_controller.cpython-37.pyc
-/usr/lib/python3.7/site-packages/gala_ragdoll/controllers/__pycache__/management_controller.cpython-37.opt-1.pyc
-/usr/lib/python3.7/site-packages/gala_ragdoll/controllers/__pycache__/management_controller.cpython-37.pyc
-/usr/lib/python3.7/site-packages/gala_ragdoll/controllers/confs_controller.py
-/usr/lib/python3.7/site-packages/gala_ragdoll/controllers/domain_controller.py
-/usr/lib/python3.7/site-packages/gala_ragdoll/controllers/format.py
-/usr/lib/python3.7/site-packages/gala_ragdoll/controllers/host_controller.py
-/usr/lib/python3.7/site-packages/gala_ragdoll/controllers/management_controller.py
-/usr/lib/python3.7/site-packages/gala_ragdoll/encoder.py
-/usr/lib/python3.7/site-packages/gala_ragdoll/models
-/usr/lib/python3.7/site-packages/gala_ragdoll/models/__init__.py
-/usr/lib/python3.7/site-packages/gala_ragdoll/models/__pycache__
-/usr/lib/python3.7/site-packages/gala_ragdoll/models/__pycache__/__init__.cpython-37.opt-1.pyc
-/usr/lib/python3.7/site-packages/gala_ragdoll/models/__pycache__/__init__.cpython-37.pyc
-/usr/lib/python3.7/site-packages/gala_ragdoll/models/__pycache__/base_model_.cpython-37.opt-1.pyc
-/usr/lib/python3.7/site-packages/gala_ragdoll/models/__pycache__/base_model_.cpython-37.pyc
-/usr/lib/python3.7/site-packages/gala_ragdoll/models/__pycache__/base_response.cpython-37.opt-1.pyc
-/usr/lib/python3.7/site-packages/gala_ragdoll/models/__pycache__/base_response.cpython-37.pyc
-/usr/lib/python3.7/site-packages/gala_ragdoll/models/__pycache__/conf.cpython-37.opt-1.pyc
-/usr/lib/python3.7/site-packages/gala_ragdoll/models/__pycache__/conf.cpython-37.pyc
-/usr/lib/python3.7/site-packages/gala_ragdoll/models/__pycache__/conf_base_info.cpython-37.opt-1.pyc
-/usr/lib/python3.7/site-packages/gala_ragdoll/models/__pycache__/conf_base_info.cpython-37.pyc
-/usr/lib/python3.7/site-packages/gala_ragdoll/models/__pycache__/conf_host.cpython-37.opt-1.pyc
-/usr/lib/python3.7/site-packages/gala_ragdoll/models/__pycache__/conf_host.cpython-37.pyc
-/usr/lib/python3.7/site-packages/gala_ragdoll/models/__pycache__/conf_is_synced.cpython-37.opt-1.pyc
-/usr/lib/python3.7/site-packages/gala_ragdoll/models/__pycache__/conf_is_synced.cpython-37.pyc
-/usr/lib/python3.7/site-packages/gala_ragdoll/models/__pycache__/conf_synced_res.cpython-37.opt-1.pyc
-/usr/lib/python3.7/site-packages/gala_ragdoll/models/__pycache__/conf_synced_res.cpython-37.pyc
-/usr/lib/python3.7/site-packages/gala_ragdoll/models/__pycache__/confs.cpython-37.opt-1.pyc
-/usr/lib/python3.7/site-packages/gala_ragdoll/models/__pycache__/confs.cpython-37.pyc
-/usr/lib/python3.7/site-packages/gala_ragdoll/models/__pycache__/domain.cpython-37.opt-1.pyc
-/usr/lib/python3.7/site-packages/gala_ragdoll/models/__pycache__/domain.cpython-37.pyc
-/usr/lib/python3.7/site-packages/gala_ragdoll/models/__pycache__/domain_manage_conf.cpython-37.opt-1.pyc
-/usr/lib/python3.7/site-packages/gala_ragdoll/models/__pycache__/domain_manage_conf.cpython-37.pyc
-/usr/lib/python3.7/site-packages/gala_ragdoll/models/__pycache__/domain_name.cpython-37.opt-1.pyc
-/usr/lib/python3.7/site-packages/gala_ragdoll/models/__pycache__/domain_name.cpython-37.pyc
-/usr/lib/python3.7/site-packages/gala_ragdoll/models/__pycache__/excepted_conf_info.cpython-37.opt-1.pyc
-/usr/lib/python3.7/site-packages/gala_ragdoll/models/__pycache__/excepted_conf_info.cpython-37.pyc
-/usr/lib/python3.7/site-packages/gala_ragdoll/models/__pycache__/expected_conf.cpython-37.opt-1.pyc
-/usr/lib/python3.7/site-packages/gala_ragdoll/models/__pycache__/expected_conf.cpython-37.pyc
-/usr/lib/python3.7/site-packages/gala_ragdoll/models/__pycache__/git_log_message.cpython-37.opt-1.pyc
-/usr/lib/python3.7/site-packages/gala_ragdoll/models/__pycache__/git_log_message.cpython-37.pyc
-/usr/lib/python3.7/site-packages/gala_ragdoll/models/__pycache__/host.cpython-37.opt-1.pyc
-/usr/lib/python3.7/site-packages/gala_ragdoll/models/__pycache__/host.cpython-37.pyc
-/usr/lib/python3.7/site-packages/gala_ragdoll/models/__pycache__/host_infos.cpython-37.opt-1.pyc
-/usr/lib/python3.7/site-packages/gala_ragdoll/models/__pycache__/host_infos.cpython-37.pyc
-/usr/lib/python3.7/site-packages/gala_ragdoll/models/__pycache__/host_sync_result.cpython-37.opt-1.pyc
-/usr/lib/python3.7/site-packages/gala_ragdoll/models/__pycache__/host_sync_result.cpython-37.pyc
-/usr/lib/python3.7/site-packages/gala_ragdoll/models/__pycache__/host_sync_status.cpython-37.opt-1.pyc
-/usr/lib/python3.7/site-packages/gala_ragdoll/models/__pycache__/host_sync_status.cpython-37.pyc
-/usr/lib/python3.7/site-packages/gala_ragdoll/models/__pycache__/manage_conf.cpython-37.opt-1.pyc
-/usr/lib/python3.7/site-packages/gala_ragdoll/models/__pycache__/manage_conf.cpython-37.pyc
-/usr/lib/python3.7/site-packages/gala_ragdoll/models/__pycache__/manage_confs.cpython-37.opt-1.pyc
-/usr/lib/python3.7/site-packages/gala_ragdoll/models/__pycache__/manage_confs.cpython-37.pyc
-/usr/lib/python3.7/site-packages/gala_ragdoll/models/__pycache__/path.cpython-37.opt-1.pyc
-/usr/lib/python3.7/site-packages/gala_ragdoll/models/__pycache__/path.cpython-37.pyc
-/usr/lib/python3.7/site-packages/gala_ragdoll/models/__pycache__/real_conf.cpython-37.opt-1.pyc
-/usr/lib/python3.7/site-packages/gala_ragdoll/models/__pycache__/real_conf.cpython-37.pyc
-/usr/lib/python3.7/site-packages/gala_ragdoll/models/__pycache__/real_conf_info.cpython-37.opt-1.pyc
-/usr/lib/python3.7/site-packages/gala_ragdoll/models/__pycache__/real_conf_info.cpython-37.pyc
-/usr/lib/python3.7/site-packages/gala_ragdoll/models/__pycache__/real_conf_path.cpython-37.opt-1.pyc
-/usr/lib/python3.7/site-packages/gala_ragdoll/models/__pycache__/real_conf_path.cpython-37.pyc
-/usr/lib/python3.7/site-packages/gala_ragdoll/models/__pycache__/realconf_base_info.cpython-37.opt-1.pyc
-/usr/lib/python3.7/site-packages/gala_ragdoll/models/__pycache__/realconf_base_info.cpython-37.pyc
-/usr/lib/python3.7/site-packages/gala_ragdoll/models/__pycache__/sync_status.cpython-37.opt-1.pyc
-/usr/lib/python3.7/site-packages/gala_ragdoll/models/__pycache__/sync_status.cpython-37.pyc
-/usr/lib/python3.7/site-packages/gala_ragdoll/models/base_model_.py
-/usr/lib/python3.7/site-packages/gala_ragdoll/models/base_response.py
-/usr/lib/python3.7/site-packages/gala_ragdoll/models/conf.py
-/usr/lib/python3.7/site-packages/gala_ragdoll/models/conf_base_info.py
-/usr/lib/python3.7/site-packages/gala_ragdoll/models/conf_host.py
-/usr/lib/python3.7/site-packages/gala_ragdoll/models/conf_is_synced.py
-/usr/lib/python3.7/site-packages/gala_ragdoll/models/conf_synced_res.py
-/usr/lib/python3.7/site-packages/gala_ragdoll/models/confs.py
-/usr/lib/python3.7/site-packages/gala_ragdoll/models/domain.py
-/usr/lib/python3.7/site-packages/gala_ragdoll/models/domain_manage_conf.py
-/usr/lib/python3.7/site-packages/gala_ragdoll/models/domain_name.py
-/usr/lib/python3.7/site-packages/gala_ragdoll/models/excepted_conf_info.py
-/usr/lib/python3.7/site-packages/gala_ragdoll/models/expected_conf.py
-/usr/lib/python3.7/site-packages/gala_ragdoll/models/git_log_message.py
-/usr/lib/python3.7/site-packages/gala_ragdoll/models/host.py
-/usr/lib/python3.7/site-packages/gala_ragdoll/models/host_infos.py
-/usr/lib/python3.7/site-packages/gala_ragdoll/models/host_sync_result.py
-/usr/lib/python3.7/site-packages/gala_ragdoll/models/host_sync_status.py
-/usr/lib/python3.7/site-packages/gala_ragdoll/models/manage_conf.py
-/usr/lib/python3.7/site-packages/gala_ragdoll/models/manage_confs.py
-/usr/lib/python3.7/site-packages/gala_ragdoll/models/path.py
-/usr/lib/python3.7/site-packages/gala_ragdoll/models/real_conf.py
-/usr/lib/python3.7/site-packages/gala_ragdoll/models/real_conf_info.py
-/usr/lib/python3.7/site-packages/gala_ragdoll/models/real_conf_path.py
-/usr/lib/python3.7/site-packages/gala_ragdoll/models/realconf_base_info.py
-/usr/lib/python3.7/site-packages/gala_ragdoll/models/sync_status.py
-/usr/lib/python3.7/site-packages/gala_ragdoll/swagger
-/usr/lib/python3.7/site-packages/gala_ragdoll/swagger/swagger.yaml
-/usr/lib/python3.7/site-packages/gala_ragdoll/test
-/usr/lib/python3.7/site-packages/gala_ragdoll/test/__init__.py
-/usr/lib/python3.7/site-packages/gala_ragdoll/test/__pycache__
-/usr/lib/python3.7/site-packages/gala_ragdoll/test/__pycache__/__init__.cpython-37.opt-1.pyc
-/usr/lib/python3.7/site-packages/gala_ragdoll/test/__pycache__/__init__.cpython-37.pyc
-/usr/lib/python3.7/site-packages/gala_ragdoll/test/__pycache__/test_confs_controller.cpython-37.opt-1.pyc
-/usr/lib/python3.7/site-packages/gala_ragdoll/test/__pycache__/test_confs_controller.cpython-37.pyc
-/usr/lib/python3.7/site-packages/gala_ragdoll/test/__pycache__/test_domain_controller.cpython-37.opt-1.pyc
-/usr/lib/python3.7/site-packages/gala_ragdoll/test/__pycache__/test_domain_controller.cpython-37.pyc
-/usr/lib/python3.7/site-packages/gala_ragdoll/test/__pycache__/test_host_controller.cpython-37.opt-1.pyc
-/usr/lib/python3.7/site-packages/gala_ragdoll/test/__pycache__/test_host_controller.cpython-37.pyc
-/usr/lib/python3.7/site-packages/gala_ragdoll/test/__pycache__/test_management_controller.cpython-37.opt-1.pyc
-/usr/lib/python3.7/site-packages/gala_ragdoll/test/__pycache__/test_management_controller.cpython-37.pyc
-/usr/lib/python3.7/site-packages/gala_ragdoll/test/test_confs_controller.py
-/usr/lib/python3.7/site-packages/gala_ragdoll/test/test_domain_controller.py
-/usr/lib/python3.7/site-packages/gala_ragdoll/test/test_host_controller.py
-/usr/lib/python3.7/site-packages/gala_ragdoll/test/test_management_controller.py
-/usr/lib/python3.7/site-packages/gala_ragdoll/util.py
-```
+- gala-ragdoll-1.0.0-1.oe1.aarch64	
 
+  ```
+  [root@openeuler-development-1-1drnd ~]# rpm -ql gala-ragdoll-1.0.0-1.oe1.aarch64
+  /etc/ima/digest_lists.tlv/0-metadata_list-compact_tlv-gala-ragdoll-1.0.0-1.oe1.aarch64
+  /etc/ima/digest_lists/0-metadata_list-compact-gala-ragdoll-1.0.0-1.oe1.aarch64
+  /etc/ragdoll/gala-ragdoll.conf
+  /usr/bin/ragdoll
+  /usr/share/doc/gala-ragdoll
+  /usr/share/doc/gala-ragdoll/design.md
+  /usr/share/doc/gala-ragdoll/development_guidelines.md
+  /usr/share/doc/gala-ragdoll/instruction_manual.md
+  /usr/share/doc/gala-ragdoll/pic
+  /usr/share/doc/gala-ragdoll/pic/a-ops_arch.png
+  /usr/share/doc/gala-ragdoll/pic/add_node.png
+  /usr/share/doc/gala-ragdoll/pic/all_option.png
+  /usr/share/doc/gala-ragdoll/pic/arch.png
+  /usr/share/doc/gala-ragdoll/pic/cfg.png
+  /usr/share/doc/gala-ragdoll/pic/cfg_area.png
+  /usr/share/doc/gala-ragdoll/pic/check.png
+  /usr/share/doc/gala-ragdoll/pic/dep.png
+  /usr/share/doc/gala-ragdoll/pic/deps.png
+  /usr/share/doc/gala-ragdoll/pic/flow.png
+  /usr/share/doc/gala-ragdoll/pic/git_diff.png
+  /usr/share/doc/gala-ragdoll/pic/jk.png
+  /usr/share/doc/gala-ragdoll/pic/safe.png
+  /usr/share/doc/gala-ragdoll/pic/yang_ext.png
+  /usr/share/doc/gala-ragdoll/requirement_decomposition.xlsx
+  /usr/share/licenses/gala-ragdoll
+  /usr/share/licenses/gala-ragdoll/LICENSE
+  ```
 
+  
+
+- python3-gala-ragdoll-1.0.0-1.oe1.aarch64
+
+  ```
+  [root@openeuler-development-1-1drnd ~]# rpm -ql python3-gala-ragdoll-1.0.0-1.oe1.aarch64
+  /etc/ima/digest_lists.tlv/0-metadata_list-compact_tlv-python3-gala-ragdoll-1.0.0-1.oe1.aarch64
+  /etc/ima/digest_lists/0-metadata_list-compact-python3-gala-ragdoll-1.0.0-1.oe1.aarch64
+  /usr/lib/python3.7/site-packages/ragdoll
+  /usr/lib/python3.7/site-packages/ragdoll-1.0.0-py3.7.egg-info
+  /usr/lib/python3.7/site-packages/ragdoll-1.0.0-py3.7.egg-info/PKG-INFO
+  /usr/lib/python3.7/site-packages/ragdoll-1.0.0-py3.7.egg-info/SOURCES.txt
+  /usr/lib/python3.7/site-packages/ragdoll-1.0.0-py3.7.egg-info/dependency_links.txt
+  /usr/lib/python3.7/site-packages/ragdoll-1.0.0-py3.7.egg-info/entry_points.txt
+  /usr/lib/python3.7/site-packages/ragdoll-1.0.0-py3.7.egg-info/requires.txt
+  /usr/lib/python3.7/site-packages/ragdoll-1.0.0-py3.7.egg-info/top_level.txt
+  /usr/lib/python3.7/site-packages/ragdoll/__init__.py
+  /usr/lib/python3.7/site-packages/ragdoll/__main__.py
+  /usr/lib/python3.7/site-packages/ragdoll/__pycache__
+  /usr/lib/python3.7/site-packages/ragdoll/__pycache__/__init__.cpython-37.opt-1.pyc
+  /usr/lib/python3.7/site-packages/ragdoll/__pycache__/__init__.cpython-37.pyc
+  /usr/lib/python3.7/site-packages/ragdoll/__pycache__/__main__.cpython-37.opt-1.pyc
+  /usr/lib/python3.7/site-packages/ragdoll/__pycache__/__main__.cpython-37.pyc
+  /usr/lib/python3.7/site-packages/ragdoll/__pycache__/encoder.cpython-37.opt-1.pyc
+  /usr/lib/python3.7/site-packages/ragdoll/__pycache__/encoder.cpython-37.pyc
+  /usr/lib/python3.7/site-packages/ragdoll/__pycache__/util.cpython-37.opt-1.pyc
+  /usr/lib/python3.7/site-packages/ragdoll/__pycache__/util.cpython-37.pyc
+  /usr/lib/python3.7/site-packages/ragdoll/analy
+  /usr/lib/python3.7/site-packages/ragdoll/analy/__init__.py
+  /usr/lib/python3.7/site-packages/ragdoll/analy/__pycache__
+  /usr/lib/python3.7/site-packages/ragdoll/analy/__pycache__/__init__.cpython-37.opt-1.pyc
+  /usr/lib/python3.7/site-packages/ragdoll/analy/__pycache__/__init__.cpython-37.pyc
+  /usr/lib/python3.7/site-packages/ragdoll/analy/__pycache__/ini_config_parser.cpython-37.opt-1.pyc
+  /usr/lib/python3.7/site-packages/ragdoll/analy/__pycache__/ini_config_parser.cpython-37.pyc
+  /usr/lib/python3.7/site-packages/ragdoll/analy/ini_config_parser.py
+  /usr/lib/python3.7/site-packages/ragdoll/config
+  /usr/lib/python3.7/site-packages/ragdoll/config/gala-ragdoll.conf
+  /usr/lib/python3.7/site-packages/ragdoll/controllers
+  /usr/lib/python3.7/site-packages/ragdoll/controllers/__init__.py
+  /usr/lib/python3.7/site-packages/ragdoll/controllers/__pycache__
+  /usr/lib/python3.7/site-packages/ragdoll/controllers/__pycache__/__init__.cpython-37.opt-1.pyc
+  /usr/lib/python3.7/site-packages/ragdoll/controllers/__pycache__/__init__.cpython-37.pyc
+  /usr/lib/python3.7/site-packages/ragdoll/controllers/__pycache__/confs_controller.cpython-37.opt-1.pyc
+  /usr/lib/python3.7/site-packages/ragdoll/controllers/__pycache__/confs_controller.cpython-37.pyc
+  /usr/lib/python3.7/site-packages/ragdoll/controllers/__pycache__/domain_controller.cpython-37.opt-1.pyc
+  /usr/lib/python3.7/site-packages/ragdoll/controllers/__pycache__/domain_controller.cpython-37.pyc
+  /usr/lib/python3.7/site-packages/ragdoll/controllers/__pycache__/format.cpython-37.opt-1.pyc
+  /usr/lib/python3.7/site-packages/ragdoll/controllers/__pycache__/format.cpython-37.pyc
+  /usr/lib/python3.7/site-packages/ragdoll/controllers/__pycache__/host_controller.cpython-37.opt-1.pyc
+  /usr/lib/python3.7/site-packages/ragdoll/controllers/__pycache__/host_controller.cpython-37.pyc
+  /usr/lib/python3.7/site-packages/ragdoll/controllers/__pycache__/management_controller.cpython-37.opt-1.pyc
+  /usr/lib/python3.7/site-packages/ragdoll/controllers/__pycache__/management_controller.cpython-37.pyc
+  /usr/lib/python3.7/site-packages/ragdoll/controllers/confs_controller.py
+  /usr/lib/python3.7/site-packages/ragdoll/controllers/domain_controller.py
+  /usr/lib/python3.7/site-packages/ragdoll/controllers/format.py
+  /usr/lib/python3.7/site-packages/ragdoll/controllers/host_controller.py
+  /usr/lib/python3.7/site-packages/ragdoll/controllers/management_controller.py
+  /usr/lib/python3.7/site-packages/ragdoll/encoder.py
+  /usr/lib/python3.7/site-packages/ragdoll/models
+  /usr/lib/python3.7/site-packages/ragdoll/models/__init__.py
+  /usr/lib/python3.7/site-packages/ragdoll/models/__pycache__
+  /usr/lib/python3.7/site-packages/ragdoll/models/__pycache__/__init__.cpython-37.opt-1.pyc
+  /usr/lib/python3.7/site-packages/ragdoll/models/__pycache__/__init__.cpython-37.pyc
+  /usr/lib/python3.7/site-packages/ragdoll/models/__pycache__/base_model_.cpython-37.opt-1.pyc
+  /usr/lib/python3.7/site-packages/ragdoll/models/__pycache__/base_model_.cpython-37.pyc
+  /usr/lib/python3.7/site-packages/ragdoll/models/__pycache__/base_response.cpython-37.opt-1.pyc
+  /usr/lib/python3.7/site-packages/ragdoll/models/__pycache__/base_response.cpython-37.pyc
+  /usr/lib/python3.7/site-packages/ragdoll/models/__pycache__/conf.cpython-37.opt-1.pyc
+  /usr/lib/python3.7/site-packages/ragdoll/models/__pycache__/conf.cpython-37.pyc
+  /usr/lib/python3.7/site-packages/ragdoll/models/__pycache__/conf_base_info.cpython-37.opt-1.pyc
+  /usr/lib/python3.7/site-packages/ragdoll/models/__pycache__/conf_base_info.cpython-37.pyc
+  /usr/lib/python3.7/site-packages/ragdoll/models/__pycache__/conf_file.cpython-37.opt-1.pyc
+  /usr/lib/python3.7/site-packages/ragdoll/models/__pycache__/conf_file.cpython-37.pyc
+  /usr/lib/python3.7/site-packages/ragdoll/models/__pycache__/conf_files.cpython-37.opt-1.pyc
+  /usr/lib/python3.7/site-packages/ragdoll/models/__pycache__/conf_files.cpython-37.pyc
+  /usr/lib/python3.7/site-packages/ragdoll/models/__pycache__/conf_host.cpython-37.opt-1.pyc
+  /usr/lib/python3.7/site-packages/ragdoll/models/__pycache__/conf_host.cpython-37.pyc
+  /usr/lib/python3.7/site-packages/ragdoll/models/__pycache__/conf_is_synced.cpython-37.opt-1.pyc
+  /usr/lib/python3.7/site-packages/ragdoll/models/__pycache__/conf_is_synced.cpython-37.pyc
+  /usr/lib/python3.7/site-packages/ragdoll/models/__pycache__/conf_synced_res.cpython-37.opt-1.pyc
+  /usr/lib/python3.7/site-packages/ragdoll/models/__pycache__/conf_synced_res.cpython-37.pyc
+  /usr/lib/python3.7/site-packages/ragdoll/models/__pycache__/confs.cpython-37.opt-1.pyc
+  /usr/lib/python3.7/site-packages/ragdoll/models/__pycache__/confs.cpython-37.pyc
+  /usr/lib/python3.7/site-packages/ragdoll/models/__pycache__/domain.cpython-37.opt-1.pyc
+  /usr/lib/python3.7/site-packages/ragdoll/models/__pycache__/domain.cpython-37.pyc
+  /usr/lib/python3.7/site-packages/ragdoll/models/__pycache__/domain_manage_conf.cpython-37.opt-1.pyc
+  /usr/lib/python3.7/site-packages/ragdoll/models/__pycache__/domain_manage_conf.cpython-37.pyc
+  /usr/lib/python3.7/site-packages/ragdoll/models/__pycache__/domain_name.cpython-37.opt-1.pyc
+  /usr/lib/python3.7/site-packages/ragdoll/models/__pycache__/domain_name.cpython-37.pyc
+  /usr/lib/python3.7/site-packages/ragdoll/models/__pycache__/excepted_conf_info.cpython-37.opt-1.pyc
+  /usr/lib/python3.7/site-packages/ragdoll/models/__pycache__/excepted_conf_info.cpython-37.pyc
+  /usr/lib/python3.7/site-packages/ragdoll/models/__pycache__/expected_conf.cpython-37.opt-1.pyc
+  /usr/lib/python3.7/site-packages/ragdoll/models/__pycache__/expected_conf.cpython-37.pyc
+  /usr/lib/python3.7/site-packages/ragdoll/models/__pycache__/git_log_message.cpython-37.opt-1.pyc
+  /usr/lib/python3.7/site-packages/ragdoll/models/__pycache__/git_log_message.cpython-37.pyc
+  /usr/lib/python3.7/site-packages/ragdoll/models/__pycache__/host.cpython-37.opt-1.pyc
+  /usr/lib/python3.7/site-packages/ragdoll/models/__pycache__/host.cpython-37.pyc
+  /usr/lib/python3.7/site-packages/ragdoll/models/__pycache__/host_infos.cpython-37.opt-1.pyc
+  /usr/lib/python3.7/site-packages/ragdoll/models/__pycache__/host_infos.cpython-37.pyc
+  /usr/lib/python3.7/site-packages/ragdoll/models/__pycache__/host_sync_result.cpython-37.opt-1.pyc
+  /usr/lib/python3.7/site-packages/ragdoll/models/__pycache__/host_sync_result.cpython-37.pyc
+  /usr/lib/python3.7/site-packages/ragdoll/models/__pycache__/host_sync_status.cpython-37.opt-1.pyc
+  /usr/lib/python3.7/site-packages/ragdoll/models/__pycache__/host_sync_status.cpython-37.pyc
+  /usr/lib/python3.7/site-packages/ragdoll/models/__pycache__/manage_conf.cpython-37.opt-1.pyc
+  /usr/lib/python3.7/site-packages/ragdoll/models/__pycache__/manage_conf.cpython-37.pyc
+  /usr/lib/python3.7/site-packages/ragdoll/models/__pycache__/manage_confs.cpython-37.opt-1.pyc
+  /usr/lib/python3.7/site-packages/ragdoll/models/__pycache__/manage_confs.cpython-37.pyc
+  /usr/lib/python3.7/site-packages/ragdoll/models/__pycache__/path.cpython-37.opt-1.pyc
+  /usr/lib/python3.7/site-packages/ragdoll/models/__pycache__/path.cpython-37.pyc
+  /usr/lib/python3.7/site-packages/ragdoll/models/__pycache__/real_conf.cpython-37.opt-1.pyc
+  /usr/lib/python3.7/site-packages/ragdoll/models/__pycache__/real_conf.cpython-37.pyc
+  /usr/lib/python3.7/site-packages/ragdoll/models/__pycache__/real_conf_info.cpython-37.opt-1.pyc
+  /usr/lib/python3.7/site-packages/ragdoll/models/__pycache__/real_conf_info.cpython-37.pyc
+  /usr/lib/python3.7/site-packages/ragdoll/models/__pycache__/real_conf_path.cpython-37.opt-1.pyc
+  /usr/lib/python3.7/site-packages/ragdoll/models/__pycache__/real_conf_path.cpython-37.pyc
+  /usr/lib/python3.7/site-packages/ragdoll/models/__pycache__/realconf_base_info.cpython-37.opt-1.pyc
+  /usr/lib/python3.7/site-packages/ragdoll/models/__pycache__/realconf_base_info.cpython-37.pyc
+  /usr/lib/python3.7/site-packages/ragdoll/models/__pycache__/sync_status.cpython-37.opt-1.pyc
+  /usr/lib/python3.7/site-packages/ragdoll/models/__pycache__/sync_status.cpython-37.pyc
+  /usr/lib/python3.7/site-packages/ragdoll/models/base_model_.py
+  /usr/lib/python3.7/site-packages/ragdoll/models/base_response.py
+  /usr/lib/python3.7/site-packages/ragdoll/models/conf.py
+  /usr/lib/python3.7/site-packages/ragdoll/models/conf_base_info.py
+  /usr/lib/python3.7/site-packages/ragdoll/models/conf_file.py
+  /usr/lib/python3.7/site-packages/ragdoll/models/conf_files.py
+  /usr/lib/python3.7/site-packages/ragdoll/models/conf_host.py
+  /usr/lib/python3.7/site-packages/ragdoll/models/conf_is_synced.py
+  /usr/lib/python3.7/site-packages/ragdoll/models/conf_synced_res.py
+  /usr/lib/python3.7/site-packages/ragdoll/models/confs.py
+  /usr/lib/python3.7/site-packages/ragdoll/models/domain.py
+  /usr/lib/python3.7/site-packages/ragdoll/models/domain_manage_conf.py
+  /usr/lib/python3.7/site-packages/ragdoll/models/domain_name.py
+  /usr/lib/python3.7/site-packages/ragdoll/models/excepted_conf_info.py
+  /usr/lib/python3.7/site-packages/ragdoll/models/expected_conf.py
+  /usr/lib/python3.7/site-packages/ragdoll/models/git_log_message.py
+  /usr/lib/python3.7/site-packages/ragdoll/models/host.py
+  /usr/lib/python3.7/site-packages/ragdoll/models/host_infos.py
+  /usr/lib/python3.7/site-packages/ragdoll/models/host_sync_result.py
+  /usr/lib/python3.7/site-packages/ragdoll/models/host_sync_status.py
+  /usr/lib/python3.7/site-packages/ragdoll/models/manage_conf.py
+  /usr/lib/python3.7/site-packages/ragdoll/models/manage_confs.py
+  /usr/lib/python3.7/site-packages/ragdoll/models/path.py
+  /usr/lib/python3.7/site-packages/ragdoll/models/real_conf.py
+  /usr/lib/python3.7/site-packages/ragdoll/models/real_conf_info.py
+  /usr/lib/python3.7/site-packages/ragdoll/models/real_conf_path.py
+  /usr/lib/python3.7/site-packages/ragdoll/models/realconf_base_info.py
+  /usr/lib/python3.7/site-packages/ragdoll/models/sync_status.py
+  /usr/lib/python3.7/site-packages/ragdoll/parses
+  /usr/lib/python3.7/site-packages/ragdoll/parses/__init__.py
+  /usr/lib/python3.7/site-packages/ragdoll/parses/__pycache__
+  /usr/lib/python3.7/site-packages/ragdoll/parses/__pycache__/__init__.cpython-37.opt-1.pyc
+  /usr/lib/python3.7/site-packages/ragdoll/parses/__pycache__/__init__.cpython-37.pyc
+  /usr/lib/python3.7/site-packages/ragdoll/parses/__pycache__/ini_parse.cpython-37.opt-1.pyc
+  /usr/lib/python3.7/site-packages/ragdoll/parses/__pycache__/ini_parse.cpython-37.pyc
+  /usr/lib/python3.7/site-packages/ragdoll/parses/ini_parse.py
+  /usr/lib/python3.7/site-packages/ragdoll/swagger
+  /usr/lib/python3.7/site-packages/ragdoll/swagger/swagger.yaml
+  /usr/lib/python3.7/site-packages/ragdoll/test
+  /usr/lib/python3.7/site-packages/ragdoll/test/__init__.py
+  /usr/lib/python3.7/site-packages/ragdoll/test/__pycache__
+  /usr/lib/python3.7/site-packages/ragdoll/test/__pycache__/__init__.cpython-37.opt-1.pyc
+  /usr/lib/python3.7/site-packages/ragdoll/test/__pycache__/__init__.cpython-37.pyc
+  /usr/lib/python3.7/site-packages/ragdoll/test/__pycache__/test_analy.cpython-37.opt-1.pyc
+  /usr/lib/python3.7/site-packages/ragdoll/test/__pycache__/test_analy.cpython-37.pyc
+  /usr/lib/python3.7/site-packages/ragdoll/test/__pycache__/test_confs_controller.cpython-37.opt-1.pyc
+  /usr/lib/python3.7/site-packages/ragdoll/test/__pycache__/test_confs_controller.cpython-37.pyc
+  /usr/lib/python3.7/site-packages/ragdoll/test/__pycache__/test_domain_controller.cpython-37.opt-1.pyc
+  /usr/lib/python3.7/site-packages/ragdoll/test/__pycache__/test_domain_controller.cpython-37.pyc
+  /usr/lib/python3.7/site-packages/ragdoll/test/__pycache__/test_host_controller.cpython-37.opt-1.pyc
+  /usr/lib/python3.7/site-packages/ragdoll/test/__pycache__/test_host_controller.cpython-37.pyc
+  /usr/lib/python3.7/site-packages/ragdoll/test/__pycache__/test_management_controller.cpython-37.opt-1.pyc
+  /usr/lib/python3.7/site-packages/ragdoll/test/__pycache__/test_management_controller.cpython-37.pyc
+  /usr/lib/python3.7/site-packages/ragdoll/test/__pycache__/test_reverse_analy.cpython-37.opt-1.pyc
+  /usr/lib/python3.7/site-packages/ragdoll/test/__pycache__/test_reverse_analy.cpython-37.pyc
+  /usr/lib/python3.7/site-packages/ragdoll/test/__pycache__/test_yang.cpython-37.opt-1.pyc
+  /usr/lib/python3.7/site-packages/ragdoll/test/__pycache__/test_yang.cpython-37.pyc
+  /usr/lib/python3.7/site-packages/ragdoll/test/test_analy.py
+  /usr/lib/python3.7/site-packages/ragdoll/test/test_confs_controller.py
+  /usr/lib/python3.7/site-packages/ragdoll/test/test_domain_controller.py
+  /usr/lib/python3.7/site-packages/ragdoll/test/test_host_controller.py
+  /usr/lib/python3.7/site-packages/ragdoll/test/test_management_controller.py
+  /usr/lib/python3.7/site-packages/ragdoll/test/test_reverse_analy.py
+  /usr/lib/python3.7/site-packages/ragdoll/test/test_yang.py
+  /usr/lib/python3.7/site-packages/ragdoll/util.py
+  /usr/lib/python3.7/site-packages/ragdoll/utils
+  /usr/lib/python3.7/site-packages/ragdoll/utils/__init__.py
+  /usr/lib/python3.7/site-packages/ragdoll/utils/__pycache__
+  /usr/lib/python3.7/site-packages/ragdoll/utils/__pycache__/__init__.cpython-37.opt-1.pyc
+  /usr/lib/python3.7/site-packages/ragdoll/utils/__pycache__/__init__.cpython-37.pyc
+  /usr/lib/python3.7/site-packages/ragdoll/utils/__pycache__/conf_tools.cpython-37.opt-1.pyc
+  /usr/lib/python3.7/site-packages/ragdoll/utils/__pycache__/conf_tools.cpython-37.pyc
+  /usr/lib/python3.7/site-packages/ragdoll/utils/__pycache__/git_tools.cpython-37.opt-1.pyc
+  /usr/lib/python3.7/site-packages/ragdoll/utils/__pycache__/git_tools.cpython-37.pyc
+  /usr/lib/python3.7/site-packages/ragdoll/utils/__pycache__/host_tools.cpython-37.opt-1.pyc
+  /usr/lib/python3.7/site-packages/ragdoll/utils/__pycache__/host_tools.cpython-37.pyc
+  /usr/lib/python3.7/site-packages/ragdoll/utils/__pycache__/object_parse.cpython-37.opt-1.pyc
+  /usr/lib/python3.7/site-packages/ragdoll/utils/__pycache__/object_parse.cpython-37.pyc
+  /usr/lib/python3.7/site-packages/ragdoll/utils/__pycache__/prepare.cpython-37.opt-1.pyc
+  /usr/lib/python3.7/site-packages/ragdoll/utils/__pycache__/prepare.cpython-37.pyc
+  /usr/lib/python3.7/site-packages/ragdoll/utils/__pycache__/yang_module.cpython-37.opt-1.pyc
+  /usr/lib/python3.7/site-packages/ragdoll/utils/__pycache__/yang_module.cpython-37.pyc
+  /usr/lib/python3.7/site-packages/ragdoll/utils/conf_tools.py
+  /usr/lib/python3.7/site-packages/ragdoll/utils/git_tools.py
+  /usr/lib/python3.7/site-packages/ragdoll/utils/host_tools.py
+  /usr/lib/python3.7/site-packages/ragdoll/utils/object_parse.py
+  /usr/lib/python3.7/site-packages/ragdoll/utils/prepare.py
+  /usr/lib/python3.7/site-packages/ragdoll/utils/yang_module.py
+  /usr/lib/python3.7/site-packages/yang_modules
+  /usr/lib/python3.7/site-packages/yang_modules/__init__.py
+  /usr/lib/python3.7/site-packages/yang_modules/__pycache__
+  /usr/lib/python3.7/site-packages/yang_modules/__pycache__/__init__.cpython-37.opt-1.pyc
+  /usr/lib/python3.7/site-packages/yang_modules/__pycache__/__init__.cpython-37.pyc
+  /usr/lib/python3.7/site-packages/yang_modules/openEuler-coremail.conf.yang
+  /usr/lib/python3.7/site-packages/yang_modules/openEuler-logos-openEuler.repo.yang
+  ```
 
 溯源服务部署时，需要定义A-Ops的部署yaml，包括：
 
@@ -908,30 +1009,45 @@ TBD：yunyi交流下具体的安全设计方案；
   ├── test
   	├─test_yang.py
   	├─test_analy.py
-      ├─test_parse.py
+  	└─test_reverse_analy.py
   ```
 
 ## 3.6、特性清单
 
-|no| SR           | AR                           | 描述                                                         | 代码估计规模 |实现版本|
-|:--|:-------|:------|:----|---|---|
-| 1 | 配置域管理 | 创建配置域 | 在配置溯源服务启动后，创建业务域，支持批量创建 | | 21.09 |
-| 2 | | 删除配置域 | 删除已经创建的业务域，支持批量删除 | | 21.09 |
-| 3 | node管理 | 给域添加node | 在host可用列表已知的条件下，给已经配置的业务域添加管理的host，采用hostId作为标识 | | 21.09 |
-| 4 | | 查询域内的node | 查询某个业务域内配置的机器列表，返回hostId列表               | | 21.09 |
-| 5 | | 删除域内的node | 删除某个业务域内配置的机器，入参支持批量hostId | | 21.09 |
-| 6 | 预期配置管理 | 给域添加纳管配置文件和预期值 | 给已经配置的业务域增加纳管的配置文件，入参支持：file + content，content表示配置的理想内容，若content为空，则将实际配置作为预期配置，进行纳管。 | | 21.09 |
-| 7 | | 查询域内的配置文件的变更记录 | 查询某个业务域的配置文件内容的变更记录（changelog） | | 21.09 |
-| 8 | | 删除配置域的纳管配置文件 | 删除某个业务域内纳管的配置文件和预期值 | | 21.09 |
-| 9 | | 查询当前支持的所有配置 | 将所有域纳管的配置和期望配置都返回 | | 21.09 |
-| 10 | 配置校验 | 查询计算节点上的实际配置 | 查询某个域内某台host节点上的实际配置，配置范围为当前域内已经纳管的配置文件 | | 21.09 |
-| 11 | | 查询当前域内的配置的预期值 | 查询某个业务域内已经配置的配置文件和配置文件的预期值 | | 21.09 |
-| 12 | | 获取配置域的同步状态 | 查询某个业务域内已经配置的配置文件的同步状态（即与实际配置的差异状态） | | 21.09 |
-| 13 | 同步配置 | 同步配置 | 下发预期配置，给某个业务域内的全部机器下发预期配置，配置范围为当前域内已经纳管的配置文件 | | 21.09 |
-| 14 | 配置监控 | 配置监控 | 对给定范围的配置开启监控 | | 21.12 |
-| 15 | 支持配置溯源可测试框架 | 支持配置溯源可测试框架 | 配置溯源基于flask_testing实现溯源代码的基本功能测试； | |  |
-| 16 | 支持OS配置文件的基本功能测试 | 支持OS配置文件的基本功能测试 | 支持OS配置文件的基本功能测试，实现对OS配置文件的yang模型、序列化/反序列化、解析等基础逻辑的统一测试例开发，具体OS配置测试时，指定测试对象参数即可； | |  |
-| 17 | 支持RPM包发布 | 支持RPM包发布 | 支持RPM包发布 | |  |
+| no   | SR                            | AR                                                        | 描述                                                         | 代码估计规模                | 实现版本 |
+| ---- | ----------------------------- | --------------------------------------------------------- | ------------------------------------------------------------ | --------------------------- | -------- |
+| 1    | 支持配置域管理                | 支持创建配置域                                            | 在配置溯源服务启动后，创建配置域，支持批量创建               |                             | 21.09    |
+| 2    |                               | 支持删除配置域                                            | 删除已经创建的配置域，支持批量删除                           |                             | 21.09    |
+| 3    |                               | 支持查询配置域信息                                        | 支持查询当前已经创建的配置域列表                             |                             | 21.09    |
+| 4    | 支持配置域中的node管理        | 支持在配置域内添加node                                    | 支持在配置域内添加node；采用nodeId作为标识，且支持批量添加node； |                             | 21.09    |
+| 5    |                               | 支持查询域内的node信息                                    | 查询某个配置域内配置的机器列表，返回nodeId列表               |                             | 21.09    |
+| 6    |                               | 支持删除配置域内的纳管的node节点                          | 删除配置域内的纳管的node节点，入参支持批量nodeId；           |                             | 21.09    |
+| 7    | 支持配置域中配置项管理        | 支持按给定的配置文件添加配置域内的纳管配置项              | 支持按给定的配置文件添加配置域内的纳管配置项；入参包括：配置文件名称、配置文件内容；若content为空，则将实际配置作为预期配置，进行纳管。忽略配置文件中不在配置模型中的部分； |                             | 21.09    |
+| 8    |                               | 支持指定node的配置文件作为配置项基线添加到配置域内        | 支持指定node的配置文件作为配置项基线添加到配置域内，忽略配置文件中不在配置模型中的部分； |                             |          |
+| 9    |                               | 支持删除配置域的纳管配置文件                              | 删除某个配置域内纳管的配置文件和预期值                       |                             | 21.09    |
+| 10   |                               | 支持查询配置域的预期配置                                  | 支持查询配置域的预期配置；                                   |                             | 21.09    |
+| 11   |                               | 支持查询配置域中纳管节点的实际配置                        | 支持查询配置域中纳管节点的实际配置                           |                             |          |
+| 12   | 支持配置校验功能              | 获取配置域的同步状态                                      | 查询某个配置域内已经配置的配置文件的同步状态（即与实际配置的差异状态） |                             | 21.09    |
+| 13   | 支持配置域配置同步功能        | 支持配置域配置同步功能                                    | 支持配置域内配置同步功能；将配置域的所有配置项预期值下发给所有纳管节点；并返回所有节点的同步处理结果； |                             | 21.12    |
+| 14   | 支持配置监控功能              | 支持配置监控功能                                          | 对配置域内的配置项监控；                                     |                             | 21.12    |
+| 15   |                               | 支持配置监控周期                                          | 支持配置监控周期，默认10分钟；                               |                             | 21.12    |
+| 16   | 支持OS配置模型化              | 支持将OS配置文件描述成yang模型表达                        | 支持将OS配置文件描述成yang模型表达；                         |                             | 21.09    |
+| 17   |                               | 扩展yang模型标签，标识yang模型节点与OS配置文件路径的关系  | 支持yang的拓展标签，支持多个标签实例；     filepath -- 指定模型与OS配置路径的关系；filepath格式: os_type:filepath；     type --  指定配置文件的配置项的类型，配置文件的类型汇总：ini、json、key-valye、text等。目前仅支持：ini类型；     spacer -- 指定配置文件中配置项和配置值的中间件，包括：空格、=、：等 | 三个扩展标签                | 21.09    |
+| 18   |                               | 支持yang模型解析                                          | 支持yang模型的解析加载，方便内部流程使用；                   |                             | 21.09    |
+| 19   | 支持OS配置文件序列化/反序列化 | 支持OS配置文件按照yang模型定义解析成溯源内部object结构；  | 支持OS配置文件按照yang模型定义解析成溯源内部object结构；     |                             | 21.09    |
+| 20   |                               | 支持将object结构序列化成json风格内容                      | 支持将object结构序列化成json风格内容；                       |                             | 21.09    |
+| 21   |                               | 支持将序列化的json风格配置转换成object结构                | 支持将序列化的json风格配置转换成object结构；                 |                             | 21.09    |
+| 22   |                               | 支持将内部object结构根据yang模型转换成OS配置文件内容      | 支持将内部object结构根据yang模型转换成OS配置文件内容；       |                             | 21.09    |
+| 23   |                               | 支持iniOS配置文件的序列化/反序列化逻辑                    | 支持ini格式的OS配置文件的序列化/反序列化逻辑；溯源服务内置转换逻辑，无需用户配套； |                             | 21.09    |
+| 24   |                               | 支持自定义序列化/反序列化解析脚本                         | 支持自定义序列化/反序列化的python脚本；                      |                             | 21.09    |
+| 25   |                               | 支持的OS类型：openEuler  补充下；                         | 描述当前已经支持的OS类型                                     |                             | 21.09    |
+| 26   | 支持OS配置变更的溯源          | 支持配置域、配置文件、node节点变更时增加配套的git目录结构 | 支持配置域、配置文件、host节点变更时增加配套的git目录结构；具体如下：     1、添加配置域时，增加创建git仓；     2、配置域内增加配置文件；     3、配置域内增加纳管node时， | 设计文档需要补充git目录管理 | 21.09    |
+| 27   |                               | 配置域内纳管配置变更时记录git提交                         | 配置域内纳管配置变更时记录git提交；将变更后的配置信息提交到git仓中； |                             | 21.09    |
+| 28   |                               | 支持按配置域查询域内配置变更历史                          | 支持将OS配置变更的序列化结果按git方式管理；                  |                             | 21.09    |
+| 29   |                               | 支持查询配置域内指定配置文件的变更历史                    | 支持查询配置域内指定配置文件的变更历史；                     |                             | 21.09    |
+| 30   | 支持配置溯源可测试框架        | 支持配置溯源可测试框架                                    | 配置溯源基于flask_testing实现溯源代码的基本功能测试；        |                             | 21.09    |
+| 31   | 支持对配置模型的基本功能测试  | 支持OS配置文件的基本功能测试                              | 支持OS配置文件的基本功能测试，实现对OS配置文件的yang模型、序列化/反序列化、解析等基础逻辑的统一测试例开发，具体OS配置测试时，指定测试对象参数即可； |                             | 21.09    |
+| 32   | 支持RPM包发布                 | 支持RPM包发布                                             | 支持RPM包发布                                                |                             | 21.09    |
 
 ## 3.7、接口清单
 ### 3.7.1、外部接口清单
@@ -946,11 +1062,12 @@ TBD：yunyi交流下具体的安全设计方案；
 | 6    | /host/deleteHost                 | DELETE | 删除配置溯源域中的主机                   |
 | 7    | /management/addManagementConf    | POST   | 给指定域内的所有主机添加配置项           |
 | 8    | /management/getManagementConf    | GET    | 获得配置溯源域中的所有配置项             |
-| 9    | /management/deleteManagementConf | DELETE | 删除配置溯源域中的若干配置项             |
-| 10   | /confs/queryRealConfs            | GET    | 获取配置溯源域中指定主机的所有配置项的值 |
-| 11   | /confs/queryExpectedConfs        | GET    | 获取配置溯源中的所有域的所有配置         |
-| 12   | /confs/syncConf                  | PUT    | 对指定配置域中的指定主机执行配置同步     |
-| 13   | /confs/getDomainStatus           | GET    | 获取指定配置域中的同步信息               |
+| 9    | /management/queryManageConf      | GET    | 获取配置域中的配置历史记录               |
+| 10   | /management/deleteManagementConf | DELETE | 删除配置溯源域中的若干配置项             |
+| 11   | /confs/queryRealConfs            | GET    | 获取配置溯源域中指定主机的所有配置项的值 |
+| 12   | /confs/queryExpectedConfs        | GET    | 获取配置溯源中的所有域的所有配置         |
+| 13   | /confs/syncConf                  | PUT    | 对指定配置域中的指定主机执行配置同步     |
+| 14   | /confs/getDomainStatus           | GET    | 获取指定配置域中的同步信息               |
 
 #### 3.7.1.1 /domain/createDomain
 
@@ -1341,7 +1458,99 @@ TBD：yunyi交流下具体的安全设计方案；
   | 404    | 当前配置域不存在 |          |
   | 500    | 服务器内部错误   |          |
 
-#### 3.7.1.9 /management/deleteManagementConf
+#### 3.7.1.9 /management/queryManageConf  
+
+- 描述：查询配置域中的历史记录
+
+- HTTP请求方式：GET
+
+- 数据提交方式：application/json
+
+- 请求参数：
+
+  | 参数名     | 必选  | 类型 | 说明       |
+  | ---------- | ----- | ---- | ---------- |
+  | domainName | True  | str  | 域名称     |
+  | confFiles  | False | list | 配置项列表 |
+
+- 请求参数示例
+
+  ```
+  {
+    "domainName": "string",
+    "confFiles": [
+      {
+        "filePath": "string"
+      }
+    ]
+  }
+  ```
+
+- 返回体参数：
+
+  | 参数名 | 类型 | 说明             |
+  | :----- | :--- | :--------------- |
+  | code   | str  | 状态码           |
+  | msg    | str  | 状态码对应的信息 |
+  | resp   | list | 配置信息         |
+
+- resp返回示例：
+
+  ```
+  {
+    "domainName": "domainName",
+    "confBaseInfos": [
+      {
+        "expectedContents": "expectedContents",
+        "filePath": "filePath",
+        "changeLog": [
+          {
+            "date": "2000-01-23T04:56:07.000+00:00",
+            "preValue": "preValue",
+            "changeReason": "changeReason",
+            "author": "author",
+            "postValue": "postValue",
+            "changeId": "changeId"
+          },
+          {
+            "date": "2000-01-23T04:56:07.000+00:00",
+            "preValue": "preValue",
+            "changeReason": "changeReason",
+            "author": "author",
+            "postValue": "postValue",
+            "changeId": "changeId"
+          }
+        ]
+      },
+      {
+        "expectedContents": "expectedContents",
+        "filePath": "filePath",
+        "changeLog": [
+          {
+            "date": "2000-01-23T04:56:07.000+00:00",
+            "preValue": "preValue",
+            "changeReason": "changeReason",
+            "author": "author",
+            "postValue": "postValue",
+            "changeId": "changeId"
+          },
+          {
+            "date": "2000-01-23T04:56:07.000+00:00",
+            "preValue": "preValue",
+            "changeReason": "changeReason",
+            "author": "author",
+            "postValue": "postValue",
+            "changeId": "changeId"
+          }
+        ]
+      }
+    ]
+  }
+  ```
+
+  
+
+#### 3.7.1.10 /management/deleteManagementConf
 
 - 描述：删除配置溯源域中的若干配置项
 
@@ -1392,7 +1601,7 @@ TBD：yunyi交流下具体的安全设计方案；
   | 404    | 当前域不存在       |          |
   | 500    | 内部错误           |          |
 
-#### 3.7.1.10 /confs/queryRealConfs
+#### 3.7.1.11 /confs/queryRealConfs
 
 - 描述：获取配置溯源域中指定主机的所有配置项的值
 
@@ -1428,7 +1637,7 @@ TBD：yunyi交流下具体的安全设计方案；
   | msg    | str  | 状态码对应的信息 |
   | resp   | list | 配置信息         |
 
-- 返回示例：
+- resp返回示例：
 
   ```json
   [
@@ -1459,7 +1668,7 @@ TBD：yunyi交流下具体的安全设计方案；
   | 404    | 配置域未找到   |          |
   | 500    | 服务器内部错误 |          |
 
-#### 3.7.1.11 /confs/queryExpectedConfs
+#### 3.7.1.12 /confs/queryExpectedConfs
 
 - 描述：获取配置溯源域中的配置项的历史记录
 
@@ -1508,7 +1717,7 @@ TBD：yunyi交流下具体的安全设计方案；
   | 404    | 配置域全部为空 |          |
   | 500    | 服务器内部错误 |          |
 
-#### 3.7.1.12 /confs/getDomainStatus
+#### 3.7.1.13 /confs/getDomainStatus
 
 - 描述：获取指定配置域中的同步信息
 
@@ -1572,7 +1781,7 @@ TBD：yunyi交流下具体的安全设计方案；
   | 404    | 溯源域未找到       |          |
   | 500    | 服务内部错误       |          |
 
-#### 3.7.1.13 /confs/syncConf
+#### 3.7.1.14 /confs/syncConf
 
 - 描述：对指定配置域中的指定主机执行配置同步
 
@@ -1629,9 +1838,7 @@ TBD：yunyi交流下具体的安全设计方案；
   | 404    | 存在配置域或host_id未找到 |          |
   | 500    | 服务器内部错误            |          |
 
-TBD 资料SR/AR
-
-#### 3.7.1.14 应用开发接口
+#### 3.7.1.15 应用开发接口
 
 [开发指南](doc/development_guidelines.md)
 

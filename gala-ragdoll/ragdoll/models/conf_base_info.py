@@ -16,13 +16,11 @@ class ConfBaseInfo(Model):
     Do not edit the class manually.
     """
 
-    def __init__(self, file_path: str=None, module_path: str=None, expected_contents: str=None, change_log: List[GitLogMessage]=None):  # noqa: E501
+    def __init__(self, file_path: str=None, expected_contents: str=None, change_log: List[GitLogMessage]=None):  # noqa: E501
         """ConfBaseInfo - a model defined in Swagger
 
         :param file_path: The file_path of this ConfBaseInfo.  # noqa: E501
         :type file_path: str
-        :param module_path: The module_path of this ConfBaseInfo.  # noqa: E501
-        :type module_path: str
         :param expected_contents: The expected_contents of this ConfBaseInfo.  # noqa: E501
         :type expected_contents: str
         :param change_log: The change_log of this ConfBaseInfo.  # noqa: E501
@@ -30,20 +28,17 @@ class ConfBaseInfo(Model):
         """
         self.swagger_types = {
             'file_path': str,
-            'module_path': str,
             'expected_contents': str,
             'change_log': List[GitLogMessage]
         }
 
         self.attribute_map = {
             'file_path': 'filePath',
-            'module_path': 'modulePath',
             'expected_contents': 'expectedContents',
             'change_log': 'changeLog'
         }
 
         self._file_path = file_path
-        self._module_path = module_path
         self._expected_contents = expected_contents
         self._change_log = change_log
 
@@ -80,29 +75,6 @@ class ConfBaseInfo(Model):
         """
 
         self._file_path = file_path
-
-    @property
-    def module_path(self) -> str:
-        """Gets the module_path of this ConfBaseInfo.
-
-        the path in the module  # noqa: E501
-
-        :return: The module_path of this ConfBaseInfo.
-        :rtype: str
-        """
-        return self._module_path
-
-    @module_path.setter
-    def module_path(self, module_path: str):
-        """Sets the module_path of this ConfBaseInfo.
-
-        the path in the module  # noqa: E501
-
-        :param module_path: The module_path of this ConfBaseInfo.
-        :type module_path: str
-        """
-
-        self._module_path = module_path
 
     @property
     def expected_contents(self) -> str:

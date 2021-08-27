@@ -41,13 +41,13 @@ gala-ragdoll
 ## 运行后的REST API使用
 默认提供的REST API地址为：
 ```
-http://localhost:8080/ui/
+http://localhost:port/ui/
 ```
 
 当前采用swagger框架定义REST API:
 
 ```
-http://localhost:8080/swagger.json
+http://localhost:port/swagger.json
 ```
 
 ## 总体介绍
@@ -57,9 +57,8 @@ gala-ragdoll是一个OS场景下的配置托管服务，能够实现对OS配置�
 - UI
 基于配置溯源能力，提供UI界面，由系统的管理员进行业务的分配和管理，同时进行自定义管控OS中的配置文件。
 附：UI为A-OPS对外提供的统一界面，再此不过多介绍。
-
 - 配置溯源服务
-服务层对外提供七块功能，分别为：
+  服务层对外提供七块功能，分别为：
 
   - 配置域的管理
     - 配置域的创建
@@ -82,7 +81,6 @@ gala-ragdoll是一个OS场景下的配置托管服务，能够实现对OS配置�
     - 设置哪些配置进行监控，按照设定频率进行定期获取实际配置，刷新配置域的同步状态
   - Git仓存储
     - 存储服务层相关的数据，包括：域与机器的关系、域与配置的关系、配置序列化之后的数据
-
 - 节点配置文件读写
 与真实节点之间进行交互，涉及配置的读、写和扩展模块的执行（配置生效）。
 该部分也由A-OPS中提供基于基于ansible的node配置操作接口。
@@ -92,6 +90,10 @@ gala-ragdoll是一个OS场景下的配置托管服务，能够实现对OS配置�
 
 ### 运行框架
 ![runtime_arch](doc/pic/arch)
+
+### 配置溯源差异样例
+
+![diff_example](doc/pic/git_diff)
 
 ## 详细介绍
 ### 设计文档

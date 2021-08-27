@@ -10,7 +10,6 @@ from ragdoll.models.domain_name import DomainName  # noqa: E501
 from ragdoll.models.host import Host  # noqa: E501
 from ragdoll.models.host_infos import HostInfos  # noqa: E501
 from ragdoll.test import BaseTestCase
-from ragdoll.models.host import Host
 
 
 class TestHostController1(BaseTestCase):
@@ -21,11 +20,11 @@ class TestHostController1(BaseTestCase):
 
         add host in the configuration domain
         """
-        host1 = Host(host_id = "551d02da-7d8c-4357-b88d-15dc55ee22ss",
-                     ip = "210.22.22.155")
-        # host2 = Host(host_id = "551d02da-7d8c-4357-b88d-15dc55ee22mm",
-        #              ip = "210.22.22.159")
-        body = HostInfos(domain_name = "dnf", host_infos = [host1])
+        # host1 = Host(host_id = "551d02da-7d8c-4357-b88d-15dc55ee22ss",
+        #              ip = "210.22.22.155")
+        host2 = Host(host_id = "551d02da-7d8c-4357-b88d-15dc55ee22mm",
+                     ip = "210.22.22.159")
+        body = HostInfos(domain_name = "dnf", host_infos = [host2])
         response = self.client.open(
             '/host/addHost',
             method='POST',
@@ -59,11 +58,9 @@ class TestHostController1(BaseTestCase):
         """Test case for delete_host_in_domain
         delete host in the configuration  domain
         """
-        host1 = Host(host_id = "551d02da-7d8c-4357-b88d-15dc55ee22mm",
-                     ip = "210.22.22.163")
-        host2 = Host(host_id = "551d02da-7d8c-4357-b88d-15dc55ee22ss",
-                     ip = "210.22.22.155")
-        body = HostInfos(domain_name = "dnf", host_infos = [host1, host2])
+        host2 = Host(host_id = "551d02da-7d8c-4357-b88d-15dc55ee22mm",
+                     ip = "210.22.22.159")
+        body = HostInfos(domain_name = "dnf", host_infos = [host2])
         response = self.client.open(
             '/host/deleteHost',
             method='DELETE',
@@ -80,7 +77,7 @@ class TestHostController1(BaseTestCase):
         """
         host2 = Host(host_id = "551d02da-7d8c-4357-b88d-15dc55ds22cc",
                      ip = "210.22.22.151")
-        body = HostInfos(domain_name = "dnf", host_infos = [host2])
+        body = HostInfos(domain_name = "dnf", host_infos = [])
         response = self.client.open(
             '/host/deleteHost',
             method='DELETE',

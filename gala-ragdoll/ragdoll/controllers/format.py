@@ -4,13 +4,16 @@ import string
 import re
 import subprocess
 import json
+import configparser
+
+CONFIG = "/etc/ragdoll/gala-ragdoll.conf"
 
 class Format(object):
 
     @staticmethod
     def isDomainExist(domainName):
-        targetDir = "/home/confTrace"
-        domainPath = os.path.join(targetDir, domainName)
+        TARGETDIR = Format.get_git_dir()
+        domainPath = os.path.join(TARGETDIR, domainName)
         if os.path.exists(domainPath):
             return True
 
@@ -52,25 +55,24 @@ class Format(object):
     @staticmethod
     def two_abs_join(abs1, abs2):
         """
-        将 绝对路径将两个绝对路径拼接,
-        就是将第二个的开路径（windows 的  C， D，E ... Linux 的 /root 最前面的 / 删除掉）
-        :param abs1:  为主的路径
-        :param abs2:  被拼接的路径
-        :return: 拼接后的数值
+        Absolute path Joins two absolute paths together
+        :param abs1:  main path
+        :param abs2:  the spliced path
+        :return: together the path
         """
-        # 1. 格式化路径（将路径中的 \\ 改为 \）
+        # 1. Format path (change \\ in path to \)
         abs2 = os.fspath(abs2)
 
-        # 2. 将路径文件拆分
+        # 2. Split the path file
         abs2 = os.path.splitdrive(abs2)[1]
-        # 3. 去掉开头的 斜杠
+        # 3. Remove the beginning '/'
         abs2 = abs2.strip('\\/') or abs2
         return os.path.abspath(os.path.join(abs1, abs2))
 
     @staticmethod
-    def isContainedInfile(file, content):
+    def isContainedInfile(f_file, content):
         isContained = False
-        with open(file, 'r') as d_file:
+        with open(f_file, 'r') as d_file:
             for line in d_file.readlines():
                 if content in line:
                     isContained = True
@@ -79,16 +81,16 @@ class Format(object):
         return isContained
 
     @staticmethod
-    def addHostToFile(file, host):
+    def addHostToFile(d_file, host):
         info_json = json.dumps(str(host), sort_keys=False, indent=4, separators=(',', ': '))
-        with open(file, 'a+') as host_file:
+        with open(d_file, 'a+') as host_file:
             host_file.write(info_json)
             host_file.write("\n")
 
     @staticmethod
     def getSubDirFiles(path):
         """
-        desc：需要将子目录记录和文件记录到successConf中
+        desc: Subdirectory records and files need to be logged to the successConf
         """
         fileRealPathList = []
         fileXPathlist = []
@@ -106,10 +108,11 @@ class Format(object):
     @staticmethod
     def isHostInDomain(domainName):
         """
-        desc: 查询domain域内是否已经配置host信息
+        desc: Query domain Whether host information is configured in the domain
         """
         isHostInDomain = False
-        domainPath = os.path.join("/home/confTrace", domainName)
+        TARGETDIR = Format.get_git_dir()
+        domainPath = os.path.join(TARGETDIR, domainName)
         hostPath = os.path.join(domainPath, "hostRecord.txt")
         if os.path.isfile(hostPath):
             isHostInDomain = True
@@ -119,7 +122,7 @@ class Format(object):
     @staticmethod
     def isHostIdExist(hostPath, hostId):
         """
-        desc: 查询hostId是否存在当前的host域管理范围内
+        desc: Query hostId exists within the current host domain management
         """
         isHostIdExist = False
         if os.path.isfile(hostPath) and os.stat(hostPath).st_size > 0:
@@ -143,7 +146,7 @@ class Format(object):
             return False
 
     @staticmethod
-    def get_file_content_by_readlines(d_file) -> []:
+    def get_file_content_by_readlines(d_file):
         """
         desc: remove empty lines and comments from d_file
         """
@@ -162,6 +165,8 @@ class Format(object):
         """
         desc: return a string after read the d_file
         """
+        if not os.path.exists(d_file):
+            return ""
         with open(d_file, 'r') as s_f:
             lines = s_f.read()
         return lines
@@ -199,3 +204,15 @@ class Format(object):
                     d_file.write("\n")
             res = 1
         return res
+
+    @staticmethod
+    def get_git_dir():
+        cf = configparser.ConfigParser()
+        if os.path.exists(CONFIG):
+            cf.read(CONFIG, encoding="utf-8")
+        else:
+            parent = os.path.dirname(os.path.realpath(__file__))
+            conf_path = os.path.join(parent, "../../config/gala-ragdoll.conf")
+            cf.read(conf_path, encoding="utf-8")
+        git_dir = eval(cf.get("git", "git_dir"))
+        return git_dir

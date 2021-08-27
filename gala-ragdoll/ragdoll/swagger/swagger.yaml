@@ -182,6 +182,27 @@ paths:
           schema:
             $ref: "#/definitions/ConfFiles"
       x-swagger-router-controller: "ragdoll.controllers.management_controller"
+  /management/queryManageConfChange:
+    get:
+      tags:
+      - "management"
+      summary: "query the change log of management config in domain"
+      description: "query the change log of management config in domain"
+      operationId: "query_changelog_of_management_confs_in_domain"
+      parameters:
+      - in: "body"
+        name: "body"
+        description: "domain info"
+        required: false
+        schema:
+          $ref: "#/definitions/ManageConfs"
+      responses:
+        "200":
+          description: "query the changelog of management configuration items successfully\
+            \ in domain"
+          schema:
+            $ref: "#/definitions/ExceptedConfInfo"
+      x-swagger-router-controller: "ragdoll.controllers.management_controller"
   /management/deleteManagementConf:
     delete:
       tags:
@@ -393,7 +414,7 @@ definitions:
       contents:
         type: "string"
         description: "the contents of the configuration file"
-      host_id:
+      hostId:
         type: "string"
         description: "the id of host"
   ConfHost:

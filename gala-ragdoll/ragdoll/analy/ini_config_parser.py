@@ -43,8 +43,8 @@ class IniConfigParser(object):
         """
         if pre_section in self._sections:
             return False
-        new_section = self._sections[pre_section].copy()
-        self._sections[new_section_name] = new_section
+        new_section_cont = self._sections[pre_section].copy()
+        self._sections[new_section] = new_section_cont
         self.remove_sections(pre_section)
 
     def remove_sections(self, section):
@@ -78,7 +78,7 @@ class IniConfigParser(object):
         res = self._sections[section][option]
         return res
 
-    def has_option(self, section , option):
+    def has_option(self, section, option):
         """
         desc: return a result of the option is in section
         """
@@ -133,7 +133,6 @@ class IniConfigParser(object):
         desc: parse a sectioned file.
         """
         lines = content.strip().splitlines()
-        print("lines is : {}".format(lines))
         cursect = self._dict()
         for line in lines:
             line = line.strip()

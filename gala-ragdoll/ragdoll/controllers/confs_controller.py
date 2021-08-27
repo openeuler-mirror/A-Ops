@@ -18,7 +18,7 @@ from ragdoll.models.conf_synced_res import ConfSyncedRes
 from ragdoll.models.realconf_base_info import RealconfBaseInfo
 from ragdoll.models.host_sync_result import HostSyncResult
 from ragdoll.models.host_sync_status import HostSyncStatus
-from ragdoll.parses.ini_parse import IniJsonParser
+from ragdoll.parses.ini_parse import IniJsonParse
 from ragdoll.models.real_conf import RealConf
 from ragdoll.controllers.format import Format
 from ragdoll.utils.git_tools import GitTools
@@ -28,7 +28,7 @@ from ragdoll.utils.host_tools import HostTools
 from ragdoll.utils.object_parse import ObjectParse
 from ragdoll import util
 
-TARGETDIR = "/home/confTrace"
+TARGETDIR = GitTools().target_dir
 
 def get_the_sync_status_of_domain(body=None):  # noqa: E501
     """get the status of the domain
@@ -46,14 +46,14 @@ def get_the_sync_status_of_domain(body=None):  # noqa: E501
 
     domain = body.domain_name
 
-    # 需要提前check domain是否存在
+    # check the domian is exist
     isExist = Format.isDomainExist(domain)
     if not isExist:
         codeNum = 404
         base_rsp = BaseResponse(codeNum, "The current domain does not exist, please create the domain first.")
         return base_rsp, codeNum
 
-    # 获取domain内管控的host信息
+    # get the exist result of the host in domain
     isHostListExist = Format.isHostInDomain(domain)
     if not isHostListExist:
         codeNum = 404
@@ -61,18 +61,20 @@ def get_the_sync_status_of_domain(body=None):  # noqa: E501
                                           "Please add the host information first")
         return base_rsp, codeNum
 
-    # 获取domain域内管控的所有host
-    print("############## 获取domain内纳管的host信息 ##############")
-    url="http://0.0.0.0:8080/host/getHost"
+    # get the host info in domain
+    print("############## get the host in domain ##############")
+    conf_tools = ConfTools()
+    port = conf_tools.load_port_by_conf()
+    url="http://0.0.0.0:" + port + "/host/getHost"
     headers = {"Content-Type": "application/json"}
     getHostBody = DomainName(domain_name = domain)
-    response = requests.get(url, data=json.dumps(getHostBody), headers=headers)  # 发送请求
+    response = requests.get(url, data=json.dumps(getHostBody), headers=headers)  # post request
     resCode = response.status_code
     resText = json.loads(response.text)
     print("return code is : {}".format(resCode))
     print("return text is : {}".format(resText))
 
-    if resCode is not 200:
+    if resCode != 200:
         codeNum = resCode
         base_rsp = BaseResponse(codeNum, "Failed to get host info in the current domain. " + 
                                          "The failure reason is:" + resText)
@@ -85,38 +87,32 @@ def get_the_sync_status_of_domain(body=None):  # noqa: E501
                                          "Please add host information to the domain.")
         return base_rsp, codeNum
 
-    # 从纳管host结果中提取host列表
+    # get the host list from the git house
     hostTools = HostTools()
     hostIds = hostTools.getHostList(resText)
     print("hostIds is : {}".format(hostIds))
 
-    # 获取当前domain域的预期配置
-    getManConfInDomainBody = DomainName(domain_name = "OS")
-    print("############## 获取domain内纳管的配置项 ##############")
-    getManConfUrl="http://0.0.0.0:8080/management/getManagementConf"
+    # get the managent conf in domain
+    print("############## get the managent conf in domain ##############")
+    getManConfUrl="http://0.0.0.0:" + port + "/management/getManagementConf"
     headers = {"Content-Type": "application/json"}
     getManConfBody = DomainName(domain_name=domain)
-    getManConfRes = requests.get(getManConfUrl, data=json.dumps(getManConfBody), headers=headers)  # 发送请求
-    manConfResCode = getManConfRes.status_code
+    getManConfRes = requests.get(getManConfUrl, data=json.dumps(getManConfBody), headers=headers)  # post request
     manConfResText = json.loads(getManConfRes.text)
-    print("manConfResText is : {}".format(manConfResText))
     manageConfs = manConfResText.get("confFiles")
     print("manageConfs is : {}".format(manageConfs))
 
-    # 调用查询真实配置的接口，获取真实配置
-    print("############## 获取真实配置 ##############")
-    getRealConfUrl = "http://0.0.0.0:8080/confs/queryRealConfs"
+    # query the real conf in host
+    print("############## query the real conf ##############")
+    getRealConfUrl = "http://0.0.0.0:" + port + "/confs/queryRealConfs"
     queryRealBody = ConfHost(domain_name = domain, host_ids = hostIds)
-    # print("queryRealBody is : {}".format(queryRealBody))
-    getResConfRes = requests.get(getRealConfUrl, data=json.dumps(queryRealBody), headers=headers)  # 发送请求
+    getResConfRes = requests.get(getRealConfUrl, data=json.dumps(queryRealBody), headers=headers)  # post request
     realConfResCode = getResConfRes.status_code
     realConfResText = json.loads(getResConfRes.text)
-
     print("realConfResText is : {}".format(realConfResText))
 
-
-    # 将实际配置与预期配置进行匹配，输出可以与预期结果进行对比的同等格式的配置
-    conf_tools = ConfTools()
+    # Match the actual configuration with the expected configuration, and output the 
+    # configuration in the same format that can be compared with the expected result.
     sync_status = SyncStatus(domain_name = domain,
                              host_status = [])
 
@@ -126,35 +122,50 @@ def get_the_sync_status_of_domain(body=None):  # noqa: E501
                                           sync_status = [])
         d_real_conf_base = d_real_conf.get("confBaseInfos")
         for d_conf in d_real_conf_base:
-            print("\n")
-            print("d_conf is : {}".format(d_conf))
             d_conf_path = d_conf.get("filePath")
             comp_res = ""
             for d_man_conf in manageConfs:
                 if d_man_conf.get("filePath").split(":")[-1] == d_conf_path:
+                    hasConf = True
                     comp_res = conf_tools.compareManAndReal(d_conf.get("confContents"), d_man_conf.get("contents"))
-                if comp_res is "":
-                    comp_res = "NOT FOUND"
+                    break
             conf_is_synced = ConfIsSynced(file_path = d_conf_path,
                                           is_synced = comp_res)
             host_sync_status.sync_status.append(conf_is_synced)
 
         sync_status.host_status.append(host_sync_status)
 
+    # deal with not found files
+    man_conf_list = []
+    for d_man_conf in manageConfs:
+        man_conf_list.append(d_man_conf.get("filePath").split(":")[-1])
+    for d_host in sync_status.host_status:
+        d_sync_status = d_host.sync_status
+        file_list = []
+        for d_file in d_sync_status:
+            file_path = d_file.file_path
+            file_list.append(file_path)
+        for d_man_conf in man_conf_list:
+            if d_man_conf in file_list:
+                continue
+            else:
+                comp_res = "NOT FOUND"
+                conf_is_synced = ConfIsSynced(file_path = d_man_conf,
+                                              is_synced = comp_res)
+                d_sync_status.append(conf_is_synced)
+
     return sync_status
 
 
-def query_excepted_confs(range):  # noqa: E501
+def query_excepted_confs():  # noqa: E501
     """query the supported configurations in the current project
 
     queryExpectedConfs # noqa: E501
 
     :rtype: List[ExceptedConfInfo]
     """
-    print("SSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSS")
-
-    # 获取当前所有的domain
-    print("############## 获取所有的domain列表 ##############")
+    # get all domain
+    print("############## get all domain ##############")
     cmd = "ls {}".format(TARGETDIR)
     gitTools = GitTools()
     res_domain = gitTools.run_shell_return_output(cmd).decode().split()
@@ -165,38 +176,32 @@ def query_excepted_confs(range):  # noqa: E501
         return base_rsp, codeNum
 
     success_domain = []
-    failed_failed = []
     all_domain_expected_files = []
+    yang_modules = YangModule()
     for d_domian in res_domain:
         domain_path = os.path.join(TARGETDIR, d_domian)
         expected_conf_lists = ExceptedConfInfo(domain_name = d_domian,
                                                conf_base_infos = [])
-        # 路径下存在文件时即判断为配置项的path
+        # Traverse all files in the source management repository
         for root, dirs, files in os.walk(domain_path):
-            conf_base_infos = []
-            # domain下还含有host缓存文件，所以需要增加对于root的层次判断
+            # Domain also contains host cache files, so we need to add hierarchical judgment for root
             if len(files) > 0 and len(root.split('/')) > 3:
                 if "hostRecord.txt" in files:
                     continue
-                confPath = root.split('/', 3)[3]
                 for d_file in files:
+                    feature = os.path.join(root.split('/')[-1], d_file)
+                    d_module = yang_modules.getModuleByFeature(feature)
+                    file_lists = yang_modules.getFilePathInModdule(yang_modules.module_list)
+                    file_path = file_lists.get(d_module.name()).split(":")[-1]
                     d_file_path = os.path.join(root, d_file)
-
                     expectedValue = Format.get_file_content_by_read(d_file_path)
 
                     git_tools = GitTools()
                     gitMessage = git_tools.getLogMessageByPath(d_file_path)
-                    feature = os.path.join(root.split('/')[-1], d_file)
 
-                    yang_modules = YangModule()
-                    d_module = yang_modules.getModuleByFeature(feature)
-                    file_lists = yang_modules.getFilePathInModdule(yang_modules._module_list)
-                    d_module_path = file_lists.get(d_module.name())
-
-                    conf_base_info = ConfBaseInfo(file_path = os.path.join(confPath, d_file),
-                                                module_path = d_module_path,
-                                                expected_contents = expectedValue,
-                                                change_log = gitMessage)
+                    conf_base_info = ConfBaseInfo(file_path = file_path,
+                                                  expected_contents = expectedValue,
+                                                  change_log = gitMessage)
                     expected_conf_lists.conf_base_infos.append(conf_base_info)
         all_domain_expected_files.append(expected_conf_lists)
 
@@ -227,31 +232,35 @@ def query_real_confs(body=None):  # noqa: E501
 
     domain = body.domain_name
     hostList = body.host_ids
-    # 需要提前check domain是否存在
+    # check the domain is Exist
     isExist = Format.isDomainExist(domain)
     if not isExist:
         codeNum = 400
         base_rsp = BaseResponse(codeNum, "The current domain does not exist, please create the domain first.")
         return base_rsp, codeNum
-    # 先check domain内是否已经配置host
+    # check whether the host is configured in the domain
     isHostListExist = Format.isHostInDomain(domain)
-    if not isExist:
+    print("isHostListExist is : {}".format(isHostListExist))
+    if not isHostListExist:
         codeNum = 400
         base_rsp = BaseResponse(codeNum, "The host information is not set in the current domain." + 
                                           "Please add the host information first")
         return base_rsp, codeNum
 
-    # 获取当前domain纳管的所有host. 如果hostList为空，咋查询当前domain内所有的host。
-    # hostList不为空，则查询当前给定的host的实际内容。
-    if len(hostList) > 0 :
+    # get all hosts managed by the current domain. 
+    # If hostList is empty, query all hosts in the current domain.
+    # If hostList is not empty, the actual contents of the currently given host are queried.
+    conf_tools = ConfTools()
+    port = conf_tools.load_port_by_conf()
+    if len(hostList) > 0:
         hostTool = HostTools()
         existHost, failedHost = hostTool.getHostExistStatus(domain, hostList)
     else:
-        print("############## 获取domain内纳管的host ##############")
-        url="http://0.0.0.0:8080/host/getHost"
+        print("############## get the host in domain ##############")
+        url="http://0.0.0.0:" + port + "/host/getHost"
         headers = {"Content-Type": "application/json"}
         get_man_host = DomainName(domain_name=domain)
-        response = requests.get(url, data=json.dumps(get_man_host), headers=headers)  # 发送请求
+        response = requests.get(url, data=json.dumps(get_man_host), headers=headers)  # post request
         print("host/getHost response is : {}".format(response.text))
         resCode = response.status_code
         resText = json.loads(response.text)
@@ -264,25 +273,23 @@ def query_real_confs(body=None):  # noqa: E501
                                           "Please add the host information first")
         return base_rsp, codeNum
 
-    # 获取domain内纳管的配置项
-    # getManConfInDomainBody = DomainName(domain_name = "OS")
-    print("############## 获取domain内纳管的配置项 ##############")
-    url="http://0.0.0.0:8080/management/getManagementConf"
+    # get the management conf in domain
+    print("############## get the management conf in domain ##############")
+    url="http://0.0.0.0:" + port + "/management/getManagementConf"
     headers = {"Content-Type": "application/json"}
     getManConfBody = DomainName(domain_name=domain)
-    response = requests.get(url, data=json.dumps(getManConfBody), headers=headers)  # 发送请求
+    print("body is : {}".format(getManConfBody))
+    response = requests.get(url, data=json.dumps(getManConfBody), headers=headers)  # post request
     print("response is : {}".format(response.text))
     resCode = response.status_code
     resText = json.loads(response.text)
     print("return code is : {}".format(response.status_code))
 
-    if resCode is not 200:
+    if resCode != 200:
         codeNum = resCode
         base_rsp = BaseResponse(codeNum, "Failed to query the configuration items managed in the current domain. " + 
                                          "The failure reason is:" + resText)
         return base_rsp, codeNum
-    print("HHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHH")
-    print("resText type is : {}".format(type(resText)))
     conf_files = resText.get("confFiles")
     if len(conf_files) == 0:
         codeNum = 400
@@ -291,53 +298,68 @@ def query_real_confs(body=None):  # noqa: E501
         return base_rsp, codeNum
 
     res = []
-    success_host = []
-    failed_host = []
-    print("existHost is : {}".format(existHost))
-    for host in existHost:
-        success_conf = []
-        failed_conf = []
+
+    # get the real conf in host
+    conf_list = []
+    for d_conf in conf_files:
+        file_path = d_conf.get("filePath").split(":")[-1]
+        conf_list.append(file_path)
+    print("############## get the real conf in host ##############")
+    get_real_conf_body = {}
+    get_real_conf_body_info = []
+    for d_host in existHost:
+        get_real_conf_body_infos = {}
+        get_real_conf_body_infos["host_id"] = d_host
+        get_real_conf_body_infos["config_list"] = conf_list
+        get_real_conf_body_info.append(get_real_conf_body_infos)
+    get_real_conf_body["infos"] = get_real_conf_body_info
+    url = conf_tools.load_collect_by_conf()
+    headers = {"Content-Type": "application/json"}
+    response = requests.get(url, data=json.dumps(get_real_conf_body), headers=headers)  # post request
+    reps = json.loads(response.text).get("resp")
+    resp_code = json.loads(response.text).get("code")
+    success_lists = {}
+    failed_lists = {}
+    for d_res in reps:
+        d_host_id = d_res.get("host_id")
+        fail_files = d_res.get("fail_files")
+        if len(fail_files) > 0:
+            failed_lists["host_id"] = d_host_id
+            failed_lists_conf = []
+            for d_failed in fail_files:
+                failed_lists_conf.append(d_failed)
+            failed_lists["failed_conf"] = failed_lists_conf
+            failed_lists["success_conf"] = []
+        else:
+            success_lists["host_id"] = d_host_id
+            success_lists["success_conf"] = []
+            success_lists["failed_conf"] = []
+
         read_conf_info = RealConfInfo(domain_name = domain,
-                                      host_id = host,
+                                      host_id = d_host_id,
                                       conf_base_infos = [])
-        for d_conf in conf_files:
-            file_path = d_conf.get("filePath").split(":")[-1]
-            # 判断文件是否存在
-            isExistes = Format.is_exists_file(file_path)
-            if not isExistes:
-                real_conf = RealconfBaseInfo(path = file_path)
-                read_conf_info.conf_base_infos.append(real_conf)
-                continue
-            # file存在，则获取实际配置
-            content = Format.get_file_content_by_read(file_path)
-            # 配置解析和转换
+        d_res_infos = d_res.get("infos")
+        for d_file in d_res_infos:
+            file_path = d_file.get("path")
+            content = d_file.get("content")
             object_parse = ObjectParse()
             content_string = object_parse.parse_content_to_json(file_path, content)
-            print("content_string is : {}".format(content_string))
-
-            # file存在，获取配置所属rpm的信息
-            conf_tools = ConfTools()
-            pkg_name, pkg_release, pkg_version = conf_tools.getRpmInfo(file_path)
-            print("the pkg info is : {name}  {version}  {release}".format(name=pkg_name, release=pkg_release, version=pkg_version))
-
-            # file存在，获取配置的文件属性信息
-            file_atrr, file_owner = conf_tools.getFileAttr(file_path)
-            print("the file attr info is : {file_atrr}  {file_owner}".format(file_atrr=file_atrr, file_owner=file_owner))
-
-            # 保存原版配置文件
-            git_file = conf_tools.writeBakFileInPath(file_path, content)
-
+            file_atrr = d_file.get("file_attr").get("mode")
+            file_owner = "(" + d_file.get("file_attr").get("group") + ", " + d_file.get("file_attr").get("owner") + ")"
             real_conf_base_info = RealconfBaseInfo(file_path = file_path,
-                                                   rpm_name = pkg_name,
-                                                   rpm_version = pkg_version,
-                                                   rpm_release = pkg_release,
                                                    file_attr = file_atrr,
                                                    file_owner = file_owner,
                                                    conf_contens = content_string)
             read_conf_info.conf_base_infos.append(real_conf_base_info)
+            if len(fail_files) > 0:
+                failed_lists.get("success_conf").append(file_path)
+            else:
+                success_lists.get("success_conf").append(file_path)
         res.append(read_conf_info)
 
-    print("res is : {}".format(res))
+    print("***************************************")
+    print("success_lists is : {}".format(success_lists))
+    print("failed_lists is : {}".format(failed_lists))
 
     if len(res) == 0:
         codeNum = 400
@@ -346,7 +368,6 @@ def query_real_confs(body=None):  # noqa: E501
                                         "The failure reason is : " + resText)
         return base_rsp, codeNum
 
-    # 拼接返回值
     return res
 
 
@@ -365,25 +386,25 @@ def sync_conf_to_host_from_domain(body=None):  # noqa: E501
     domain = body.domain_name
     hostList = body.host_ids
 
-    # 需要提前check domain是否存在
+    #  check whether the domain exists
     isExist = Format.isDomainExist(domain)
     if not isExist:
         codeNum = 404
         base_rsp = BaseResponse(codeNum, "The current domain does not exist, please create the domain first.")
         return base_rsp, codeNum
 
-    # 获取domain域内管控的所有host
-    print("############## 获取domain内纳管的host信息 ##############")
-    url="http://0.0.0.0:8080/host/getHost"
+    # get the management host in domain
+    conf_tools = ConfTools()
+    port = conf_tools.load_port_by_conf()
+    print("############## get host in domain ##############")
+    url="http://0.0.0.0:" + port + "/host/getHost"
     headers = {"Content-Type": "application/json"}
     getHostBody = DomainName(domain_name = domain)
-    response = requests.get(url, data=json.dumps(getHostBody), headers=headers)  # 发送请求
+    response = requests.get(url, data=json.dumps(getHostBody), headers=headers)  # post request
     resHostCode = response.status_code
     resHostText = json.loads(response.text)
-    print("return resHostCode is : {}".format(resHostCode))
-    print("return resHostText is : {}".format(resHostText))
 
-    # # check 入参的host是否在domain内
+    # Check whether the host is in the managed host list
     existHost = []
     if len(hostList) > 0:
         for host in hostList:
@@ -403,20 +424,18 @@ def sync_conf_to_host_from_domain(body=None):  # noqa: E501
                                           "Please add the host information first")
         return base_rsp, codeNum
 
-    # 查询预期配置
-    print("############## 获取domain内纳管的配置项 ##############")
-    getManConfUrl="http://0.0.0.0:8080/management/getManagementConf"
+    # get the management conf in domain
+    print("############## get management conf in domain ##############")
+    getManConfUrl="http://0.0.0.0:" + port + "/management/getManagementConf"
     headers = {"Content-Type": "application/json"}
     getManConfBody = DomainName(domain_name=domain)
-    getManConfRes = requests.get(getManConfUrl, data=json.dumps(getManConfBody), headers=headers)  # 发送请求
-    manConfResCode = getManConfRes.status_code
+    getManConfRes = requests.get(getManConfUrl, data=json.dumps(getManConfBody), headers=headers)  # post request
     manConfResText = json.loads(getManConfRes.text)
     manageConfs = manConfResText.get("confFiles")
     print("manageConfs is : {}".format(manageConfs))
 
-    # 将预期配置进行反序列化和反解析
+    # Deserialize and reverse parse the expected configuration
     sync_res = []
-    conf_tools = ConfTools()
     for d_host in existHost:
         host_sync_result = HostSyncResult(host_id = d_host,
                            sync_result = [])
@@ -424,9 +443,8 @@ def sync_conf_to_host_from_domain(body=None):  # noqa: E501
             file_path = d_man_conf.get("filePath").split(":")[-1]
             contents = d_man_conf.get("contents")
             object_parse = ObjectParse()
-            content = object_parse.parse_json_to_object(file_path, contents)
-            print("content is : {}".format(content))
-            # 配置写入 host
+            content = object_parse.parse_json_to_content(file_path, contents)
+            # Configuration to the host
             result = conf_tools.wirteFileInPath(file_path, content)
             conf_sync_res = ConfSyncedRes(file_path = file_path,
                                           result = "")

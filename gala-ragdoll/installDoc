@@ -1,31 +1,51 @@
-# 需要<pyconfig.h>
-yum install python3-devel python3-cffi gcc cmake pcre2-devel
+# The introduction of install gala-ragdoll package
 
+1. configure the yum repo:
+cat /etc/yum.repos.d/openEuler.repo
+[snn]
+name = snn
+baseurl = https://repo.huaweicloud.com/openeuler/openEuler-20.03-LTS-SP1/everything/x86_64/
+enabled = 1
+gpgcheck = 0
+gpgkey = http://repo.openeuler.org/openEuler-20.03-LTS-SP1/OS/$basearch/RPM-GPG-KEY-openEuler
 
-# 安装libyang模块
-git clone https://github.com/CESNET/libyang.git
-mkdir build
-cd build
-cmake ..
-make
-make install
-cp -r /usr/local/lib64/libyang* /usr/lib64
+2. install requires:
+yum install python3-devel python3-cffi gcc cmake pcre2-devel pcre-devel
 
-如果中间出现cmake失败，问题总结如下：
-问题1：提示缺少pcre2的头文件
-错误提示：Could NOT find PCRE2: Found unsuitable version "", but required is at least
-解决方法：yum install pcre2-devel
+3. install gala-ragdoll:
+yum install python3-gala-ragdoll python3-flask-testing
 
-问题2：make过程中提示警告被看做error：
-cc1: all warnings being treated as errors
-error: command 'gcc' failed with exit status 1
-解决方法：在代码中搜索“Werror”字样，查看搜索结果：
-tests/style/CMakeLists.txt:12:target_compile_options(cpp_compat PUBLIC "-Werror=c++-compat")
-删除该行
-
-问题3：libyang社区已经发布2.0版本，动态库链接为：libyang.so.2
-如果想要获取so.1，则需要在原生社区中下载v1.0.225。构建方法相同，同时需要预先安装pcre-devel。
-
-
-# 安装libyang的python模块
-pip3 install libyang
+After installing a single package, the following RPM packages are installed:
+=========================================================================================================================
+ Package                               Architecture             Version                       Repository            Size
+=========================================================================================================================
+Installing:
+ python3-gala-ragdoll                  aarch64                  1.0.0-1.oe1                   obs                  119 k
+Installing dependencies:
+ python3-connexion                            aarch64             2.9.0-1.oe1               obs                    148 k
+ python3-attrs                                noarch              17.4.0-9.oe1              everything              50 k
+ python3-babel                                noarch              2.8.0-2.oe1               OS                     6.1 M
+ python3-chardet                              noarch              3.0.4-8.oe1               OS                     190 k
+ python3-click                                noarch              7.0-2.oe1                 OS                     145 k
+ python3-clickclick                           aarch64             20.10.2-1.oe1             obs                     21 k
+ python3-flask                                noarch              1:1.1.2-1.oe1             obs                    165 k
+ python3-idna                                 noarch              2.10-1.oe1                OS                      83 k
+ python3-importlib_metadata                   noarch              0.23-1.oe1                everything              50 k
+ python3-inflection                           aarch64             0.5.1-1.oe1               obs                     17 k
+ python3-isodate                              aarch64             0.6.0-1.oe1               obs                     59 k
+ python3-itsdangerous                         noarch              1.1.0-2.oe1               OS                      36 k
+ python3-jinja2                               noarch              2.11.2-1.oe1              OS                     223 k
+ python3-jsonschema                           noarch              3.2.0-1.oe1               obs                    113 k
+ python3-markupsafe                           aarch64             1.1.1-1.oe1               OS                      29 k
+ python3-openapi-schema-validator             aarch64             0.1.5-1.oe1               obs                     22 k
+ python3-openapi-spec-validator               aarch64             0.3.1-1.oe1               obs                     53 k
+ python3-pyrsistent                           aarch64             0.18.0-1.oe1              obs                    130 k
+ python3-pysocks                              noarch              1.7.0-2.oe1               OS                      32 k
+ python3-pytz                                 noarch              2020.1-1.oe1              OS                      48 k
+ python3-pyyaml                               aarch64             5.3.1-3.oe1               OS                     175 k
+ python3-requests                             noarch              2.24.0-1.oe1              OS                     100 k
+ python3-urllib3                              noarch              1.25.9-1.oe1              OS                     179 k
+ python3-werkzeug                             noarch              1.0.1-1.oe1               obs                    428 k
+ python3-zipp                                 noarch              0.5.1-2.oe1               everything              14 k
+ python3-libyang                              aarch64             1.6.1-1.oe1               obs                     117 k
+ python3-flask-testing                        aarch64             0.8.1-1.oe1               obs                     22 k

@@ -10,7 +10,7 @@ from ragdoll import util
 from ragdoll.controllers.format import Format
 from ragdoll.utils.git_tools import GitTools
 
-targetDir = "/home/confTrace"
+TARGETDIR = GitTools().target_dir
 
 # logging.basicConfig(filename='log.log',
 #                     format='%(asctime)s - %(name)s - %(levelname)s -%(module)s:  %(message)s',
@@ -44,7 +44,7 @@ def create_domain(body=None):  # noqa: E501
             failedDomain.append(tempDomainName)
         else:
             successDomain.append(tempDomainName)
-            domainPath = os.path.join(targetDir, tempDomainName)
+            domainPath = os.path.join(TARGETDIR, tempDomainName)
             os.mkdir(domainPath)
 
     if len(failedDomain) == 0:
@@ -55,7 +55,6 @@ def create_domain(body=None):  # noqa: E501
         codeString = Format.splicErrorString("domain", "created", successDomain, failedDomain)
 
     base_rsp = BaseResponse(codeNum, codeString)
-    logging.info('domain created successfully, including {}'.format(successDomain))
 
     return base_rsp, codeNum
 
@@ -74,13 +73,12 @@ def delete_domain(domainName):  # noqa: E501
         base_rsp = BaseResponse(400, "The entered domian is empty")
         return base_rsp
 
-    targetDir = "/home/confTrace"
     successDomain = []
     failedDomain = []
 
     print("domainName is : {}".format(domainName))
     for tempDomainName in domainName:
-        domainPath = os.path.join(targetDir, tempDomainName)
+        domainPath = os.path.join(TARGETDIR, tempDomainName)
         isExist = Format.isDomainExist(domainPath)
         print("isExist is : {}".format(isExist))
         if isExist:
@@ -103,11 +101,23 @@ def delete_domain(domainName):  # noqa: E501
 
 
 def query_domain():  # noqa: E501
-    """query the list of all configuration domain
-
+    """
     query the list of all configuration domain # noqa: E501
-
-
     :rtype: List[Domain]
     """
-    return 'do some magic!'
+    domain_list = []
+    cmd = "ls {}".format(TARGETDIR)
+    gitTools = GitTools()
+    ls_res = gitTools.run_shell_return_output(cmd).decode()
+    ll_list = ls_res.split('\n')
+    for d_ll in ll_list:
+        if d_ll:
+            domain = Domain(domain_name = d_ll)
+            domain_list.append(domain)
+
+    if len(domain_list) > 0:
+        codeNum = 200
+    else:
+        codeNum = 400
+
+    return domain_list, codeNum
