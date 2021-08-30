@@ -20,7 +20,7 @@ import time
 import unittest
 
 from aops_database.proxy.diag import DiagDatabase
-from aops_database.conf.constant import DIAG_TREE_INDEX, DIAG_REPORT_INDEX
+from aops_database.conf.constant import DIAG_TREE_INDEX, DIAG_REPORT_INDEX, DIAG_TASK_INDEX
 from aops_database.factory.mapping import MAPPINGS
 from aops_utils.restful.status import SUCCEED
 from aops_utils.compare import compare_two_object
@@ -35,12 +35,15 @@ class TestDiagDatabase(unittest.TestCase):
         self.proxy.connect()
         self.proxy.delete_index(DIAG_TREE_INDEX)
         self.proxy.delete_index(DIAG_REPORT_INDEX)
+        self.proxy.delete_index(DIAG_TASK_INDEX)
         self.proxy.create_index(DIAG_TREE_INDEX, MAPPINGS[DIAG_TREE_INDEX])
         self.proxy.create_index(DIAG_REPORT_INDEX, MAPPINGS[DIAG_REPORT_INDEX])
+        self.proxy.create_index(DIAG_TASK_INDEX, MAPPINGS[DIAG_TASK_INDEX])
 
     def tearDown(self):
         self.proxy.delete_index(DIAG_TREE_INDEX)
         self.proxy.delete_index(DIAG_REPORT_INDEX)
+        self.proxy.delete_index(DIAG_TASK_INDEX)
         self.proxy.close()
 
     def test_api_diag_tree(self):
@@ -108,6 +111,70 @@ class TestDiagDatabase(unittest.TestCase):
         self.assertEqual(len(res[1]["trees"]), 3)
 
     def test_api_diag_report(self):
+        # ==============save diag task================
+        data = {
+            "username": "test",
+            "task_id": "t1",
+            "time": 31,
+            "host_list": [],
+            "tree_list": ["tree1", "tree2"],
+            "time_range": [1, 2],
+            "expected_report_num": 3
+        }
+        res = self.proxy.save_diag_task(data)
+        data = {
+            "username": "test",
+            "task_id": "t2",
+            "time": 11,
+            "host_list": [],
+            "tree_list": ["tree1", "tree2"],
+            "time_range": [1, 2],
+            "expected_report_num": 3
+        }
+        res = self.proxy.save_diag_task(data)
+
+        data = {
+            "username": "test",
+            "task_id": "t3",
+            "time": 21,
+            "host_list": ["a", "b"],
+            "tree_list": ["tree1"],
+            "time_range": [1,5],
+            "expected_report_num": 8
+        }
+        res = self.proxy.save_diag_task(data)
+        time.sleep(1)
+        # ==============get diag task===============
+        data = {
+            "username": "test",
+            "sort": "time",
+            "page":1,
+            "per_page": 2
+        }
+        res = self.proxy.get_diag_task(data)
+        expected_res = {
+            "total_count": 3,
+            "total_page": 2,
+            "task_infos": [
+                {
+                    "task_id": "t2",
+                    "time": 11,
+                    "host_list": [],
+                    "tree_list": ["tree1", "tree2"],
+                    "time_range": [1, 2],
+                    "expected_report_num": 3
+                },
+                {
+                    "task_id": "t3",
+                    "time": 21,
+                    "host_list": ["a", "b"],
+                    "tree_list": ["tree1"],
+                    "time_range": [1,5],
+                    "expected_report_num": 8
+                }
+            ]
+        }
+        self.assertEqual(res[1], expected_res)
         # =============save diag report===============
         data = {
             "reports": [
@@ -200,6 +267,39 @@ class TestDiagDatabase(unittest.TestCase):
             ]
         }
         res = self.proxy.get_diag_report_list(data)
+        self.assertEqual(res[1], expected_res)
+
+        # ==============get diag task===============
+        data = {
+            "username": "test",
+            "time_range": [20, 32],
+            "sort": "time",
+            "direction": "asc"
+        }
+        res = self.proxy.get_diag_task(data)
+        expected_res = {
+            "total_count": 2,
+            "total_page": 1,
+            "task_infos": [
+                {
+                    "time_range": [1,5],
+                    "task_id": "t3",
+                    "time": 21,
+                    "tree_list": ["tree1"],
+                    "host_list": ["a", "b"],
+                    "expected_report_num": 8
+                },
+                {
+                    "task_id": "t1",
+                    "time": 31,
+                    "host_list": [],
+                    "tree_list": ["tree1", "tree2"],
+                    "time_range": [1, 2],
+                    "expected_report_num": 3
+                }
+            ]
+        }
+        print(res[1])
         self.assertEqual(res[1], expected_res)
 
         # ==========get diag process=================

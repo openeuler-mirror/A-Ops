@@ -22,7 +22,6 @@ from aops_database.proxy.check import CheckDatabase
 from aops_database.conf.constant import CHECK_RULE_INDEX, CHECK_RESULT_INDEX
 from aops_database.factory.mapping import MAPPINGS
 from aops_utils.restful.status import SUCCEED
-from aops_utils.compare import compare_two_object
 
 
 class TestCheckDatabase(unittest.TestCase):
@@ -50,31 +49,29 @@ class TestCheckDatabase(unittest.TestCase):
             "check_items": [
                 {
                     "check_item": "memory_usage",
-                    "data_list": [{"name": "a", "label": {"mode": "irq"}}],
+                    "data_list": [{"name": "a", "type":"kpi", "label": {"mode": "irq"}}, {"name":"a", "type":"kpi","label":{"mode":"haha"}}],
                     "condition": "c1",
-                    "description": "bb",
-                    "label_config": ""
+                    "description": "bb"
                 },
                 {
                     "check_item": "cpu_usage",
-                    "data_list": [{"name": "a", "label": {}}],
+                    "data_list": [{"name": "b", "type":"log", "label": {}}],
                     "condition": "c1",
                     "description": "xxx",
-                    "label_config": ""
+                    "plugin": "x"
                 },
                 {
                     "check_item": "disk_usage",
-                    "data_list": [{"name": "a", "label": {}}],
+                    "data_list": [{"name": "a", "type":"kpi", "label": {"cpu":"cpu1", "mode":"irq"}}],
                     "condition": "c1",
                     "description": "xxx",
-                    "label_config": ""
+                    "plugin": "aa"
                 },
                 {
                     "check_item": "io_usage",
                     "data_list": [],
                     "condition": "c1",
-                    "description": "xxx",
-                    "label_config": ""
+                    "description": "xxx"
                 }
             ]
         }
@@ -92,13 +89,13 @@ class TestCheckDatabase(unittest.TestCase):
         }
         expected_res = {
             "total_count": 4,
-            "result": [
+            "check_items": [
                 {
                     "check_item": "cpu_usage",
-                    "data_list": [{"name": "a", "label": {}}],
+                    "data_list": [{"name": "b", "type":"log", "label": {}}],
                     "condition": "c1",
                     "description": "xxx",
-                    "label_config": ""
+                    "plugin": "x"
                 }
             ],
             "total_page": 2
@@ -128,7 +125,7 @@ class TestCheckDatabase(unittest.TestCase):
                 {
                     "username": "test",
                     "host_id": "id1",
-                    "data_list": [{"name": "a", "label": {"mode": "irq"}}],
+                    "data_list": [{"name": "a", "type":"log", "label": {"mode": "irq"}}],
                     "start": 1,
                     "end": 7,
                     "check_item": "cpu_usage",
@@ -138,7 +135,7 @@ class TestCheckDatabase(unittest.TestCase):
                 {
                     "username": "test",
                     "host_id": "id1",
-                    "data_list": [{"name": "a", "label": {"mode": "irq"}}],
+                    "data_list": [{"name": "a", "type":"kpi", "label": {"mode": "irq"}}],
                     "start": 2,
                     "end": 7,
                     "check_item": "mem_usage",
@@ -148,7 +145,7 @@ class TestCheckDatabase(unittest.TestCase):
                 {
                     "username": "test",
                     "host_id": "id1",
-                    "data_list": [{"name": "a", "label": {"mode": "irq"}}],
+                    "data_list": [{"name": "a", "type":"kpi", "label": {"mode": "irq"}}],
                     "start": 8,
                     "end": 10,
                     "check_item": "cpu_usage",
@@ -158,7 +155,7 @@ class TestCheckDatabase(unittest.TestCase):
                 {
                     "username": "test",
                     "host_id": "id2",
-                    "data_list": [{"name": "a", "label": {"mode": "irq"}}],
+                    "data_list": [{"name": "a", "type":"kpi", "label": {"mode": "irq"}}],
                     "start": 5,
                     "end": 9,
                     "check_item": "disk_usage",
@@ -168,7 +165,7 @@ class TestCheckDatabase(unittest.TestCase):
                 {
                     "username": "test",
                     "host_id": "id2",
-                    "data_list": [{"name": "a", "label": {"mode": "irq", "a": 1}}, {"name": 2}],
+                    "data_list": [{"name": "a", "type":"kpi", "label": {"mode": "irq", "a": 1}}, {"name": 2}],
                     "start": 15,
                     "end": 22,
                     "check_item": "disk_usage",
@@ -196,9 +193,9 @@ class TestCheckDatabase(unittest.TestCase):
         expected_res = {
             "total_page": 2,
             "total_count": 4,
-            "result": [
+            "check_result": [
                 {
-                    "data_list": [{"name": "a", "label": {"mode": "irq"}}],
+                    "data_list": [{"name": "a", "type":"kpi", "label": {"mode": "irq"}}],
                     "start": 2,
                     "end": 7,
                     "check_item": "mem_usage",
@@ -207,7 +204,7 @@ class TestCheckDatabase(unittest.TestCase):
                     "host_id": "id1",
                 },
                 {
-                    "data_list": [{"name": "a", "label": {"mode": "irq"}}],
+                    "data_list": [{"name": "a", "type":"kpi", "label": {"mode": "irq"}}],
                     "start": 5,
                     "end": 9,
                     "check_item": "disk_usage",
@@ -232,10 +229,10 @@ class TestCheckDatabase(unittest.TestCase):
         expected_res = {
             "total_page": 1,
             "total_count": 2,
-            "result": [
+            "check_result": [
                 {
                     "host_id": "id1",
-                    "data_list": [{"name": "a", "label": {"mode": "irq"}}],
+                    "data_list": [{"name": "a", "type":"log", "label": {"mode": "irq"}}],
                     "start": 1,
                     "end": 7,
                     "check_item": "cpu_usage",
@@ -244,7 +241,7 @@ class TestCheckDatabase(unittest.TestCase):
                 },
                 {
                     "host_id": "id1",
-                    "data_list": [{"name": "a", "label": {"mode": "irq"}}],
+                    "data_list": [{"name": "a", "type":"kpi", "label": {"mode": "irq"}}],
                     "start": 8,
                     "end": 10,
                     "check_item": "cpu_usage",
@@ -275,7 +272,7 @@ class TestCheckDatabase(unittest.TestCase):
             "per_page": 2
         }
         expected_res = {
-            "result": [
+            "results": [
                 {
                     "host_id": "id1",
                     "count": 3
@@ -290,4 +287,3 @@ class TestCheckDatabase(unittest.TestCase):
         }
         res = self.proxy.get_check_result_count(data)
         self.assertEqual(res[1], expected_res)
-

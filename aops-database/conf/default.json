@@ -1,0 +1,23 @@
+{
+    "tasks": [
+        {
+            "task_id": "95c3e692ff3811ebbcd3a89d3a259eef",
+            "task_name": "Default deployment",
+            "username": "admin",
+            "host_list": [
+                {
+                    "host_name": "90.90.64.64",
+                    "host_id": "11111"
+                },
+                {
+                    "host_name": "90.90.64.66",
+                    "host_id": "11111"
+                },
+                {
+                    "host_name": "90.90.64.65",
+                    "host_id": "33333"
+                }
+            ]
+        }
+    ]
+}

@@ -28,13 +28,6 @@ DATA_HISTORY = "history"
 DATA_MESSAGES = "messages"
 DIAG_REPORT_INDEX = "diag_report"
 DIAG_TREE_INDEX = "diag_tree"
+DIAG_TASK_INDEX = "diag_task"
 CHECK_RESULT_INDEX = "check_result"
 CHECK_RULE_INDEX = "check_rule"
-
-DEFAULT_TASK_INFO = [{"task_id": "95c3e692ff3811ebbcd3a89d3a259eef",
-                      "task_name": "Default deployment",
-                      "username": "admin",
-                      "host_list": [{"host_name": "90.90.64.64", "host_id": "11111"},
-                                    {"host_name": "90.90.64.66", "host_id": "11111"},
-                                    {"host_name": "90.90.64.65", "host_id": "33333"}]
-                      }]

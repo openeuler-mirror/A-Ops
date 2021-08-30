@@ -86,6 +86,8 @@ DATA_DELETE_DIAG_REPORT = "/data/diag/report/delete"
 DATA_GET_DIAG_REPORT = "/data/diag/report/get"
 DATA_GET_DIAG_REPORT_LIST = "/data/diag/report/get_list"
 DATA_GET_DIAG_PROCESS = "/data/diag/process/query"
+DATA_SAVE_DIAG_TASK = "/data/diag/task/save"
+DATA_GET_DIAG_TASK = "/data/diag/task/get"
 
 DATA_ADD_CHECK_RULE = "/data/check/rule/add"
 DATA_DELETE_CHECK_RULE = "/data/check/rule/delete"

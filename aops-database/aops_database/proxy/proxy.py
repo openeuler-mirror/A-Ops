@@ -220,6 +220,24 @@ class ElasticsearchProxy(DataBaseProxy):
             LOGGER.error(error)
             return False
 
+    def _bulk(self, action):
+        """
+        Do bulk action
+
+        Args:
+            action(list): actions
+
+        Returns:
+            bool
+        """
+        try:
+            if action:
+                helpers.bulk(self._es_db, action)
+            return True
+        except ElasticsearchException as error:
+            LOGGER.error(error)
+            return False
+
     def insert_bulk(self, index, data):
         """
         Insert batch data into es
@@ -237,12 +255,31 @@ class ElasticsearchProxy(DataBaseProxy):
                 "_index": index,
                 "_source": item})
 
-        try:
-            helpers.bulk(self._es_db, action)
-            return True
-        except ElasticsearchException as error:
-            LOGGER.error(error)
-            return False
+        return self._bulk(action)
+
+    def update_bulk(self, index, data):
+        """
+        Update batch data
+
+        Args:
+            index(str): index of the data
+            data(list): batch data
+
+        Returns:
+            bool: succeed or fail
+        """
+        action = []
+        for item in data:
+            _id = item.get("_id")
+            doc = item.get("doc")
+            action.append({
+                "_op_type": "update",
+                "_index": index,
+                "_id": _id,
+                "doc": doc
+            })
+
+        return self._bulk(action)
 
     def delete(self, index, body):
         """
