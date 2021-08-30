@@ -18,7 +18,7 @@ Description: Diag database operation
 import json
 
 from aops_database.proxy.proxy import ElasticsearchProxy
-from aops_database.conf.constant import DIAG_TREE_INDEX, DIAG_REPORT_INDEX
+from aops_database.conf.constant import DIAG_TASK_INDEX, DIAG_TREE_INDEX, DIAG_REPORT_INDEX
 from aops_database.function.helper import judge_return_code
 from aops_utils.log.log import LOGGER
 from aops_utils.restful.status import DATABASE_DELETE_ERROR, DATABASE_INSERT_ERROR,\
@@ -281,9 +281,9 @@ class DiagDatabase(ElasticsearchProxy):
                         "end": {"gte": time_range[0]}
                     }
                     },
-                    {"range": {
-                        "start": {"lte": time_range[1]}
-                    }
+                        {"range": {
+                            "start": {"lte": time_range[1]}
+                        }
                     }
                     ])
                 query_body["query"]["bool"]["should"] = [
@@ -298,6 +298,43 @@ class DiagDatabase(ElasticsearchProxy):
                 ]
 
         return query_body
+
+    def get_diag_report(self, data):
+        """
+        Get diag report
+
+        Args:
+            data(dict): e.g.
+                {
+                    "username": "admin",
+                    "report_list": ["xxxx"]
+                }
+
+        Returns:
+            int: status code
+            dict: result
+        """
+        result = {
+            "result": []
+        }
+        report_list = data.get('report_list')
+
+        query_body = self._general_body(data)
+        query_body["query"]["bool"]["must"].append(
+            {"terms": {"report_id": report_list}})
+
+        res = self.query(DIAG_REPORT_INDEX, query_body, [
+            "host_id", "tree_name", "task_id", "report_id", "start", "end", "report"])
+        if res[0]:
+            LOGGER.info("query report %s succeed", report_list)
+            for item in res[1]['hits']['hits']:
+                item['_source']['report'] = json.loads(
+                    item['_source']['report'])
+                result["result"].append(item['_source'])
+            return SUCCEED, result
+
+        LOGGER.error("query report %s fail", report_list)
+        return DATABASE_QUERY_ERROR, result
 
     def get_diag_process(self, data):
         """
@@ -337,15 +374,46 @@ class DiagDatabase(ElasticsearchProxy):
 
         return SUCCEED, result
 
-    def get_diag_report(self, data):
+    def save_diag_task(self, data):
         """
-        Get diag report
+        Save diag task
 
         Args:
             data(dict): e.g.
                 {
                     "username": "admin",
-                    "report_list": ["xxxx"]
+                    "task_id": "id",
+                    "time": 111,
+                    "host_list": [],
+                    "tree_list": [],
+                    "time_range": [],
+                    "expected_report_num": 11
+                }
+
+        Returns:
+            int: status code
+        """
+        res = self.insert(DIAG_TASK_INDEX, data)
+        if res:
+            LOGGER.info("save diag task succeed")
+            return SUCCEED
+
+        LOGGER.error("save diag task fail")
+        return DATABASE_INSERT_ERROR
+
+    def get_diag_task(self, data):
+        """
+        Get diag task list
+
+        Args:
+            data(dict): e.g.
+                {
+                    "username": "admin",
+                    "status": "finshed",
+                    "sort": "tree_name",
+                    "direction": "asc",
+                    "page": 1,
+                    "per_page": 11
                 }
 
         Returns:
@@ -353,22 +421,58 @@ class DiagDatabase(ElasticsearchProxy):
             dict: result
         """
         result = {
-            "result": []
+            "total_count": 0,
+            "total_page": 0,
+            "task_infos": []
         }
-        report_list = data.get('report_list')
 
-        query_body = self._general_body(data)
-        query_body["query"]["bool"]["must"].append(
-            {"terms": {"report_id": report_list}})
-
-        res = self.query(DIAG_REPORT_INDEX, query_body, [
-            "host_id", "tree_name", "task_id", "report_id", "start", "end", "report"])
-        if res[0]:
-            LOGGER.info("query report %s succeed", report_list)
-            for item in res[1]['hits']['hits']:
-                item['_source']['report'] = json.loads(item['_source']['report'])
-                result["result"].append(item['_source'])
+        query_body = self._generate_query_task_body(data)
+        count_res = self.count(DIAG_TASK_INDEX, query_body)
+        if not count_res[0]:
+            LOGGER.error("query count of diag task fail")
+            return DATABASE_QUERY_ERROR, result
+        if count_res[1] == 0:
+            LOGGER.info("there is no matched diag task")
             return SUCCEED, result
 
-        LOGGER.error("query report %s fail", report_list)
+        total_count = count_res[1]
+        total_page = self._make_es_paginate_body(data, total_count, query_body)
+        res = self.query(DIAG_TASK_INDEX, query_body, [
+            "task_id", "host_list", "time_range", "time",
+            "tree_list", "expected_report_num"])
+        if res[0]:
+            LOGGER.info("query diag task succeed")
+            result["total_page"] = total_page
+            result["total_count"] = total_count
+            for item in res[1]['hits']['hits']:
+                result["task_infos"].append(item['_source'])
+            return SUCCEED, result
+
+        LOGGER.error("query diag task fail")
         return DATABASE_QUERY_ERROR, result
+
+    def _generate_query_task_body(self, data):
+        """
+        Generate task query body
+
+        Args:
+            data(dict)
+
+        Returns:
+            query body
+        """
+        query_body = self._general_body(data)
+        time_range = data.get('time_range')
+        if time_range and len(time_range) == 2:
+            query_body["query"]["bool"]["must"].extend(
+                [{"range": {
+                    "time": {"gte": time_range[0]}
+                }
+                },
+                    {"range": {
+                        "time": {"lte": time_range[1]}
+                    }
+                }
+                ])
+
+        return query_body

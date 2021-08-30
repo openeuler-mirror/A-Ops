@@ -44,7 +44,6 @@ class CheckDatabase(ElasticsearchProxy):
                             "data_list": [],
                             "condition": "",
                             "description": "",
-                            "label_config": "",
                             "plugin": ""
                         }
                     ]
@@ -122,7 +121,7 @@ class CheckDatabase(ElasticsearchProxy):
         """
         result = {
             "total_count": 0,
-            "result": [],
+            "check_items": [],
             "total_page": 0,
         }
         query_body = self._generate_query_rule_body(data)
@@ -133,13 +132,13 @@ class CheckDatabase(ElasticsearchProxy):
         total_page = self._make_es_paginate_body(data, total_count, query_body)
 
         res = self.query(CHECK_RULE_INDEX, query_body, [
-            'check_item', 'data_list', 'condition', 'description', 'label_config', 'plugin'])
+            'check_item', 'data_list', 'condition', 'description', 'plugin'])
         if res[0]:
             LOGGER.info("query check rule succeed")
             result["total_count"] = total_count
             result["total_page"] = total_page
             for item in res[1]['hits']['hits']:
-                result["result"].append(item['_source'])
+                result["check_items"].append(item['_source'])
             return SUCCEED, result
 
         LOGGER.error("query check rule fail")
@@ -318,7 +317,7 @@ class CheckDatabase(ElasticsearchProxy):
         result = {
             "total_page": 0,
             "total_count": 0,
-            "result": []
+            "check_result": []
         }
 
         query_body = self._generate_query_result_body(data)
@@ -342,7 +341,7 @@ class CheckDatabase(ElasticsearchProxy):
             result["total_page"] = total_page
 
             for item in res[1]['hits']['hits']:
-                result["result"].append(item['_source'])
+                result["check_result"].append(item['_source'])
             return SUCCEED, result
 
         LOGGER.error("query check result fail")
@@ -413,7 +412,7 @@ class CheckDatabase(ElasticsearchProxy):
             dict: result
         """
         result = {
-            "result": [],
+            "results": [],
             "total_count": 0,
             "total_page": 0,
         }
@@ -434,7 +433,7 @@ class CheckDatabase(ElasticsearchProxy):
                 end = min(start + per_page, total_count)
             buckets = res[1]['aggregations']['count']['buckets'][start:end]
             for bucket in buckets:
-                result['result'].append(
+                result['results'].append(
                     {"host_id": bucket['key'], "count": bucket['doc_count']})
             result['total_count'] = total_count
             result['total_page'] = total_page

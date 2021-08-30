@@ -28,6 +28,7 @@ DATABASE_DELETE_ERROR = 1103
 DATABASE_QUERY_ERROR = 1104
 DATA_EXIST = 1105
 DATA_DEPENDENCY_ERROR = 1106
+DATABASE_UPDATE_ERROR = 1107
 LOGIN_ERROR = 1200
 TOKEN_ERROR = 1201
 REPEAT_LOGIN = 1202
@@ -65,6 +66,9 @@ class StatusCode:  # pylint: disable=R0903
         },
         DATABASE_QUERY_ERROR: {
             "msg": "query data from database fail"
+        },
+        DATABASE_UPDATE_ERROR: {
+            "msg": "update data in database fail"
         },
         DATA_EXIST: {
             "msg": "data has existed"

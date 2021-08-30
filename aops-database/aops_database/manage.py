@@ -15,6 +15,7 @@ Time:
 Author:
 Description: Manager that start aops-database
 """
+import os
 import sqlalchemy
 
 from aops_database.function.helper import create_tables, ENGINE, SESSION
@@ -22,10 +23,14 @@ from aops_database.factory.table import User
 from aops_database.factory.mapping import MAPPINGS
 from aops_database.proxy.deploy import DeployDatabase
 from aops_database.proxy.account import UserDatabase
-from aops_database.conf.constant import DEFAULT_TASK_INFO
+from aops_utils.conf.constant import BASE_CONFIG_PATH
 from aops_utils.log.log import LOGGER
 from aops_utils.restful.status import SUCCEED
 from aops_utils.manage import init_app
+from aops_utils.readconfig import read_json_config_file
+
+
+DEFAULT_TASK_PATH = os.path.join(BASE_CONFIG_PATH, 'default.json')
 
 
 def init_user():
@@ -75,7 +80,11 @@ def init_es():
         "username": "",
         "task_list": [""]
     }
-    for default_task in DEFAULT_TASK_INFO:
+    task_info = read_json_config_file(DEFAULT_TASK_PATH)
+    if task_info is None:
+        return
+
+    for default_task in task_info['tasks']:
         data["username"] = default_task["username"]
         data["task_list"][0] = default_task["task_id"]
         task_name = default_task["task_name"]

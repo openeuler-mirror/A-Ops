@@ -184,3 +184,54 @@ class GetDiagReport(BaseResource):
             dict: response body
         """
         return self.do_action('get_diag_report', DiagDatabase())
+
+class SaveDiagTask(BaseResource):
+    """
+    Interface for save diag task.
+    Restful API: POST
+    """
+
+    def post(self):
+        """
+        Save diag task
+
+        Args:
+            username(str)
+            task_id(str)
+            time(int)
+            host_list(list)
+            tree_list(list)
+            time_range(list)
+            expected_report_num(int)
+            cur_report_num(int)
+            status(str)
+
+        Returns:
+            dict: response body
+        """
+        return self.do_action('save_diag_task', DiagDatabase())
+
+
+class GetDiagTask(BaseResource):
+    """
+    Interface for get diag task.
+    Restful API: POST
+    """
+
+    def post(self):
+        """
+        Get diag task
+
+        Args:
+            username(str)
+            status(str)
+            sort(str)
+            direction(str)
+            page(int)
+            per_page(int)
+            time_range(list)
+
+        Returns:
+            dict: response body
+        """
+        return self.do_action('get_diag_task', DiagDatabase())

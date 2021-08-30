@@ -20,13 +20,13 @@ from flask import Flask
 
 def init_app(name):
     """
-    Init app
+    Init application
 
     Args:
-        name(str): module name
+        name(str)
 
     Returns:
-        flask app
+        app
         configuration
     """
     module_name = 'aops_' + name

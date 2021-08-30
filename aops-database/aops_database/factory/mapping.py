@@ -16,7 +16,7 @@ Author:
 Description: Elasticsearch index related mappings
 """
 from aops_database.conf.constant import DIAG_REPORT_INDEX, DIAG_TREE_INDEX,\
-    TASK_INDEX, TEMPLATE_INDEX, CHECK_RESULT_INDEX, CHECK_RULE_INDEX
+    TASK_INDEX, TEMPLATE_INDEX, CHECK_RESULT_INDEX, CHECK_RULE_INDEX, DIAG_TASK_INDEX
 
 MAPPINGS = {
     TASK_INDEX: {
@@ -115,6 +115,26 @@ MAPPINGS = {
             }
         }
     },
+    DIAG_TASK_INDEX: {
+        "mappings": {
+            "properties": {
+                "task_id": {
+                    "type": "keyword",
+                    "ignore_above": 256
+                },
+                "username": {
+                    "type": "keyword",
+                    "ignore_above": 256
+                },
+                "time": {
+                    "type": "long"
+                },
+                "expected_report_num": {
+                    "type": "long"
+                }
+            }
+        }
+    },
     CHECK_RULE_INDEX: {
         "mappings": {
             "properties": {
@@ -136,6 +156,9 @@ MAPPINGS = {
                     "type": "nested",
                     "properties": {
                         "name": {
+                            "type": "text"
+                        },
+                        "type": {
                             "type": "text"
                         },
                         "label": {
@@ -177,6 +200,9 @@ MAPPINGS = {
                     "type": "nested",
                     "properties": {
                         "name": {
+                            "type": "text"
+                        },
+                        "type": {
                             "type": "text"
                         },
                         "label": {
