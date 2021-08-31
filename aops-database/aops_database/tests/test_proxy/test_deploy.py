@@ -21,7 +21,7 @@ import unittest
 from aops_database.proxy.deploy import DeployDatabase
 from aops_database.conf.constant import TEMPLATE_INDEX, TASK_INDEX
 from aops_database.factory.mapping import MAPPINGS
-from aops_utils.restful.status import SUCCEED
+from aops_utils.restful.status import SUCCEED, DATA_EXIST
 from aops_utils.compare import compare_two_object
 
 
@@ -179,6 +179,16 @@ class TestDeployDatabase(unittest.TestCase):
 
         time.sleep(1)
         # ===============get template=================
+        data = {
+                "username": "aaa",
+                "template_name": "b",
+                "description": "itsss ",
+                "template_content": {
+                    "1": 1}
+            }
+        res = self.proxy.add_template(data)
+        self.assertEqual(res, DATA_EXIST)
+
         data = {
             "template_list": ["task1"],
             "username": "b"

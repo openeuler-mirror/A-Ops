@@ -73,12 +73,6 @@ class TestCheckDatabase(unittest.TestCase):
                     "data_list": [],
                     "condition": "c1",
                     "description": "xxx"
-                },
-                {
-                    "check_item": "io_usage",
-                    "data_list": [],
-                    "condition": "c1",
-                    "description": "xxx"
                 }
             ]
         }
@@ -92,14 +86,15 @@ class TestCheckDatabase(unittest.TestCase):
                 {
                     "check_item": "cpu_usage",
                     "data_list": [{"name": "b", "type":"log", "label": {}}],
-                    "condition": "c2",
+                    "condition": "c5",
                     "description": "xxx",
                     "plugin": "aa"
                 }
             ]
         }
         res = self.proxy.add_check_rule(data)
-        self.assertEqual(len(res[1]["succeed_list"]), 0)
+        self.assertEqual(len(res[1]["update_list"]), 1)
+        time.sleep(1)
         # ==============get check rule===================
         data = {
             "username": "test",
@@ -115,9 +110,9 @@ class TestCheckDatabase(unittest.TestCase):
                 {
                     "check_item": "cpu_usage",
                     "data_list": [{"name": "b", "type":"log", "label": {}}],
-                    "condition": "c1",
+                    "condition": "c5",
                     "description": "xxx",
-                    "plugin": "x"
+                    "plugin": "aa"
                 }
             ],
             "total_page": 2
