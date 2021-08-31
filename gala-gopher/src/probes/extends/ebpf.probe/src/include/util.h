@@ -1,6 +1,7 @@
 #ifndef __EBPF_UTIL_H__
 #define __EBPF_UTIL_H__
 
+#include <bpf/libbpf.h>
 /* if eBPF probe need to be integrated by gala-gopher, should redefinition the macro*/
 #define UNIT_TESTING 1
 
