@@ -88,11 +88,37 @@ class TestDiagDatabase(unittest.TestCase):
                         }
                     },
                     "description": "t22"
+                },
+                {
+                    "tree_name": "tree4",
+                    "tree_content": {
+                        "node1": 1,
+                        "node2": {
+                            "a": 1
+                        }
+                    },
+                    "description": "t22"
                 }
             ]
         }
         res = self.proxy.import_diag_tree(data)
         self.assertEqual(len(res[1]["succeed_list"]), 4)
+        time.sleep(1)
+        data = {
+            "username": "test",
+            "trees": [
+                {
+                    "tree_name": "tree1",
+                    "tree_content": {
+                        "node1": 3,
+                        "node2": 4
+                    },
+                    "description": "t2",
+                    "tag": ["内核", "重启"]
+                }
+            ]}
+        res = self.proxy.import_diag_tree(data)
+        self.assertEqual(len(res[1]["succeed_list"]), 0)
         time.sleep(1)
         # =========delete diag tree=====================
         data = {

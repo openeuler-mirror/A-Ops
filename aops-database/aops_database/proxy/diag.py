@@ -57,9 +57,22 @@ class DiagDatabase(ElasticsearchProxy):
             "succeed_list": [],
             "fail_list": []
         }
+        record = set()
+        query_body = self._general_body(data)
+        query_body['query']['bool']['must'].append(
+            {"match": {"tree_name": ""}})
         for tree in trees:
             tree_name = tree.get('tree_name')
             tree['username'] = username
+            if tree_name in record:
+                LOGGER.warning("diag tree [%s] has existed", tree_name)
+                continue
+            # query first
+            query_body['query']['bool']['must'][1]["match"]["tree_name"] = tree_name
+            res = self.query(DIAG_TREE_INDEX, query_body)
+            if res[0] and len(res[1]['hits']['hits']) > 0:
+                LOGGER.warning("diag tree [%s] has existed", tree_name)
+                continue
             # serialize
             tree['tree_content'] = json.dumps(tree['tree_content'])
             res = self.insert(DIAG_TREE_INDEX, tree)
@@ -67,6 +80,7 @@ class DiagDatabase(ElasticsearchProxy):
                 LOGGER.info(
                     "insert fault diagnose tree [%s] succeed", tree_name)
                 result['succeed_list'].append(tree_name)
+                record.add(tree_name)
             else:
                 LOGGER.error("insert fault diagnose tree [%s] fail", tree_name)
                 result['fail_list'].append(tree_name)

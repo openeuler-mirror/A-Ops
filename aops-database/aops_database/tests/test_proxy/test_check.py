@@ -22,6 +22,7 @@ from aops_database.proxy.check import CheckDatabase
 from aops_database.conf.constant import CHECK_RULE_INDEX, CHECK_RESULT_INDEX
 from aops_database.factory.mapping import MAPPINGS
 from aops_utils.restful.status import SUCCEED
+from aops_utils.compare import compare_two_object
 
 
 class TestCheckDatabase(unittest.TestCase):
@@ -72,12 +73,33 @@ class TestCheckDatabase(unittest.TestCase):
                     "data_list": [],
                     "condition": "c1",
                     "description": "xxx"
+                },
+                {
+                    "check_item": "io_usage",
+                    "data_list": [],
+                    "condition": "c1",
+                    "description": "xxx"
                 }
             ]
         }
         res = self.proxy.add_check_rule(data)
         self.assertEqual(len(res[1]["succeed_list"]), 4)
         time.sleep(1)
+
+        data = {
+            "username": "test",
+            "check_items": [
+                {
+                    "check_item": "cpu_usage",
+                    "data_list": [{"name": "b", "type":"log", "label": {}}],
+                    "condition": "c2",
+                    "description": "xxx",
+                    "plugin": "aa"
+                }
+            ]
+        }
+        res = self.proxy.add_check_rule(data)
+        self.assertEqual(len(res[1]["succeed_list"]), 0)
         # ==============get check rule===================
         data = {
             "username": "test",
@@ -144,16 +166,6 @@ class TestCheckDatabase(unittest.TestCase):
                 },
                 {
                     "username": "test",
-                    "host_id": "id1",
-                    "data_list": [{"name": "a", "type":"kpi", "label": {"mode": "irq"}}],
-                    "start": 8,
-                    "end": 10,
-                    "check_item": "cpu_usage",
-                    "condition": "xxx",
-                    "value": "1"
-                },
-                {
-                    "username": "test",
                     "host_id": "id2",
                     "data_list": [{"name": "a", "type":"kpi", "label": {"mode": "irq"}}],
                     "start": 5,
@@ -177,7 +189,33 @@ class TestCheckDatabase(unittest.TestCase):
         res = self.proxy.save_check_result(data)
         self.assertEqual(res, SUCCEED)
         time.sleep(1)
-
+        data = {
+            "check_results":[
+                {
+                    "username": "test",
+                    "host_id": "id1",
+                    "data_list": [{"name": "a", "type":"kpi", "label": {"mode": "irq"}}],
+                    "start": 2,
+                    "end": 7,
+                    "check_item": "mem_usage",
+                    "condition": "xxx",
+                    "value": "cao"
+                },
+                {
+                    "username": "test",
+                    "host_id": "id1",
+                    "data_list": [{"name": "a", "type":"kpi", "label": {"mode": "irq"}}],
+                    "start": 8,
+                    "end": 10,
+                    "check_item": "cpu_usage",
+                    "condition": "xxx",
+                    "value": "1"
+                }
+            ]
+        }
+        res = self.proxy.save_check_result(data)
+        self.assertEqual(res, SUCCEED)
+        time.sleep(1)
         # ============get check result==============
         # sort by check_item
         data = {
@@ -200,7 +238,7 @@ class TestCheckDatabase(unittest.TestCase):
                     "end": 7,
                     "check_item": "mem_usage",
                     "condition": "xxx",
-                    "value": "1",
+                    "value": "cao",
                     "host_id": "id1",
                 },
                 {

@@ -59,13 +59,27 @@ class CheckDatabase(ElasticsearchProxy):
             "succeed_list": [],
             "fail_list": []
         }
+        record = set()
+        query_body = self._general_body(data)
+        query_body['query']['bool']['must'].append(
+            {"match": {"check_item": ""}})
         for check_item in check_items:
             item_name = check_item.get('check_item')
+            if item_name in record:
+                LOGGER.warning("check rule [%s] has existed", item_name)
+                continue
+            # query first
+            query_body['query']['bool']['must'][1]["match"]["check_item"] = item_name
+            res = self.query(CHECK_RULE_INDEX, query_body)
+            if res[0] and len(res[1]['hits']['hits']) > 0:
+                LOGGER.warning("check rule [%s] has existed", item_name)
+                continue
             check_item['username'] = username
             res = self.insert(CHECK_RULE_INDEX, check_item)
             if res:
                 LOGGER.info("insert check rule [%s] succeed", item_name)
                 result['succeed_list'].append(item_name)
+                record.add(item_name)
             else:
                 LOGGER.error("insert check rule [%s] fail", item_name)
                 result['fail_list'].append(item_name)
@@ -229,14 +243,55 @@ class CheckDatabase(ElasticsearchProxy):
         Returns:
             int: status code
         """
-        check_results = data.get("check_results")
-        res = self.insert_bulk(CHECK_RESULT_INDEX, check_results)
-        if res:
-            LOGGER.info("save check result succeed")
+        just_insert, need_update = self._split_results(data)
+        if all([self.insert_bulk(CHECK_RESULT_INDEX, just_insert),
+                self.update_bulk(CHECK_RESULT_INDEX, need_update)]):
+            LOGGER.info("save or update check result succeed")
             return SUCCEED
 
-        LOGGER.error("save check result fail")
+        LOGGER.error("save or update check result fail")
         return DATABASE_INSERT_ERROR
+
+    def _split_results(self, data):
+        """
+        Judge whether the result needs to be inserted or updated
+
+        Args:
+            data(dict)
+
+        Returns:
+            list: data that need inserted
+            list: data that need updated
+        """
+        check_results = data.get("check_results")
+        just_insert = []
+        need_update = []
+        for check_result in check_results:
+            query_body = {
+                "query": {
+                    "bool": {
+                        "must": [
+                            {"match": {"username": check_result['username']}},
+                            {"match": {"host_id": check_result['host_id']}},
+                            {"match": {
+                                "check_item": check_result['check_item']}},
+                            {"match": {"start": check_result['start']}},
+                            {"match": {"end": check_result['end']}}
+                        ]
+                    }
+                }
+            }
+            res = self.query(CHECK_RESULT_INDEX, query_body)
+            if res[0] and len(res[1]['hits']['hits']) != 0:
+                LOGGER.info("query check result succeed")
+                doc = {
+                    "value": check_result["value"]
+                }
+                _id = res[1]['hits']['hits'][0]['_id']
+                need_update.append({"_id": _id, "doc": doc})
+            else:
+                just_insert.append(check_result)
+        return just_insert, need_update
 
     def delete_check_result(self, data):
         """
