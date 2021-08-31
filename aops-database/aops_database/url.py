@@ -20,6 +20,7 @@ from aops_database.views.host import AddHost, DeleteHost, DeleteHostInfo, GetHos
     DeleteHostGroup, GetHostGroup, GetHostInfo, GetHostInfoByUser, SaveHostInfo, GetHostCount
 from aops_database.views.deploy import AddTemplate, DeleteTemplate, GetTemplate, AddTask,\
     DeleteTask, GetTask
+from aops_database.views.data import GetData
 from aops_database.views.diag import AddDiagTree, DeleteDiagTree, GetDiagTree, SaveDiagReport,\
     DeleteDiagReport, GetDiagReport, GetDiagReportList, GetDiagProcess, SaveDiagTask, GetDiagTask
 from aops_database.views.check import AddCheckRule, DeleteCheckRule, GetCheckResultCount,\
@@ -70,6 +71,9 @@ SPECIFIC_URLS = {
         (AddTask, DATA_ADD_TASK),
         (DeleteTask, DATA_DELETE_TASK),
         (GetTask, DATA_GET_TASK)
+    ],
+    "DATA_URLS": [
+        (GetData, DATA_GET_DATA)
     ],
     "DIAG_URLS": [
         (AddDiagTree, DATA_ADD_DIAG_TREE),

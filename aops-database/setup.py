@@ -11,6 +11,8 @@ setup(
     install_requires=[
         'SQLAlchemy',
         'elasticsearch>=7',
+        'prometheus_api_client',
+        'PyMySQL',
         'Werkzeug',
         'urllib3',
         'Flask',

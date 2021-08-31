@@ -15,6 +15,7 @@ Time:
 Author:
 Description: some helper function
 """
+import time
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.orm.scoping import scoped_session
@@ -81,6 +82,38 @@ def drop_tables(engine):
         engine(instance): _engine.Engine instance
     """
     Base.metadata.drop_all(engine)
+
+
+def timestamp_datetime(value):
+    """
+    transfer unix time to formatted timestamp.
+
+    Args:
+        value (int): unix time.
+
+    Returns:
+        str: formatted time.
+    """
+    time_format = '%Y-%m-%dT%H:%M:%S%z'
+    time_struct = time.localtime(value)
+    return time.strftime(time_format, time_struct)
+
+
+def timestr_unix(time_str):
+    """
+    transfer formatted timestamp to unix time.
+
+    Args:
+        time_str (str): formated time string.
+
+    Returns:
+        int: unix time.
+    """
+    time_format_with_hill = '%Y-%m-%dT%H:%M:%S.%f%z'
+
+    time_str = time_str[:26] + time_str[-6:]
+    time_format = time.strptime(time_str, time_format_with_hill)
+    return int(time.mktime(time_format))
 
 
 def operate(proxy, data, func, session=None):
