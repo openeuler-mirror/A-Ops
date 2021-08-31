@@ -2,6 +2,7 @@ import os
 import subprocess
 import sys
 import configparser
+import ast
 from datetime import datetime
 from dateutil.parser import parse
 from ragdoll.models.git_log_message import GitLogMessage
@@ -27,7 +28,7 @@ class GitTools(object):
             parent = os.path.dirname(os.path.realpath(__file__))
             conf_path = os.path.join(parent, "../../config/gala-ragdoll.conf")
             cf.read(conf_path, encoding="utf-8")
-        git_dir = eval(cf.get("git", "git_dir"))
+        git_dir = ast.literal_eval(cf.get("git", "git_dir"))
         return git_dir
 
     @property

@@ -24,7 +24,7 @@ class ObjectParse(object):
         module = yang_modules.getModuleByFilePath(file_path)
         d_type = yang_modules.getTypeInModdule([module])
         conf_type = d_type[module.name()]
-        repo = self.creat e_object_by_type(conf_type)
+        repo = self.create_object_by_type(conf_type)
         # Fill an object with content
         object_with_content = ""
         if conf_type == "ini":

@@ -4,6 +4,7 @@ import sys
 import json
 import operator
 import configparser
+import ast
 from enum import Enum
 
 from ragdoll.utils.git_tools import GitTools
@@ -188,7 +189,7 @@ class ConfTools(object):
             conf_base_infos = d_conf.get("confBaseInfos")
             real_conf = []
             if len(conf_base_infos) == 0:
-                return null
+                return None
             for d_conf_info in conf_base_infos:
                 paths = d_conf_info.get("path").split(" ")
                 confContents = json.loads(d_conf_info.get("confContents"))
@@ -213,9 +214,9 @@ class ConfTools(object):
     def compareManAndReal(self, real_conf, man_conf):
         """
         des: return a result of compare the manageConfs and realConfs.
-             manageConfs is a result of http://0.0.0.0:9191/management/getManagementConf
+             manageConfs is a result of http://0.0.0.0:11114/management/getManagementConf
              realConfs is a result of escaping through realConfToExpectDict interface after
-                       calling http://0.0.0.0:9191/confs/queryRealConfs
+                       calling http://0.0.0.0:11114/confs/queryRealConfs
         input:
             real_conf: {
                         "OS": {
@@ -612,8 +613,8 @@ class ConfTools(object):
             parent = os.path.dirname(os.path.realpath(__file__))
             conf_path = os.path.join(parent, "../../config/gala-ragdoll.conf")
             cf.read(conf_path, encoding="utf-8")
-        git_dir = eval(cf.get("collect", "collect_address"))
-        git_user_name = eval(cf.get("collect", "collect_api"))
+        git_dir = ast.literal_eval(cf.get("collect", "collect_address"))
+        git_user_name = ast.literal_eval(cf.get("collect", "collect_api"))
         return git_dir + git_user_name
 
     def load_port_by_conf(self):

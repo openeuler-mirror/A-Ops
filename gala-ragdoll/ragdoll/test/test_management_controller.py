@@ -92,7 +92,7 @@ class TestManagementController(BaseTestCase):
         body = DomainName(domain_name = "dnf")
         response = self.client.open(
             '/management/getManagementConf',
-            method='GET',
+            method='POST',
             data=json.dumps(body),
             content_type='application/json')
         print("response is : {}".format(response.data))
@@ -111,7 +111,7 @@ class TestManagementController(BaseTestCase):
         #    'domainName': 'OS'
         #}
         body = DomainName(domain_name="OS")
-        response = requests.get(url, data=json.dumps(body), headers=headers)  # 发送请求
+        response = requests.post(url, data=json.dumps(body), headers=headers)  # 发送请求
         print("response is : {}".format(response))
         text = response.text
         print(json.loads(text))
@@ -128,7 +128,7 @@ class TestManagementController(BaseTestCase):
         #                    conf_files = [])
         response = self.client.open(
             '/management/queryManageConfChange',
-            method='GET',
+            method='POST',
             data=json.dumps(body),
             content_type='application/json')
         print("response is : {}".format(response))

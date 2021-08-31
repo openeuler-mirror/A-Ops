@@ -1,6 +1,6 @@
 Name:		A-Ops
 Version:	1.0.0
-Release:	1
+Release:	3
 Summary:	The intelligent ops toolkit for openEuler
 License:	MulanPSL2
 URL:		https://gitee.com/openeuler/A-Ops
@@ -13,7 +13,7 @@ BuildRequires:	librdkafka-devel libmicrohttpd-devel
 
 # build for ragdoll & aops basic module
 BuildRequires:  python3-setuptools python3-connexion python3-werkzeug python3-libyang
-BuildRequires:	git python3-devel
+BuildRequires:	git python3-devel systemd
 
 
 %description
@@ -77,7 +77,8 @@ Configuration traceability
 
 %package -n python3-gala-ragdoll
 Summary: python3 pakcage of gala-ragdoll
-Requires: gala-ragdoll = %{version}-%{release} python3-flask-testing python3-libyang git python3-werkzeug
+Requires: gala-ragdoll = %{version}-%{release} python3-flask-testing python3-libyang git 
+Requires: python3-werkzeug python3-connexion python3-swagger-ui-bundle
 
 %description -n python3-gala-ragdoll
 python3 pakcage of gala-ragdoll
@@ -161,7 +162,23 @@ mkdir -p %{buildroot}/%{_sysconfdir}/ragdoll
 install config/*.conf %{buildroot}/%{_sysconfdir}/ragdoll/
 mkdir %{buildroot}/%{python3_sitelib}/ragdoll/config
 install config/*.conf %{buildroot}/%{python3_sitelib}/ragdoll/config
+mkdir -p %{buildroot}/%{_prefix}/lib/systemd/system
+install service/gala-ragdoll.service %{buildroot}/%{_prefix}/lib/systemd/system
 popd
+
+%pre -n python3-gala-ragdoll
+if [ -f "%{systemd_dir}/gala-ragdoll.service" ] ; then
+        systemctl enable gala-ragdoll.service || :
+fi
+
+%post -n python3-gala-ragdoll
+%systemd_post gala-ragdoll.service
+
+%preun -n python3-gala-ragdoll
+%systemd_preun gala-ragdoll.service
+
+%postun -n python3-gala-ragdoll
+%systemd_postun gala-ragdoll.service
 
 
 %files -n aops-utils
@@ -211,6 +228,7 @@ popd
 %license gala-ragdoll/LICENSE
 /%{_sysconfdir}/ragdoll/gala-ragdoll.conf
 %{_bindir}/ragdoll
+%{_prefix}/lib/systemd/system/gala-ragdoll.service
 
 
 %files -n python3-gala-ragdoll
@@ -220,8 +238,12 @@ popd
 
 
 %changelog
-* Sat 31 Jul 2021 orange-snn<songnannan2@huawei.com> - 1.0.0-1
+* Wed Sep 1 2021 orange-snn<songnannan2@huawei.com> - 1.0.0-3
+- add service file in gala-ragdoll
+
+* Tue Aug 24 2021 zhu-yuncheng<zhuyuncheng@huawei.com> - 1.0.0-2
+- Update spec
+
+* Sat Jul 31 2021 orange-snn<songnannan2@huawei.com> - 1.0.0-1
 - Package init
 
-* Tue 24 Aug 2021 zhu-yuncheng<zhuyuncheng@huawei.com> - 1.0.0-2
-- Update spec

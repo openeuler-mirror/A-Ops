@@ -2,6 +2,7 @@ import connexion
 import six
 import os
 import json
+import re
 
 from ragdoll.models.base_response import BaseResponse  # noqa: E501
 from ragdoll.models.domain_name import DomainName  # noqa: E501
@@ -31,14 +32,16 @@ def add_host_in_domain(body=None):  # noqa: E501
 
     # check whether host_infos is empty
     if len(host_infos) == 0:
-        base_rsp = BaseResponse(400, "The entered host is empty")
-        return base_rsp
+        num = 400
+        base_rsp = BaseResponse(num, "The entered host is empty")
+        return base_rsp, num
 
     #  check whether the domain exists
     isExist = Format.isDomainExist(domain)
     if not isExist:
-        base_rsp = BaseResponse(400, "The current domain does not exist, please create the domain first.")
-        return base_rsp
+        num = 400
+        base_rsp = BaseResponse(num, "The current domain does not exist, please create the domain first.")
+        return base_rsp, num
 
     successHost = []
     failedHost = []
@@ -218,13 +221,11 @@ def get_host_by_domain_name(body=None):  # noqa: E501
     try:
         with open(hostPath, 'r') as d_file:
             for line in d_file.readlines():
-                # Each field is separated by ",\n", and the last field is separated by the trailing "}" and the leading space
-                hostInfo = line.split(",\\n")
-                # The string of IP and host is "XXXX", so take the interception [2:-1] to get the actual value
-                hostId = hostInfo[0].split(":")[1][2:-1]
-                ip = hostInfo[1].split(":")[1][2:-1]
-                # The string of Ipv6 is: ' None}"\n'
-                ipv6 = hostInfo[2].split(":")[1][1:-3]
+                json_str = json.loads(line)
+                host_json = ast.literal_eval(json_str)
+                hostId = host_json["host_id"]
+                ip = host_json["ip"]
+                ipv6 = host_json["ipv6"]
                 host = Host(host_id=hostId, ip=ip, ipv6=ipv6)
                 hostlist.append(host)
     except OSError as err:
