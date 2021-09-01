@@ -21,7 +21,7 @@ from aops_database.proxy.proxy import ElasticsearchProxy
 from aops_database.conf.constant import TEMPLATE_INDEX, TASK_INDEX
 from aops_utils.log.log import LOGGER
 from aops_utils.restful.status import DATABASE_DELETE_ERROR, DATABASE_INSERT_ERROR,\
-    DATABASE_QUERY_ERROR, SUCCEED
+    DATABASE_QUERY_ERROR, DATA_EXIST, SUCCEED
 
 
 class DeployDatabase(ElasticsearchProxy):
@@ -148,6 +148,14 @@ class DeployDatabase(ElasticsearchProxy):
         Returns:
             int: status code
         """
+        query_body = self._general_body(data)
+        query_body['query']['bool']['must'].append(
+            {"match": {"template_name": data.get('template_name')}})
+        res = self.query(TEMPLATE_INDEX, query_body)
+        if res[0] and len(res[1]['hits']['hits']) > 0:
+            LOGGER.warning("template [%s] has existed",
+                           data.get('template_name'))
+            return DATA_EXIST
         data['template_content'] = json.dumps(data['template_content'])
         res = self.insert(TEMPLATE_INDEX, data)
         if res:

@@ -55,24 +55,72 @@ class DiagDatabase(ElasticsearchProxy):
         trees = data['trees']
         result = {
             "succeed_list": [],
-            "fail_list": []
+            "fail_list": [],
+            "update_list": []
         }
+        query_body = self._general_body(data)
+        query_body['query']['bool']['must'].append(
+            {"match": {"tree_name": ""}})
         for tree in trees:
-            tree_name = tree.get('tree_name')
-            tree['username'] = username
             # serialize
             tree['tree_content'] = json.dumps(tree['tree_content'])
-            res = self.insert(DIAG_TREE_INDEX, tree)
-            if res:
-                LOGGER.info(
-                    "insert fault diagnose tree [%s] succeed", tree_name)
-                result['succeed_list'].append(tree_name)
-            else:
-                LOGGER.error("insert fault diagnose tree [%s] fail", tree_name)
-                result['fail_list'].append(tree_name)
+            # query first, return true if need updated
+            if self._update_diag_tree(tree, query_body, result):
+                continue
+            # insert
+            tree['username'] = username
+            self._add_diag_tree(tree, result)
 
         status_code = judge_return_code(result, DATABASE_INSERT_ERROR)
         return status_code, result
+
+    def _update_diag_tree(self, data, query_body, result):
+        """
+        Update diag tree accoring to the tree name
+
+        Args:
+            data(dict): check item
+            query_body(dict): query DSL
+            result(dict): record
+
+        Returns:
+            bool: return True if need updated
+        """
+        tree_name = data.get('tree_name')
+        query_body['query']['bool']['must'][1]["match"]["tree_name"] = tree_name
+        res = self.query(DIAG_TREE_INDEX, query_body)
+        if res[0] and len(res[1]['hits']['hits']) > 0:
+            LOGGER.warning(
+                "diag tree [%s] has existed, choose to update it", tree_name)
+            _id = res[1]['hits']['hits'][0]['_id']
+            action = [{"_id": _id, "doc": data}]
+            res = self.update_bulk(DIAG_TREE_INDEX, action)
+            if res:
+                LOGGER.info("update diag tree [%s] succeed", tree_name)
+                result['update_list'].append(tree_name)
+            else:
+                LOGGER.error("update diag tree [%s] fail", tree_name)
+                result['fail_list'].append(tree_name)
+
+            return True
+        return False
+
+    def _add_diag_tree(self, data, result):
+        """
+        Insert diag tree into database
+
+        Args:
+            check_item(dict): check item
+            result(dict): record
+        """
+        tree_name = data.get("tree_name")
+        res = self.insert(DIAG_TREE_INDEX, data)
+        if res:
+            LOGGER.info("insert diag tree [%s] succeed", tree_name)
+            result['succeed_list'].append(tree_name)
+        else:
+            LOGGER.error("insert diag tree [%s] fail", tree_name)
+            result['fail_list'].append(tree_name)
 
     def delete_diag_tree(self, data):
         """

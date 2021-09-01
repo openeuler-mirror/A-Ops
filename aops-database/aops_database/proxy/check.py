@@ -57,21 +57,70 @@ class CheckDatabase(ElasticsearchProxy):
         check_items = data['check_items']
         result = {
             "succeed_list": [],
-            "fail_list": []
+            "fail_list": [],
+            "update_list": []
         }
+        query_body = self._general_body(data)
+        query_body['query']['bool']['must'].append(
+            {"match": {"check_item": ""}})
         for check_item in check_items:
-            item_name = check_item.get('check_item')
+            # query first, if the same check item exists, update and return True
+            if self._update_check_rule(check_item, query_body, result):
+                continue
+            # since it's a new check item, do insert
             check_item['username'] = username
-            res = self.insert(CHECK_RULE_INDEX, check_item)
-            if res:
-                LOGGER.info("insert check rule [%s] succeed", item_name)
-                result['succeed_list'].append(item_name)
-            else:
-                LOGGER.error("insert check rule [%s] fail", item_name)
-                result['fail_list'].append(item_name)
+            self._add_check_rule(check_item, result)
 
         status_code = judge_return_code(result, DATABASE_INSERT_ERROR)
         return status_code, result
+
+    def _update_check_rule(self, data, query_body, result):
+        """
+        Update check rule accoring to the check item name
+
+        Args:
+            data(dict): check item
+            query_body(dict): query DSL
+            result(dict): record
+
+        Returns:
+            bool: return True if need updated
+        """
+        item_name = data.get('check_item')
+        query_body['query']['bool']['must'][1]["match"]["check_item"] = item_name
+        res = self.query(CHECK_RULE_INDEX, query_body)
+        if res[0] and len(res[1]['hits']['hits']) > 0:
+            LOGGER.warning(
+                "check rule [%s] has existed, choose to update it", item_name)
+            _id = res[1]['hits']['hits'][0]['_id']
+            action = [{"_id": _id, "doc": data}]
+            res = self.update_bulk(CHECK_RULE_INDEX, action)
+            if res:
+                LOGGER.info("update check rule [%s] succeed", item_name)
+                result['update_list'].append(item_name)
+            else:
+                LOGGER.error("update check rule [%s] fail", item_name)
+                result['fail_list'].append(item_name)
+
+            return True
+        return False
+
+    def _add_check_rule(self, check_item, result):
+        """
+        Insert check rule into database
+
+        Args:
+            check_item(dict): check item
+            result(dict): record
+        """
+        item_name = check_item.get('check_item')
+        res = self.insert(CHECK_RULE_INDEX, check_item)
+        if res:
+            LOGGER.info("insert check rule [%s] succeed", item_name)
+            result['succeed_list'].append(item_name)
+        else:
+            LOGGER.error("insert check rule [%s] fail", item_name)
+            result['fail_list'].append(item_name)
 
     def delete_check_rule(self, data):
         """
@@ -229,14 +278,55 @@ class CheckDatabase(ElasticsearchProxy):
         Returns:
             int: status code
         """
-        check_results = data.get("check_results")
-        res = self.insert_bulk(CHECK_RESULT_INDEX, check_results)
-        if res:
-            LOGGER.info("save check result succeed")
+        just_insert, need_update = self._split_results(data)
+        if all([self.insert_bulk(CHECK_RESULT_INDEX, just_insert),
+                self.update_bulk(CHECK_RESULT_INDEX, need_update)]):
+            LOGGER.info("save or update check result succeed")
             return SUCCEED
 
-        LOGGER.error("save check result fail")
+        LOGGER.error("save or update check result fail")
         return DATABASE_INSERT_ERROR
+
+    def _split_results(self, data):
+        """
+        Judge whether the result needs to be inserted or updated
+
+        Args:
+            data(dict)
+
+        Returns:
+            list: data that need inserted
+            list: data that need updated
+        """
+        check_results = data.get("check_results")
+        just_insert = []
+        need_update = []
+        for check_result in check_results:
+            query_body = {
+                "query": {
+                    "bool": {
+                        "must": [
+                            {"match": {"username": check_result['username']}},
+                            {"match": {"host_id": check_result['host_id']}},
+                            {"match": {
+                                "check_item": check_result['check_item']}},
+                            {"match": {"start": check_result['start']}},
+                            {"match": {"end": check_result['end']}}
+                        ]
+                    }
+                }
+            }
+            res = self.query(CHECK_RESULT_INDEX, query_body)
+            if res[0] and len(res[1]['hits']['hits']) != 0:
+                LOGGER.info("query check result succeed")
+                doc = {
+                    "value": check_result["value"]
+                }
+                _id = res[1]['hits']['hits'][0]['_id']
+                need_update.append({"_id": _id, "doc": doc})
+            else:
+                just_insert.append(check_result)
+        return just_insert, need_update
 
     def delete_check_result(self, data):
         """

@@ -94,6 +94,38 @@ class TestDiagDatabase(unittest.TestCase):
         res = self.proxy.import_diag_tree(data)
         self.assertEqual(len(res[1]["succeed_list"]), 4)
         time.sleep(1)
+        data = {
+            "username": "test",
+            "trees": [
+                {
+                    "tree_name": "tree4",
+                    "tree_content": {
+                        "node1": 5,
+                        "node2": 4
+                    },
+                    "description": "t2",
+                    "tag": ["内核", "重启"]
+                }
+            ]}
+        res = self.proxy.import_diag_tree(data)
+        self.assertEqual(len(res[1]["succeed_list"]), 0)
+        self.assertEqual(len(res[1]["update_list"]), 1)
+        time.sleep(1)
+        data = {
+            "tree_list": ["tree4"],
+            "username": "test"
+        }
+        res = self.proxy.get_diag_tree(data)
+        expected_res = {
+                    "tree_name": "tree4",
+                    "tree_content": {
+                        "node1": 5,
+                        "node2": 4
+                    },
+                    "description": "t2",
+                    "tag": ["内核", "重启"]
+                }
+        self.assertEqual(res[1]["trees"][0], expected_res)
         # =========delete diag tree=====================
         data = {
             "tree_list": ["tree4"],
