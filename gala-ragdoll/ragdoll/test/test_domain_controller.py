@@ -77,7 +77,8 @@ class TestDomainController1(BaseTestCase):
         text = response.text
         print(json.loads(text))
 
-     def test_query_domain(self):
+
+    def test_query_domain(self):
         """Test case for query_domain
 
         query the list of all configuration domain

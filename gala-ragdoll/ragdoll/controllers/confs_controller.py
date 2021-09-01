@@ -68,7 +68,7 @@ def get_the_sync_status_of_domain(body=None):  # noqa: E501
     url="http://0.0.0.0:" + port + "/host/getHost"
     headers = {"Content-Type": "application/json"}
     getHostBody = DomainName(domain_name = domain)
-    response = requests.get(url, data=json.dumps(getHostBody), headers=headers)  # post request
+    response = requests.post(url, data=json.dumps(getHostBody), headers=headers)  # post request
     resCode = response.status_code
     resText = json.loads(response.text)
     print("return code is : {}".format(resCode))
@@ -97,20 +97,29 @@ def get_the_sync_status_of_domain(body=None):  # noqa: E501
     getManConfUrl="http://0.0.0.0:" + port + "/management/getManagementConf"
     headers = {"Content-Type": "application/json"}
     getManConfBody = DomainName(domain_name=domain)
-    getManConfRes = requests.get(getManConfUrl, data=json.dumps(getManConfBody), headers=headers)  # post request
+    getManConfRes = requests.post(getManConfUrl, data=json.dumps(getManConfBody), headers=headers)  # post request
     manConfResText = json.loads(getManConfRes.text)
     manageConfs = manConfResText.get("confFiles")
     print("manageConfs is : {}".format(manageConfs))
+
+    if len(manageConfs) == 0:
+        codeNum = 404
+        base_rsp = BaseResponse(codeNum, "The configuration is not set in the current domain." + 
+                                        "Please add the configuration information first.")
+        return base_rsp, codeNum
 
     # query the real conf in host
     print("############## query the real conf ##############")
     getRealConfUrl = "http://0.0.0.0:" + port + "/confs/queryRealConfs"
     queryRealBody = ConfHost(domain_name = domain, host_ids = hostIds)
-    getResConfRes = requests.get(getRealConfUrl, data=json.dumps(queryRealBody), headers=headers)  # post request
+    getResConfRes = requests.post(getRealConfUrl, data=json.dumps(queryRealBody), headers=headers)  # post request
     realConfResCode = getResConfRes.status_code
     realConfResText = json.loads(getResConfRes.text)
     print("realConfResText is : {}".format(realConfResText))
-
+    if realConfResCode != 200:
+        codeNum = realConfResCode
+        base_rsp = BaseResponse(codeNum, "Failed to get the real config of the all hosts in domain.")
+        return base_rsp, codeNum
     # Match the actual configuration with the expected configuration, and output the 
     # configuration in the same format that can be compared with the expected result.
     sync_status = SyncStatus(domain_name = domain,
@@ -126,7 +135,6 @@ def get_the_sync_status_of_domain(body=None):  # noqa: E501
             comp_res = ""
             for d_man_conf in manageConfs:
                 if d_man_conf.get("filePath").split(":")[-1] == d_conf_path:
-                    hasConf = True
                     comp_res = conf_tools.compareManAndReal(d_conf.get("confContents"), d_man_conf.get("contents"))
                     break
             conf_is_synced = ConfIsSynced(file_path = d_conf_path,
@@ -260,7 +268,7 @@ def query_real_confs(body=None):  # noqa: E501
         url="http://0.0.0.0:" + port + "/host/getHost"
         headers = {"Content-Type": "application/json"}
         get_man_host = DomainName(domain_name=domain)
-        response = requests.get(url, data=json.dumps(get_man_host), headers=headers)  # post request
+        response = requests.post(url, data=json.dumps(get_man_host), headers=headers)  # post request
         print("host/getHost response is : {}".format(response.text))
         resCode = response.status_code
         resText = json.loads(response.text)
@@ -279,7 +287,7 @@ def query_real_confs(body=None):  # noqa: E501
     headers = {"Content-Type": "application/json"}
     getManConfBody = DomainName(domain_name=domain)
     print("body is : {}".format(getManConfBody))
-    response = requests.get(url, data=json.dumps(getManConfBody), headers=headers)  # post request
+    response = requests.post(url, data=json.dumps(getManConfBody), headers=headers)  # post request
     print("response is : {}".format(response.text))
     resCode = response.status_code
     resText = json.loads(response.text)
@@ -315,9 +323,15 @@ def query_real_confs(body=None):  # noqa: E501
     get_real_conf_body["infos"] = get_real_conf_body_info
     url = conf_tools.load_collect_by_conf()
     headers = {"Content-Type": "application/json"}
-    response = requests.get(url, data=json.dumps(get_real_conf_body), headers=headers)  # post request
+    response = requests.post(url, data=json.dumps(get_real_conf_body), headers=headers)  # post request
     reps = json.loads(response.text).get("resp")
     resp_code = json.loads(response.text).get("code")
+    if (resp_code != 200) and (resp_code != 206):
+        codeNum = 404
+        codeString = "Failed to obtain the actual configuration, please check the file exists."
+        base_rsp = BaseResponse(codeNum, codeString)
+        return base_rsp, codeNum
+
     success_lists = {}
     failed_lists = {}
     for d_res in reps:
@@ -400,7 +414,7 @@ def sync_conf_to_host_from_domain(body=None):  # noqa: E501
     url="http://0.0.0.0:" + port + "/host/getHost"
     headers = {"Content-Type": "application/json"}
     getHostBody = DomainName(domain_name = domain)
-    response = requests.get(url, data=json.dumps(getHostBody), headers=headers)  # post request
+    response = requests.post(url, data=json.dumps(getHostBody), headers=headers)  # post request
     resHostCode = response.status_code
     resHostText = json.loads(response.text)
 
@@ -429,7 +443,7 @@ def sync_conf_to_host_from_domain(body=None):  # noqa: E501
     getManConfUrl="http://0.0.0.0:" + port + "/management/getManagementConf"
     headers = {"Content-Type": "application/json"}
     getManConfBody = DomainName(domain_name=domain)
-    getManConfRes = requests.get(getManConfUrl, data=json.dumps(getManConfBody), headers=headers)  # post request
+    getManConfRes = requests.post(getManConfUrl, data=json.dumps(getManConfBody), headers=headers)  # post request
     manConfResText = json.loads(getManConfRes.text)
     manageConfs = manConfResText.get("confFiles")
     print("manageConfs is : {}".format(manageConfs))

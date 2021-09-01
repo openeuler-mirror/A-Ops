@@ -5,6 +5,7 @@ import re
 import subprocess
 import json
 import configparser
+import ast
 
 CONFIG = "/etc/ragdoll/gala-ragdoll.conf"
 
@@ -12,6 +13,8 @@ class Format(object):
 
     @staticmethod
     def isDomainExist(domainName):
+        if domainName == "" or domainName == " " or domainName == "/":
+            return False
         TARGETDIR = Format.get_git_dir()
         domainPath = os.path.join(TARGETDIR, domainName)
         if os.path.exists(domainPath):
@@ -214,5 +217,5 @@ class Format(object):
             parent = os.path.dirname(os.path.realpath(__file__))
             conf_path = os.path.join(parent, "../../config/gala-ragdoll.conf")
             cf.read(conf_path, encoding="utf-8")
-        git_dir = eval(cf.get("git", "git_dir"))
+        git_dir = ast.literal_eval(cf.get("git", "git_dir"))
         return git_dir

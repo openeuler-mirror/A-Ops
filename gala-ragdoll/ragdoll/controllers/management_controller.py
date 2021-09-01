@@ -67,8 +67,9 @@ def add_management_confs_in_domain(body=None):  # noqa: E501
         elif d_conf.host_id:
             contents_list_null.append(d_conf)
         else:
-            base_rsp = BaseResponse(400, "Invalid input exists.")
-            return base_rsp
+            codeNum = 400
+            base_rsp = BaseResponse(codeNum, "Invalid input exists.")
+            return base_rsp, codeNum
 
     successConf = []
     failedConf = []
@@ -98,7 +99,6 @@ def add_management_confs_in_domain(body=None):  # noqa: E501
         get_real_conf_body_info = []
         print("contents_list_null is : {}".format(contents_list_null))
         for d_conf in contents_list_null:
-            print("d_conf is : {}".format(d_conf))
             confs_list = []
             confs = {}
             confs["host_id"] = d_conf.host_id
@@ -109,11 +109,17 @@ def add_management_confs_in_domain(body=None):  # noqa: E501
 
         url = conf_tools.load_collect_by_conf()
         headers = {"Content-Type": "application/json"}
-        response = requests.get(url, data=json.dumps(get_real_conf_body), headers=headers)  # post request
+        response = requests.post(url, data=json.dumps(get_real_conf_body), headers=headers)  # post request
         response_code = json.loads(response.text).get("code")
+        if response_code == None:
+            codeNum = 500
+            codeString = "Failed to obtain the actual configuration, please check the interface of conf/collect."
+            base_rsp = BaseResponse(codeNum, codeString)
+            return base_rsp, codeNum
+
         if (response_code != 200) and (response_code != 206):
             codeNum = 500
-            codeString = "Failed to obtain the actual configuration, please re-add the expected configuration."
+            codeString = "Failed to obtain the actual configuration, please check the file exists."
             base_rsp = BaseResponse(codeNum, codeString)
             return base_rsp, codeNum
 
@@ -291,7 +297,7 @@ def get_management_confs_in_domain(body=None):  # noqa: E501
                 yang_modules = YangModule()
                 d_module = yang_modules.getModuleByFeature(feature)
                 file_lists = yang_modules.getFilePathInModdule(yang_modules.module_list)
-                file_path = file_lists.get(d_module.name())
+                file_path = file_lists.get(d_module.name()).split(":")[-1]
 
                 conf = ConfFile(file_path = file_path, contents = contents)
                 expected_conf_lists.conf_files.append(conf)

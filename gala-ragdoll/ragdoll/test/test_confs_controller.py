@@ -27,7 +27,7 @@ class TestConfsController(BaseTestCase):
         body = DomainName(domain_name = "dnf")
         response = self.client.open(
             '/confs/getDomainStatus',
-            method='GET',
+            method='POST',
             data=json.dumps(body),
             content_type='application/json')
         print("response is : {}".format(response.data.decode('utf-8')))
@@ -41,7 +41,7 @@ class TestConfsController(BaseTestCase):
         """
         response = self.client.open(
             '/confs/queryExpectedConfs',
-            method='GET')
+            method='POST')
 
         print("response is : {}".format(response.data.decode('utf-8')))
         self.assert200(response,
@@ -62,7 +62,7 @@ class TestConfsController(BaseTestCase):
         body = ConfHost(domain_name = "dnf", host_ids = [hostID1])
         response = self.client.open(
             '/confs/queryRealConfs',
-            method='GET',
+            method='POST',
             data=json.dumps(body),
             content_type='application/json')
         print("test_query_real_confs response is : {}".format(response.data))

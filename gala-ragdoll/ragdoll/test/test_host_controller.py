@@ -95,7 +95,7 @@ class TestHostController1(BaseTestCase):
         body = DomainName(domain_name="dnf")
         response = self.client.open(
             '/host/getHost',
-            method='GET',
+            method='POST',
             data=json.dumps(body),
             content_type='application/json')
         print("test_get_host_by_domain_name response is : {}".format(response.data))

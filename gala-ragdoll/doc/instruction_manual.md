@@ -45,10 +45,9 @@ user_email = "songnannan2@huawei.com"
 [collect]                                  // A-OPS 对外提供的collect接口
 collect_address = "http://127.0.0.1:11111"
 collect_api = "/manage/config/collect"
-password = "123"                      // A-OPS的密码字段  --- 暂留，后续会删除
 
 [ragdoll]
-port = 9191
+port = 11114
 
 ```
 

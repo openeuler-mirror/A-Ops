@@ -41,7 +41,7 @@ paths:
           description: "domain already exists"
       x-swagger-router-controller: "ragdoll.controllers.domain_controller"
   /domain/queryDomain:
-    get:
+    post:
       tags:
       - "domain"
       summary: "query the list of all configuration domain"
@@ -99,7 +99,7 @@ paths:
             $ref: "#/definitions/BaseResponse"
       x-swagger-router-controller: "ragdoll.controllers.host_controller"
   /host/getHost:
-    get:
+    post:
       tags:
       - "host"
       summary: "get host by domainName"
@@ -162,7 +162,7 @@ paths:
             $ref: "#/definitions/BaseResponse"
       x-swagger-router-controller: "ragdoll.controllers.management_controller"
   /management/getManagementConf:
-    get:
+    post:
       tags:
       - "management"
       summary: "get management configuration items and expected values in the domain"
@@ -183,7 +183,7 @@ paths:
             $ref: "#/definitions/ConfFiles"
       x-swagger-router-controller: "ragdoll.controllers.management_controller"
   /management/queryManageConfChange:
-    get:
+    post:
       tags:
       - "management"
       summary: "query the change log of management config in domain"
@@ -225,7 +225,7 @@ paths:
             $ref: "#/definitions/BaseResponse"
       x-swagger-router-controller: "ragdoll.controllers.management_controller"
   /confs/queryRealConfs:
-    get:
+    post:
       tags:
       - "confs"
       summary: "query the real configuration value in the current hostId node"
@@ -246,7 +246,7 @@ paths:
               $ref: "#/definitions/RealConfInfo"
       x-swagger-router-controller: "ragdoll.controllers.confs_controller"
   /confs/queryExpectedConfs:
-    get:
+    post:
       tags:
       - "confs"
       summary: "query expected configuration value in the current hostId node"
@@ -287,7 +287,7 @@ paths:
               $ref: "#/definitions/HostSyncResult"
       x-swagger-router-controller: "ragdoll.controllers.confs_controller"
   /confs/getDomainStatus:
-    get:
+    post:
       tags:
       - "confs"
       summary: "get the status of the domain"
