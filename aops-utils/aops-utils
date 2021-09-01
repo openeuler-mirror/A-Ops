@@ -37,7 +37,7 @@ function create_config_file() {
   wsgi_file_name=$(get_config "${config_file}" "uwsgi" "wsgi-file")
   wsgi_file=$(find /usr/lib -name "aops_"${service_type} | head -n 1)
   daemonize=$(get_config "${config_file}" "uwsgi" "daemonize")
-  http-timeout=$(get_config "${config_file}" "uwsgi" "http-timeout")
+  http_timeout=$(get_config "${config_file}" "uwsgi" "http-timeout")
   harakiri=$(get_config "${config_file}" "uwsgi" "harakiri")
   module_name="aops-"${service_type}
   module="aops_"${service_type}
@@ -62,7 +62,7 @@ module=${module}.manage
 uwsgi-file=${wsgi_file_name}
 pidfile=$OUT_PATH/${module_name}.pid
 callable=app
-http-timeout=${http-timeout}
+http-timeout=${http_timeout}
 harakiri=${harakiri}
 daemonize=$daemonize" >"$OUT_PATH"/"${module_name}".ini
   chown root: $OUT_PATH/"${module_name}".ini

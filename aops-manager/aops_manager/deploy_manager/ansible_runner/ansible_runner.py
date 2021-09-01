@@ -258,8 +258,6 @@ class ResultCallback(CallbackBase):
         """
         host_name = result._host.get_name()
         result_info = result._result
-        self.host_failed[host_name] = {"task_name": result.task_name,
-                                       "result": result_info}
 
         LOGGER.debug('==============v2_runner_on_failed========='
                      '[task:%s]=========[host:%s]==============',
@@ -274,6 +272,9 @@ class ResultCallback(CallbackBase):
         LOGGER.debug("%s | FAILED! => %s", host_name, result_info)
         if ignore_errors:
             LOGGER.info("... ignoring")
+        else:
+            self.host_failed[host_name] = {"task_name": result.task_name,
+                                           "result": result_info}
 
     def v2_runner_on_unreachable(self, result):
         """
