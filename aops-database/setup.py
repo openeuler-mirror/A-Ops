@@ -16,11 +16,12 @@ setup(
         'Flask',
         'Flask-RESTful',
         'requests',
-        'PyYAML'
+        'PyYAML',
+        'PyMySQL',
         ],
     author='cmd-lsw-yyy-zyc',
     data_files=[
-        ('/etc/aops', ['conf/database.ini']),
+        ('/etc/aops', ['conf/database.ini', 'conf/default.json']),
         ('/usr/lib/systemd/system', ['aops-database.service']),
     ],
     scripts=['aops-basedatabase', 'aops-database'],

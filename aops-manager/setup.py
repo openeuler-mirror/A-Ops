@@ -11,7 +11,7 @@ setup(
     version='1.0.0',
     packages=find_packages(),
     install_requires=[
-        'ansible>=2.9.24',
+        'ansible>=2.9.0',
         'PyYAML',
         'marshmallow>=3.13.0',
         'Flask',
