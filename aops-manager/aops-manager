@@ -6,7 +6,7 @@ MANAGER_CONFIG_FILE=$SYS_PATH/manager.ini
 
 function main() {
   if [ "${OPERATION}" = "start" ]; then
-    create_config_file "${MANAGER_CONFIG_FILE}" "manager"
+    create_config_file "${MANAGER_CONFIG_FILE}" "manager" "aops"
   fi
   start_or_stop_service "${MANAGER_CONSTANT}"
   exit $?

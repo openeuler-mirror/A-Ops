@@ -317,6 +317,19 @@ class ElasticsearchProxy(DataBaseProxy):
             LOGGER.error("delete es index %s fail", index)
             return False
 
+    def update_settings(self, **kwargs):
+        """
+        Update es configuration, e.g. the maximum number of modified queries
+
+        Args:
+            kwargs(dict)
+        """
+        try:
+            self._es_db.indices.put_settings(
+                index='_all', body={"index": kwargs})
+        except ElasticsearchException:
+            LOGGER.error("update elasticsearch indices fail")
+
     @staticmethod
     def _make_es_paginate_body(data, count, body):
         """

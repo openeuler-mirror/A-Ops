@@ -31,16 +31,24 @@ function create_config_file() {
   echo "[INFO] start to create uwsgi file"
   config_file=$1
   service_type=$2
+  module_type=$3
 
   ip=$(get_config "${config_file}" "${service_type}" "ip")
   port=$(get_config "${config_file}" "${service_type}" "port")
   wsgi_file_name=$(get_config "${config_file}" "uwsgi" "wsgi-file")
-  wsgi_file=$(find /usr/lib -name "aops_"${service_type} | head -n 1)
+  wsgi_file=$(find /usr/lib -name ${module_type}"_"${service_type} | head -n 1)
   daemonize=$(get_config "${config_file}" "uwsgi" "daemonize")
   http_timeout=$(get_config "${config_file}" "uwsgi" "http-timeout")
   harakiri=$(get_config "${config_file}" "uwsgi" "harakiri")
-  module_name="aops-"${service_type}
-  module="aops_"${service_type}
+  # module_name should be like this: adoctor-diag-scheduler which is joined with '-'
+  array=(`echo ${service_type} | tr '_' ' '`)
+  module_name=${module_type}
+  for var in ${array[@]}
+  do
+    module_name=${module_name}"-"${var}
+  done
+  # module should be like this: adoctor_diag_scheduler which is joined with '_'
+  module=${module_type}"_"${service_type}
 
   check_file $daemonize
   echo "[INFO] run $module_name under path: $wsgi_file"

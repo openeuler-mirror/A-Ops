@@ -18,7 +18,7 @@ Description:
 from flask import Flask
 
 
-def init_app(name):
+def init_app(name, module="aops"):
     """
     Init application
 
@@ -29,7 +29,7 @@ def init_app(name):
         app
         configuration
     """
-    module_name = 'aops_' + name
+    module_name = '_'.join([module, name])
     app = Flask(name)
 
     module = __import__(module_name, fromlist=[module_name])
