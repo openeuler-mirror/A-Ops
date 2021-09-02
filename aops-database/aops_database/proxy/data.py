@@ -81,7 +81,7 @@ class LogDatabase(ElasticsearchProxy):
                 success_result.extend(LogDatabase._parse_data(host_id, query_result))
             # query failed
             else:
-                failed_result.extend(query_result)
+                failed_result.extend({"host_id": host_id, "data_items": data_items})
 
         data = {"succeed_list": success_result, "fail_list": failed_result}
 
