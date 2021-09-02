@@ -26,5 +26,3 @@ setup(
     scripts=['aops-manager'],
     zip_safe=False
 )
-
-

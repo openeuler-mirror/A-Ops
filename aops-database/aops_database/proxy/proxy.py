@@ -16,13 +16,15 @@ Author:
 Description: Database proxy
 """
 import math
+from datetime import datetime
+from abc import ABC, abstractmethod
 from urllib3.exceptions import LocationValueError
 import sqlalchemy
 from elasticsearch import Elasticsearch, ElasticsearchException, helpers, TransportError, \
     NotFoundError
-from abc import ABC, abstractmethod
-from aops_database.conf import configuration
+from prometheus_api_client import PrometheusConnect, PrometheusApiClientException
 from aops_utils.log.log import LOGGER
+from aops_database.conf import configuration
 
 
 class DataBaseProxy(ABC):
@@ -479,3 +481,105 @@ class MysqlProxy(DataBaseProxy):
             LOGGER.error(error)
             self.session.rollback()
             return False
+
+
+class PromDbProxy(DataBaseProxy):
+    """
+    Proxy of prometheus time series database
+    """
+
+    def __init__(self, host=None, port=None):
+        """
+        Init Prometheus time series database proxy
+        Args:
+            host (str)
+            port (int)
+        """
+        DataBaseProxy.__init__(self)
+        self._host = host or configuration.prometheus.get(
+            'IP')  # pylint: disable=E1101
+        self._port = port or configuration.prometheus.get(
+            'PORT')  # pylint: disable=E1101
+        self.connected = False
+        self._prom = None
+
+    def connect(self):
+        """
+        Make a connect to database connection pool
+
+        Returns:
+            bool: connect succeed or fail
+        """
+        url = "http://%s:%s" % (self._host, self._port)
+
+        self._prom = PrometheusConnect(url=url, disable_ssl=True)
+        self.connected = self._prom.check_prometheus_connection()
+        return self.connected
+
+    def close(self):
+        pass
+
+    def query(self, host, time_range, metric, label_config=None):
+        """
+        query a metric's data of a host during a time range
+        Args:
+            host (str): host ip
+            time_range (list): list of datetime.datetime
+            metric (str): data type of prometheus
+            label_config (dict): label config of metric
+
+        Returns:
+            tuple: (bool, dict)
+        """
+        start_time = datetime.fromtimestamp(time_range[0])
+        end_time = datetime.fromtimestamp(time_range[1])
+
+        # metric of a host's all exporters
+        # e.g. metric "up" of localhost: up{instance=127.0.0.1\\d{1,5}}
+        host_condition = 'instance=~"%s:\\\\d{1,5}"' % host
+        combined_condition = PromDbProxy._combine_condition(
+            label_config, host_condition)
+
+        metric_with_condition = metric + combined_condition
+
+        try:
+            data = self._prom.get_metric_range_data(
+                metric_name=metric_with_condition,
+                start_time=start_time,
+                end_time=end_time,
+            )
+
+            if not data:
+                LOGGER.warning("Query result is empty. Exporter of host %s doesn't record the "
+                               "metric '%s' during [%s, %s].", host, metric, start_time, end_time)
+
+            return True, data
+
+        except (ValueError, TypeError, PrometheusApiClientException) as error:
+            LOGGER.error("Prometheus query failed. %s", error)
+            failed_item = {
+                "host_id": host,
+                "name": metric,
+                "label": label_config,
+            }
+            return False, [failed_item]
+
+    @staticmethod
+    def _combine_condition(label_config, *args):
+        """
+        Combine condition together
+        Args:
+            label_config: label config of metric
+            *args (str/list): one or multiple string of condition
+
+        Returns:
+            str
+        """
+        condition_list = list(args)
+
+        if label_config:
+            for key, value in label_config.items():
+                condition_list.append(str(key) + '=' + '"' + value + '"')
+
+        combined_condition = '{' + ",".join(condition_list) + '}'
+        return combined_condition
