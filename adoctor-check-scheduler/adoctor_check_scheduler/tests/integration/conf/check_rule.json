@@ -1,0 +1,99 @@
+{
+  "check_items": [
+    {
+      "check_item": "check_item1",
+      "data_list": [
+        {
+          "name": "node_cpu_seconds_total",
+          "type": "kpi",
+          "label": {
+            "cpu": "1",
+            "mode": "irq"
+          }
+        }
+      ],
+      "condition": "$0>1",
+      "plugin": "",
+      "description": "aaa"
+    },
+    {
+      "check_item": "check_item2",
+      "data_list": [
+        {
+          "name": "node_cpu_frequency_min_hertz",
+          "type": "kpi",
+          "label": {
+            "cpu": "1"
+          }
+        },
+        {
+          "name": "node_cpu_guest_seconds_total",
+          "type": "kpi",
+          "label": {
+            "cpu": "1",
+            "mode": "nice"
+          }
+        }
+      ],
+      "condition": "$0 + $1 < 10",
+      "plugin": "",
+      "description": "bbb"
+    },
+    {
+      "check_item": "check_item3",
+      "data_list": [
+        {
+          "name": "node_cpu_seconds_total",
+          "type": "kpi",
+          "label": {
+            "cpu": "1",
+            "mode": "irq"
+          }
+        },
+        {
+          "name": "node_context_switches_total",
+          "type": "kpi"
+        }
+      ],
+      "condition": "$0.count(1m,1,'>' ) + $1 > 10",
+      "plugin": "",
+      "description": "ccc"
+    },
+    {
+      "check_item": "check_item4",
+      "data_list": [
+        {
+          "name": "node_boot_time_seconds",
+          "type": "kpi"
+        }
+      ],
+      "condition": "max(#2) < 10",
+      "plugin": "",
+      "description": "xxx"
+    },
+    {
+      "check_item": "check_item5",
+      "data_list": [
+        {
+          "name": "go_memstats_sys_bytes",
+          "type": "kpi"
+        }
+      ],
+      "condition": "diff(#1) == True",
+      "plugin": "",
+      "description": "ddd"
+    },
+    {
+      "check_item": "check_item6",
+      "data_list": [
+        {
+          "name": "dmesg",
+          "type": "log"
+        }
+      ],
+      "condition": "keyword('error') == True",
+      "plugin": "",
+      "description": "ddd"
+    }
+  ]
+}
