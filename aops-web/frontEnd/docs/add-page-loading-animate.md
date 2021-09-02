@@ -1,0 +1,25 @@
+为首屏增加 加载动画
+====
+
+
+
+## 需求
+
+> 为了缓解用户第一次访问时，加载 JS 过大所导致用户等待白屏时间过长导致的用户体验不好，进行的一个优化动效。
+
+
+
+## 实现方案
+
+1. 将 动画加载 dom 元素放在 #app 内，Vue 生命周期开始时，会自动清掉 #app 下的所有元素。
+2. 将 动画加载 dom 元素放在 body 下，Vue 生命周期开始时 App.vue (created, mounted) 调用 `@/utils/utll` 下的 removeLoadingAnimate(#id, timeout) 则会移除加载动画
+
+最后一步：
+​	将样式插入到 `public/index.html` 文件的 `<head></head>` 最好写成内联 `<style>动画样式</style>` 
+
+
+
+----
+
+目前使用的是第一种 loading 动画方案，可以直接参考 `public/index.html`
+
