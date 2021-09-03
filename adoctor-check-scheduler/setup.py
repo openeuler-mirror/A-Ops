@@ -7,7 +7,7 @@ from setuptools import setup, find_packages
 
 
 setup(
-    name='adocter-check-scheduler',
+    name='adoctor-check-scheduler',
     version='1.0.0',
     packages=find_packages(),
     install_requires=[
@@ -15,7 +15,7 @@ setup(
         'Flask',
         'Flask-RESTful',
         'requests',
-        'flask_apscheduler>=1.12.2',
+        'flask_apscheduler>=1.11.0',
         'kafka-python>=2.0.2',
         'uWSGI'
         ],

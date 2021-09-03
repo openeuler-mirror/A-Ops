@@ -13,7 +13,7 @@
 """
 Author: YangYunYi
 Date: 2021/8/23 17:19
-docs: test_check_verify.py
+docs: test_check_verify.py.py
 description:
 """
 
@@ -24,20 +24,23 @@ from aops_utils.restful.response import MyResponse
 from aops_utils.restful.status import SUCCEED, PARAM_ERROR
 
 test_data = {'check_items': [
-    {'check_item': 'check_item1', 'data_list': [{'name': 'data_item1', 'label': {'mode': 'irq'}}],
+    {'check_item': 'check_item1', 'data_list': [{'name': 'data_item1', 'type': 'kpi',
+                                                 'label': {'mode': 'irq'}}],
      'condition': '>1', 'plugin': '', 'description': 'aaa'},
-    {'check_item': 'check_item2', 'data_list': [{'name': 'data_item2', 'label': {'mode': 'irq'}},
-                                                {'name': 'data_item3',
+    {'check_item': 'check_item2', 'data_list': [{'name': 'data_item2', 'type': 'kpi',
+                                                 'label': {'mode': 'irq'}},
+                                                {'name': 'data_item3', 'type': 'kpi',
                                                  'label': {'mode': 'irq', 'device': '125s0f0'}}],
      'condition': 'data_item2 + data_item3 < 10', 'plugin': '', 'description': 'bbb'},
     {'check_item': 'check_item3',
-     'data_list': [{'name': 'data_item2', 'label': {'mode': 'idle'}}, {'name': 'data_item4'}],
+     'data_list': [{'name': 'data_item2', 'type': 'kpi', 'label': {'mode': 'idle'}},
+                   {'name': 'data_item4', 'type': 'log'}],
      'condition': 'func1(data_item2, data_item4) < 5', 'plugin': '',
      'description': 'ccc'},
-    {'check_item': 'check_item4', 'data_list': [{'name': 'data_item5'}],
+    {'check_item': 'check_item4', 'data_list': [{'name': 'data_item5', 'type': 'log'}],
      'condition': 'max(data_item5) < 10',
      'plugin': '', 'description': ''},
-    {'check_item': 'check_item5', 'data_list': [{'name': 'data_item6'}],
+    {'check_item': 'check_item5', 'data_list': [{'name': 'data_item6', 'type': 'kpi' }],
      'condition': 'func2(data_item6, 100, "reboot") == True', 'plugin': '',
      'description': 'ddd'}]}
 

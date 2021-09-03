@@ -36,7 +36,7 @@ function create_config_file() {
   ip=$(get_config "${config_file}" "${service_type}" "ip")
   port=$(get_config "${config_file}" "${service_type}" "port")
   wsgi_file_name=$(get_config "${config_file}" "uwsgi" "wsgi-file")
-  wsgi_file=$(find /usr/lib -name ${module_type}"_"${service_type} | head -n 1)
+  wsgi_file=$(find /usr/lib/python*/site-packages -maxdepth 1 -name ${module_type}"_"${service_type} | head -n 1)
   daemonize=$(get_config "${config_file}" "uwsgi" "daemonize")
   http_timeout=$(get_config "${config_file}" "uwsgi" "http-timeout")
   harakiri=$(get_config "${config_file}" "uwsgi" "harakiri")

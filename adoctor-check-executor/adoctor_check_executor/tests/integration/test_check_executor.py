@@ -27,9 +27,9 @@ from aops_utils.kafka.kafka_exception import ProducerInitError
 from aops_utils.log.log import LOGGER
 
 CONFIG_PATH = "conf"
+CURRENT_PATH = os.path.dirname(os.path.abspath(__file__))
 
-
-def publish_check_task(task_msg):
+def publish_check_task(task_msg, topic):
     """
     Publish check task
     Args:
@@ -38,7 +38,7 @@ def publish_check_task(task_msg):
     try:
         producer = BaseProducer(scheduler_check_config)
         LOGGER.debug("Send check task msg %s", task_msg)
-        producer.send_msg(CheckTopic.do_check_topic, task_msg)
+        producer.send_msg(topic, task_msg)
     except ProducerInitError as exp:
         LOGGER.error("Produce task msg failed. %s" % exp)
 
@@ -49,23 +49,23 @@ def test_do_check():
                                'public_ip': '90.90.64.65'}],
                 'check_items': ['check_item2'], 'time_range': [1630421611, 1630421641]}
 
-    publish_check_task(test_msg)
+    publish_check_task(test_msg, CheckTopic.do_check_topic)
 
 
 def test_import_check_rule():
-    config_path = os.path.join(CONFIG_PATH, "check_rule.json")
+    config_path = os.path.join(CURRENT_PATH, CONFIG_PATH, "check_rule.json")
     with open(config_path, 'r', encoding='utf-8-sig') as cfg_file:
         check_config = json.load(cfg_file)
     check_config["username"] = "admin"
-    publish_check_task(check_config)
+    publish_check_task(check_config, CheckTopic.import_check_rule_topic)
 
 
 def test_delete_check_rule():
     delete_check_msg = {
-        "user": "admin",
+        "username": "admin",
         "check_items": ["check_item1", "check_item7"]
     }
-    publish_check_task(delete_check_msg)
+    publish_check_task(delete_check_msg, CheckTopic.delete_check_rule_topic)
 
 
 def start_retry_consumer():

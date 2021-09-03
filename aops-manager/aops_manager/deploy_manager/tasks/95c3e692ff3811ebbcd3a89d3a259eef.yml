@@ -21,3 +21,24 @@ step_list:
  fluentd:
    enable: false
    continue: false
+ adoctor_check_executor:
+   enable: false
+   continue: false
+ adoctor_check_scheduler:
+   enable: false
+   continue: false
+ adoctor_diag_executor:
+   enable: false
+   continue: false
+ adoctor_diag_scheduler:
+   enable: false
+   continue: false
+ gala_gopher:
+   enable: false
+   continue: false
+ gala_spider:
+   enable: false
+   continue: false
+ gala_ragdoll:
+   enable: false
+   continue: false

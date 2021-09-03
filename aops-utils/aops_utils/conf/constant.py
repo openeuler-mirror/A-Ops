@@ -101,6 +101,25 @@ DATA_GET_CHECK_RESULT_COUNT = "/data/check/result/count"
 DATA_USER_LOGIN = "/data/account/login"
 DATA_USER_CHANGEPASSWORD = "/data/acount/change"
 
+# diagnose route
+DIAG_IMPORT_TREE = "/diag/tree/import"
+DIAG_GET_TREE = "/diag/tree/get"
+DIAG_DELETE_TREE = "/diag/tree/delete"
+DIAG_GET_TASK = "/diag/task/get"
+DIAG_GET_REPORT = "/diag/report/get"
+DIAG_GET_REPORT_LIST = "/diag/report/get_list"
+DIAG_DELETE_REPORT = "/diag/report/delete"
+DIAG_EXECUTE_DIAG = "/diag/execute"
+DIAG_GET_PROGRESS = "/diag/progress/get"
+
+# check route
+CHECK_GET_RESULT = "/check/result/get"
+CHECK_COUNT_RESULT = "/check/result/count"
+CHECK_GET_RULE = "/check/rule/get"
+CHECK_IMPORT_RULE = "/check/rule/import"
+CHECK_DELETE_RULE = "/check/rule/delete"
+CHECK_COUNT_RULE = "/check/rule/count"
+
 # parameter
 MAX_PORT = 65535
 MIN_PORT = 0

@@ -42,7 +42,7 @@ class CheckConsumer(threading.Thread):
         try:
             self._consumer = BaseConsumer(topic, group_id, configuration)
         except ConsumerInitError as exp:
-            LOGGER.error("Get consumer failed, ", exp)
+            LOGGER.error("Get consumer failed, %s", exp)
         self._topic = topic
         self._group_id = group_id
         self._running_flag = True
@@ -83,7 +83,7 @@ class CheckConsumer(threading.Thread):
                 try:
                     self._process_msgs(consumer_record.value)
                 except CheckExceptionList as exp:
-                    LOGGER.error("consumer msg exp ", exp)
+                    LOGGER.error("Process msg exp %s", exp)
                 self._consumer.commit()
 
     def _process_msgs(self, msg):

@@ -8,8 +8,7 @@
     install_fluentd: true      # install fluentd
     config_fluentd: true       # config fluentd
     start_fluentd: true   # auto start fluentd service
-    create_user: true
+    create_user: false
   roles:
-    - ../roles/user
     - ../roles/fluentd           # fluentd
 

@@ -4,7 +4,7 @@
   become_user: root
   template: 
     src: "{{ item.src }}"
-    dest: "{{ check_executor_conf_dir }}/{{ item.dst }}"
+    dest: "{{ check_scheduler_conf_dir }}/{{ item.dst }}"
     owner: root 
     group: root 
     mode: 0644 
