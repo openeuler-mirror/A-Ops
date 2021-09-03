@@ -83,7 +83,7 @@ class TestDeleteRuleConsumer(unittest.TestCase):
                         'condition': '$0 + $1 < 10',
                         'plugin': '',
                         'description': 'bbb'}, ]
-        check_item_manager.import_check_item("user", check_items)
+        check_item_manager.import_check_item("admin", check_items)
         import_rule_consumer = DelRuleConsumer(CheckTopic.delete_check_rule_topic,
                                                CheckGroup.delete_check_rule_group_id,
                                                executor_check_config)
@@ -112,4 +112,4 @@ class TestDoCheckConsumer(unittest.TestCase):
                                                CheckGroup.do_check_group_id,
                                                executor_check_config)
         import_rule_consumer._process_msgs(msg)
-        self.assertEqual(len(check_item_manager._cache.get("admin")), 2)
+        self.assertEqual(len(check_item_manager._cache), 1)

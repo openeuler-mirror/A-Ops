@@ -116,7 +116,6 @@ class TestCheckItemManager(unittest.TestCase):
         mock_check_toolkit.get_check_rule_from_database.side_effect = [self.check_items,
                                                                        self.check_items]
         check_item_manager.query_check_rule()
-        self.assertListEqual(list(check_item_manager._cache.keys()), ["admin1", "admin2"])
         self.assertListEqual(list(check_item_manager._cache["admin1"].keys()),
                              ["check_item1", "check_item2"])
         self.assertListEqual(list(check_item_manager._cache["admin2"].keys()),

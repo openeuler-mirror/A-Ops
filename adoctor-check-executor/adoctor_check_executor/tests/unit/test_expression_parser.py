@@ -178,7 +178,7 @@ class TestParser(unittest.TestCase):
 
 class TestFunctioncall(unittest.TestCase):
     def test_get_function(self):
-        self.assertSetEqual(FunctionCall.function_list,
+        self.assertSetEqual(set(FunctionCall.function_list.keys()),
                             {'builtin_keyword', 'builtin_diff', 'builtin_count', 'builtin_max',
                              'builtin_avg', 'builtin_sum', 'builtin_abschange',
                              'builtin_change', 'builtin_min'})

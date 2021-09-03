@@ -20,7 +20,7 @@ description: test expression rule
 
 import unittest
 from adoctor_check_executor.check_rule_plugins.expression_rule import ExpressionCheckRule
-from adoctor_check_executor.common.check_error import CheckItemError, CheckPluginError
+from adoctor_check_executor.common.check_error import CheckItemError, ExpressionError
 
 
 class TestExpressionRulePlugin(unittest.TestCase):
@@ -65,6 +65,6 @@ class TestExpressionRulePlugin(unittest.TestCase):
         expression_check_rule.analysis_expression("$0+$1>10000.235")
         self.assertTrue(expression_check_rule.judge_condition(1, data_vector, "$0"))
         self.assertTrue(expression_check_rule.judge_condition(0, data_vector, "$0"))
-        with self.assertRaises(CheckPluginError, msg="Invalid index"):
+        with self.assertRaises(ExpressionError, msg="Invalid index"):
             self.assertTrue(expression_check_rule.judge_condition(10, data_vector, "$0"))
             self.assertTrue(expression_check_rule.judge_condition(5, data_vector, "$7"))

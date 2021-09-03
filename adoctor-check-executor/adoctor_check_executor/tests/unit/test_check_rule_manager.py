@@ -20,7 +20,7 @@ description: test check rule manager
 import os
 import unittest
 import shutil
-
+from adoctor_check_executor.common.check_error import CheckPluginError
 from adoctor_check_executor.check_executor.check_rule_manager import check_rule_manager
 
 HOME_PATH = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
@@ -30,7 +30,6 @@ class TestCheckRuleManager(unittest.TestCase):
     def setUp(self) -> None:
         src_file = os.path.join("data", "test_rule_plugin.py")
         dst_file = os.path.join(HOME_PATH,
-                                "adoctor_check_executor",
                                 "check_rule_plugins",
                                 "test_rule_plugin.py")
 
@@ -38,7 +37,6 @@ class TestCheckRuleManager(unittest.TestCase):
 
     def tearDown(self) -> None:
         dst_file = os.path.join(HOME_PATH,
-                                "adoctor_check_executor",
                                 "check_rule_plugins",
                                 "test_rule_plugin.py")
         os.remove(dst_file)
@@ -54,7 +52,8 @@ class TestCheckRuleManager(unittest.TestCase):
 
     def test_unload_plugin(self):
         check_rule_manager.run_plugin("test_rule_plugin", "TestCheckRule", "test_rule_plugin")
-        check_rule_manager.unload_plugin("xxx")
+        with self.assertRaises(CheckPluginError, msg="Unload invalid plugin exception"):
+            check_rule_manager.unload_plugin("xxx")
         self.assertIn("test_rule_plugin", check_rule_manager.plugins.keys(),
                       msg="Load expression plugin rule success")
         check_rule_manager.unload_plugin("test_rule_plugin")
@@ -63,8 +62,9 @@ class TestCheckRuleManager(unittest.TestCase):
 
     def test_get_plugin(self):
         check_rule_manager.run_plugin("test_rule_plugin", "TestCheckRule", "test_rule_plugin")
-        self.assertIsNone(check_rule_manager.get_plugin("xxxx"),
-                          msg="Load expression plugin rule success")
+        with self.assertRaises(CheckPluginError, msg="load invalid plugin exception"):
+            check_rule_manager.get_plugin("xxxx")
+
         test_plugin = check_rule_manager.get_plugin("test_rule_plugin")
         self.assertEqual(test_plugin.name, "test_check_rule",
                          msg="Load expression plugin rule success")
