@@ -1,0 +1,13 @@
+---
+- hosts: adoctor_diag_scheduler_hosts # Define Execution Host Range
+  gather_facts: no # Do not collect facts during the execution to improve the execution speed.
+  user: aops # Execution user
+  vars_files:
+    - "../vars/adoctor_diag_scheduler_vars.yml"
+  vars:
+    install_adoctor_diag_scheduler: true # Install adoctor_diag_scheduler
+    config_adoctor_diag_scheduler: true # Config adoctor_diag_schedulerr
+    start_adoctor_diag_scheduler: true # Auto start adoctor_diag_scheduler service
+    create_user: False # Create user
+  roles:
+    - ../roles/adoctor_diag_scheduler # Install adoctor_diag_scheduler

@@ -1,0 +1,12 @@
+# Checking the Service Status
+- name: Start gala ragdoll
+  become: true
+  become_user: root
+  shell: "systemctl start gala-ragdoll"
+
+# Checking the Service Status
+- name: Verify gala ragdoll is listening on 11114
+  wait_for: 
+    delay=10
+    port=11114
+    timeout=20

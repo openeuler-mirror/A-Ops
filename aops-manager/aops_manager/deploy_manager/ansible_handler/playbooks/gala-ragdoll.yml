@@ -1,0 +1,14 @@
+---
+- hosts: gala_ragdoll_hosts # Define Execution Host Range
+  gather_facts: no # Do not collect facts during the execution to improve the execution speed.
+  become: true
+  become_user: root
+  vars_files:
+    - "../vars/gala_ragdoll_vars.yml"
+  vars:
+    install_gala_ragdoll: true # Install gala_ragdoll
+    config_gala_ragdoll: true # Config gala_ragdoll
+    start_gala_ragdoll: true # Start gala_ragdoll service
+    create_user: False # Add gala_ragdoll user
+  roles:
+    - ../roles/gala_ragdoll # Install gala_ragdoll

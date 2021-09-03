@@ -1,0 +1,7 @@
+#Start fluentd service
+- name: Start fluentd
+  become: true
+  become_user: "{{ user }}"
+  service:
+    name: fluentd
+    state: started

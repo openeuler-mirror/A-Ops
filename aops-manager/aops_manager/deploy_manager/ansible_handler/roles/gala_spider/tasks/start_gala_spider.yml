@@ -1,0 +1,3 @@
+# Checking the Service Status
+- name: Start gala spider
+  shell: "/usr/bin/spider"

@@ -1,0 +1,4 @@
+diag_scheduler_conf_dir: "/etc/aops"
+
+kafka_server_list: 90.90.64.64:9092
+diag_scheduler_port: 11113

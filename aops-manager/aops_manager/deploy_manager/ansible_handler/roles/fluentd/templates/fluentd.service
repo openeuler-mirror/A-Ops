@@ -1,0 +1,13 @@
+[Unit]
+Description=Fluentd
+Documentation=http://www.fluentd.org/
+After=network.target
+
+[Service]
+Type=simple
+ExecStart=/usr/bin/fluentd -c {{ fluentd_config_dir }}fluent.conf
+User={{ user }}
+Group={{ group }}
+
+[Install]
+WantedBy=multi-user.target

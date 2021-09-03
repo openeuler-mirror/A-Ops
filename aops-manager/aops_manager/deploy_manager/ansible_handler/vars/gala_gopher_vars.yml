@@ -1,0 +1,19 @@
+---
+# gala gopher repo config
+repo_name: "gala_gopher"
+repo_description: "gala gopher"
+repo_base_url: "http://121.36.3.168:82/home:/s00456810:/branches:/openEuler:/21.09/standard_aarch64/"
+repo_file: "gala_gopher"
+
+
+# gala gopher
+install_dir: "/opt/gala-gopher/"
+
+spider_kafka_host: 172.168.128.61
+
+probes_example_switch: "off"
+probes_system_meminfo: "off"
+probes_system_vmstat: "off"
+probes_system_tcp: "off"
+probes_system_inode: "off"
+extend_probes_redis: "off"

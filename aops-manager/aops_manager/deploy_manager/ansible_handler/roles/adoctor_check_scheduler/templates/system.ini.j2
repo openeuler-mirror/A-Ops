@@ -1,0 +1,23 @@
+# log module
+[log]
+log_level=INFO
+log_dir=/var/log/aops
+max_bytes=31457280
+backup_count=40
+
+[manager]
+ip={{ ansible_host }}
+port=11111
+
+[database]
+ip={{ ansible_host }}
+port=11119
+
+[check]
+ip={{ ansible_host }}
+port=11112
+
+[diagnose]
+ip={{ ansible_host }}
+port=11113
+

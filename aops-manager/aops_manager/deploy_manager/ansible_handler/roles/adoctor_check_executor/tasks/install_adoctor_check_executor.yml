@@ -1,0 +1,8 @@
+---
+- name: Install packages
+  become: true
+  become_user: root
+  dnf:
+    state: present
+    name:
+      - adoctor-check-executor

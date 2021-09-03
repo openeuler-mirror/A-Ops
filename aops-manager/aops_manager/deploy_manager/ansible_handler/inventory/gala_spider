@@ -1,0 +1,12 @@
+gala_spider_hosts:
+  hosts:
+   192.168.1.1:
+      ansible_host: 192.168.1.1
+      ansible_python_interpreter: /usr/bin/python3
+      gala_spider_id: 1
+      kafka_port: 9092
+   192.168.1.2:
+      ansible_host: 192.168.1.2
+      ansible_python_interpreter: /usr/bin/python3
+      gala_spider_id: 2
+      kafka_port: 9092

@@ -1,0 +1,15 @@
+---
+- name: Install packages
+  become: true
+  become_user: root
+  dnf:
+    state: present
+    name:
+      - rubygem-fluentd
+      - rubygem-fluent-plugin-elasticsearch
+
+
+- name: Copy fluentd.service
+  become: true
+  become_user: "{{ user }}"
+  template: src=fluentd.service dest=/usr/lib/systemd/system/fluentd.service owner={{ user }} group={{ group }} mode=0644 backup=yes

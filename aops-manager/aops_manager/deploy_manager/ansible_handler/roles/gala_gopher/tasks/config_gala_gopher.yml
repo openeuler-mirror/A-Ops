@@ -1,0 +1,3 @@
+---
+- name: Copy gala-gopher config
+  template: src=gala-gopher.conf dest={{ install_dir }}/gala-gopher.conf mode=644 backup=yes

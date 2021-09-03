@@ -11,3 +11,9 @@ install_dir: "/opt/kafka"
 
 # Default configuration for multiple host groups and roles
 zk_client_port: 2181
+
+# elasticsearch repo config
+repo_name: "Kafka"
+repo_description: "kafka repository"
+repo_base_url: "https://repo.oepkgs.net/openEuler/rpm/openEuler-20.03-LTS-SP1/budding-openeuler/aarch64/"
+repo_file: "kafka"
