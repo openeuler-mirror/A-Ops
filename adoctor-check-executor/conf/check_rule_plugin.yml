@@ -1,0 +1,6 @@
+---
+plugin_list:
+  - plugin_name: expression_rule_plugin
+    file_name: expression_rule
+    module_name: ExpressionCheckRule
+

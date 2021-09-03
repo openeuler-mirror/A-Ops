@@ -1,0 +1,14 @@
+[Unit]
+Description=A-doctor's Check Executor
+
+[Service]
+Type=oneshot
+After=network.target
+PIDFile=/var/run/adoctor-check.pid
+Restart=on-failure
+RestartSec=5
+ExecStart=/usr/bin/check_executor_manager
+ExecStop=/bin/kill -s SIGINT -$MAINPID
+
+[install]
+WantedBy=multi-user.target
