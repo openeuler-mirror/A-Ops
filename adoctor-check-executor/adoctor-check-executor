@@ -1,0 +1,10 @@
+#!/usr/bin/python3
+
+from adoctor_check_executor.check_executor_manager import main
+
+
+try:
+    main()
+except Exception as error:
+    print(error)
+
