@@ -1,0 +1,42 @@
+#!/usr/bin/python3
+import sys
+
+from aops_utils.log.log import LOGGER
+from aops_utils.kafka.kafka_exception import ConsumerInitError
+from adoctor_diag_executor.function.consumer import Consumer
+from adoctor_diag_executor.conf import diag_configuration
+
+consumer_list = []
+
+
+def start_consumer():
+    try:
+        diag_consumer = Consumer(diag_configuration.topic.get("NAME"),
+                                 diag_configuration.consumer.get("GROUP_ID"),
+                                 configuration=diag_configuration)
+        consumer_list.append(diag_consumer)
+        diag_consumer.consume_msg()
+    except ConsumerInitError as error:
+        LOGGER.error(error)
+
+
+def stop_consumer():
+    for consumer in consumer_list:
+        consumer.stop_consumer()
+
+
+def main():
+    """
+    Main function.
+    """
+    command = sys.argv[1]
+    if command == "start":
+        start_consumer()
+    elif command == "stop":
+        stop_consumer()
+    else:
+        print("Invalid parameter")
+
+
+if __name__ == "__main__":
+    main()
