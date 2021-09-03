@@ -72,3 +72,20 @@ def make_diag_url(route):
         "Content-Type": "application/json; charset=UTF-8"
     }
     return diag_url, diag_header
+
+
+def make_check_url(route):
+    """
+    make check url
+    Args:
+        route(str)
+    Returns:
+        tuple: url, header
+    """
+    check_ip = configuration.check.get("IP")  # pylint: disable=E1101
+    check_port = configuration.check.get("PORT")  # pylint: disable=E1101
+    check_url = URL_FORMAT % (check_ip, check_port, route)
+    check_header = {
+        "Content-Type": "application/json; charset=UTF-8"
+    }
+    return check_url, check_header

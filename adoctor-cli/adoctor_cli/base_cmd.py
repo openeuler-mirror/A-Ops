@@ -28,7 +28,6 @@ def str_split(string):
         string(str): The string need to be splited.
     Returns:
         list of items
-
     """
     if string is not None and len(string) != 0:
         return string.split(",")
@@ -44,7 +43,6 @@ def cli_request(action, manager_url, pyload, header, access_token):
         pyload(dict): request body
         header(dict): request header
         access_token(str): access token of users
-
     Returns:
         json: response of manager
     """
@@ -60,15 +58,12 @@ def add_query_args(sub_parse, item_list):
     Args:
         item_list(list): list for sort items
         sub_parse(sub_parse): sub_parse of the command
-    Returns:
-
     """
     sub_parse.add_argument(
         '--sort',
         help='sort for the query result, null is no sort',
         nargs='?',
         type=str,
-        default="",
         choices=item_list
     )
 
@@ -87,9 +82,6 @@ def add_access_token(sub_parse):
     Add access_token of the sub parse.
     Args:
         sub_parse(sub_parse): sub_parse of the command
-
-    Returns:
-
     """
     sub_parse.add_argument(
             '--access_token',
@@ -98,6 +90,31 @@ def add_access_token(sub_parse):
             type=str,
             required=True
     )
+
+
+def add_start_and_end(sub_parse):
+    """
+    Add start time and end time of the sub parse.
+    Args:
+        sub_parse(sub_parse): sub_parse of the command
+    """
+    group_start_end = sub_parse.add_argument_group(
+        'group_start_end',
+        'The group for start and end')
+
+    group_start_end.add_argument(
+        '--start',
+        nargs='?',
+        type=str,
+        default="",
+        help='original date of raw data, default is 1 hour ago.')
+
+    group_start_end.add_argument(
+        '--end',
+        nargs='?',
+        type=str,
+        default="",
+        help='end date of raw data, default is now')
 
 
 class BaseCommand:
@@ -136,7 +153,6 @@ class BaseCommand:
         Args:
             sub_command(str): sub command of the cli
             help_desc(str): help description of the sub command
-
         """
         self.sub_parse = BaseCommand.subparsers.add_parser(
             sub_command, help=help_desc)
@@ -148,7 +164,6 @@ class BaseCommand:
 
         Args:
             command: commands for aops
-
         """
         command.sub_parse.set_defaults(func=command.do_command)
 
@@ -156,7 +171,6 @@ class BaseCommand:
     def args_parser(cls):
         """
         Description: argument parser
-
         """
         args = cls.parser.parse_args()
         args.func(args)
@@ -168,6 +182,4 @@ class BaseCommand:
 
         Args:
             params: Command line parameters
-        Returns:
-
         """
