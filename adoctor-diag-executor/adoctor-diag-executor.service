@@ -1,0 +1,12 @@
+[Unit]
+Description=A-doctor's Diagnose Executor
+After=network.target
+
+[Service]
+Restart=on-failure
+RestartSec=5
+ExecStart=/usr/bin/adoctor-diag-executor start
+ExecStop=/usr/bin/adoctor-diag-executor stop
+
+[install]
+WantedBy=multi-user.target
