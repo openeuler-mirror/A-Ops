@@ -97,7 +97,7 @@ function is_started() {
 
 function start_service() {
   module_name=$1
-  uwsgi -d --ini $OUT_PATH/"${module_name}".ini
+  uwsgi -d --ini $OUT_PATH/"${module_name}".ini --enable-threads
   echo "[INFO] start uwsgi service: ${module_name} success"
   exit 0
 }
