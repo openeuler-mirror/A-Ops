@@ -23,6 +23,7 @@ from aops_database.factory.table import User
 from aops_database.factory.mapping import MAPPINGS
 from aops_database.proxy.deploy import DeployDatabase
 from aops_database.proxy.account import UserDatabase
+from aops_database.conf import configuration as database_config
 from aops_utils.conf.constant import BASE_CONFIG_PATH
 from aops_utils.log.log import LOGGER
 from aops_utils.restful.status import SUCCEED
@@ -76,6 +77,12 @@ def init_es():
             raise ValueError("create elasticsearch index %s fail", index_name)
 
     LOGGER.info("create elasticsearch index succeed")
+    # update es settings
+    config = {
+        "max_result_window": database_config.elasticsearch.get('MAX_ES_QUERY_NUM')
+    }
+    proxy.update_settings(**config)
+    # add default task
     data = {
         "username": "",
         "task_list": [""]

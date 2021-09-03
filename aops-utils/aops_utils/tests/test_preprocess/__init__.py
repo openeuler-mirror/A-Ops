@@ -10,25 +10,3 @@
 # PURPOSE.
 # See the Mulan PSL v2 for more details.
 # ******************************************************************************/
-"""
-Time:
-Author:
-Description: default config of database
-"""
-database = {
-    "IP": "127.0.0.1",
-    "PORT": 11112
-}
-
-mysql = {
-    "IP": "127.0.0.1",
-    "PORT": 3306,
-    "DATABASE_NAME": "aops",
-    "ENGINE_FORMAT": "mysql+pymysql://@%s:%s/%s",
-    "POOL_SIZE": 10000,
-    "POOL_RECYCLE": 7200
-}
-
-elasticsearch = {
-    "MAX_ES_QUERY_NUM": 10000000
-}

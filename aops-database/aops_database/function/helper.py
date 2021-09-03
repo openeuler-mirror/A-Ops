@@ -154,11 +154,12 @@ def judge_return_code(result, default_stat):
     Returns:
         int: status code
     """
-    if result['succeed_list'] and result['fail_list']:
-        return PARTIAL_SUCCEED
-    if result['succeed_list']:
-        return SUCCEED
-    if result['fail_list']:
+    if (result.get('succeed_list') or result.get('update_list')):
+        if result.get('fail_list'):
+            return PARTIAL_SUCCEED
+        else:
+            return SUCCEED
+    if result.get('fail_list'):
         return default_stat
     return SUCCEED
 
