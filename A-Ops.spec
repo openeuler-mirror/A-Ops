@@ -1,6 +1,6 @@
 Name:		A-Ops
 Version:	1.0.0
-Release:	3
+Release:	4
 Summary:	The intelligent ops toolkit for openEuler
 License:	MulanPSL2
 URL:		https://gitee.com/openeuler/A-Ops
@@ -151,6 +151,8 @@ popd
 pushd gala-gopher
 install -d %{buildroot}/opt/gala-gopher
 install -d %{buildroot}%{_bindir}
+mkdir -p  %{buildroot}/usr/lib/systemd/system
+install -m 0600 service/gala-gopher.service %{buildroot}/usr/lib/systemd/system/gala-gopher.service
 sh install.sh %{buildroot}%{_bindir} %{buildroot}/opt/gala-gopher
 popd
 
@@ -165,6 +167,17 @@ install config/*.conf %{buildroot}/%{python3_sitelib}/ragdoll/config
 mkdir -p %{buildroot}/%{_prefix}/lib/systemd/system
 install service/gala-ragdoll.service %{buildroot}/%{_prefix}/lib/systemd/system
 popd
+
+
+%post -n gala-gopher
+%systemd_post gala-gopher.service
+
+%preun -n gala-gopher
+%systemd_preun gala-gopher.service
+
+%postun -n gala-gopher
+%systemd_postun_with_restart gala-gopher.service
+
 
 %pre -n python3-gala-ragdoll
 if [ -f "%{systemd_dir}/gala-ragdoll.service" ] ; then
@@ -221,6 +234,7 @@ fi
 %config(noreplace) /opt/gala-gopher/gala-gopher.conf
 /opt/gala-gopher/extend_probes/*
 /opt/gala-gopher/meta/*
+/usr/lib/systemd/system/gala-gopher.service
 
 
 %files -n gala-ragdoll
@@ -238,6 +252,9 @@ fi
 
 
 %changelog
+* Thu Sep 2 2021 zhaoyuxing<zhaoyuxsing2@huawei.com> - 1.0.0-4
+- add service file in gala-spider
+
 * Wed Sep 1 2021 orange-snn<songnannan2@huawei.com> - 1.0.0-3
 - add service file in gala-ragdoll
 
