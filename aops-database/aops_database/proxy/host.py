@@ -418,6 +418,7 @@ class HostDatabase(MysqlProxy):
         username = data['username']
         result = {}
         deleted = []
+        not_deleted = []
         result["deleted"] = deleted
         try:
             # Filter the group if there are hosts in the group
@@ -426,13 +427,14 @@ class HostDatabase(MysqlProxy):
                 filter(HostGroup.host_group_name.in_(host_group_list)).all()
             for host_group in host_groups:
                 if host_group.host_count > 0:
+                    not_deleted.append(host_group.host_group_name)
                     continue
                 deleted.append(host_group.host_group_name)
                 self.session.delete(host_group)
             self.session.commit()
-            if len(deleted) != len(host_group_list):
+            if not_deleted:
                 LOGGER.error(
-                    "host group %s deleted, some groups delete fail", deleted)
+                    "host group %s deleted, groups %s delete fail", deleted, not_deleted)
                 return DATA_DEPENDENCY_ERROR, result
             LOGGER.info("host group %s delete succeed", deleted)
             return SUCCEED, result
