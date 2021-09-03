@@ -23,7 +23,7 @@ from flask import request, jsonify
 from flask_restful import Resource
 from adoctor_check_scheduler.common.constant import CheckTopic
 from adoctor_check_scheduler.common.check_verify import ImportRuleSchema, \
-    GetCheckRuleCountSchema, GetCheckRuleSchema, DeleteCheckRuleSchema, \
+    GetCheckRuleSchema, DeleteCheckRuleSchema, \
     GetCheckResultSchema, GetCheckResultCountSchema
 from adoctor_check_scheduler.common.config import scheduler_check_config
 from aops_utils.restful.response import MyResponse

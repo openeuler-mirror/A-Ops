@@ -47,11 +47,14 @@ class TestCheckScheduler(unittest.TestCase):
     def test_import_check_rule(self):
         test_data = {'check_items': [
             {'check_item': 'check_item1', 'data_list': [{'name': 'data_item1',
+                                                         'type': 'kpi',
                                                          'label': {'mode': 'irq'}}],
              'condition': '>1', 'plugin': '', 'description': 'aaa'},
             {'check_item': 'check_item2', 'data_list': [{'name': 'data_item2',
+                                                         'type': 'kpi',
                                                          'label': {'mode': 'irq'}},
                                                         {'name': 'data_item3',
+                                                         'type': 'kpi',
                                                          'label': {'mode': 'irq',
                                                                    'device': '125s0f0'}}],
              'condition': 'data_item2 + data_item3 < 10', 'plugin': '',

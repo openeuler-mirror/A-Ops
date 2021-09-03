@@ -19,7 +19,7 @@ description: test data backpack
 """
 import unittest
 from adoctor_check_executor.check_rule_plugins.expression_parser.data_backpack import DataBackpack
-from adoctor_check_executor.common.check_error import CheckPluginError
+from adoctor_check_executor.common.check_error import ExpressionError
 
 
 class TestDataCackPack(unittest.TestCase):
@@ -45,7 +45,7 @@ class TestDataCackPack(unittest.TestCase):
     def test_get_key_data_name(self):
         self.assertEqual(self.data_backpack.get_key_data_name("default"), "$1")
         self.assertEqual(self.data_backpack.get_key_data_name("$0"), "$0")
-        with self.assertRaises(CheckPluginError, msg="Invalid key data name"):
+        with self.assertRaises(ExpressionError, msg="Invalid key data name"):
             self.data_backpack.get_key_data_name("$2")
 
     def test_pre_check(self):
@@ -57,7 +57,7 @@ class TestDataCackPack(unittest.TestCase):
 
     def test_get_time_stamp(self):
         self.assertEqual(self.data_backpack.get_time_stamp(0, "$1"), 1630422082.931)
-        with self.assertRaises(CheckPluginError, msg="Invalid key data name or index"):
+        with self.assertRaises(ExpressionError, msg="Invalid key data name or index"):
             self.data_backpack.get_time_stamp(-1, "$1")
             self.data_backpack.get_time_stamp(4, "$1")
             self.data_backpack.get_time_stamp(-1, "$4")

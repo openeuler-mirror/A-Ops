@@ -46,8 +46,8 @@ class CheckTimeKeeper:
         self._last_backward = self._start_time
         self._min_time_stamp = MIN_TIMESTAMP
         self._backward_task_step = scheduler_check_config.check_scheduler.get("BACKWARD_TASK_STEP")
-        self._forward_max_task_step = scheduler_check_config.check_scheduler.get(
-            "FORWARD_MAX_TASK_STEP")
+        self._forward_max_task_step = int(scheduler_check_config.check_scheduler.get(
+            "FORWARD_MAX_TASK_STEP"))
 
     def get_forward_time_range(self):
         """
