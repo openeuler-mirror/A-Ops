@@ -8,5 +8,5 @@ RestartSec=5
 ExecStart=/usr/bin/adoctor-diag-executor start
 ExecStop=/usr/bin/adoctor-diag-executor stop
 
-[install]
+[Install]
 WantedBy=multi-user.target
