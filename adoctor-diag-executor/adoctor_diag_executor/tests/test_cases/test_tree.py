@@ -49,6 +49,4 @@ class TestTree(unittest.TestCase):
             diagnosed_json = json_file.read()
             diagnosed_tree_dict = json.loads(diagnosed_json)
 
-        print(diagnosed_tree_dict)
-        print(TestTree.tree.to_dict())
         self.assertEqual(TestTree.tree.to_dict(), diagnosed_tree_dict)
