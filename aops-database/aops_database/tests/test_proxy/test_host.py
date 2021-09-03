@@ -23,7 +23,7 @@ from werkzeug.security import generate_password_hash
 from aops_database.proxy.host import HostDatabase
 from aops_database.factory.table import Host, User
 from aops_database.function.helper import create_tables, drop_tables, create_database_engine
-from aops_utils.restful.status import DATA_EXIST, SUCCEED
+from aops_utils.restful.status import DATA_EXIST, SUCCEED, DATA_DEPENDENCY_ERROR
 from aops_utils.compare import compare_two_object
 
 
@@ -166,6 +166,7 @@ class TestHostDatabase(unittest.TestCase):
         res = self.proxy.delete_host_group(args)
 
         self.assertEqual(res[1]['deleted'], [])
+        self.assertEqual(res[0], DATA_DEPENDENCY_ERROR)
 
         args = {
             "host_group_list": ["group1"],
