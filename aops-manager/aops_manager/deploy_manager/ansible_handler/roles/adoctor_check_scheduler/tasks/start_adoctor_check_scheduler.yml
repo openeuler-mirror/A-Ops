@@ -1,0 +1,11 @@
+# Checking the Service Status
+- name: Start adoctor_check_scheduler
+  become: true
+  become_user: root
+  service:
+    name: adoctor-check-scheduler
+    state: started
+
+# Checking the Service Status
+- name: verify adoctor_check_scheduler is listening on {{ check_scheduler_port }}
+  wait_for: port={{ check_scheduler_port }} timeout=1

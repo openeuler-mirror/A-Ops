@@ -1,0 +1,22 @@
+[global]
+data_source = "kafka"
+ui_source = "neo4j"
+
+[kafka]
+topic = gala_gopher
+broker = ["{{ ansible_host }}:{{ kafka_port }}"]
+
+[promecheus]
+broker =
+
+[table_info]
+base_table_name = ["tcp_link", "lvs_link"]
+other_table_name = ["nginx_statistic" , "lvs_link" , "haproxy_link" , "dnsmasq_link"]
+
+[option]
+exclude_addr = {{ exclude_addr }}
+
+[neo4j]
+address = http://localhost:7474
+username = neo4j
+password =

@@ -1,0 +1,12 @@
+---
+- name: Install adoctor_check_executor
+  include: install_adoctor_check_executor.yml
+  when: install_adoctor_check_executor
+
+- name: Config adoctor_check_executor
+  include: config_adoctor_check_executor.yml
+  when: config_adoctor_check_executor
+
+- name: Start adoctor_check_executor
+  include: start_adoctor_check_executor.yml
+  when: start_adoctor_check_executor

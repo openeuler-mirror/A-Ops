@@ -25,6 +25,6 @@ CheckAllPlaybooks() {
 
 }
 
-PLAYBOOK_PATH="../../../../aops/manager/deploy_manager/ansible_handler/playbooks"
+PLAYBOOK_PATH="../../../../aops_manager/deploy_manager/ansible_handler/playbooks"
 
 CheckAllPlaybooks $PLAYBOOK_PATH

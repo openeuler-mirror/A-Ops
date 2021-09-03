@@ -1,0 +1,3 @@
+check_executor_conf_dir: "/etc/aops"
+
+kafka_server_list: 90.90.64.64:9092

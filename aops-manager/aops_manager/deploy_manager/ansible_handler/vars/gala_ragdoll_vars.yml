@@ -1,0 +1,8 @@
+---
+# gala-ragdoll repo config
+repo_name: "gala-ragdoll"
+repo_description: "gala-ragdoll repository "
+repo_base_url: "http://121.36.3.168:82/home:/s00456810:/branches:/openEuler:/21.09/standard_aarch64/"
+
+
+gala_ragdoll_port: 11114

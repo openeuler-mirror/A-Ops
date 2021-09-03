@@ -1,0 +1,15 @@
+---
+- hosts: fluentd_hosts
+  gather_facts: no
+  user: aops
+  vars_files:
+    - "../vars/fluentd_vars.yml"
+  vars:
+    install_fluentd: true      # install fluentd
+    config_fluentd: true       # config fluentd
+    start_fluentd: true   # auto start fluentd service
+    create_user: true
+  roles:
+    - ../roles/user
+    - ../roles/fluentd           # fluentd
+

@@ -1,0 +1,12 @@
+---
+- name: Install adoctor_diag_scheduler
+  include: install_adoctor_diag_scheduler.yml
+  when: install_adoctor_diag_scheduler
+
+- name: Config adoctor_diag_scheduler
+  include: config_adoctor_diag_scheduler.yml
+  when: config_adoctor_diag_scheduler
+
+- name: Start adoctor_diag_scheduler
+  include: start_adoctor_diag_scheduler.yml
+  when: start_adoctor_diag_scheduler

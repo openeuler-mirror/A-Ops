@@ -1,0 +1,13 @@
+---
+- hosts: adoctor_check_scheduler_hosts # Define Execution Host Range
+  gather_facts: no # Do not collect facts during the execution to improve the execution speed.
+  user: aops # Execution user
+  vars_files:
+    - "../vars/adoctor_check_scheduler_vars.yml"
+  vars:
+    install_adoctor_check_scheduler: true # Install adoctor_check_scheduler
+    config_adoctor_check_scheduler: true # Config adoctor_check_schedulerr
+    start_adoctor_check_scheduler: true # Auto start adoctor_check_scheduler service
+    create_user: False # Create user
+  roles:
+    - ../roles/adoctor_check_scheduler # Install adoctor_check_scheduler

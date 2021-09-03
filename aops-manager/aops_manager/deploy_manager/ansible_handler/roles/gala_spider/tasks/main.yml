@@ -1,0 +1,17 @@
+---
+#  Install gala_spider
+- name: Install gala_spider
+  include: install_gala_spider.yml
+  when: install_gala_spider
+
+# Config example
+- name: Config gala_spider
+  include: config_gala_spider.yml
+  when: config_gala_spider
+
+# Start example
+- name: Start gala_spideer
+  include: start_gala_spider.yml
+  when: start_gala_spider
+
+

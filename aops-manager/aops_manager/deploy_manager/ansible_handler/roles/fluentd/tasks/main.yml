@@ -1,0 +1,12 @@
+---
+- name: Install fluentd
+  include: install_fluentd.yml
+  when: install_fluentd
+
+- name: Config fluentd
+  include: config_fluentd.yml
+  when: config_fluentd
+
+- name: Start fluentd
+  include: start_fluentd.yml
+  when: start_fluentd

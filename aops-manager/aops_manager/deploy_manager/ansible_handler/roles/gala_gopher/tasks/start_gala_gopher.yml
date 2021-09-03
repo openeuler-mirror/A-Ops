@@ -1,0 +1,7 @@
+#Start fluentd service
+- name: Start gala-Gopher
+  become: true
+  become_user: root
+  service:
+    name: gala-gopher
+    state: started

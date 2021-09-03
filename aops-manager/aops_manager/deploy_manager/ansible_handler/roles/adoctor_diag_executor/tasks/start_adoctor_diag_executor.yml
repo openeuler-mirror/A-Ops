@@ -1,0 +1,7 @@
+# Checking the Service Status
+- name: Start adoctor_diag_executor
+  become: true
+  become_user: root
+  service:
+    name: adoctor-diag-executor
+    state: started
