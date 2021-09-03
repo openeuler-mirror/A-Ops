@@ -35,18 +35,26 @@ class Consumer(BaseConsumer):
         Raises: ConsumerInitError
         """
         super().__init__(topic, group_id, configuration)
+        self._running_flag = True
 
     def consume_msg(self):
         """
         manually pull messages from broker, the number of messages is based on max_records.
         """
         try:
-            while True:
+            while self._running_flag:
                 data = self.poll()
                 if data:
                     self.process_msgs(data)
         except KafkaError as err:
             LOGGER.error(err)
+
+    def stop_consumer(self):
+        """
+        stop consumer
+        """
+        LOGGER.info("Stop consumer topic:%s group:%s", self.topic, self.conf["group_id"])
+        self._running_flag = False
 
     def process_msgs(self, data):
         """
