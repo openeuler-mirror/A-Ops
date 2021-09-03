@@ -67,7 +67,6 @@
             const _this = this
             this.isLoading = true
             values.priority = 0
-            console.log('Received values of form: ', values)
             const domainInfo = []
             domainInfo.push(values)
             createDomain(domainInfo)

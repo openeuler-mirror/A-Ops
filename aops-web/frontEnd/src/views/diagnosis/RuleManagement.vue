@@ -10,7 +10,7 @@
           <div style="height: 100%;width: calc(100% - 75px);float: left;position:relative;">
             <div class="content">
               <div style="color: #999;">异常检测规则数量</div>
-              <div style="color: #333;font-size: 32px;line-height: 1em">{{ ('1345' || 0).toString().replace(/(\d)(?=(?:\d{3})+$)/g, '$1,')}}</div>
+              <div style="color: #333;font-size: 32px;line-height: 1em">{{ ruleCount.toString().replace(/(\d)(?=(?:\d{3})+$)/g, '$1,') }}</div>
             </div>
           </div>
         </div>
@@ -22,7 +22,7 @@
               </div>
             </template>
             <template slot="drawerView">
-              <add-abnormal-check-rule-drawer></add-abnormal-check-rule-drawer>
+              <add-abnormal-check-rule-drawer :addSuccess="getRuleList"></add-abnormal-check-rule-drawer>
             </template>
           </drawer-view>
         </div>
@@ -81,28 +81,32 @@
     <a-card style="width: 100%;float: left;margin-top: 10px">
       <div style="font-weight: bold;font-size: 18px;margin-top: -12px;margin-bottom: 10px">异常检测规则列表</div>
       <a-table
+        rowKey="check_item"
         :columns="columns"
-        :data-source="resultList"
+        :data-source="ruleList"
         :pagination="pagination"
         @change="handleTableChange"
         :loading="tableIsLoading"
         :expandIconAsCell="false"
         :expandIconColumnIndex="1">
-        <span slot="action" slot-scope="result">
-          <a @click="openEdit(result)">编辑</a>
+        <span slot="index" slot-scope="text, record, index">
+          {{ index + firstIndex }}
+        </span>
+        <span slot="action" slot-scope="rule">
+          <span>编辑</span>
           <a-divider type="vertical" />
           <a-popconfirm
             title="确认要删除这条异常检测记录?"
             ok-text="确认"
             cancel-text="取消"
-            @confirm="deleteResult(result)"
+            @confirm="deleteRule(rule)"
           ><a href="#">删除</a></a-popconfirm>
           <a-divider type="vertical" />
-          <a><a-icon type="down" /></a>
+          <a-icon type="down" style="color: #999"/>
         </span>
-        <p slot="expandedRowRender" slot-scope="result" style="margin: 0">
-          {{ result }}
-        </p>
+        <div slot="expandedRowRender" slot-scope="result" style="width: 100%;margin: 1px;padding-left: 50px;">
+          <check-result-expanded :dataSource="result.data_list"></check-result-expanded>
+        </div>
       </a-table>
     </a-card>
   </my-page-header-wrapper>
@@ -113,6 +117,8 @@ import MyPageHeaderWrapper from '@/views/utils/MyPageHeaderWrapper'
 import DrawerView from '@/views/utils/DrawerView'
 import GetCheckResultDrawer from '@/views/diagnosis/components/GetCheckResultDrawer'
 import AddAbnormalCheckRuleDrawer from '@/views/diagnosis/components/AddAbnormalCheckRuleDrawer'
+import CheckResultExpanded from '@/views/diagnosis/components/CheckResultExpanded'
+import { getRule, getResultCountTopTen, getRuleCount, deleteRule } from '@/api/check'
 
 export default {
   name: 'RuleManagement',
@@ -120,71 +126,69 @@ export default {
     MyPageHeaderWrapper,
     DrawerView,
     AddAbnormalCheckRuleDrawer,
-    GetCheckResultDrawer
+    GetCheckResultDrawer,
+    CheckResultExpanded
   },
   mounted: function () {
-    for (var i = 0; i < 10; i++) {
-      this.resultCountList.push({
-        hostName: 'Host' + new Date().getTime(),
-        ip: '127.0.0.1',
-        count: parseInt(Math.random() * 100)
-      })
-    }
-    this.resultCountList.sort(function (a, b) { return a.count < b.count })
-    this.getResultList({})
+    this.getRuleCount()
+    this.getResultCountTopTen()
+    this.getRuleList()
   },
   computed: {
-    resultCountListPart_1 () {
-      return ''
+    firstIndex () {
+      return (this.pagination.current - 1) * this.pagination.pageSize + 1
     }
   },
   data () {
     return {
+      ruleCount: 0,
       filters: null,
       sorter: null,
       tableIsLoading: false,
       columns,
       resultCountList: [],
-      resultList: [],
-      pagination: {
-        current: 1,
-        pageSize: 5,
-        showSizeChanger: true,
-        showQuickJumper: true,
-        change: this.paginationChange
-      }
+      ruleList: [],
+      pagination: { current: 1, pageSize: 5, showSizeChanger: true, showQuickJumper: true }
     }
   },
   methods: {
-    paginationChange (page, pageSize) {
-      // this.getResultList({})
+    getRuleCount () {
+      var that = this
+      getRuleCount().then(function (data) {
+        that.ruleCount = data.rule_count
+      }).catch(function (err) {
+        that.$message.error(err.response.data.msg)
+      })
     },
-    handleTableChange (pagination, filters, sorter) {
-      // 存储翻页状态
-      this.pagination = pagination
-      this.filters = filters
-      this.sorter = sorter
-      // 出发排序、筛选、分页时，重新请求主机列表
-      this.getResultList({})
+    getResultCountTopTen () {
+      var that = this
+      getResultCountTopTen().then(function (data) {
+        that.resultCountList = data.results
+      }).catch(function (err) {
+        that.$message.error(err.response.data.msg)
+      })
     },
-    getResultList ({ p, f, s }) {
-      console.log(this.pagination.current)
-      this.resultList = []
-      for (var i = 0; i < 20; i++) {
-        this.resultList.push({
-          id: new Date().getTime(),
-          hostName: 'Host' + new Date().getTime(),
-          ip: '127.0.0.1',
-          checkItems: 'checkItems TEST...',
-          condition: 'condition TEST...',
-          result: 'result TEST...',
-          tags: '标签一、标签二、标签三'
-        })
-      }
+    handleTableChange (pagination) {
+      this.pagination = pagination // 存储翻页状态
+      this.getRuleList() // 出发排序、筛选、分页时，重新请求
     },
-    deleteResult (result) {
-      console.log('delete:' + JSON.stringify(result))
-      this.$message.success('记录删除成功')
+    getRuleList () {
+      this.ruleList = []
+      var that = this
+      getRule({ perPage: this.pagination.pageSize, page: this.pagination.current }).then(function (data) {
+        that.ruleList = data.check_items
+        that.pagination = { ...that.pagination }
+        that.pagination.total = data.total_count
+      }).catch(function (err) {
+        that.$message.error(err.response.data.msg)
+      })
+    },
+    deleteRule (rule) {
+      var that = this
+      deleteRule([rule.check_item]).then(function () {
+        that.getRuleList()
+        that.$message.success('记录删除成功')
+      })
     }
   }
 }
@@ -196,11 +200,11 @@ const columns = [
     key: 'index',
     align: 'center',
     width: 70,
-    customRender: (text, record, index) => `${index + 1}`
+    scopedSlots: { customRender: 'index' }
   },
   {
-    dataIndex: 'checkItems',
-    key: 'checkItems',
+    dataIndex: 'check_item',
+    key: 'check_item',
     title: '检测项'
   },
   {
@@ -209,8 +213,8 @@ const columns = [
     title: '检测条件'
   },
   {
-    dataIndex: 'result',
-    key: 'result',
+    dataIndex: 'description',
+    key: 'description',
     title: '检测结果描述'
   },
   {

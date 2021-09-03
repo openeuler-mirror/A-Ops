@@ -12,6 +12,8 @@
                 ]"
             style="width: 100%"
             :get-popup-container="trigger => trigger.parentNode"
+            show-time
+            format="YYYY-MM-DD HH:mm:ss"
           />
         </a-form-item>
       </a-col>
@@ -28,6 +30,18 @@
                 ]"
             style="width: 100%"
             :get-popup-container="trigger => trigger.parentNode"
+            show-time
+            format="YYYY-MM-DD HH:mm:ss"
+          />
+        </a-form-item>
+      </a-col>
+    </a-row>
+    <a-row :gutter="16">
+      <a-col :span="24">
+        <a-form-item label="区间间隔">
+          <a-input
+            v-decorator="['interval', { rules: [{ required: true, message: '请输入区间间隔(单位：秒),只能输入数字!',pattern: new RegExp(/^[1-9]\d*$/, 'g') }] }]"
+            placeholder="请输入区间间隔(单位：秒)"
           />
         </a-form-item>
       </a-col>
@@ -72,11 +86,12 @@ import { executeDiag } from '@/api/diagnosis'
 
   export default {
     name: 'AddFaultTree',
-    inject: ['setButtons', 'close'], // 来自祖辈们provide中声明的参数、方法
+    inject: ['setButtons', 'close', 'showSpin', 'closeSpin'], // 来自祖辈们provide中声明的参数、方法
     data () {
       return {
         form: this.$form.createForm(this),
-        selectedItems: []
+        selectedItems: [],
+        dateFormat: 'YYYY/MM/DD HH:mm'
       }
     },
     props: {
@@ -88,13 +103,8 @@ import { executeDiag } from '@/api/diagnosis'
     },
     computed: {
       filteredOptions () {
-        const OPTIONS = []
-        this.faultTreeList.forEach(function (item) {
-          if (item.tree_name !== '') {
-            OPTIONS.push(item.tree_name)
-          }
-        })
-        return OPTIONS.filter(o => !this.selectedItems.includes(o))
+        // 数组第一项为空(父页面用于放置新增故障树按钮)
+        return this.faultTreeList.slice(1).map(item => item.tree_name).filter(o => !this.selectedItems.includes(o))
       }
     },
     methods: {
@@ -102,30 +112,38 @@ import { executeDiag } from '@/api/diagnosis'
         const that = this
         this.form.validateFields((err, values) => {
           if (!err) {
-            console.log('Received values of form: ', values)
+            that.showSpin()
             const data = {}
             data.host_list = []
+            values.host_list.split(',').forEach(function (host) {
+              data.host_list.push(host)
+            })
             data.time_range = []
-            data.tree_list = []
-            data.access_token = []
-            executeDiag({
-              uid: '123',
-              data
-            }).then(function (res) {
-              that.$message.success(res.message)
+            data.time_range.push(that.getUnixTime(values['startTime'].format('YYYY-MM-DD HH:mm:ss')))
+            data.time_range.push(that.getUnixTime(values['endTime'].format('YYYY-MM-DD HH:mm:ss')))
+            data.tree_list = that.selectedItems
+            data.interval = parseInt(values.interval)
+            executeDiag(data).then(function (res) {
+              that.$message.success(res.msg)
+              that.closeSpin()
               that.close()
               that.saveSuccess()
             }).catch(function (err) {
-              that.$message.error(err.response.data.message)
+              that.$message.error(err.response.data.msg)
             }).finally(function () {
+              that.closeSpin()
             })
           }
         })
       },
+      getUnixTime (dateStr) {
+        const newStr = dateStr.replace(/-/g, '/')
+        const date = new Date(newStr)
+        return date.getTime()
+      },
       handleChange (selectedItems) {
         this.selectedItems = selectedItems
         this.form.setFieldsValue({ 'tree_list': selectedItems })
-        console.log(selectedItems)
       }
     }
   }

@@ -1,20 +1,17 @@
 <template>
   <div :class="wrpCls">
     <avatar-dropdown :menu="showMenu" :current-user="{ name: userName}" :class="prefixCls" />
-    <select-lang :class="prefixCls" />
   </div>
 </template>
 
 <script>
 import { mapState } from 'vuex'
 import AvatarDropdown from './AvatarDropdown'
-import SelectLang from '@/components/SelectLang'
 
 export default {
   name: 'RightContent',
   components: {
-    AvatarDropdown,
-    SelectLang
+    AvatarDropdown
   },
   props: {
     prefixCls: {

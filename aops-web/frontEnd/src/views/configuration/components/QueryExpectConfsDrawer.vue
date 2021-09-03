@@ -63,7 +63,6 @@
     },
     watch: {
       activeKey (key) {
-        console.log(key)
       }
     },
     methods: {
@@ -71,11 +70,9 @@
         const _this = this
         _this.collapseIsLoading = true
         queryExpectedConfs({
-          uid: '123',
           domainName: _this.domainName,
           hostIds: [{ hostId: host.hostId }]
         }).then((res) => {
-          console.log(res.result.expectedConfsData[0])
           _this.collapseData = res.result.expectedConfsData[0].confBaseInfos
           _this.collapseIsLoading = false
         }).catch((err) => {
@@ -87,7 +84,6 @@
     mounted: function () {
       const _this = this
       this.onload(function (params) {
-        console.log(params)
         _this.host = params
       })
       this.getExpectedConfs(this.host)

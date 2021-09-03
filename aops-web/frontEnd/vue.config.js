@@ -4,6 +4,7 @@ const GitRevisionPlugin = require('git-revision-webpack-plugin')
 const GitRevision = new GitRevisionPlugin()
 const buildDate = JSON.stringify(new Date().toLocaleString())
 const createThemeColorReplacerPlugin = require('./config/plugin.config')
+const BundleAnalyzerPlugin = require('webpack-bundle-analyzer').BundleAnalyzerPlugin
 
 function resolve (dir) {
   return path.join(__dirname, dir)
@@ -17,26 +18,6 @@ function getGitHash () {
   return 'unknown'
 }
 
-const isProd = process.env.NODE_ENV === 'production'
-
-const assetsCDN = {
-  // webpack build externals
-  externals: {
-    vue: 'Vue',
-    'vue-router': 'VueRouter',
-    vuex: 'Vuex',
-    axios: 'axios'
-  },
-  css: [],
-  // https://unpkg.com/browse/vue@2.6.10/
-  js: [
-    '//cdn.jsdelivr.net/npm/vue@2.6.14/dist/vue.min.js',
-    '//cdn.jsdelivr.net/npm/vue-router@3.1.3/dist/vue-router.min.js',
-    '//cdn.jsdelivr.net/npm/vuex@3.1.1/dist/vuex.min.js',
-    '//cdn.jsdelivr.net/npm/axios@0.21.1/dist/axios.min.js'
-  ]
-}
-
 // vue.config.js
 const vueConfig = {
   configureWebpack: {
@@ -48,10 +29,12 @@ const vueConfig = {
         APP_VERSION: `"${require('./package.json').version}"`,
         GIT_HASH: JSON.stringify(getGitHash()),
         BUILD_DATE: buildDate
-      })
+      }),
+      // 依赖大小分析工具
+      new BundleAnalyzerPlugin()
     ],
-    // if prod, add externals
-    externals: isProd ? assetsCDN.externals : {},
+
+    externals: {}
   },
 
   chainWebpack: config => {
@@ -72,15 +55,6 @@ const vueConfig = {
       .options({
         name: 'assets/[name].[hash:8].[ext]'
       })
-
-    // if prod is on
-    // assets require on cdn
-    if (isProd) {
-      config.plugin('html').tap(args => {
-        args[0].cdn = assetsCDN
-        return args
-      })
-    }
   },
 
   css: {
@@ -114,6 +88,38 @@ const vueConfig = {
       },
       '/api/host': {
         target: 'http://123.60.114.22:11114',
+        ws: false,
+        changeOrigin: true,
+        pathRewrite: {
+          '^/api': ''
+        }
+      },
+      '/api/confs': {
+        target: 'http://123.60.114.22:11114',
+        ws: false,
+        changeOrigin: true,
+        pathRewrite: {
+          '^/api': ''
+        }
+      },
+      '/api/management': {
+        target: 'http://123.60.114.22:11114',
+        ws: false,
+        changeOrigin: true,
+        pathRewrite: {
+          '^/api': ''
+        }
+      },
+      '/api/diag': {
+        target: 'http://123.60.114.22:11113',
+        ws: false,
+        changeOrigin: true,
+        pathRewrite: {
+          '^/api': ''
+        }
+      },
+      '/api/check': {
+        target: 'http://123.60.114.22:11112',
         ws: false,
         changeOrigin: true,
         pathRewrite: {

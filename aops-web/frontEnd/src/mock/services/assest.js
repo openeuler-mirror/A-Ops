@@ -91,9 +91,6 @@ const getHosts = (options) => {
 }
 
 const getHostInfo = (options) => {
-  const body = getBody(options)
-  console.log('getHostInfo: ', body)
-
   return builder({
     'msg': Mock.mock('success'),
     'total_count': 3,
@@ -103,31 +100,18 @@ const getHostInfo = (options) => {
 }
 
 const addHost = (options) => {
-    const body = getBody(options)
-    console.log(body)
-
     return builder({
       'msg': Mock.mock('success')
     }, '添加成功', 200, { 'Custom-Header': Mock.mock('@guid') })
 }
 
 const deleteHost = (options) => {
-  const body = getBody(options)
-  console.log(body)
-
   return builder({
     'msg': Mock.mock('success')
   }, '添加成功', 200, { 'Custom-Header': Mock.mock('@guid') })
 }
 
 const getHostGroupList = (options) => {
-  const body = getBody(options)
-  console.log('option: ', options)
-
-  if (body.uid !== '123') {
-      return builder({ 'msg': '用户错误' }, '用户错误', 410)
-  }
-
   return builder({
     'msg': Mock.mock('success'),
     'total_count': 3,
@@ -149,8 +133,6 @@ const addHostGroup = (options) => {
 }
 
 const deleteHostGroup = (options) => {
-  console.log(options)
-
   return builder({
     'msg': Mock.mock('success')
   }, '添加成功', 200, { 'Custom-Header': Mock.mock('@guid') })

@@ -1,5 +1,4 @@
 export function getSelectedRow (selectedRowKeys, selectedRowsAll, pageTableData) {
-  console.log('js: ', selectedRowKeys, selectedRowsAll)
   const newselectedRowsAll = []
   selectedRowKeys.forEach(key => {
     const filteredItem = selectedRowsAll.filter(row => row.host_group_name === key)

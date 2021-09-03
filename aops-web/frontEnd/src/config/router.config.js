@@ -1,5 +1,5 @@
 // eslint-disable-next-line
-import { UserLayout, BasicLayout, BlankLayout } from '@/layouts'
+import { UserLayout, BasicLayout } from '@/layouts'
 // import { bxAnaalyse } from '@/core/icons'
 
 const RouteView = {
@@ -8,6 +8,10 @@ const RouteView = {
 }
 
 const routeMap = {
+  /*
+    @title: 路由名称。通过i18nRender转换成不同语种
+    @path: 路由链接
+  */
   index: {
     title: 'menu.home',
     path: '/'
@@ -65,6 +69,14 @@ const routeMap = {
             path: '/diagnosis/network-topo-diagram'
           }
         }
+      },
+      FaultTrees: {
+        title: 'menu.diagnosis.fault-trees',
+        path: '/diagnosis/fault-trees'
+      },
+      NetworkTopoDiagram: {
+        title: 'menu.diagnosis.network-topo-diagram',
+        path: '/diagnosis/network-topo-diagram'
       }
     }
   },
@@ -80,13 +92,23 @@ const routeMap = {
         title: 'menu.configuration.transcation-domain-configurations',
         path: '/configuration/transcation-domain-configurations'
       },
-      hostConfigurations: {
-        title: 'menu.configuration.host-configurations',
-        path: '/configuration/host-configurations'
+      TranscationDomainConfigurationsDetail: {
+        title: 'menu.configuration.transcation-domain-configurations',
+        path: '/configuration/transcation-domain-configurations/:domainName'
       },
       queryHostList: {
         title: 'menu.configuration.transcation-domain-management.query_host_list',
         path: '/configuration/query_host_list/:domainName'
+      }
+    }
+  },
+  task: {
+    title: 'menu.task',
+    path: '/task',
+    children: {
+      TaskManagement: {
+        title: 'menu.task.task-management',
+        path: '/task/task-management'
       }
     }
   }
@@ -150,14 +172,13 @@ export const asyncRouterMap = [
             meta: { title: 'menu.assests.host-group-management', permission: ['assests'] }
           }
         ]
-      }
-      /* 关闭智能诊断页面路由
+      },
       {
         path: routeMap.diagnosis.path,
         name: 'diagnosis',
         redirect: '/diagnosis/abnormal-check',
         component: RouteView,
-        meta: { title: routeMap.diagnosis.title, icon: 'form', permission: ['diagnosis'] },
+        meta: { title: routeMap.diagnosis.title, icon: 'medicine-box', permission: ['diagnosis'] },
         children: [{
           path: routeMap.diagnosis.children.AbnormalCheck.path,
           name: 'AbnormalCheck',
@@ -222,14 +243,12 @@ export const asyncRouterMap = [
           }]
         }]
       },
-      */
-      /* 关闭配置管理页面
       {
         path: routeMap.configuration.path,
         name: 'configuration',
         redirect: routeMap.configuration.children.TranscationDomainManagement.path,
         component: RouteView,
-        meta: { title: routeMap.configuration.title, icon: 'form', permission: ['configuration'] },
+        meta: { title: routeMap.configuration.title, icon: 'apartment', permission: ['configuration'] },
         children: [
           {
             path: routeMap.configuration.children.TranscationDomainManagement.path,
@@ -244,17 +263,11 @@ export const asyncRouterMap = [
             meta: { title: routeMap.configuration.children.TranscationDomainConfigurations.title, permission: ['configuration'] }
           },
           {
-            // 主机管理页面开发完成后从menu中隐藏掉，同时配置自定义面包屑
-            path: routeMap.configuration.children.hostConfigurations.path,
-            name: 'hostConfigurations',
-            component: () => import('@/views/configuration/TranscationDomainManagement'),
-            meta: { title: routeMap.configuration.children.hostConfigurations.title, permission: ['configuration'] }
-          },
-          {
-            path: '/configuration/diff-test',
-            name: 'DiffTest',
-            component: () => import('@/views/configuration/DiffTest'),
-            meta: { title: 'diff test', permission: ['configuration'] }
+            path: routeMap.configuration.children.TranscationDomainConfigurationsDetail.path,
+            name: 'transcationDomainConfigurations',
+            hidden: true,
+            component: () => import('@/views/configuration/TranscationDomainConfigurations'),
+            meta: { title: routeMap.configuration.children.TranscationDomainConfigurationsDetail.title, permission: ['configuration'] }
           },
           {
             path: routeMap.configuration.children.queryHostList.path,
@@ -272,8 +285,22 @@ export const asyncRouterMap = [
               ] }
           }
         ]
+      },
+      {
+        path: routeMap.task.path,
+        name: 'task',
+        redirect: routeMap.task.children.TaskManagement.path,
+        component: RouteView,
+        meta: { title: routeMap.task.title, icon: 'robot', permission: ['task'] },
+        children: [
+          {
+            path: routeMap.task.children.TaskManagement.path,
+            name: 'TaskManagement',
+            component: () => import('@/views/task/TaskManagement'),
+            meta: { title: routeMap.task.children.TaskManagement.title, permission: ['task'] }
+          }
+        ]
       }
-      */
     ]
   },
   {

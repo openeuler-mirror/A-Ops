@@ -182,7 +182,6 @@ export default {
     },
     methods: {
         handleTableChange (pagination, filters, sorter) {
-            console.log(pagination, filters, sorter)
             // 存储翻页状态
             this.pagination = pagination
             this.filters = filters
@@ -191,7 +190,6 @@ export default {
             this.getHostList()
         },
         handleInput (e) {
-            console.log(e)
         },
         onSelectChange (selectedRowKeys, selectedRows) {
             this.selectedRowKeys = selectedRowKeys

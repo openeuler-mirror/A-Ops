@@ -2,9 +2,6 @@
 
   <div id="userLayout" :class="['user-layout-wrapper', isMobile && 'mobile']">
     <div class="container">
-      <div class="user-layout-lang">
-        <select-lang class="select-lang-trigger" />
-      </div>
       <div class="user-layout-content">
         <div class="top">
           <div class="header">
@@ -37,13 +34,9 @@
 
 <script>
 import { deviceMixin } from '@/store/device-mixin'
-import SelectLang from '@/components/SelectLang'
 
 export default {
   name: 'UserLayout',
-  components: {
-    SelectLang
-  },
   mixins: [deviceMixin],
   mounted () {
     document.body.classList.add('userLayout')
@@ -72,7 +65,6 @@ export default {
     min-height: 100%;
     background: #f0f2f5 url(~@/assets/background.svg) no-repeat 50%;
     background-size: 100%;
-    //padding: 50px 0 84px;
     position: relative;
 
     .user-layout-lang {
@@ -144,7 +136,6 @@ export default {
       }
 
       .footer {
-        // position: absolute;
         width: 100%;
         bottom: 0;
         padding: 0 16px;

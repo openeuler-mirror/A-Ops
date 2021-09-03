@@ -20,7 +20,7 @@ export default api
 export function domainList (parameter) {
   return request({
     url: api.domainList,
-    method: 'get',
+    method: 'post',
     parameter
   })
 }
@@ -29,7 +29,7 @@ export function domainList (parameter) {
 export function domainHostList (domainName, ...parameter) {
   return request({
     url: api.domainHostList,
-    method: 'get',
+    method: 'post',
     data: {
       ...parameter,
       domainName: domainName
@@ -48,13 +48,12 @@ export function addHost (domainName, hostInfos, ...parameter) {
   })
 }
 // 获取业务域主机同步状态
-export function domainStatus (domainName, ...parameter) {
+export function domainStatus ({ domainName, ...parameter }) {
   return request({
     url: api.domainStatus,
-    method: 'get',
+    method: 'post',
     data: {
-      ...parameter,
-      domainName: domainName
+      domainName
     }
   })
 }
@@ -66,7 +65,6 @@ export function domainStatus (domainName, ...parameter) {
 //   }
 // ]
 export function createDomain (domainInfo, ...parameter) {
-  console.log(domainInfo)
   return request({
     url: api.createDomain,
     method: 'post',
@@ -88,12 +86,11 @@ export function deleteDomain (parameter) {
   })
 }
 // 删除业务域主机
-export function deleteHost (domainName, hostInfos, ...parameter) {
+export function deleteHost ({ domainName, hostInfos, ...parameter }) {
   return request({
     url: api.deleteHost,
-    method: 'post',
+    method: 'delete',
     data: {
-      ...parameter,
       domainName: domainName,
       hostInfos: hostInfos
     }
@@ -112,12 +109,11 @@ export function syncConf (domainName, hostIds, ...parameter) {
   })
 }
 // 获取主机当前配置
-export function queryRealConfs (domainName, hostIds, ...parameter) {
+export function queryRealConfs ({ domainName, hostIds, ...parameter }) {
   return request({
     url: api.queryRealConfs,
-    method: 'get',
+    method: 'post',
     data: {
-      ...parameter,
       domainName: domainName,
       hostIds: hostIds
     }

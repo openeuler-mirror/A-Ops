@@ -52,7 +52,6 @@ export default {
   },
   methods: {
     getFaultTree () {
-      console.log(this.faultTreeId)
       this.faultTree = {
         tree_name: '故障树2',
         avatar: 'https://gw.alipayobjects.com/zos/rmsportal/WdGqmHpayyMjiEhcKoVE.png',

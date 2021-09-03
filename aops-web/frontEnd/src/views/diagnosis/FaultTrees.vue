@@ -2,7 +2,7 @@
   <my-page-header-wrapper>
     <a-card>
       <div style="height: 110px;position: relative;">
-        <img class="avatar-img" :src="faultTree.avatar">
+        <img class="avatar-img" src="~@/assets/huawei_logo_h.png">
         <div class="content-div">
           <div class="title">
             <span style="padding-right: 5px">{{faultTree.tree_name}}</span>
@@ -10,11 +10,18 @@
             <a-tag>软件故障</a-tag>
             <a-tag>配置</a-tag>
           </div>
-          <div class="remark">描述：{{faultTree.content}}</div>
+          <div class="remark">描述：{{faultTree.description}}</div>
           <div class="btn-box">
             <a>编辑</a>
             <a>导出</a>
-            <a>删除</a>
+            <a-popconfirm
+              title="您确定要删除该故障树吗?"
+              ok-text="确认"
+              cancel-text="取消"
+              @confirm="deletediagtree(faultTree.tree_name)"
+            >
+              <a href="javascript:;" >删除</a>
+            </a-popconfirm>
           </div>
         </div>
         <drawer-view title="新建故障诊断">
@@ -30,7 +37,10 @@
       </div>
       <a-tabs default-active-key="1" style="min-height: 350px">
         <a-tab-pane key="1" tab="树图">
-          <span>树图...</span>
+          <fault-tree
+            :treeData="faultTree.tree_content || {}"
+            :treeDataLoading="treeDataLoading"
+          />
         </a-tab-pane>
         <a-tab-pane key="2" tab="文件" force-render>
           <p>1、文件1</p>
@@ -43,15 +53,20 @@
 </template>
 
 <script>
+import { getDiagTree, delDiagTree } from '@/api/diagnosis'
+
 import MyPageHeaderWrapper from '@/views/utils/MyPageHeaderWrapper'
 import DrawerView from '@/views/utils/DrawerView'
 import AddFaultDiagnosis from '@/views/diagnosis/components/AddFaultDiagnosis'
+import FaultTree from './components/FaultTree.vue'
+
 export default {
   name: 'FaultTrees',
   components: {
     MyPageHeaderWrapper,
     DrawerView,
-    AddFaultDiagnosis
+    AddFaultDiagnosis,
+    FaultTree
   },
   created () {
     this.getFaultTree()
@@ -59,20 +74,43 @@ export default {
   data () {
     return {
       faultTreeId: this.$route.params.id,
-      faultTree: {}
+      faultTree: {},
+      treeDataLoading: false
     }
   },
   methods: {
     getFaultTree () {
-      console.log(this.faultTreeId)
-      this.faultTree = {
-        tree_name: '故障树2',
-        avatar: 'https://gw.alipayobjects.com/zos/rmsportal/WdGqmHpayyMjiEhcKoVE.png',
-        content: '这里可以放一两项简单描述，仅可点击查看详情2'
-      }
+      const _this = this
+      const treeList = []
+      treeList.push(_this.faultTreeId)
+      this.treeDataLoading = true
+      getDiagTree({
+        treeList
+      }).then(function (res) {
+        _this.faultTree = res.trees[0]
+      }).catch(function (err) {
+        _this.$message.error(err.response.data.msg)
+      }).finally(function () {
+        _this.treeDataLoading = false
+      })
+    },
+    deletediagtree (treeName) {
+      const _this = this
+      const treeList = []
+      treeList.push(treeName)
+      delDiagTree({
+        treeList
+      }).then(function (res) {
+        _this.$message.success('删除成功')
+        // 跳转回故障诊断页面
+        _this.$router.push('/diagnosis/fault-diagnosis')
+      }).catch(function (err) {
+        _this.$message.error(err.response.data.msg)
+      }).finally(function () {
+      })
     },
     addFaultDiagnosisSuccess () {
-      console.log('addFaultDiagnosisSuccess')
+      // console.log('addFaultDiagnosisSuccess')
     }
   }
 }

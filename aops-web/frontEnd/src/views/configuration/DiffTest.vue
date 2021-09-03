@@ -15,7 +15,7 @@
       <a-row type="flex" justify="space-between">
         <a-col :span="11">
           <span
-          class="test"
+            class="test"
             v-for="(part, index) in diffLeft"
             :key="index"
             :style="{ background: setColor(part.added, part.removed), color: (part.added || part.removed) ? '#fff' : '' }"
@@ -25,7 +25,7 @@
         </a-col>
         <a-col :span="11">
           <span
-          class="test"
+            class="test"
             v-for="(part, index) in diffRight"
             :key="index"
             :style="{ background: setColor(part.added, part.removed), color: (part.added || part.removed) ? '#fff' : '' }"
@@ -40,7 +40,7 @@
       <a-row type="flex" justify="space-between">
         <a-col :span="11">
           <span
-          class="test"
+            class="test"
             v-for="(part, index) in diffLeft2"
             :key="index"
             :style="{ background: setColor(part.added, part.removed, true), color: (part.added || part.removed) ? '#fff' : '' }"
@@ -50,7 +50,7 @@
         </a-col>
         <a-col :span="11">
           <span
-          class="test"
+            class="test"
             v-for="(part, index) in diffRight2"
             :key="index"
             :style="{ background: setColor(part.added, part.removed), color: (part.added || part.removed) ? '#fff' : '' }"
@@ -65,7 +65,7 @@
       <a-row type="flex" justify="space-between">
         <a-col :span="11">
           <span
-          class="test"
+            class="test"
             v-for="(part, index) in diffByLine"
             :key="index"
             :style="{ background: setColor2(part.added, part.removed, true), color: (part.added || part.removed) ? '#fff' : '' }"
@@ -75,7 +75,7 @@
         </a-col>
         <a-col :span="11">
           <span
-          class="test"
+            class="test"
             v-for="(part, index) in diffByLine"
             :key="index"
             :style="{ background: setColor2(part.added, part.removed), color: (part.added || part.removed) ? '#fff' : '' }"
@@ -90,7 +90,7 @@
       <a-row type="flex" justify="space-between">
         <a-col :span="11">
           <div
-          class="test"
+            class="test"
             v-for="(part, index) in diffPartList"
             :key="index"
             :style="{ background: setColor2(part.added, part.removed, true), color: (part.added || part.removed) ? '#fff' : '' }"
@@ -100,7 +100,7 @@
         </a-col>
         <a-col :span="11">
           <div
-          class="test"
+            class="test"
             v-for="(part, index) in diffPartList"
             :key="index"
             :style="{ background: setColor2(part.added, part.removed), color: (part.added || part.removed) ? '#fff' : '' }"
@@ -113,8 +113,8 @@
     <a-card>
       仿git样式
       <div
-      v-for="(part, index) in diffPartList"
-      :key="index"
+        v-for="(part, index) in diffPartList"
+        :key="index"
       >
         <a-row type="flex" justify="space-between">
           <a-col :span="11" class="diff-line" :class="[setDiffClass(part.added, part.removed, true)]">
@@ -130,6 +130,7 @@
 </template>
 
 <script>
+// 本组件是diff对比组件的几个测试样例，生产代码中不应包含
 import { PageHeaderWrapper } from '@ant-design-vue/pro-layout'
 const Diff = require('diff')
 
@@ -198,7 +199,7 @@ export default {
         }
         return ''
       },
-      setDiffClass (isAdd, isRemoved, isOrigin) {console.log(isAdd,isRemoved)
+      setDiffClass (isAdd, isRemoved, isOrigin) {
         if (isOrigin) {
           if (isAdd) {
             return 'diff-add-blank'
@@ -222,7 +223,6 @@ export default {
       this.diff = Diff.diffChars(this.testConf1, this.testConf2)
       // console.log(this.diff)
       this.diffByLine = Diff.diffLines(this.testConf1, this.testConf2)
-      console.log(this.diffByLine)
     }
 }
 </script>

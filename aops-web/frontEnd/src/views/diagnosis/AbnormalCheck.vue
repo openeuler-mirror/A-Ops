@@ -10,7 +10,7 @@
           <div style="height: 100%;width: calc(100% - 75px);float: left;position:relative;">
             <div class="content">
               <div style="color: #999;">异常检测规则数量</div>
-              <div style="color: #333;font-size: 32px;line-height: 1em">{{ ('1345' || 0).toString().replace(/(\d)(?=(?:\d{3})+$)/g, '$1,')}}</div>
+              <div style="color: #333;font-size: 32px;line-height: 1em">{{ ruleCount.toString().replace(/(\d)(?=(?:\d{3})+$)/g, '$1,')}}</div>
             </div>
           </div>
         </div>
@@ -57,7 +57,7 @@
                 <p style="margin: 0">{{ item.hostName }}</p>
                 <p style="margin: 0">{{ item.ip }}</p>
               </a-col>
-              <a-col :span="6">{{ item.count }}项</a-col>
+              <a-col :span="6" style="color: #ff58ab">{{ item.count }}项</a-col>
             </a-row>
           </a-col>
           <a-col style="float: left;height: 100%;" :span="8">
@@ -86,6 +86,7 @@
     <a-card style="width: 100%;float: left;margin-top: 10px">
       <div style="font-weight: bold;font-size: 18px;margin-top: -12px;margin-bottom: 10px">异常检测记录</div>
       <a-table
+        rowKey="host_id"
         :columns="columns"
         :data-source="resultList"
         :pagination="pagination"
@@ -93,22 +94,25 @@
         :loading="tableIsLoading"
         :expandIconAsCell="false"
         :expandIconColumnIndex="3">
-        <span slot="timeArray" slot-scope="result">{{result.start_time}}-{{result.end_time}}</span>
+        <span slot="index" slot-scope="text, record, index">
+          {{ index + firstIndex }}
+        </span>
         <span slot="action" slot-scope="result">
-          <a @click="openEdit(result)">查看报告</a>
+          <span>查看报告</span>
           <a-divider type="vertical" />
           <a-popconfirm
             title="确认要删除这条异常检测记录?"
             ok-text="确认"
             cancel-text="取消"
+            :disabled="true"
             @confirm="deleteResult(result)"
-          ><a href="#">删除</a></a-popconfirm>
+          ><span href="#">删除</span></a-popconfirm>
           <a-divider type="vertical" />
-          <a><a-icon type="down" /></a>
+          <a-icon type="down"  style="color: #999"/>
         </span>
-        <p slot="expandedRowRender" slot-scope="result" style="margin: 0">
-          {{ result }}
-        </p>
+        <div slot="expandedRowRender" slot-scope="result" style="width: 100%;margin: 1px;padding-left: 50px;">
+          <check-result-expanded :dataSource="result.data_list"></check-result-expanded>
+        </div>
       </a-table>
     </a-card>
   </my-page-header-wrapper>
@@ -119,6 +123,9 @@ import MyPageHeaderWrapper from '@/views/utils/MyPageHeaderWrapper'
 import DrawerView from '@/views/utils/DrawerView'
 import GetCheckResultDrawer from '@/views/diagnosis/components/GetCheckResultDrawer'
 import AddAbnormalCheckRuleDrawer from '@/views/diagnosis/components/AddAbnormalCheckRuleDrawer'
+import { getRuleCount, getResultCountTopTen, getResult } from '@/api/check'
+import { dateFormat } from '@/views/utils/Utils'
+import CheckResultExpanded from '@/views/diagnosis/components/CheckResultExpanded'
 
   export default {
     name: 'AbnormalCheck',
@@ -126,71 +133,66 @@ import AddAbnormalCheckRuleDrawer from '@/views/diagnosis/components/AddAbnormal
       MyPageHeaderWrapper,
       DrawerView,
       AddAbnormalCheckRuleDrawer,
-      GetCheckResultDrawer
+      GetCheckResultDrawer,
+      CheckResultExpanded
     },
     mounted: function () {
-      for (var i = 0; i < 10; i++) {
-        this.resultCountList.push({
-          hostName: 'Host' + new Date().getTime(),
-          ip: '127.0.0.1',
-          count: parseInt(Math.random() * 100)
-        })
-      }
-      this.resultCountList.sort(function (a, b) { return a.count < b.count })
+      this.getRuleCount()
+      this.getResultCountTopTen()
       this.getResultList({})
     },
     computed: {
-      resultCountListPart_1 () {
-        return ''
+      firstIndex () {
+        return (this.pagination.current - 1) * this.pagination.pageSize + 1
       }
     },
     data () {
       return {
+        ruleCount: 0,
         filters: null,
         sorter: null,
         tableIsLoading: false,
         columns,
         resultCountList: [],
         resultList: [],
-        pagination: {
-          current: 1,
-          pageSize: 5,
-          showSizeChanger: true,
-          showQuickJumper: true,
-          change: this.paginationChange
-        }
+        pagination: { current: 1, pageSize: 5, showSizeChanger: true, showQuickJumper: true }
       }
     },
     methods: {
+      getRuleCount () {
+        var that = this
+        getRuleCount().then(function (data) {
+          that.ruleCount = data.rule_count
+        }).catch(function (err) {
+          that.$message.error(err.response.data.msg)
+        })
+      },
+      getResultCountTopTen () {
+        var that = this
+        getResultCountTopTen().then(function (data) {
+          that.resultCountList = data.results
+        }).catch(function (err) {
+          that.$message.error(err.response.data.msg)
+        })
+      },
       paginationChange (page, pageSize) {
         // this.getResultList({})
       },
-      handleTableChange (pagination, filters, sorter) {
-        // 存储翻页状态
-        this.pagination = pagination
-        this.filters = filters
-        this.sorter = sorter
-        // 出发排序、筛选、分页时，重新请求主机列表
-        this.getResultList({})
+      handleTableChange (pagination) {
+        this.pagination = pagination // 存储翻页状态
+        this.getResultList() // 出发排序、筛选、分页时，重新请求
       },
-      getResultList ({ p, f, s }) {
-        console.log(this.pagination.current)
-        this.resultList = []
-        for (var i = 0; i < 20; i++) {
-          this.resultList.push({
-            id: new Date().getTime(),
-            hostName: 'Host' + new Date().getTime(),
-            ip: '127.0.0.1',
-            checkItems: 'checkItems TEST...',
-            condition: 'condition TEST...',
-            result: 'result TEST...',
-            start_time: '2021-08-23 12:00',
-            end_time: '2021-08-25 12:00'
-          })
-        }
+      getResultList () {
+        var that = this
+        getResult({ perPage: this.pagination.pageSize, page: this.pagination.current }).then(function (data) {
+          that.resultList = data.check_result
+          that.pagination = { ...that.pagination }
+          that.pagination.total = data.total_count
+        }).catch(function (err) {
+          that.$message.error(err.response.data.msg)
+        })
       },
       deleteResult (result) {
-        console.log('delete:' + JSON.stringify(result))
         this.$message.success('记录删除成功')
       }
     }
@@ -203,7 +205,7 @@ import AddAbnormalCheckRuleDrawer from '@/views/diagnosis/components/AddAbnormal
       key: 'index',
       align: 'center',
       width: 70,
-      customRender: (text, record, index) => `${index + 1}`
+      scopedSlots: { customRender: 'index' }
     },
     {
       dataIndex: 'hostName',
@@ -216,8 +218,8 @@ import AddAbnormalCheckRuleDrawer from '@/views/diagnosis/components/AddAbnormal
       title: 'IP地址'
     },
     {
-      dataIndex: 'checkItems',
-      key: 'checkItems',
+      dataIndex: 'check_item',
+      key: 'check_item',
       title: '检测项'
     },
     {
@@ -226,16 +228,17 @@ import AddAbnormalCheckRuleDrawer from '@/views/diagnosis/components/AddAbnormal
       title: '检测条件'
     },
     {
-      dataIndex: 'result',
-      key: 'result',
+      dataIndex: 'value',
+      key: 'value',
       title: '检测结果'
     },
     {
       title: '检测时间段',
-      scopedSlots: { customRender: 'timeArray' }
+      customRender: (text, record, index) => dateFormat('YYYY-mm-dd HH:MM:SS', record.start * 1000) + ' 至 ' + dateFormat('YYYY-mm-dd HH:MM:SS', record.end * 1000)
     },
     {
       title: '操作',
+      key: 'action',
       scopedSlots: { customRender: 'action' }
     }
   ]

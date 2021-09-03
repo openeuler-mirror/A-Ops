@@ -2,7 +2,7 @@
   <my-page-header-wrapper>
     <a-card>
       <div style="height: 110px;position: relative;">
-        <img class="avatar-img" :src="report.avatar">
+        <img class="avatar-img" src="~@/assets/huawei_logo_h.png">
         <div class="content-div">
           <div class="title">
             <span style="padding-right: 5px">报告ID：{{report.id}}</span>
@@ -48,6 +48,7 @@
 
 <script>
 import MyPageHeaderWrapper from '@/views/utils/MyPageHeaderWrapper'
+import { getdiagreport } from '@/api/diagnosis'
 
 export default {
   name: 'NetworkTopoDiagram',
@@ -59,12 +60,24 @@ export default {
   },
   data () {
     return {
-      reportId: this.$route.params.id,
-      report: {}
+      task_id: this.$route.params.id,
+      report: {},
+      reportData: []
     }
   },
   methods: {
     getDiagReport () {
+      const _this = this
+      const reportList = []
+      reportList.push(_this.task_id)
+      getdiagreport(reportList).then(function (res) {
+        if (res.code === 200) {
+          _this.reportData = res.result
+        }
+      }).catch(function (err) {
+        _this.$message.error(err.response.data.msg)
+      }).finally(function () {
+      })
       this.report = {
         id: '2349497',
         hostName: 'Host111',
@@ -87,7 +100,7 @@ export default {
       }
     },
     deleteReport () {
-      console.log('删除！')// 删除后当前页不存在，可能要跳回列表页
+      // console.log('删除！')// 删除后当前页不存在，可能要跳回列表页
       this.$message.success('诊断报告已删除！')
     }
   }

@@ -24,7 +24,7 @@
         <a-table
           :rowKey="rowKey"
           :columns="columns"
-          :data-source="tableData"
+          :data-source="taskList"
           :pagination="pagination"
           :row-selection="rowSelection"
           @change="handleTableChange"
@@ -33,7 +33,7 @@
                 <a-progress :percent="record.progress" size="small" status="active" />
               </span>
               <span slot="action" slot-scope="record">
-                <router-link :to="{ path: '/diagnosis/diag-report/'+record.progress }" target="_blank">查看报告</router-link>
+                <router-link :to="{ path: '/diagnosis/diag-report/'+record.task_id }" target="_blank">查看报告</router-link>
                 <a-divider type="vertical" />
                 <a href="#" @click="diagnosisDelete(record)">删除</a>
               </span>
@@ -42,9 +42,9 @@
     </a-card>
     <a-card :bordered="false" style="margin-top: 12px">
       <div class="ant-pro-pages-list-applications-filterCardList">
-        <a-list :loading="loading" :data-source="currentTreeData" :grid="{ gutter: 24, xl: 3, lg: 3, md: 3, sm: 2, xs: 1 }" >
+        <a-list :loading="loading" :data-source="treeData.slice(0,showIndex)" :grid="{ gutter: 24, xl: 3, lg: 3, md: 3, sm: 2, xs: 1 }" >
           <a-list-item slot="renderItem" slot-scope="item">
-            <template v-if="!item || item.tree_name === ''">
+            <template v-if="!item.tree_name">
               <drawer-view title="新增故障树">
                 <template slot="click">
                   <a-button class="new-btn" type="dashed">
@@ -61,11 +61,11 @@
                 <a-card>
                   <div>
                     <div class="avatar-div">
-                      <img class="avatar-img" :src="item.avatar">
+                      <img class="avatar-img" src="~@/assets/huawei_logo_h.png">
                     </div>
                     <div class="content-div">
                       <div class="title">{{item.tree_name}}</div>
-                      <div class="remark">{{item.content}}</div>
+                      <div class="remark">{{item.description}}</div>
                     </div>
                   </div>
                   <template slot="actions">
@@ -89,7 +89,7 @@
                             </a-menu-item>
                             <a-menu-item>
                               <a-popconfirm
-                                title="您确定要删除该信息吗?"
+                                title="您确定要删除该故障树吗?"
                                 ok-text="确认"
                                 cancel-text="取消"
                                 @confirm="deletediagtree(item.tree_name)"
@@ -108,17 +108,18 @@
           </a-list-item>
         </a-list>
       </div>
-      <div style="text-align: center"><a @click="getMoreTree">加载更多</a></div>
+      <div style="text-align: center" v-if="treeData.length>showIndex"><a @click="showIndex = showIndex+6">加载更多</a></div>
     </a-card>
   </my-page-header-wrapper>
 </template>
 
 <script>
 import MyPageHeaderWrapper from '@/views/utils/MyPageHeaderWrapper'
-  import { getReportList, getDiagTree, getDiagProgress, delDiagReport, delDiagTree } from '@/api/diagnosis'
+  import { getTaskList, getProgress, getDiagTree, delDiagReport, delDiagTree } from '@/api/diagnosis'
   import DrawerView from '@/views/utils/DrawerView'
   import AddFaultTree from '@/views/diagnosis/components/AddFaultTree'
   import AddFaultDiagnosis from '@/views/diagnosis/components/AddFaultDiagnosis'
+import { dateFormat } from '@/views/utils/Utils'
   // import CardInfo from './components/CardInfo'
   const columns = [
     {
@@ -128,14 +129,12 @@ import MyPageHeaderWrapper from '@/views/utils/MyPageHeaderWrapper'
       sorter: false
     },
     {
-      dataIndex: 'tree_name',
-      key: 'tree_name',
-      title: '所用故障树'
+      title: '所用故障树',
+      customRender: (text, item) => item.tree_list.join(', ')
     },
     {
-      dataIndex: 'time',
-      key: 'time',
-      title: '诊断时间段'
+      title: '诊断时间段',
+      customRender: (text, item) => item.time_range.map(time => dateFormat('YYYY-mm-dd HH:MM:SS', time)).join(' 至 ')
     },
     {
       key: 'progress',
@@ -159,21 +158,21 @@ import MyPageHeaderWrapper from '@/views/utils/MyPageHeaderWrapper'
     data () {
       return {
         rowKey: 'task_id',
+        taskList: [],
         pagination: {
           current: 1,
-          pageSize: 10,
+          pageSize: 5,
+          total: 0,
           showSizeChanger: true,
           showQuickJumper: true
         },
         filters: {},
         sorter: {},
         columns,
-        tableData: [],
         selectedRowKeys: [],
         tableIsLoading: false,
         treeData: [],
-        currentTreeData: [],
-        currentTreeData_index: 0,
+        showIndex: 6,
         loading: true
       }
     },
@@ -189,11 +188,6 @@ import MyPageHeaderWrapper from '@/views/utils/MyPageHeaderWrapper'
           pageSize: this.pagination.pageSize
         }
       },
-      tableFilters () {
-        return {
-          ...this.filters
-        }
-      },
       tableSorter () {
         return {
           field: this.sorter.field,
@@ -203,110 +197,97 @@ import MyPageHeaderWrapper from '@/views/utils/MyPageHeaderWrapper'
     },
     mounted: function () {
       this.refreshFaultDiagnosisList()
-      this.getDiagTree({
-        pagination: this.tablePagination
-      })
-      // const _this = this
-      // setInterval(function () {
-      //   if (_this.tableData.length > 0) {
-      //     _this.loadDiagProgress(_this.tableData)
-      //   }
-      // }, 30000)
+      this.getDiagTree()
+      const _this = this
+      setInterval(function () {
+        if (_this.taskList.length > 0) {
+          _this.loadDiagProgress(_this.taskList)
+        }
+      }, 30000)
     },
     methods: {
       addDiagTreeSuccess () {
-        console.log('刷新故障树列表页')
+        this.getDiagTree()
+        // console.log('刷新故障树列表页')
       },
       addFaultDiagnosisSuccess () {
         this.refreshFaultDiagnosisList()
-        console.log('刷新故障诊断列表页')
+        // console.log('刷新故障诊断列表页')
       },
       handleTableChange (pagination, filters, sorter) {
         // 设置翻页状态
         this.pagination = pagination
-        this.filters = filters
         this.sorter = sorter
-        // 出发排序、筛选、分页时，重新请求主机列表
-        this.getHostList({
-          pagination: this.tablePagination,
-          filters: this.tableFilters,
-          sorter: this.tableSorter
+        this.getTaskList({
+          pagination: pagination,
+          sorter: sorter
         })
       },
       onSelectChange (selectedRowKeys, selectedRows) {
-        console.log(`selectedRowKeys: ${selectedRowKeys}`, 'selectedRows: ', selectedRows)
+        // console.log(`selectedRowKeys: ${selectedRowKeys}`, 'selectedRows: ', selectedRows)
         this.selectedRowKeys = selectedRowKeys
       },
       refreshFaultDiagnosisList () {
         const that = this
-        that.getFaultDiagnosisList({
-          pagination: that.tablePagination,
-          filters: that.tableFilters,
-          sorter: that.tableSorter
+        that.getTaskList({
+            pagination: that.tablePagination,
+            sorter: that.tableSorter
         })
       },
-      // 获取列表数据
-      getFaultDiagnosisList (tableInfo) {
-        const _this = this
-        this.tableIsLoading = true
-
-        getReportList({
-          uid: '123',
-          tableInfo
-        })
-          .then(function (res) {
-            _this.tableData = res.result.host_infos
-            _this.loadDiagProgress(_this.tableData)
+      // 获取诊断任务列表
+      getTaskList (tableInfo) {
+        const that = this
+        const pagination = that.pagination || {}
+        that.tableIsLoading = true
+        getTaskList(tableInfo).then(function (data) {
+          var taskList = data.task_infos
+          var taskMap = {}
+          var taskIdArray = []
+          taskList.forEach(function (task) {
+            taskMap[task.task_id] = task
+            taskIdArray.push(task.task_id)
+          })
+          that.pagination = {
+            ...that.pagination,
+            current: pagination.current,
+            pageSize: pagination.pageSize,
+            total: data.total_count || (data.total_count === 0 ? 0 : pagination.total)
+          }
+          getProgress(taskIdArray).then(function (data) {
+            data.result.forEach(function (progress) {
+              taskMap[progress.task_id].progress = progress.progress
+            })
+            that.taskList = taskList
+            that.tableIsLoading = false
           }).catch(function (err) {
-          _this.$message.error(err.response.data.message)
-        }).finally(function () { _this.tableIsLoading = false })
+            that.$message.error(err.response.data.msg)
+          })
+        }).catch(function (err) {
+          that.$message.error(err.response.data.msg)
+          that.tableIsLoading = false
+        })
       },
       // 获取故障树列表
-      getDiagTree: function (tableInfo) {
+      getDiagTree: function () {
         const _this = this
         this.loading = true
+        const treeList = []
         getDiagTree({
-          uid: '123',
-          tableInfo
+          treeList
         }).then(function (res) {
-          _this.treeData = res.result.diagTree_infos
-          if (_this.treeData.length > 5) {
-            for (let i = 0; i < 6; i++) {
-              _this.currentTreeData.push(_this.treeData[i])
-            }
-            _this.currentTreeData_index = 6
-          } else {
-            _this.currentTreeData = _this.treeData
-            _this.currentTreeData_index = _this.treeData.length
-          }
-          _this.loading = false
+          _this.treeData = [{}]
+          _this.treeData.push(...res.trees)
         }).catch(function (err) {
-          _this.$message.error(err.response.data.message)
-          _this.loading = false
+          _this.$message.error(err.response.data.msg)
         }).finally(function () {
           _this.loading = false
         })
-      },
-      // 加载更多故障树
-      getMoreTree () {
-        const _this = this
-        if (_this.treeData.length > _this.currentTreeData_index + 6) {
-          for (let i = _this.currentTreeData_index; i < _this.currentTreeData_index + 6; i++) {
-            _this.currentTreeData.push(_this.treeData[i])
-          }
-          _this.currentTreeData_index = _this.currentTreeData_index + 6
-        } else {
-          for (let i = _this.currentTreeData_index; i < _this.treeData.length; i++) {
-            _this.currentTreeData.push(_this.treeData[i])
-            _this.currentTreeData_index = _this.treeData.length
-          }
-        }
       },
       // 删除故障诊断报告
       diagnosisDelete (record) {
         const _this = this
         const reportList = []
-        reportList.push(record.report_id)
+        reportList.push(record.task_id)
         this.$confirm({
           title: (<div><p>删除后无法恢复</p><p>请确认删除以下故障诊断报告:</p></div>),
           content: () => record.task_id,
@@ -321,17 +302,14 @@ import MyPageHeaderWrapper from '@/views/utils/MyPageHeaderWrapper'
       handleDeleteDiagnosis (reportList, isBash) {
         const _this = this
         return new Promise((resolve, reject) => {
-          delDiagReport({
-            uid: '123',
-            reportList
-          }).then((res) => {
+          delDiagReport(reportList).then((res) => {
               _this.$message.success('删除成功')
               _this.refreshFaultDiagnosisList()
               if (isBash) _this.selectedRowKeys = []
               resolve()
             })
             .catch((err) => {
-              _this.$message.error(err.response.data.message)
+              _this.$message.error(err.response.data.msg)
               reject(err)
             })
         })
@@ -343,29 +321,25 @@ import MyPageHeaderWrapper from '@/views/utils/MyPageHeaderWrapper'
           taskData.forEach(function (item) {
             taskList.push(item.task_id)
           })
-          getDiagProgress({
-            uid: '123',
-            taskList
-          }).then(function (res) {
+        getProgress(taskList).then(function (res) {
             const newTableData = []
-            _this.tableData.forEach(function (item) {
-              res.result.diagProgress_infos.forEach(function (childItem) {
+            _this.taskList.forEach(function (item) {
+              res.result.forEach(function (childItem) {
                 if (item.task_id === childItem.task_id) {
                   item.progress = childItem.progress
                 }
               })
               newTableData.push(item)
             })
-            _this.tableData = newTableData
-            console.log(res.result.diagProgress_infos)
+            _this.taskList = newTableData
           }).catch(function (err) {
-          _this.$message.error(err.response.data.message)
+            _this.$message.error(err.response.data.msg)
         }).finally(function () {
         })
       },
       // 导出故障树
       getdiagtree () {
-        console.log('导出故障树')
+        // console.log('导出故障树')
       },
       // 删除故障树
       deletediagtree (treeName) {
@@ -373,15 +347,12 @@ import MyPageHeaderWrapper from '@/views/utils/MyPageHeaderWrapper'
         const treeList = []
         treeList.push(treeName)
         delDiagTree({
-          uid: '123',
           treeList
         }).then(function (res) {
-            _this.$message.success(res.message)
-            _this.getDiagTree({
-              pagination: _this.tablePagination
-            })
+            _this.$message.success('删除成功')
+            _this.getDiagTree()
           }).catch(function (err) {
-          _this.$message.error(err.response.data.message)
+          _this.$message.error(err.response.data.msg)
         }).finally(function () {
         })
       }
@@ -392,15 +363,16 @@ import MyPageHeaderWrapper from '@/views/utils/MyPageHeaderWrapper'
 <style lang="less" scoped>
   .avatar-div {
     float: left;
-    width: 60px;
+    width: 80px;
   }
   .avatar-img {
     height: 60px;
-    width: 60px
+    width: 80px
   }
   .content-div {
-    float: left;margin-left: 10px;
-    width: 77%;
+    float: left;
+    margin-left: 10px;
+    width: calc(100% - 90px);
   }
   .title {
     font-weight: 600;
@@ -431,6 +403,6 @@ import MyPageHeaderWrapper from '@/views/utils/MyPageHeaderWrapper'
     background-color: #fff;
     border-radius: 2px;
     width: 100%;
-    height: 158px;
+    height: 157px;
   }
 </style>

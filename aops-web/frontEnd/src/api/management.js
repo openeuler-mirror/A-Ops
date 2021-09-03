@@ -10,50 +10,40 @@ const api = {
 export default api
 
 // 新增配置
-export function addManagementConf ({ name, configList, ...parameter }) {
+export function addManagementConf (data) {
   return request({
     url: api.addManagementConf,
     method: 'post',
-    data: {
-      ...parameter,
-      domainName: name,
-      configList
-    }
+    data: data
   })
 }
 
 // 配置管理
-export function getManagementConf ({ tableInfo, ...parameter }) {
-  console.log(parameter)
+export function getManagementConf (data) {
   return request({
     url: api.getManagementConf,
-    method: 'get',
-    data: {
-      ...parameter,
-      item: tableInfo.filters.item,
-      href: tableInfo.filters.href
-    }
+    method: 'post',
+    data: data
   })
 }
 
 // 配置管理日志
-export function queryManageConfChange ({ parameter }) {
-  console.log(parameter)
+export function queryManageConfChange (data) {
   return request({
     url: api.queryManageConfChange,
-    method: 'get',
-    parameter
+    method: 'post',
+    data: data
   })
 }
 
 // 删除配置
-export function deleteManagementConf ({ managementConfList, parameter }) {
+export function deleteManagementConf (parameter) {
   return request({
     url: api.deleteManagementConf,
     method: 'delete',
     data: {
-      management_conf_list: managementConfList,
-      ...parameter
+      domainName: parameter.domainName,
+      confFiles: parameter.confFiles
     }
   })
 }

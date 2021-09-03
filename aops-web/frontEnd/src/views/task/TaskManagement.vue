@@ -1,0 +1,423 @@
+
+<template>
+  <my-page-header-wrapper>
+    <a-card :bordered="false">
+      <div>
+        <a-row class="aops-table-control-row" type="flex" justify="space-between">
+          <a-col>
+            <div>
+              <h2 class="card-title">部署任务列表</h2>
+            </div>
+          </a-col>
+          <a-col>
+            <a-row type="flex" :gutter="16">
+              <a-col>
+                <drawer-view title="新增部署任务">
+                  <template slot="click">
+                    <a-button type="primary">
+                      新增部署任务<a-icon type="plus"/>
+                    </a-button>
+                  </template>
+                  <template slot="drawerView">
+                    <add-task :saveSuccess="addTaskSuccess"></add-task>
+                  </template>
+                </drawer-view>
+              </a-col>
+            </a-row>
+          </a-col>
+        </a-row>
+        <a-table
+          :rowKey="rowKey"
+          :columns="columns"
+          :data-source="tableData"
+          :pagination="pagination"
+          :row-selection="rowSelection"
+          @change="handleTableChange"
+          :loading="tableIsLoading">
+              <span slot="action" slot-scope="record">
+                <a-popconfirm title="你确定执行这个任务吗?" ok-text="确认" cancel-text="取消" @confirm="executeTask(record)">
+                  <a>执行</a>
+                </a-popconfirm>
+                <a-divider type="vertical" />
+                <a-popconfirm title="你确定删除这个任务吗?" ok-text="确认" cancel-text="取消" @confirm="deleteTask(record)">
+                  <a-icon slot="icon" type="close-circle" style="color: red" />
+                  <a>删除</a>
+                </a-popconfirm>
+              </span>
+        </a-table>
+      </div>
+    </a-card>
+    <a-card :bordered="false" style="margin-top: 12px">
+      <div class="ant-pro-pages-list-applications-filterCardList">
+        <a-list :loading="templateIsLoading" :data-source="currentTemplateData" :grid="{ gutter: 24, xl: 3, lg: 3, md: 3, sm: 2, xs: 1 }" >
+          <a-list-item slot="renderItem" slot-scope="item">
+            <template v-if="!item.template_name">
+              <drawer-view title="新增playbook模板">
+                <template slot="click">
+                  <a-button class="new-btn" type="dashed">
+                    <a-icon type="plus"/>新增playbook模板
+                  </a-button>
+                </template>
+                <template slot="drawerView">
+                  <add-template :saveSuccess="addTemplateSuccess"></add-template>
+                </template>
+              </drawer-view>
+            </template>
+            <template v-else>
+              <a-card>
+                <div>
+                  <div class="avatar-div">
+                    <img class="avatar-img" src="~@/assets/huawei_logo_h.png">
+                  </div>
+                  <div class="content-div">
+                    <div class="title">{{item.template_name}}</div>
+                    <div class="remark">{{item.description}}</div>
+                  </div>
+                </div>
+                <template slot="actions">
+                  <div @click.prevent>
+                    <div class="tagList">
+                      <a-tag>安装</a-tag>
+                      <a-tag>用户管理</a-tag>
+                      <a-tag>加密</a-tag>
+                    </div>
+                    <div style="float: right;width: 100px;border-left: 1px solid #ddd">
+                      <a-tooltip title="编辑" style="float: left;width: 50%;text-align: center;line-height: 22px">
+                        <a-icon type="edit" />
+                      </a-tooltip>
+                      <a-dropdown style="float: right;width: 50%">
+                        <a class="ant-dropdown-link">
+                          <a-icon type="ellipsis" />
+                        </a>
+                        <a-menu slot="overlay">
+                          <a-menu-item>
+                            <a-popconfirm
+                              title="您确定要删除该模板吗?"
+                              ok-text="确认"
+                              cancel-text="取消"
+                              @confirm="deleteTemplate(item.template_name)"
+                            >
+                              <a href="javascript:;" >删除</a>
+                            </a-popconfirm>
+                          </a-menu-item>
+                        </a-menu>
+                      </a-dropdown>
+                    </div>
+                  </div>
+                </template>
+              </a-card>
+            </template>
+          </a-list-item>
+        </a-list>
+      </div>
+      <div style="text-align: center"><a @click="getMoreTemplate">加载更多</a></div>
+    </a-card>
+  </my-page-header-wrapper>
+</template>
+
+<script>
+  import { PageHeaderWrapper } from '@ant-design-vue/pro-layout'
+  import MyPageHeaderWrapper from '@/views/utils/MyPageHeaderWrapper'
+  import { getTaskList, deleteTask, executeTask, getTemplateList, deleteTemplate } from '@/api/task'
+  import DrawerView from '@/views/utils/DrawerView'
+  import AddTask from '@/views/task/components/AddTask'
+  import AddTemplate from '@/views/task/components/AddTemplate'
+
+  const defaultPagination = {
+    current: 1,
+    pageSize: 2,
+    showSizeChanger: true,
+    showQuickJumper: true
+  }
+  const columns = [
+    {
+      dataIndex: 'task_id',
+      key: 'task_id',
+      title: '任务ID',
+      sorter: false
+    },
+    {
+      dataIndex: 'task_name',
+      key: 'task_name',
+      title: '任务名称'
+    },
+    {
+      dataIndex: 'description',
+      key: 'description',
+      title: '任务描述',
+      customRender (text, record, index) {
+        if (text !== undefined && text.length >= 10) {
+          text = text.substr(0, 10) + '...'
+          return text
+        } else {
+          return text
+        }
+      }
+    },
+    {
+      dataIndex: 'playbook_name',
+      key: 'playbook_name',
+      title: '所用playbook',
+      customRender (text, record, index) {
+        if (record.template_name !== undefined) {
+          return record.template_name.join(',')
+        } else {
+          return record.template_name
+        }
+      }
+    },
+    {
+      key: 'operation',
+      title: '操作',
+      scopedSlots: { customRender: 'action' }
+    }
+  ]
+
+  export default {
+    name: 'TaskManagement',
+    components: {
+      PageHeaderWrapper,
+      MyPageHeaderWrapper,
+      DrawerView,
+      AddTask,
+      AddTemplate
+    },
+    data () {
+      return {
+        rowKey: 'task_id',
+        pagination: defaultPagination,
+        filters: {},
+        sorter: {},
+        columns,
+        tableData: [],
+        selectedRowKeys: [],
+        selectedRows: [],
+        tableIsLoading: false,
+        templateData: [],
+        currentTemplateData: [],
+        currentTemplateData_index: 0,
+        templateIsLoading: true
+      }
+    },
+    computed: {
+      rowSelection () {
+        return {
+          selectedRowKeys: this.selectedRowKeys,
+          onChange: this.onSelectChange
+        }
+      }
+    },
+    mounted: function () {
+      this.getTaskList()
+      this.getTemplateList()
+    },
+    methods: {
+      // 新增playbook模板
+      addTemplateSuccess () {
+        this.getTemplateList()
+      },
+      // 新增部署任务
+      addTaskSuccess () {
+        this.handleRefresh()
+      },
+      handleTableChange (pagination, filters, sorter) {
+        // 设置翻页状态
+        this.pagination = pagination
+        this.filters = filters
+        this.sorter = sorter
+        // 出发排序、筛选、分页时，重新请求主机列表
+        this.getTaskList()
+      },
+      onSelectChange (selectedRowKeys, selectedRows) {
+        this.selectedRowKeys = selectedRowKeys
+        this.selectedRows = selectedRows
+      },
+      // 获取列表数据
+      getTaskList () {
+        const _this = this
+        this.tableIsLoading = true
+        const pagination = this.pagination || {}
+        const filters = this.filters || {}
+        const sorter = this.sorter || {}
+
+        getTaskList({
+          tableInfo: {
+            pagination: {
+              current: pagination.current,
+              pageSize: pagination.pageSize
+            },
+            filters: filters,
+            sorter: {
+              field: sorter.field,
+              order: sorter.order
+            }
+          }
+        })
+          .then(function (res) {
+            _this.tableData = res.task_infos || []
+            _this.pagination = {
+              ..._this.pagination,
+              current: pagination.current,
+              pageSize: pagination.pageSize,
+              total: res.total_count || (res.total_count === 0 ? 0 : pagination.total)
+            }
+          }).catch(function (err) {
+          _this.$message.error(err.response.data.msg)
+        }).finally(function () { _this.tableIsLoading = false })
+      },
+      // 刷新列表数据
+      handleRefresh () {
+        this.pagination = defaultPagination
+        this.sorter = null
+        this.filters = null
+        this.selectedRowKeys = []
+        this.getTaskList()
+      },
+      // 删除配置任务
+      deleteTask (record) {
+        return this.handleDeleteTask([record.task_id])
+      },
+      // 删除配置任务
+      handleDeleteTask (taskList, isBash) {
+        const _this = this
+        return new Promise((resolve, reject) => {
+          deleteTask({
+            taskList
+          }).then((res) => {
+            _this.$message.success('删除成功')
+            _this.handleRefresh()
+            if (isBash) _this.selectedRowKeys = []
+            resolve()
+          })
+            .catch((err) => {
+              _this.$message.error(err.response.data.msg)
+              reject(err)
+            })
+        })
+      },
+      // 执行配置任务
+      executeTask (record) {
+        return this.handleExecuteTask([record.task_id])
+      },
+      // 执行部署任务
+      handleExecuteTask (taskList, isBash) {
+        const _this = this
+        return new Promise((resolve, reject) => {
+          executeTask({
+            taskList
+          }).then((res) => {
+            _this.$message.success('执行成功')
+            _this.handleRefresh()
+            if (isBash) _this.selectedRowKeys = []
+            resolve()
+          })
+            .catch((err) => {
+              _this.$message.error(err.response.data.msg)
+              reject(err)
+            })
+        })
+      },
+      // 获取playbook模板列表
+      getTemplateList: function () {
+        const _this = this
+        this.templateIsLoading = true
+        getTemplateList({})
+          .then(function (res) {
+          _this.templateData = res.template_infos
+          _this.currentTemplateData = [{}]
+          if (_this.templateData.length > 4) {
+            for (let i = 0; i < 5; i++) {
+              _this.currentTemplateData.push(_this.templateData[i])
+            }
+            _this.currentTemplateData_index = 5
+          } else {
+            _this.currentTemplateData.push(..._this.templateData)
+            _this.currentTemplateData_index = _this.templateData.length
+          }
+          _this.templateIsLoading = false
+        }).catch(function (err) {
+          _this.$message.error(err.response.data.msg)
+          _this.templateIsLoading = false
+        }).finally(function () {
+          _this.templateIsLoading = false
+        })
+      },
+      // 加载更多playbook模板
+      getMoreTemplate () {
+        const _this = this
+        if (_this.templateData.length > _this.currentTemplateData_index + 6) {
+          for (let i = _this.currentTemplateData_index; i < _this.currentTemplateData_index + 6; i++) {
+            _this.currentTemplateData.push(_this.templateData[i])
+          }
+          _this.currentTemplateData_index = _this.currentTemplateData_index + 6
+        } else {
+          for (let i = _this.currentTemplateData_index; i < _this.templateData.length; i++) {
+            _this.currentTemplateData.push(_this.templateData[i])
+            _this.currentTemplateData_index = _this.templateData.length
+          }
+        }
+      },
+      // 删除playbook模板
+      deleteTemplate (templateName) {
+        const _this = this
+        const templateList = []
+        templateList.push(templateName)
+        deleteTemplate({
+          templateList
+        }).then(function (res) {
+          _this.$message.success('删除成功')
+          _this.getTemplateList()
+        }).catch(function (err) {
+          _this.$message.error(err.response.data.msg)
+        }).finally(function () {
+        })
+      }
+    }
+  }
+</script>
+
+<style lang="less" scoped>
+  .avatar-div {
+    float: left;
+    width: 60px;
+  }
+  .avatar-img {
+    height: 60px;
+    width: 60px
+  }
+  .content-div {
+    float: left;margin-left: 10px;
+    width: 77%;
+  }
+  .title {
+    font-weight: 600;
+  }
+  .tagList{
+    float: left;
+    text-align: left;
+    padding-left: 10px;
+    text-overflow: -o-ellipsis-lastline;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    display: -webkit-box;
+    -webkit-line-clamp: 1;
+    line-clamp: 1;
+    -webkit-box-orient: vertical;
+  }
+  .tagList span{cursor: pointer}
+  .remark {
+    text-overflow: -o-ellipsis-lastline;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    line-clamp: 2;
+    -webkit-box-orient: vertical;
+  }
+  .new-btn {
+    background-color: #fff;
+    border-radius: 2px;
+    width: 100%;
+    height: 158px;
+  }
+</style>

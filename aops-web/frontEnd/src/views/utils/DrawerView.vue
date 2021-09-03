@@ -1,11 +1,27 @@
 <template>
   <span @click="visible = true" style="display: inline">
     <slot name="click"></slot>
-    <a-drawer :title="title" :width="720" :height="600" :visible="visible" @close="visible = false">
+    <a-drawer
+      :title="title"
+      :width="width"
+      :height="height"
+      :body-style="bodyStyle"
+      :visible="visible"
+      @close="visible = false"
+    >
       <slot name="drawerView"></slot>
-      <div class="drawerBtn">
-        <a-button style="margin-right: 8px" @click="visible = false">取消</a-button>
-        <a-button v-for="(button,key) in buttonList" @click="button.callBack" :key="key">{{ button.text }}</a-button>
+      <div class="drawerBtn" v-if="hasButtonOnBottom">
+        <a-button style="margin-left: 8px" @click="visible = false">{{ closeButtonText }}</a-button>
+        <a-button
+          :loading="spinning"
+          v-for="(button,key) in buttonList"
+          :key="key"
+          style="margin-left: 8px"
+          @click="button.callBack"
+          :type="button.type || ''"
+        >
+          {{ button.text }}
+        </a-button>
       </div>
     </a-drawer>
   </span>
@@ -21,17 +37,43 @@ export default {
     return {
       setButtons: this.setButtons,
       close: this.close,
+      showSpin: this.showSpin,
+      closeSpin: this.closeSpin,
       onload: this.addLoad
     }
   },
   props: {
-    title: String
+    title: {
+      type: String,
+      default: ''
+    },
+    width: {
+      type: Number,
+      default: 720
+    },
+    height: {
+      type: Number,
+      default: 600
+    },
+    bodyStyle: {
+      type: Object,
+      default: () => { return {} }
+    },
+    hasButtonOnBottom: {
+      type: Boolean,
+      default: true
+    },
+    closeButtonText: {
+      type: String,
+      default: '关闭'
+    }
   },
   data () {
     return {
       buttonList: [],
       loads: [],
       params: null,
+      spinning: false,
       visible: false
     }
   },
@@ -43,10 +85,17 @@ export default {
     setButtons (...list) {
       this.buttonList = list
     },
+    showSpin () {
+      this.spinning = true
+    },
+    closeSpin () {
+      this.spinning = false
+    },
     close () {
       this.visible = false
     },
     open (params) {
+      // 外部通过ref调用本组件的open方法，实现drawer展开
       this.params = params
       this.visible = true
       // 通知注册了load事件的子组件

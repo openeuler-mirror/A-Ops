@@ -3,7 +3,7 @@
   <my-page-header-wrapper>
     <a-card :bordered="false">
       <div>
-        <h3 class="card-title">{{domainName}}主机列表</h3>
+        <h3 class="card-title">{{ domainName }}主机列表</h3>
       </div>
       <div>
         <div>共获取到{{ tableData.length }}条主机信息</div>
@@ -24,7 +24,7 @@
                 </a-button>
               </a-col>
               <a-col>
-                <a-button @click="syncConf(selectedRowKeys, selectedRows)">
+                <a-button @click="syncConf(selectedRowKeys, selectedRows)" disabled>
                   <a-icon type="sync" />批量同步
                 </a-button>
               </a-col>
@@ -33,6 +33,7 @@
                   <a-icon type="redo" />刷新
                 </a-button>
               </a-col>
+              <!--------暂时没有其他功能--------
               <a-col>
                 <a-button>
                   <a-dropdown>
@@ -50,6 +51,7 @@
                   </a-dropdown>
                 </a-button>
               </a-col>
+              -------------------------------->
             </a-row>
           </a-col>
         </a-row>
@@ -61,27 +63,34 @@
           :loading="tableIsLoading"
           :pagination="false"
         >
+          <!------------暂不做同步---------------
           <span slot="filterIcon">
             同步状态
             <a-icon type="reload" @click="refreshDomainStatus()"/>
           </span>
-          <template slot="state" slot-scope="record">
-            <span v-if="'已同步'!=record.isSynced" style="color:#ff0000 ">
-              <a-icon type="close-circle"  theme="twoTone" two-tone-color="#ff0000"/>
-              {{record.isSynced}}
-            </span>
-            <span v-if="'已同步'==record.isSynced">
-              <a-icon type="check-circle"  theme="twoTone" two-tone-color="#52c41a"/>
-              {{record.isSynced}}
-            </span>
+          ------------------------------------->
+          <template slot="syncStatus" slot-scope="statusInfo">
+            <div v-if="domainStatusIsLoading">
+              <a-icon type="loading" />
+            </div>
+            <div v-else>
+              <a-icon v-if="statusInfo.syncStatus === statusEnum.sync" type="check-circle" theme="twoTone" two-tone-color="#52c41a"/>
+              <a-icon v-if="statusInfo.syncStatus === statusEnum.notSync" type="close-circle" theme="twoTone" two-tone-color="#f00"/>
+              <a-icon v-if="statusInfo.syncStatus === statusEnum.notFound" type="question-circle" theme="twoTone" two-tone-color="#ccc"/>
+              {{ statusTitleEnum[statusInfo.syncStatus] }}
+              <span v-if="statusInfo.syncStatus === statusEnum.notSync" >{{ `${statusInfo.count}条` }}</span>
+            </div>
           </template>
           <span slot="action" slot-scope="record">
             <a @click="showQueryRealConfsDrawer(record)">当前配置</a>
             <a-divider type="vertical" />
+            <!---- 只是没有这个功能---------
             <a @click="showQueryExpectConfsDrawer(record)">配置日志</a>
             <a-divider type="vertical" />
+            ----------------------------->
             <a @click="showDomainStatusDrawer(record)">状态详情</a>
             <a-divider type="vertical" />
+            <!-----------暂时不做同步功能----------
             <a-popconfirm
               title="你确定要将当前业务域的配置同步到这台主机吗?"
               ok-text="确认"
@@ -91,6 +100,7 @@
               <a href="#">同步</a>
             </a-popconfirm>
             <a-divider type="vertical" />
+            ------------------------------------->
             <a-popconfirm
               title="你确定要从当前业务域中删除这台主机吗?"
               ok-text="确认"
@@ -99,46 +109,32 @@
             >
               <a>删除</a>
             </a-popconfirm>
-            <a-divider type="vertical" />
-            <a-dropdown>
-              <a class="ant-dropdown-link" @click="e => e.preventDefault()">
-                更多 <a-icon type="down" />
-              </a>
-              <a-menu slot="overlay">
-                <a-menu-item>
-                  <a @click="showAddHostDrawer(domain.id)">添加主机</a>
-                </a-menu-item>
-                <a-menu-item>
-                  <a @click="showAddHostDrawer(domain.id)">删除主机</a>
-                </a-menu-item>
-              </a-menu>
-            </a-dropdown>
           </span>
         </a-table>
       </div>
     </a-card>
     <!--添加主机抽屉-->
-    <drawer-view title="添加主机" ref="addHostDrawer">
+    <drawer-view title="添加主机" ref="addHostDrawer" :bodyStyle="{ paddingBottom: '80px' }">
       <template slot="drawerView">
         <add-host-drawer></add-host-drawer>
       </template>
     </drawer-view>
     <!--主机当前配置抽屉-->
-    <drawer-view title="主机当前配置" ref="queryRealConfsDrawer">
+    <drawer-view ref="queryRealConfsDrawer" :bodyStyle="{ paddingBottom: '80px' }">
       <template slot="drawerView">
-        <query-real-confs-drawer></query-real-confs-drawer>
-      </template>
-    </drawer-view>
-    <!--配置日志抽屉-->
-    <drawer-view title="配置日志" ref="queryExpectConfsDrawer">
-      <template slot="drawerView">
-        <query-expect-confs-drawer></query-expect-confs-drawer>
+        <query-real-confs-drawer
+          :confsOfDomain="confsOfDomain"
+          :confsOfDomainLoading="confsOfDomainLoading"
+        />
       </template>
     </drawer-view>
     <!--状态详情抽屉-->
-    <drawer-view title="状态详情" ref="domainStatusDrawer">
+    <drawer-view title="状态详情" ref="domainStatusDrawer" :hasButtonOnBottom="false" :bodyStyle="{ paddingBottom: '80px' }">
       <template slot="drawerView">
-        <get-domain-status-drawer ></get-domain-status-drawer>
+        <get-domain-status-drawer
+          :tableData="tableData"
+          :domainStatusIsLoading="domainStatusIsLoading"
+        />
       </template>
     </drawer-view>
   </my-page-header-wrapper>
@@ -148,11 +144,21 @@
   import MyPageHeaderWrapper from '@/views/utils/MyPageHeaderWrapper'
 
   import { domainHostList, deleteHost, domainStatus, syncConf } from '@/api/configuration'
+  import { getManagementConf } from '@/api/management'
+
   import DrawerView from '@/views/utils/DrawerView'
   import QueryRealConfsDrawer from '@/views/configuration/components/QueryRealConfsDrawer'
   import QueryExpectConfsDrawer from '@/views/configuration/components/QueryExpectConfsDrawer'
   import GetDomainStatusDrawer from '@/views/configuration/components/GetDomainStatusDrawer'
   import AddHostDrawer from '@/views/configuration/components/AddHostDrawer'
+
+  import defaultSettings from '@/config/defaultSettings'
+  import { STATUS_ENUM, getStatusInfoFromAllConfs } from './utils/statusCheckTools'
+
+  const STATUS_TITLE_ENUM = {}
+  STATUS_TITLE_ENUM[STATUS_ENUM.sync] = '已同步'
+  STATUS_TITLE_ENUM[STATUS_ENUM.notSync] = '未同步'
+  STATUS_TITLE_ENUM[STATUS_ENUM.notFound] = '未知状态'
 
   export default {
     name: 'QueryHostList',
@@ -167,12 +173,19 @@
     data () {
       return {
         rowKey: 'hostId',
-        tableData: [],
+        hostList: [],
         statusData: [],
         selectedRowKeys: [],
         selectedRows: [],
         tableIsLoading: false,
-        domainName: this.$route.params.domainName
+        domainName: this.$route.params.domainName,
+        statusEnum: STATUS_ENUM,
+        statusTitleEnum: STATUS_TITLE_ENUM,
+        domainStatusIsLoading: false,
+        hostStatusData: { a: 1 },
+        confsOfDomain: [],
+        confsOfDomainLoading: false,
+        setTimeoutKey_statusInterval: undefined
       }
     },
     computed: {
@@ -194,14 +207,14 @@
             title: 'IP协议'
           },
           {
-            dataIndex: '',
-            key: 'isSynced',
-            // title: '同步状态',
+            dataIndex: 'syncStatusInfo',
+            key: 'syncStatusInfo',
+            title: '同步状态',
             filterMultiple: false,
             slots: {
-              title: 'filterIcon'
+              // title: 'filterIcon' 暂不做同步
             },
-            scopedSlots: { customRender: 'state' }
+            scopedSlots: { customRender: 'syncStatus' }
           },
           {
             key: 'operation',
@@ -215,6 +228,15 @@
           selectedRowKeys: this.selectedRowKeys,
           onChange: this.onSelectChange
         }
+      },
+      tableData () {
+        return this.hostList.map(host => {
+          const hostTemp = host
+          const matchedStatusHost = this.statusData.filter(item => item.hostId === hostTemp.hostId)[0] || {}
+          hostTemp.syncStatusList = matchedStatusHost.syncStatus || []
+          hostTemp.syncStatusInfo = getStatusInfoFromAllConfs(hostTemp.syncStatusList)
+          return hostTemp
+        })
       }
     },
     methods: {
@@ -223,54 +245,40 @@
         this.selectedRows = selectedRows
       },
       // 获取业务域列表数据
-      getHostList () {
+      getHostList (domainName) {
         const _this = this
         this.tableIsLoading = true
-        domainHostList({
-          domainName: _this.domainName
-        }).then(function (res) {
-          _this.tableData = res.result.domainHostData
-          _this.setStatus()
+        domainHostList(domainName)
+        .then(function (res) {
+          _this.hostList = res
           }).catch(function (err) {
-          _this.$message.error(err.response.data.message)
+            if (err.response.data.code !== 400) {
+            _this.$message.error(err.response.data.msg || err.response.data.detail)
+          } else {
+            _this.hostList = []
+          }
         }).finally(function () { _this.tableIsLoading = false })
       },
       // 获取业务域主机同步状态
       getDomainStatus () {
         const _this = this
-        this.tableIsLoading = true
+        this.domainStatusIsLoading = true
         domainStatus({
           domainName: _this.domainName
         }).then(function (res) {
-            _this.statusData = res.result.doMainStatusData
+            _this.statusData = res.hostStatus || []
           }).catch(function (err) {
-          _this.$message.error(err.response.data.message)
-        }).finally(function () { _this.tableIsLoading = false })
-      },
-      setStatus () {
-        const _this = this
-        _this.tableData.forEach(function (item) {
-          let synced = '已同步'
-          _this.statusData.hostStatus.forEach(function (childItem) {
-            let i = 0
-            if (item.hostId === childItem.hostId) {
-              childItem.syncStatus.forEach(function (status) {
-                i++
-                if (status.isSynced === 'NOT FOUND') {
-                  synced = '未同步' + i + '条'
-                }
-              })
-            }
-          })
-          item.isSynced = synced
-        })
+          _this.$message.error(err.response.data.msg)
+        }).finally(function () { _this.domainStatusIsLoading = false })
       },
       handleRefresh () {
         this.selectedRowKeys = []
-        this.getHostList('')
+        this.getHostList(this.domainName)
+        this.refreshDomainStatus()
       },
       deleteDomainHost (record) {
-        this.handleDelete(record)
+        console.log('00', record)
+        this.handleDelete([record])
       },
       deleteHostBash (selectedRowKeys, selectedRows) {
         const _this = this
@@ -285,6 +293,7 @@
         })
       },
       handleDelete (hostInfos, isBash) {
+        console.log(hostInfos)
         const _this = this
         return new Promise((resolve, reject) => {
           deleteHost({
@@ -293,7 +302,7 @@
           }).then((res) => {
               _this.$message.success('删除成功')
               _this.getDomainStatus()
-              _this.getHostList()
+              _this.getHostList(_this.domainName)
               if (isBash) {
                 _this.selectedRowKeys = []
                 _this.selectedRows = []
@@ -301,15 +310,13 @@
               resolve()
             })
             .catch((err) => {
-              _this.$message.error(err.response.data.message)
+              _this.$message.error(err.response.data.nsg)
               reject(err)
             })
         })
       },
       refreshDomainStatus () {
-        const _this = this
-        _this.getDomainStatus('')
-        _this.setStatus()
+        this.getDomainStatus()
       },
       syncConf (selectedRowKeys, selectedRows) {
         const _this = this
@@ -329,7 +336,6 @@
         this.handleSyncConf(rows, true)
       },
       handleSyncConf (selectedRows, isBash) {
-        console.log(selectedRows)
         const hostIds = []
         selectedRows.forEach(function (item) {
           hostIds.push({ hostId: item.hostId })
@@ -342,7 +348,7 @@
           }).then((res) => {
             _this.$message.success('同步成功')
             _this.getDomainStatus()
-            _this.getHostList()
+            _this.getHostList(_this.domainName)
             if (isBash) {
               _this.selectedRowKeys = []
               _this.selectedRows = []
@@ -350,7 +356,7 @@
             resolve()
           })
             .catch((err) => {
-              _this.$message.error(err.response.data.message)
+              _this.$message.error(err.response.data.msg)
               reject(err)
             })
         })
@@ -358,23 +364,40 @@
       showAddHostDrawer () {
         this.$refs.addHostDrawer.open(this.domainName)
       },
-      showQueryRealConfsDrawer (record) {
-        this.$refs.queryRealConfsDrawer.open(record)
+      showQueryRealConfsDrawer (host) {
+        this.$refs.queryRealConfsDrawer.open({
+          host,
+          domainName: this.domainName
+        })
       },
       showQueryExpectConfsDrawer (record) {
         this.$refs.queryExpectConfsDrawer.open(record)
       },
       showDomainStatusDrawer (record) {
         this.$refs.domainStatusDrawer.open(record)
+      },
+      getConfsOfDomain (domainName) {
+        const _this = this
+        _this.confsOfDomainLoading = true
+        getManagementConf({
+          domainName
+        }).then(function (res) {
+          _this.confsOfDomain = res.confFiles || []
+        }).catch(function (err) {
+          _this.$message.error(err.response.data.msg)
+        }).finally(function () {
+          _this.confsOfDomainLoading = false
+        })
       }
     },
     mounted: function () {
       this.getDomainStatus()
       this.getHostList(this.domainName)
+      this.getConfsOfDomain(this.domainName)
       const _this = this
-      setInterval(function () {
+      this.setTimeoutKey_statusInterval = setInterval(function () {
         _this.refreshDomainStatus()
-      }, 60000)
+      }, defaultSettings.domainStatusRefreshInterval)
     }
   }
 </script>

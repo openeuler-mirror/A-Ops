@@ -4,8 +4,8 @@
     <a-row type="flex" justify="space-between">
       <a-col :span="22">
         <div style="float: left;margin-bottom: 10px">
-          <span>主机：{{host.hostId}}</span>
-          <span class="ip-left">{{host.ip}}</span>
+          <span>主机：{{ host.hostId }}</span>
+          <span class="ip-left">{{ host.ip }}</span>
         </div>
         <div style="float: right;margin-bottom: 10px">
           <a-popconfirm
@@ -24,11 +24,20 @@
     </a-row>
     <a-row type="flex" justify="space-between">
       <a-col :span="22">
-        <a-table :columns="columns" :data-source="data" :pagination="false" size="small" >
-          <span slot="action">
+        <a-table
+          rowKey="file_path"
+          :columns="columns"
+          :data-source="syncStatusList"
+          :pagination="false"
+          size="small"
+          :loading="domainStatusIsLoading"
+        >
+          <span slot="isSynced" slot-scope="isSynced">
             <span>
-              <a-icon type="close-circle" theme="twoTone" two-tone-color="#ff0000" />
-              未同步
+              <a-icon v-if="isSynced === statusEnum.sync" type="check-circle" theme="twoTone" two-tone-color="#52c41a"/>
+              <a-icon v-if="isSynced === statusEnum.notSync" type="close-circle" theme="twoTone" two-tone-color="#f00"/>
+              <a-icon v-if="isSynced === statusEnum.notFound" type="question-circle" theme="twoTone" two-tone-color="#ccc"/>
+              {{ statusTitleEnum[isSynced] }}
             </span>
           </span>
         </a-table>
@@ -38,6 +47,12 @@
 </template>
 
 <script>
+  import { STATUS_ENUM } from '../utils/statusCheckTools'
+
+  const STATUS_TITLE_ENUM = {}
+  STATUS_TITLE_ENUM[STATUS_ENUM.sync] = '已同步'
+  STATUS_TITLE_ENUM[STATUS_ENUM.notSync] = '未同步'
+  STATUS_TITLE_ENUM[STATUS_ENUM.notFound] = '未找到'
 
   export default {
     name: 'GetDomainStatusDrawer',
@@ -45,47 +60,41 @@
     components: {},
     data () {
       return {
-        host: [],
+        host: {},
         columns: [
           {
-            title: '编号',
-            dataIndex: 'key'
+            title: '配置文件',
+            dataIndex: 'file_path'
           },
           {
             title: '同步状态',
-            scopedSlots: { customRender: 'action' }
-          },
-          {
-            title: '配置项',
-            dataIndex: 'name'
-          },
-          {
-            title: '配置文件',
-            dataIndex: 'address'
+            dataIndex: 'isSynced',
+            scopedSlots: { customRender: 'isSynced' }
           }
         ],
-        data: [
-          {
-            key: '1',
-            name: 'John Brown',
-            address: '/ete/yum.repos.d/openEuler.repo'
-          },
-          {
-            key: '2',
-            name: 'Jim Green',
-            address: '/ete/yum.repos.d/openEuler.repo'
-          },
-          {
-            key: '3',
-            name: 'Joe Black',
-            address: '/ete/yum.repos.d/openEuler.repo'
-          }
-        ]
+        statusEnum: STATUS_ENUM,
+        statusTitleEnum: STATUS_TITLE_ENUM
+      }
+    },
+    props: {
+      tableData: {
+        type: Array,
+        default: () => { return [] }
+      },
+      domainStatusIsLoading: {
+        type: Boolean,
+        default: false
+      }
+    },
+    computed: {
+      syncStatusList () {
+        const matchedHost = this.tableData.filter(hostInfo => hostInfo.hostId === this.host.hostId)[0] || {}
+        console.log('list', matchedHost)
+        return matchedHost.syncStatusList || []
       }
     },
     methods: {
       confirm (e) {
-        console.log(e)
         this.$message.success('Click on Yes')
       },
       cancel (e) {
@@ -93,9 +102,8 @@
     },
     mounted: function () {
       const _this = this
-      this.onload(function (params) {
-        console.log(params)
-        _this.host = params
+      this.onload(function (host) {
+        _this.host = host
       })
     }
   }

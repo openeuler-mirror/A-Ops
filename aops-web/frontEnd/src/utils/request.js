@@ -1,10 +1,8 @@
 import axios from 'axios'
 import store from '@/store'
-// import storage from 'store'
 import cookie from 'js-cookie'
 import notification from 'ant-design-vue/es/notification'
 import { VueAxios } from './axios'
-// import { ACCESS_TOKEN } from '@/store/mutation-types'
 
 // 创建 axios 实例
 const request = axios.create({
@@ -15,7 +13,6 @@ const request = axios.create({
 
 // 异常拦截处理器
 const errorHandler = (error) => {
-  console.log('errHandler: ', error)
   if (error.response) {
     const data = error.response.data
     // 从 localstorage 获取 token
@@ -45,7 +42,6 @@ const errorHandler = (error) => {
 
 // request interceptor
 request.interceptors.request.use(config => {
-  // const token = storage.get(ACCESS_TOKEN)
   const token = cookie.get('aops_token')
   // 如果 token 存在
   // 让每个请求携带自定义 token 请根据实际情况自行修改
@@ -58,16 +54,10 @@ request.interceptors.request.use(config => {
 // response interceptor
 request.interceptors.response.use((response) => {
   // 这对业务域相关接口返回体做特殊处理，后续需要统一
-  const config = response.config
-  let code
-  if (config.url.match('^/domain/')) {
-    code = response.status
-  } else {
-    code = response.data.code
-  }
+  const code = response.data.code || response.status
 
-  // 特殊处理结束
   if (code !== 200) {
+    console.log('response: ', response)
     switch (code) {
       case 1201:
         notification.error({

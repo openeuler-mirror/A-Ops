@@ -66,11 +66,7 @@ const permission = {
   actions: {
     GenerateRoutes ({ commit }, data) {
       return new Promise(resolve => {
-        // eslint-disable-next-line
-        const { roles } = data
         const routerMap = cloneDeep(asyncRouterMap)
-        // next line for auth control
-        // const accessedRouters = filterAsyncRouter(routerMap, roles)
         const accessedRouters = routerMap
         commit('SET_ROUTERS', accessedRouters)
         resolve()

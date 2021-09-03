@@ -77,17 +77,18 @@ const managementConfChangeList = [
   }
 ]
 
-const addManagementConf = (options) => {
-  const body = getBody(options)
-
-  if (!body.domainName || !body.configList) {
-    return builder({ 'msg': '缺少必要参数' }, '缺少参数', 410)
-  }
-
-  return builder({
-    'msg': Mock.mock('success')
-  }, '添加成功', 200, { 'Custom-Header': Mock.mock('@guid') })
-}
+// const addManagementConf = (options) => {
+//   console.log('模拟')
+//   const body = getBody(options)
+//
+//   if (!body.domainName || !body.configList) {
+//     return builder({ 'msg': '缺少必要参数' }, '缺少参数', 410)
+//   }
+//
+//   return builder({
+//     'msg': Mock.mock('success')
+//   }, '添加成功', 200, { 'Custom-Header': Mock.mock('@guid') })
+// }
 
 const getManagementConf = (options) => {
   const body = getBody(options)
@@ -120,7 +121,7 @@ const deleteManagementConf = (options) => {
   }, '删除成功', 200, { 'Custom-Header': Mock.mock('@guid') })
 }
 
-Mock.mock(/\/management\/addManagementConf/, 'post', addManagementConf)
+// Mock.mock(/\/management\/addManagementConf/, 'post', addManagementConf)
 Mock.mock(/\/management\/getManagementConf/, 'get', getManagementConf)
 Mock.mock(/\/management\/queryManageConfChange/, 'get', queryManageConfChange)
 Mock.mock(/\/management\/deleteManagementConf/, 'delete', deleteManagementConf)

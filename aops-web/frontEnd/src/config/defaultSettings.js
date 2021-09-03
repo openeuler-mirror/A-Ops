@@ -26,5 +26,8 @@ export default {
   title: 'A-OPS',
   pwa: false,
   iconfontUrl: '',
-  production: process.env.NODE_ENV === 'production' && process.env.VUE_APP_PREVIEW !== 'true'
+  production: process.env.NODE_ENV === 'production' && process.env.VUE_APP_PREVIEW !== 'true',
+
+  // 主机域-主机列表更新频率1min
+  domainStatusRefreshInterval: 60000
 }

@@ -165,7 +165,6 @@ export default {
         e.preventDefault()
         this.form.validateFields((err, values) => {
           if (!err) {
-            console.log('Received values of form: ', values)
             this.submitLoading = true
             // 后需调整：修改时传host_id, 新建时传host_name
             if (this.pageType === 'edit') {

@@ -4,7 +4,7 @@
     <a-card :bordered="false">
       <div>
         <h3 class="card-title">业务域列表</h3>
-        <span>共有业务域n个</span>
+        <span>共有业务域{{ domainData.length }}个</span>
       </div>
       <div>
         <a-list :loading="domainLoading" :data-source="cardListData" :grid="{ gutter: 24, xl: 3, lg: 3, md: 3, sm: 2, xs: 1 }" >
@@ -18,7 +18,7 @@
                   <a-row type="flex" justify="space-between">
                     <a-col>priority</a-col>
                     <a-col>
-                      <a :href="`transcation-domain-configurations`" target="_blank">查看域内配置</a>
+                      <router-link :to="`transcation-domain-configurations/${domain.domainName}`" target="_blank">查看域内配置</router-link>
                       <a-divider type="vertical" />
                       <a-dropdown>
                         <a class="ant-dropdown-link" @click="e => e.preventDefault()">
@@ -49,7 +49,7 @@
         </a-row>
       </div>
     </a-card>
-    <drawer-view title="添加主机" ref="addHostDrawer">
+    <drawer-view title="添加主机" ref="addHostDrawer" :bodyStyle="{ paddingBottom: '80px' }">
       <template slot="drawerView">
         <add-host-drawer :domainName="domainName"></add-host-drawer>
       </template>
@@ -98,7 +98,7 @@ export default {
           // 特殊处理
           _this.domainData = res
         }).catch(function (err) {
-          _this.$message.error(err.response.data.message)
+          _this.$message.error(err.response.data.msg)
         }).finally(function () { _this.domainLoading = false })
       },
       showAddHostDrawer (domainName) {
@@ -136,7 +136,7 @@ export default {
             resolve()
           })
             .catch((err) => {
-              _this.$message.error(err.response.data.message)
+              _this.$message.error(err.response.data.msg)
               reject(err)
             })
         })

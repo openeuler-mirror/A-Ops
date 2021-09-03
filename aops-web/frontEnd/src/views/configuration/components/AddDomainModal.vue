@@ -56,7 +56,6 @@ export default {
           if (!err) {
             const _this = this
             this.isLoading = true
-            console.log('Received values of form: ', values)
             addDomain(values)
             .then(function () {
                 _this.$message.success('添加成功')

@@ -2,6 +2,7 @@ import request from '@/utils/request'
 
 const api = {
   hostList: '/manage/host/get', // 全量接口待确认
+  hostCount: '/manage/host/count', // 全量接口待确认
   hostInfo: '/manage/host/info/query',
   addHost: '/manage/host/add',
   editHost: '/manage/host/edit_host', // 未提供
@@ -26,7 +27,6 @@ const managementMap = {
 
 // 主机管理
 export function hostList ({ tableInfo, ...parameter }) {
-  console.log('主机列表： ', tableInfo, parameter)
   const management = tableInfo.filters.management
   ? managementMap[tableInfo.filters.management[0]] // 将字符串true false转换成boolean
   : undefined
@@ -44,9 +44,16 @@ export function hostList ({ tableInfo, ...parameter }) {
     }
   })
 }
+// 主机统计
+export function hostCount () {
+  return request({
+    url: api.hostCount,
+    method: 'post',
+    data: {}
+  })
+}
 
 export function hostInfo (parameter) {
-  console.log(parameter)
   return request({
     url: api.hostInfo,
     method: 'post',
@@ -54,6 +61,24 @@ export function hostInfo (parameter) {
       ...parameter,
       host_list: parameter.host_list
     }
+  })
+}
+// 获取指定主机的基本信息，并以map形式返回。需要特别的代码结构配合使用
+export function hostBasicInfo (list, key) {
+  var hostList = []
+  list.forEach(function (item) {
+    hostList.push(item[key || 'host_id'])
+  })
+  return request({
+    url: api.hostInfo,
+    method: 'post',
+    data: { host_list: hostList, basic: true }
+  }).then(function (data) {
+    var map = {}
+    data.host_infos.forEach(function (host) {
+      map[host.host_id] = host
+    })
+    return map
   })
 }
 

@@ -53,5 +53,7 @@ export default {
     'menu.configuration.transcation-domain-management': '业务域管理',
     'menu.configuration.transcation-domain-management.query_host_list': '业务域主机列表',
     'menu.configuration.transcation-domain-configurations': '业务域配置管理',
-    'menu.configuration.host-configurations': '主机配置管理'
+    'menu.configuration.host-configurations': '主机配置管理',
+    'menu.task': '部署管理',
+    'menu.task.task-management': '部署任务'
 }

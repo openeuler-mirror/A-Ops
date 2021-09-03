@@ -214,13 +214,11 @@ export default {
             this.getHostGroupList()
         },
         handleExpand (expend, record) {
-            console.log(expend, record)
         },
         onSelectChange (selectedRowKeys) {
             this.selectedRowKeys = selectedRowKeys
 
             this.selectedRowsAll = getSelectedRow(selectedRowKeys, this.selectedRowsAll, this.tableData)
-            console.log('select: ', this.selectedRowsAll, this.selectedRowKeys)
         },
         // 获取列表数据
         getHostGroupList () {
