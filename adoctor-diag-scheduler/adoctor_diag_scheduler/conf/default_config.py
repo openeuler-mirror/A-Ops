@@ -16,20 +16,20 @@ Author:
 Description: default config of database
 """
 producer = {
-    "kafka_server_list": "90.90.64.64:9092",
-    "api_version": "0.11.5",
-    "acks": 1,
-    "retries": 3,
-    "retry_backoff_ms": 100
+    "KAFKA_SERVER_LIST": "90.90.64.64:9092",
+    "API_VERSION": "0.11.5",
+    "ACKS": 1,
+    "RETRIES": 3,
+    "RETRY_BACKOFF_MS": 100
 }
 
 
 topic = {
-    "name": "DIAGNOSE_EXECUTE_REQ"
+    "NAME": "DIAGNOSE_EXECUTE_REQ"
 }
 
 
 diag_scheduler = {
-    "ip": "127.0.0.1",
-    "port": 60116
+    "IP": "127.0.0.1",
+    "PORT": 60116
 }

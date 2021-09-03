@@ -16,14 +16,14 @@ Author:
 Description: default config of diagnose executor
 """
 consumer = {
-    "kafka_server_list": "90.90.64.64:9092",
-    "group_id": "DiagGroup",
-    "enable_auto_commit": "False",
-    "auto_offset_reset": "earliest",
-    "timeout_ms": "5",
-    "max_records": "3"
+    "KAFKA_SERVER_LIST": "90.90.64.64:9092",
+    "GROUP_ID": "DiagGroup",
+    "ENABLE_AUTO_COMMIT": "False",
+    "AUTO_OFFSET_RESET": "earliest",
+    "TIMEOUT_MS": "5",
+    "MAX_RECORDS": "3"
 }
 
 topic = {
-    "name": "DIAGNOSE_EXECUTE_REQ"
+    "NAME": "DIAGNOSE_EXECUTE_REQ"
 }
