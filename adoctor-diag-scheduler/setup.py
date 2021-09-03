@@ -21,6 +21,6 @@ setup(
         ('/etc/aops', ['conf/diag_scheduler.ini']),
         ('/usr/lib/systemd/system', ['adoctor-diag-scheduler.service']),
     ],
-    scripts=['diag-scheduler-manager'],
+    scripts=['adoctor-diag-scheduler'],
     zip_safe=False
 )
