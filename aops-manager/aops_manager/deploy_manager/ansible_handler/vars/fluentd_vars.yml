@@ -1,8 +1,4 @@
 ---
-# fluentd User Group
-user: fluentd
-group: fluentd
-
 # fluentd config path
 fluentd_config_dir: /etc/fluentd/
 

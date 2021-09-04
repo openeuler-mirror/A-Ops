@@ -26,15 +26,15 @@
 
 - name: Create config dir
   become: true
-  become_user: "{{ user }}"
-  file: path={{ fluentd_config_dir }} state=directory owner={{ user }} group={{ group }} mode=0755
+  become_user: root
+  file: path={{ fluentd_config_dir }} state=directory owner=root group=root mode=0755
 
 - name: Copy config file
   become: true
-  become_user: "{{ user }}"
-  template: src=fluent.conf.j2 dest={{ fluentd_config_dir }}/fluent.conf mode=0644 owner={{ user }} group={{ group }} backup=yes
+  become_user: root
+  template: src=fluent.conf.j2 dest={{ fluentd_config_dir }}/fluent.conf mode=0644 owner=root group=root backup=yes
 
 - name: Init fluentd
   become: true
-  become_user: "{{ user }}"
+  become_user: root
   shell: "fluentd --setup {{ fluentd_config_dir }}"

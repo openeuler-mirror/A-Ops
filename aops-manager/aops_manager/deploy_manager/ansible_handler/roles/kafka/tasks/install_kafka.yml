@@ -17,7 +17,6 @@
   become_user: root
   dnf:
     state: present
-    gpgcheck: 0
     name:
       - kafka
 

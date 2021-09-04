@@ -13,7 +13,6 @@
   become: true
   become_user: root
   dnf:
-    gpgcheck: no
     state: present
     name:
       - python3-gala-ragdoll

@@ -37,7 +37,7 @@ class CheckItemSchema(Schema):
     check_item = fields.String(required=True, validate=lambda s: len(s) > 0)
     data_list = fields.List(fields.Nested(DataItemSchema), required=True)
     condition = fields.String(required=True, validate=lambda s: len(s) > 0)
-    description = fields.String(required=False, validate=lambda s: len(s) > 0)
+    description = fields.String(required=False)
     plugin = fields.String(required=True)
 
 

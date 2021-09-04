@@ -11,5 +11,5 @@
 
 - name: Copy fluentd.service
   become: true
-  become_user: "{{ user }}"
-  template: src=fluentd.service dest=/usr/lib/systemd/system/fluentd.service owner={{ user }} group={{ group }} mode=0644 backup=yes
+  become_user: root
+  template: src=fluentd.service dest=/usr/lib/systemd/system/fluentd.service owner=root group=root mode=0644 backup=yes

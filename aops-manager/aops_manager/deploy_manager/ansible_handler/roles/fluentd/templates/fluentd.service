@@ -6,8 +6,8 @@ After=network.target
 [Service]
 Type=simple
 ExecStart=/usr/bin/fluentd -c {{ fluentd_config_dir }}fluent.conf
-User={{ user }}
-Group={{ group }}
+User=root
+Group=root
 
 [Install]
 WantedBy=multi-user.target
