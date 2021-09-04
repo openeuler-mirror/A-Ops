@@ -15,10 +15,11 @@ Description: group  method's entrance for custom commands
 Class:HostCommand
 """
 import sys
-from aops_cli.base_cmd import BaseCommand, str_split, cli_request, add_access_token
-from aops_utils.log.log import LOGGER
+from aops_cli.base_cmd import BaseCommand, cli_request, add_access_token
 from aops_utils.restful.helper import make_manager_url
 from aops_utils.conf.constant import ADD_GROUP, DELETE_GROUP, GET_GROUP
+from aops_utils.validate import name_check, str_split
+from aops_utils.cli_utils import add_page
 
 
 class GroupCommand(BaseCommand):
@@ -51,8 +52,7 @@ class GroupCommand(BaseCommand):
         self.sub_parse.add_argument(
             '--host_group_list',
             help='list of group names',
-            nargs='?',
-            default=""
+            nargs='?'
         )
 
         self.sub_parse.add_argument(
@@ -64,6 +64,7 @@ class GroupCommand(BaseCommand):
         )
 
         add_access_token(self.sub_parse)
+        add_page(self.sub_parse)
 
     def do_command(self, params):
         """
@@ -71,7 +72,6 @@ class GroupCommand(BaseCommand):
         Args:
             params: Command line parameters
         """
-
         action = params.action
 
         action_dict = {
@@ -98,8 +98,7 @@ class GroupCommand(BaseCommand):
         manager_url, header = make_manager_url(ADD_GROUP)
 
         if len(groups) != 1:
-            LOGGER.error(
-                'One group can be added, please try again')
+            print("One group can be added, and ',' cannot be contained in name. Please try again")
             sys.exit(0)
 
         pyload = {
@@ -119,14 +118,17 @@ class GroupCommand(BaseCommand):
             dict: response from the backend
         Raises:
         """
-
-        groups = str_split(params.host_group_list) if params.host_group_list is not None else []
+        groups = str_split(params.host_group_list)
+        if len(groups) == 0:
+            print("No group will be deleted, because of the empty group list.")
+            print("Please check your group list if you want to delete groups.")
+            sys.exit(0)
+        name_check(groups)
         manager_url, header = make_manager_url(DELETE_GROUP)
 
         pyload = {
             "host_group_list": groups,
         }
-
         return cli_request('DELETE', manager_url, pyload, header, params.access_token)
 
     @staticmethod
@@ -139,8 +141,11 @@ class GroupCommand(BaseCommand):
             dict: response from the backend
         """
         manager_url, header = make_manager_url(GET_GROUP)
-
+        if params.host_group_name is not None or params.host_group_list is not None:
+            print("host_group_list and host_group_name is not supported in query.")
+            sys.exit(0)
         pyload = {
-                  }
-
+            "page": params.page,
+            "per_page": params.per_page
+        }
         return cli_request('POST', manager_url, pyload, header, params.access_token)

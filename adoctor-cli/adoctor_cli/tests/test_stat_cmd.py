@@ -20,6 +20,7 @@ from unittest import mock
 from adoctor_cli.commands.stat_cmd import StatCommand
 from aops_utils.restful.response import MyResponse
 
+
 class Redirect:
     _content = ""
 

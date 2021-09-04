@@ -21,19 +21,6 @@ from abc import abstractmethod
 from aops_utils.restful.response import MyResponse
 
 
-def str_split(string):
-    """
-    Description: split str args into list
-    Args:
-        string(str): The string need to be splited.
-    Returns:
-        list of items
-    """
-    if string is not None and len(string) != 0:
-        return string.split(",")
-    return []
-
-
 def cli_request(action, manager_url, pyload, header, access_token):
     """
     cli request to manager

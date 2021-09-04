@@ -15,11 +15,13 @@ Description: report method's entrance for custom commands
 Class:ReportCommand
 """
 
-from adoctor_cli.base_cmd import BaseCommand, str_split, cli_request
+from adoctor_cli.base_cmd import BaseCommand, cli_request
 from adoctor_cli.base_cmd import add_access_token, add_start_and_end
 from aops_utils.restful.helper import make_diag_url
 from aops_utils.conf.constant import DIAG_GET_REPORT_LIST, DIAG_DELETE_REPORT, DIAG_GET_REPORT
 from aops_utils.time_utils import time_check_generate
+from aops_utils.validate import name_check, str_split
+from aops_utils.cli_utils import add_page
 
 
 class ReportCommand(BaseCommand):
@@ -72,6 +74,7 @@ class ReportCommand(BaseCommand):
 
         add_start_and_end(self.sub_parse)
         add_access_token(self.sub_parse)
+        add_page(self.sub_parse)
 
     def do_command(self, params):
         """
@@ -87,8 +90,8 @@ class ReportCommand(BaseCommand):
         action = params.action
 
         action_dict = {
-            'delete': self.manage_requests_delete_report,  # /manage/delete_report
-            'get': self.manage_requests_get_report  # /manage/get_report
+            'delete': self.manage_requests_delete_report,
+            'get': self.manage_requests_get_report
         }
         kwargs = {
             "params": params,
@@ -107,15 +110,24 @@ class ReportCommand(BaseCommand):
         """
         params = kwargs.get('params')
         time_list = kwargs.get('time_list')
-        pyload = {}
+        pyload = {
+            "page": params.page,
+            "per_page": params.per_page
+        }
         if params.report_list is not None:
-            pyload['report_list'] = str_split(params.report_list)
+            reports = str_split(params.report_list)
+            name_check(reports)
+            pyload['report_list'] = reports
             diag_url, header = make_diag_url(DIAG_GET_REPORT)
             return cli_request('POST', diag_url, pyload, header, params.access_token)
         if params.host_list is not None:
-            pyload['host_list'] = str_split(params.host_list)
+            hosts = str_split(params.host_list)
+            name_check(hosts)
+            pyload['host_list'] = hosts
         if params.tree_list is not None:
-            pyload['tree_list'] = str_split(params.tree_list)
+            trees = str_split(params.tree_list)
+            name_check(trees)
+            pyload['tree_list'] = trees
         if params.task_id is not None:
             pyload['task_id'] = params.task_id
         pyload["time_range"] = time_list
@@ -133,8 +145,8 @@ class ReportCommand(BaseCommand):
             dict: body of response
         """
         params = kwargs.get('params')
-        reports = str_split(params.report_list) if params.report_list is not None else []
-
+        reports = str_split(params.report_list)
+        name_check(reports)
         pyload = {
             "report_list": reports
         }

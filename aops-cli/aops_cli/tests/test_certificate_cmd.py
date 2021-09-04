@@ -18,7 +18,6 @@ Description:
 import unittest
 from unittest import mock
 from aops_cli.commands.certificate_cmd import CertificateCommand
-from aops_cli.base_cmd import str_split
 from aops_utils.restful.response import MyResponse
 
 

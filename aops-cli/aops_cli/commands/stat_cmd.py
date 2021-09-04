@@ -14,7 +14,7 @@
 Description: statistics method's entrance for custom commands
 Class:StatCommand
 """
-
+import sys
 from aops_cli.base_cmd import BaseCommand, cli_request, add_access_token
 from aops_utils.conf.constant import GET_HOST_COUNT
 from aops_utils.restful.helper import make_manager_url
@@ -52,7 +52,7 @@ class StatCommand(BaseCommand):
             help="field about data",
             nargs='?',
             type=str,
-            choices=['host', 'check_result'],
+            choices=['host'],
             required=True)
 
     def do_command(self, params):
@@ -60,10 +60,6 @@ class StatCommand(BaseCommand):
         Description: Executing command
         Args:
             params: Command line parameters
-        Returns:
-
-        Raises:
-
         """
         action = params.action
         action_dict = {
@@ -78,11 +74,11 @@ class StatCommand(BaseCommand):
         Args:
             params: Command line parameters
         Returns:
-
-        Raises:
-
+            dict: body of response
         """
-
+        if params.field is None:
+            print("please input the field of the statistics, using --field <field>.")
+            sys.exit(0)
         pyload = {
                  }
         manager_url, header = make_manager_url(GET_HOST_COUNT)

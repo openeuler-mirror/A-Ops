@@ -76,8 +76,8 @@ class AccountCommand(BaseCommand):
 
         action = params.action
         action_dict = {
-            'login': self.manage_requests_login,  # /account/login
-            'change': self.manage_requests_change  # /account/change
+            'login': self.manage_requests_login,
+            'change': self.manage_requests_change
         }
         return action_dict.get(action)(params)
 
