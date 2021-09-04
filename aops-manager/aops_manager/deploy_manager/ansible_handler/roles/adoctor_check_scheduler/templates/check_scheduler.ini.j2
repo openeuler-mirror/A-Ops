@@ -23,4 +23,10 @@ dead_retry_task_discount = 0.5
 backward_task_step = 60
 backward_task_interval = 30
 forward_task_interval = 30
-forward_max_task_step = 86400 # 1 day
+forward_max_task_step = 86400
+
+[uwsgi]
+wsgi-file=manage.py
+daemonize=/var/log/aops/uwsgi/check_scheduler.log
+http-timeout=600
+harakiri=600

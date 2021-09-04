@@ -1,14 +1,4 @@
 ---
- - name: Repo config for gala_gopher
-   become: true
-   become_user: root
-   yum_repository:
-     name: "{{ repo_name }}"
-     baseurl: "{{ repo_base_url }}"
-     enabled: yes
-     description: "{{ repo_description }}"
-     gpgcheck: no
-
  - name: Install packages
    become: true
    become_user: root

@@ -5,8 +5,8 @@
   shell: "systemctl start gala-ragdoll"
 
 # Checking the Service Status
-- name: Verify gala ragdoll is listening on 11114
+- name: Verify gala ragdoll is listening on {{ gala_ragdoll_port }}
   wait_for: 
     delay=10
-    port=11114
+    port={{ gala_ragdoll_port }}
     timeout=20

@@ -1,3 +1,10 @@
 # Checking the Service Status
 - name: Start gala spider
   shell: "/usr/bin/spider"
+
+# Checking the Service Status
+- name: Verify gala spider is listening on {{ gala_spider_port }}
+  wait_for: 
+    delay=10
+    port={{ gala_spider_port }}
+    timeout=20

@@ -11,4 +11,3 @@
     backup: yes
   with_items :
     - {src: check_executor.ini.j2, dst: check_executor.ini }
-    - {src: system.ini.j2, dst: system.ini }
