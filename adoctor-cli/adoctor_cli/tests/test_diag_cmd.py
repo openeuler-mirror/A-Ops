@@ -18,7 +18,7 @@ Description:
 import unittest
 from adoctor_cli.commands.diag_cmd import DiagCommand
 from unittest import mock
-from adoctor_cli.base_cmd import str_split
+from aops_utils.validate import str_split
 from aops_utils.restful.response import MyResponse
 from aops_utils.time_utils import time_check_generate
 

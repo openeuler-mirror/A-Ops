@@ -1,11 +1,26 @@
 #!/usr/bin/python3
+# ******************************************************************************
+# Copyright (c) Huawei Technologies Co., Ltd. 2021-2021. All rights reserved.
+# licensed under the Mulan PSL v2.
+# You can use this software according to the terms and conditions of the Mulan PSL v2.
+# You may obtain a copy of Mulan PSL v2 at:
+#     http://license.coscl.org.cn/MulanPSL2
+# THIS SOFTWARE IS PROVIDED ON AN 'AS IS' BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR
+# IMPLIED, INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY OR FIT FOR A PARTICULAR
+# PURPOSE.
+# See the Mulan PSL v2 for more details.
+# ******************************************************************************/
 """
-Description: validate funtion.
+Time:
+Author:
+Description:
 """
+
 import os
+import sys
 from datetime import datetime
 
-from .log.log import LOGGER
+from aops_utils.log.log import LOGGER
 
 
 def validate_path(path, file=True):
@@ -50,3 +65,29 @@ def validate_time(time, time_format):
     except ValueError as error:
         LOGGER.error(error)
         return False
+
+
+def name_check(name_list):
+    """
+    check name with ','
+    Args:
+        name_list(list): list of name
+    """
+    for item in name_list:
+        if item == "" or item.isspace():
+            print("Null string, space string and name ends with ',' are not accepted.")
+            print("please check your input.")
+            sys.exit(0)
+
+
+def str_split(string):
+    """
+    Description: split str args into list
+    Args:
+        string(str): The string need to be splited.
+    Returns:
+        list of items
+    """
+    if string:
+        return string.split(",")
+    return []

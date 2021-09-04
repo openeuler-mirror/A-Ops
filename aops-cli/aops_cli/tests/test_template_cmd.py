@@ -18,7 +18,7 @@ Description:
 import unittest
 from unittest import mock
 from aops_cli.commands.template_cmd import TemplateCommand
-from aops_cli.base_cmd import str_split
+from aops_utils.validate import str_split
 from aops_utils.readconfig import read_yaml_config_file
 from aops_utils.restful.response import MyResponse
 
@@ -63,7 +63,7 @@ class TestTemplateCli(unittest.TestCase):
             mock_get_response.return_value = expected_res
             cmd.do_command(args)
             args_dict = vars(args)
-            ignore_list = ['action', 'template_list', 'sort', 'direction', 'sub_parse_name', 'access_token']
+            ignore_list = ['page', 'per_page', 'action', 'template_list', 'sort', 'direction', 'sub_parse_name', 'access_token']
             for item in ignore_list:
                 args_dict.pop(item)
             args_dict['template_content'] = read_yaml_config_file(args_dict['template_content'])
@@ -117,7 +117,7 @@ class TestTemplateCli(unittest.TestCase):
             args_dict = dict()
             args_list = str_split(vars(args)['template_list'])
             args_dict['template_list'] = args_list
-            param_list = ['access_token', 'sort', 'direction']
+            param_list = ['sort', 'direction', 'page', 'per_page']
             for item in param_list:
                 args_dict[item] = vars(args)[item]
             self.assertEqual(args_dict, mock_get_response.call_args_list[0][0][2])

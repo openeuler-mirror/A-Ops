@@ -44,6 +44,7 @@ class TestStatCli(unittest.TestCase):
         cmd = StatCommand()
         args = cmd.parser.parse_args(['stat',
                                       '--action=count',
+                                      '--field=host',
                                       "--access_token=123321"])
         with mock.patch.object(MyResponse, "get_response") as mock_get_response:
             expected_res = {

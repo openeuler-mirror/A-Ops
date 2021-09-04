@@ -17,12 +17,14 @@ Class:CheckRuleCommand
 import json
 import sys
 
-from adoctor_cli.base_cmd import BaseCommand, str_split, cli_request
+from adoctor_cli.base_cmd import BaseCommand, cli_request
 from adoctor_cli.base_cmd import add_access_token
 from aops_utils.log.log import LOGGER
 from aops_utils.restful.helper import make_check_url
 from aops_utils.readconfig import read_json_config_file
 from aops_utils.conf.constant import CHECK_IMPORT_RULE, CHECK_GET_RULE, CHECK_DELETE_RULE
+from aops_utils.validate import name_check, str_split
+from aops_utils.cli_utils import add_page
 
 
 class CheckRuleCommand(BaseCommand):
@@ -67,6 +69,7 @@ class CheckRuleCommand(BaseCommand):
             type=str)
 
         add_access_token(self.sub_parse)
+        add_page(self.sub_parse)
 
     def do_command(self, params):
         """
@@ -78,9 +81,9 @@ class CheckRuleCommand(BaseCommand):
         action = params.action
 
         action_dict = {
-            'add': self.manage_requests_import_check_rule,  # /manage/import_check_rule
-            'delete': self.manage_requests_delete_check_rule,  # /manage/delete_check_rule
-            'get': self.manage_requests_get_check_rule  # /manage/get_check_rule
+            'add': self.manage_requests_import_check_rule,
+            'delete': self.manage_requests_delete_check_rule,
+            'get': self.manage_requests_get_check_rule
         }
 
         action_dict.get(action)(params)
@@ -112,8 +115,13 @@ class CheckRuleCommand(BaseCommand):
         Returns:
             dict： body of response
         """
-        checks = str_split(params.check_items) if params.check_items is not None else []
-        pyload = {"check_items": checks}
+        checks = str_split(params.check_items)
+        name_check(checks)
+        pyload = {
+            "check_items": checks,
+            "page": params.page,
+            "per_page": params.per_page
+        }
 
         check_url, header = make_check_url(CHECK_GET_RULE)
         res = cli_request('POST', check_url, pyload, header, params.access_token)
@@ -134,7 +142,8 @@ class CheckRuleCommand(BaseCommand):
         Returns:
             dict： body of response
         """
-        checks = str_split(params.check_items) if params.check_items is not None else []
+        checks = str_split(params.check_items)
+        name_check(checks)
         pyload = {"check_items": checks}
 
         check_url, header = make_check_url(CHECK_DELETE_RULE)

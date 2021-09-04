@@ -18,7 +18,7 @@ Description:
 import unittest
 from adoctor_cli.commands.fault_tree_cmd import FaultreeCommand
 from unittest import mock
-from adoctor_cli.base_cmd import str_split
+from aops_utils.validate import str_split
 from aops_utils.restful.response import MyResponse
 
 

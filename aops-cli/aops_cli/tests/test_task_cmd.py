@@ -17,7 +17,7 @@ Description:
 """
 import unittest
 from unittest import mock
-from aops_cli.base_cmd import str_split
+from aops_utils.validate import str_split
 from aops_cli.commands.task_cmd import TaskCommand
 from aops_utils.restful.response import MyResponse
 
@@ -62,7 +62,7 @@ class TestTaskCli(unittest.TestCase):
             mock_get_response.return_value = expected_res
             cmd.do_command(args)
             args_dict = vars(args)
-            ignore_list = ['action', 'task_list', 'sub_parse_name', 'sort', 'direction', "access_token"]
+            ignore_list = ['action', 'task_list', 'sub_parse_name', 'sort', 'direction', "access_token", 'page', 'per_page']
             for item in ignore_list:
                 args_dict.pop(item)
             args_dict['template_name'] = str_split(vars(args)['template_name'])
@@ -84,6 +84,7 @@ class TestTaskCli(unittest.TestCase):
             cmd.do_command(args)
             args_dict = dict()
             args_dict['task_list'] = str_split(vars(args)['task_list'])
+
             self.assertEqual(args_dict, mock_get_response.call_args_list[0][0][2])
 
     def test_get_task(self):
@@ -115,6 +116,8 @@ class TestTaskCli(unittest.TestCase):
             args_dict = dict()
             args_list = str_split(vars(args)['task_list'])
             args_dict['task_list'] = args_list
+            args_dict['page'] = 1
+            args_dict['per_page'] = 20
             self.assertEqual(args_dict, mock_get_response.call_args_list[0][0][2])
 
     def test_execute_task(self):
