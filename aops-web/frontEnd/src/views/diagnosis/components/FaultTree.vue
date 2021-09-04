@@ -10,10 +10,7 @@
 /* eslint-disable */
 import G6 from '@antv/g6'
 import { PageHeaderWrapper } from '@ant-design-vue/pro-layout'
-import { i18nRender } from '@/locales'
 import { treeDataProcesser } from '../utils/treeDataProcesser'
-
-import { treeTestData } from '@/mock/topoTestJson'
 
 export default {
   name: 'FaultTrees',
@@ -37,28 +34,6 @@ export default {
     }
   },
   computed: {
-    // 自定义面包屑内容
-    breadcrumb () {
-        const routes = this.$route.meta.diyBreadcrumb.map((route) => {
-            return {
-                path: route.path,
-                breadcrumbName: i18nRender(route.breadcrumbName)
-            }
-        })
-        return {
-            props: {
-                routes,
-                itemRender: ({ route, params, routes, paths, h }) => {
-                    if (routes.indexOf(route) === routes.length - 1) {
-                        return <span>{route.breadcrumbName}</span>
-                    } else {
-                        return <router-link to={route.path}>{route.breadcrumbName}</router-link>
-                    }
-                }
-            }
-        }
-    },
-
   },
   watch: {
     treeDataLoading () {

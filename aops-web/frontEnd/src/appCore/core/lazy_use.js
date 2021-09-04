@@ -47,11 +47,10 @@ import {
   message,
   notification
 } from 'ant-design-vue'
-// import Viser from 'viser-vue'
 
 // ext library
 import VueCropper from 'vue-cropper'
-import PermissionHelper from '@/core/permission/permission'
+import PermissionHelper from '@/appCore/core/permission/permission'
 import './directives/action'
 
 Vue.use(ConfigProvider)
@@ -105,8 +104,7 @@ Vue.prototype.$success = Modal.success
 Vue.prototype.$error = Modal.error
 Vue.prototype.$warning = Modal.warning
 
-// Vue.use(Viser)
 Vue.use(PermissionHelper)
 Vue.use(VueCropper)
 
-process.env.NODE_ENV !== 'production' && console.warn('NOTICE: Antd use lazy-load.')
+process.env.NODE_ENV !== 'production' && console.warn('lazy-load.')

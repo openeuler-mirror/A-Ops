@@ -74,7 +74,7 @@
 
 <script>
 import store from '@/store'
-import router from '@/router'
+import router from '@/appCore/router'
 
 import { PageHeaderWrapper } from '@ant-design-vue/pro-layout'
 import HostDetailDrawer from './components/HostDetailDrawer'

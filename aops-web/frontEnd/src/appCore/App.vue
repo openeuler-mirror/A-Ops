@@ -7,8 +7,8 @@
 </template>
 
 <script>
-import { domTitle, setDocumentTitle } from '@/utils/domUtil'
-import { i18nRender } from '@/locales'
+import { domTitle, setDocumentTitle } from '@/appCore/utils/domUtil'
+import { i18nRender } from '@/appCore/locales'
 
 export default {
   data () {

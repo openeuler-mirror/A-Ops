@@ -1,4 +1,4 @@
-import request from '@/utils/request'
+import request from '@/appCore/utils/request'
 
 const api = {
   // 获取部署任务列表

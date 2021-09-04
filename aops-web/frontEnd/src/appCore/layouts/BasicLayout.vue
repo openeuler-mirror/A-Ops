@@ -34,13 +34,13 @@
 
 <script>
 import { updateTheme } from '@ant-design-vue/pro-layout'
-import { i18nRender } from '@/locales'
+import { i18nRender } from '@/appCore/locales'
 import { mapState } from 'vuex'
-import { CONTENT_WIDTH_TYPE, SIDEBAR_TYPE, TOGGLE_MOBILE_TYPE } from '@/store/mutation-types'
+import { CONTENT_WIDTH_TYPE, SIDEBAR_TYPE, TOGGLE_MOBILE_TYPE } from '@/appCore/store/mutation-types'
 
-import defaultSettings from '@/config/defaultSettings'
-import RightContent from '@/components/GlobalHeader/RightContent'
-import GlobalFooter from '@/components/GlobalFooter'
+import defaultSettings from '@/appCore/config/defaultSettings'
+import RightContent from '@/appCore/components/GlobalHeader/RightContent'
+import GlobalFooter from '@/appCore/components/GlobalFooter'
 
 export default {
   name: 'BasicLayout',

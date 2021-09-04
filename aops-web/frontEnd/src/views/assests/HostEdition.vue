@@ -82,8 +82,8 @@
 // 创建和编辑共用一个组件
 import store from '@/store'
 import { mapState } from 'vuex'
-import router from '@/router'
-import { i18nRender } from '@/locales'
+import router from '@/appCore/router'
+import { i18nRender } from '@/appCore/locales'
 
 import { PageHeaderWrapper } from '@ant-design-vue/pro-layout'
 import AddHostGroupModal from './components/AddHostGroupModal'

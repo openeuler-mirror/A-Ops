@@ -6,7 +6,7 @@
 
 <script>
 import { PageHeaderWrapper } from '@ant-design-vue/pro-layout'
-import { i18nRender } from '@/locales'
+import { i18nRender } from '@/appCore/locales'
 
 export default {
   name: 'MyPageHeaderWrapper',

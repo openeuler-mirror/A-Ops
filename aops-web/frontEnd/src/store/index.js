@@ -1,18 +1,18 @@
 import Vue from 'vue'
 import Vuex from 'vuex'
 
-import app from './modules/app'
-import user from './modules/user'
+import app from '@/appCore/store/modules/app'
+import user from '@/appCore/store/modules/user'
 
 // default router permission control
-import permission from './modules/permission'
+import permission from '@/appCore/store/modules/permission'
 
 // dynamic router permission control (Experimental)
 // import permission from './modules/async-router'
 
 import host from './modules/host'
 
-import getters from './getters'
+import getters from '@/appCore/store/getters'
 
 Vue.use(Vuex)
 
@@ -21,7 +21,6 @@ export default new Vuex.Store({
     app,
     user,
     permission,
-
     host
   },
   state: {},

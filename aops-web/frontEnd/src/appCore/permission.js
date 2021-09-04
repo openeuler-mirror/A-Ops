@@ -1,13 +1,13 @@
-import router from './router'
-import store from './store'
+import router from '@/appCore/router'
+import store from '@/store'
 // import storage from 'store'
 import cookie from 'js-cookie'
 import NProgress from 'nprogress' // progress bar
-import '@/components/NProgress/nprogress.less' // progress bar custom style
+import '@/appCore/components/NProgress/nprogress.less' // progress bar custom style
 import notification from 'ant-design-vue/es/notification'
-import { setDocumentTitle, domTitle } from '@/utils/domUtil'
+import { setDocumentTitle, domTitle } from '@/appCore/utils/domUtil'
 // import { ACCESS_TOKEN } from '@/store/mutation-types'
-import { i18nRender } from '@/locales'
+import { i18nRender } from '@/appCore/locales'
 
 NProgress.configure({ showSpinner: false }) // NProgress Configuration
 
@@ -31,7 +31,7 @@ router.beforeEach((to, from, next) => {
         store.dispatch('setUserName', cookie.get('user_name'))
         // request login userInfo
         store
-          .dispatch('GetInfo') // 因为这个借口目前还没有。getInfo内容被跳过了，返回空的结果
+          .dispatch('GetInfo') // 因为这个接口目前还没有。getInfo内容被跳过了，返回空的结果
           .then(res => {
             const roles = res.result && res.result.role
             // generate dynamic router

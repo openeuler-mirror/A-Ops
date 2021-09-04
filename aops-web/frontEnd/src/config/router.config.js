@@ -1,5 +1,5 @@
 // eslint-disable-next-line
-import { UserLayout, BasicLayout } from '@/layouts'
+import { UserLayout, BasicLayout } from '@/appCore/layouts'
 // import { bxAnaalyse } from '@/core/icons'
 
 const RouteView = {
@@ -264,7 +264,7 @@ export const asyncRouterMap = [
           },
           {
             path: routeMap.configuration.children.TranscationDomainConfigurationsDetail.path,
-            name: 'transcationDomainConfigurations',
+            name: 'transcationDomainConfigurationsDetail',
             hidden: true,
             component: () => import('@/views/configuration/TranscationDomainConfigurations'),
             meta: { title: routeMap.configuration.children.TranscationDomainConfigurationsDetail.title, permission: ['configuration'] }
@@ -325,21 +325,6 @@ export const constantRouterMap = [
         path: 'login',
         name: 'login',
         component: () => import(/* webpackChunkName: "user" */ '@/views/user/Login')
-      },
-      {
-        path: 'register',
-        name: 'register',
-        component: () => import(/* webpackChunkName: "user" */ '@/views/user/Register')
-      },
-      {
-        path: 'register-result',
-        name: 'registerResult',
-        component: () => import(/* webpackChunkName: "user" */ '@/views/user/RegisterResult')
-      },
-      {
-        path: 'recover',
-        name: 'recover',
-        component: undefined
       }
     ]
   },

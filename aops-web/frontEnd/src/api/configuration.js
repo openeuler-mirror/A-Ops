@@ -1,4 +1,4 @@
-import request from '@/utils/request'
+import request from '@/appCore/utils/request'
 import qs from 'qs'
 
 const api = {

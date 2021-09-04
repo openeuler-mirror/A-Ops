@@ -3,11 +3,11 @@ import 'core-js/stable'
 import 'regenerator-runtime/runtime'
 
 import Vue from 'vue'
-import App from './App.vue'
-import router from './router'
+import App from '@/appCore/App.vue'
+import router from '@/appCore/router'
 import store from './store/'
-import i18n from './locales'
-import { VueAxios } from './utils/request'
+import i18n from '@/appCore/locales'
+import { VueAxios } from '@/appCore/utils/request'
 import ProLayout, { PageHeaderWrapper } from '@ant-design-vue/pro-layout'
 import themePluginConfig from '../config/themePluginConfig'
 
@@ -15,11 +15,11 @@ import themePluginConfig from '../config/themePluginConfig'
 // WARNING: `mockjs` NOT SUPPORT `IE` PLEASE DO NOT USE IN `production` ENV.
 // import './mock'
 
-import bootstrap from './core/bootstrap'
-import './core/lazy_use' // use lazy load components
-import './permission' // permission control
-import './utils/filter' // global filter
-import './global.less' // global style
+import bootstrap from '@/appCore/core/bootstrap'
+import '@/appCore/core/lazy_use' // use lazy load components
+import '@/appCore/permission' // permission control
+import '@/appCore/utils/filter' // global filter
+import '@/appCore/global.less' // global style
 
 Vue.config.productionTip = false
 

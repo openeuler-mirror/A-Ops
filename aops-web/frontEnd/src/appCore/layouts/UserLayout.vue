@@ -33,7 +33,7 @@
 </template>
 
 <script>
-import { deviceMixin } from '@/store/device-mixin'
+import { deviceMixin } from '@/appCore/store/device-mixin'
 
 export default {
   name: 'UserLayout',
