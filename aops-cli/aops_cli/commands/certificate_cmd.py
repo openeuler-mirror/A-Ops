@@ -15,9 +15,10 @@ Description: certificate method's entrance for custom commands
 Class:CertificateCommand
 """
 
-from aops_cli.base_cmd import BaseCommand, cli_request, add_access_token
+from aops_cli.base_cmd import BaseCommand
 from aops_utils.restful.helper import make_manager_url
 from aops_utils.conf.constant import USER_CERTIFICATE
+from aops_utils.cli_utils import cli_request, add_access_token
 
 
 class CertificateCommand(BaseCommand):

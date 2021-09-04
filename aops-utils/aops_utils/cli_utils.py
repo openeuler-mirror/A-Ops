@@ -10,6 +10,14 @@
 # PURPOSE.
 # See the Mulan PSL v2 for more details.
 # ******************************************************************************/
+"""
+Time:
+Author:
+Description:
+"""
+
+from aops_utils.restful.response import MyResponse
+
 
 def add_page(sub_parse):
     """
@@ -32,3 +40,92 @@ def add_page(sub_parse):
         type=int,
         default=20
     )
+
+
+def cli_request(action, manager_url, pyload, header, access_token=None):
+    """
+    cli request to manager
+    Args:
+        action(str): actions of requests
+        manager_url(str): route
+        pyload(dict): request body
+        header(dict): request header
+        access_token(str): access token of users
+
+    Returns:
+        json: response of manager
+    """
+    if access_token is not None:
+        header['access_token'] = access_token
+    result = MyResponse.get_response(action, manager_url, pyload, header)
+    print(result)
+    return result
+
+
+def add_query_args(sub_parse, item_list):
+    """
+    Add query args of the sub parse.
+    Args:
+        item_list(list): list for sort items
+        sub_parse(sub_parse): sub_parse of the command
+    Returns:
+
+    """
+    sub_parse.add_argument(
+        '--sort',
+        help='sort for the query result, null is no sort',
+        nargs='?',
+        type=str,
+        default="",
+        choices=item_list
+    )
+
+    sub_parse.add_argument(
+        '--direction',
+        help='asc or desc of the sort',
+        nargs='?',
+        type=str,
+        default="asc",
+        choices=['asc', 'desc']
+    )
+
+
+def add_access_token(sub_parse):
+    """
+    Add access_token of the sub parse.
+    Args:
+        sub_parse(sub_parse): sub_parse of the command
+
+    """
+    sub_parse.add_argument(
+            '--access_token',
+            help='The access token for operations',
+            nargs='?',
+            type=str,
+            required=True
+    )
+
+
+def add_start_and_end(sub_parse):
+    """
+    Add start time and end time of the sub parse.
+    Args:
+        sub_parse(sub_parse): sub_parse of the command
+    """
+    group_start_end = sub_parse.add_argument_group(
+        'group_start_end',
+        'The group for start and end')
+
+    group_start_end.add_argument(
+        '--start',
+        nargs='?',
+        type=str,
+        default="",
+        help='original date of raw data, default is 1 hour ago.')
+
+    group_start_end.add_argument(
+        '--end',
+        nargs='?',
+        type=str,
+        default="",
+        help='end date of raw data, default is now')

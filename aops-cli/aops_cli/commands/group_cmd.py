@@ -15,11 +15,11 @@ Description: group  method's entrance for custom commands
 Class:HostCommand
 """
 import sys
-from aops_cli.base_cmd import BaseCommand, cli_request, add_access_token
+from aops_cli.base_cmd import BaseCommand
 from aops_utils.restful.helper import make_manager_url
 from aops_utils.conf.constant import ADD_GROUP, DELETE_GROUP, GET_GROUP
 from aops_utils.validate import name_check, str_split
-from aops_utils.cli_utils import add_page
+from aops_utils.cli_utils import add_page, cli_request, add_access_token
 
 
 class GroupCommand(BaseCommand):
@@ -94,7 +94,7 @@ class GroupCommand(BaseCommand):
 
         """
 
-        groups = str_split(params.host_group_name) if params.host_group_name is not None else []
+        groups = str_split(params.host_group_name)
         manager_url, header = make_manager_url(ADD_GROUP)
 
         if len(groups) != 1:

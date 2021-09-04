@@ -16,14 +16,13 @@ Class:HostCommand
 """
 import sys
 
-from aops_cli.base_cmd import BaseCommand, cli_request, add_access_token, add_query_args
+from aops_cli.base_cmd import BaseCommand
 from aops_utils.validate import name_check, str_split
 from aops_utils.restful.response import MyResponse
 from aops_utils.restful.helper import make_manager_url
 from aops_utils.conf.constant import ADD_HOST, DELETE_HOST, QUERY_HOST, QUERY_HOST_DETAIL
 from aops_utils.restful.status import SUCCEED
-from aops_utils.log.log import LOGGER
-from aops_utils.cli_utils import add_page
+from aops_utils.cli_utils import add_page, cli_request, add_access_token, add_query_args
 
 
 class HostCommand(BaseCommand):
@@ -214,7 +213,7 @@ class HostCommand(BaseCommand):
         header['access_token'] = params.access_token
         result_basic = MyResponse.get_response('POST', manager_url, pyload, header)
         if result_basic.get('code') != SUCCEED:
-            LOGGER.error("Query request with bad response.")
+            print("Query request with bad response.")
             print(result_basic)
             sys.exit(0)
         verbose = True if params.verbose == "True" else False
@@ -229,7 +228,7 @@ class HostCommand(BaseCommand):
             header['access_token'] = params.access_token
             result_details = MyResponse.get_response('POST', manager_url, pyload, header)
             if result_details.get('code') != SUCCEED:
-                LOGGER.error("Query request with bad response.")
+                print("Query request with bad response.")
                 print(result_details)
                 sys.exit(0)
             for info in result_details['host_infos']:
