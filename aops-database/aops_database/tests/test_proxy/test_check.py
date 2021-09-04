@@ -120,6 +120,15 @@ class TestCheckDatabase(unittest.TestCase):
         res = self.proxy.get_check_rule(data)
         self.assertEqual(expected_res, res[1])
 
+        data = {
+            "username": "test",
+            "check_items": [],
+            "sort": "check_item",
+            "direction": "desc",
+        }
+        res = self.proxy.get_check_rule(data)
+        self.assertEqual(4, len(res[1]['check_items']))
+
         # =============delete rule =================
         data = {
             "username": "test",
@@ -285,6 +294,15 @@ class TestCheckDatabase(unittest.TestCase):
         }
         res = self.proxy.get_check_result(data)
         self.assertEqual(res[1], expected_res)
+
+        data = {
+            "username": "test",
+            "time_range": [],
+            "check_items": [],
+            "host_list": []
+        }
+        res = self.proxy.get_check_result(data)
+        self.assertEqual(5, len(res[1]['check_result']))
 
         # ============delete check result=============
         data = {

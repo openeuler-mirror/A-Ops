@@ -59,6 +59,10 @@ class Host(Base, MyBase):  # pylint: disable=R0903
     host_group = relationship('HostGroup', back_populates='hosts')
     owner = relationship('User', back_populates='hosts')
 
+    def __eq__(self, o):
+        return self.user == o.user and self.host_name == o.host_name\
+            and self.public_ip == o.public_ip
+
 
 class HostGroup(Base, MyBase):
     """
