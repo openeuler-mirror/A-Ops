@@ -12,8 +12,6 @@
           </div>
           <div class="remark">描述：{{ faultTree.description }}</div>
           <div class="btn-box">
-            <a>编辑</a>
-            <a>导出</a>
             <a-popconfirm
               title="您确定要删除该故障树吗?"
               ok-text="确认"
@@ -43,9 +41,9 @@
           />
         </a-tab-pane>
         <a-tab-pane key="2" tab="文件" force-render>
-          <p>1、文件1</p>
-          <p>2、文件2</p>
-          <p>2、文件...</p>
+          <a-card style="white-space: pre-wrap;">
+            <div>{{ faultTree.tree_content }}</div>
+          </a-card>
         </a-tab-pane>
       </a-tabs>
     </a-card>
@@ -88,6 +86,9 @@ export default {
         treeList
       }).then(function (res) {
         _this.faultTree = res.trees[0]
+        if (!_this.faultTree.tree_content || !_this.faultTree.tree_content['node name']) {
+          _this.$message.error('数据错误')
+        }
       }).catch(function (err) {
         _this.$message.error(err.response.data.msg)
       }).finally(function () {

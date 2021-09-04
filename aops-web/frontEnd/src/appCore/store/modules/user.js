@@ -57,19 +57,23 @@ const user = {
     // 获取用户信息
     GetInfo ({ commit }) {
       return new Promise((resolve, reject) => {
-        // 暂时还没有userInfo的接口，跳过，使用空数据
-        const userInfo = {}
-        // role
-        const roleObj = {}
+        try {
+          // 暂时还没有userInfo的接口，跳过，使用空数据
+          const userInfo = {}
+          // role
+          const roleObj = {}
 
-        userInfo.role = roleObj
-        const response = { result: userInfo }
-        const result = response.result
+          userInfo.role = roleObj
+          const response = { result: userInfo }
+          const result = response.result
 
-        commit('SET_ROLES', [1])
-        commit('SET_INFO', result)
+          commit('SET_ROLES', [1])
+          commit('SET_INFO', result)
 
-        resolve(response)
+          resolve(response)
+        } catch (err) {
+          reject(err)
+        }
       })
     },
 

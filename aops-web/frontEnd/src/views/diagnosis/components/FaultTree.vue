@@ -39,9 +39,11 @@ export default {
     treeDataLoading () {
       const _this = this
       this.drawData = treeDataProcesser(this.treeData)
-      this.tree.data(this.drawData)
-      this.tree.render()
-      this.tree.fitView()
+      if (this.drawData !== null) {
+        this.tree.data(this.drawData)
+        this.tree.render()
+        this.tree.fitView()
+      }
  
       this.tree.on('collapse-text:click', function (e) {
         _this.handleCollapse(e)

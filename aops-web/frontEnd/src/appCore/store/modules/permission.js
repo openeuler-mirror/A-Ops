@@ -65,11 +65,15 @@ const permission = {
   },
   actions: {
     GenerateRoutes ({ commit }, data) {
-      return new Promise(resolve => {
-        const routerMap = cloneDeep(asyncRouterMap)
-        const accessedRouters = routerMap
-        commit('SET_ROUTERS', accessedRouters)
-        resolve()
+      return new Promise((resolve, reject) => {
+        try {
+          const routerMap = cloneDeep(asyncRouterMap)
+          const accessedRouters = routerMap
+          commit('SET_ROUTERS', accessedRouters)
+          resolve()
+        } catch (err) {
+          reject(err)
+        }
       })
     }
   }

@@ -1,4 +1,5 @@
 export function treeDataProcesser (rawTreeData, id = '0') {
+  if (!rawTreeData['node name']) return null
   const { children, ...params } = rawTreeData
   const nodeTemp = {
     ...params,

@@ -33,7 +33,7 @@ function setI18nLanguage (lang) {
 }
 
 export function loadLanguageAsync (lang = defaultLang) {
-  return new Promise(resolve => {
+  return new Promise((resolve, reject) => {
     // 缓存语言设置
     storage.set('lang', lang)
     if (i18n.locale !== lang) {
@@ -44,7 +44,7 @@ export function loadLanguageAsync (lang = defaultLang) {
           loadedLanguages.push(lang)
           moment.updateLocale(locale.momentName, locale.momentLocale)
           return setI18nLanguage(lang)
-        })
+        }).catch(err => reject(err))
       }
       return resolve(setI18nLanguage(lang))
     }
