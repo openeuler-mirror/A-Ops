@@ -6,7 +6,7 @@ info:
   title: "Topo Graph Engine Service"
   contact:
     email: "zhengxian@huawei.com"
-host: "0.0.0.0:8080"
+host: "10.136.117.116:11115"
 basePath: "/gala-spider/api/v1"
 tags:
 - name: "gala-spider"
@@ -31,7 +31,7 @@ paths:
           description: "successful operation"
           schema:
             $ref: "#/definitions/BaseResponse"
-      x-swagger-router-controller: "swagger_server.controllers.gala_spider"
+      x-swagger-router-controller: "spider.controllers.gala_spider"
   /get_entities:
     get:
       tags:
@@ -55,7 +55,7 @@ paths:
           description: "successful operation"
           schema:
             $ref: "#/definitions/EntitiesResponse"
-      x-swagger-router-controller: "swagger_server.controllers.gala_spider"
+      x-swagger-router-controller: "spider.controllers.gala_spider"
 definitions:
   EntitiesResponse:
     type: "object"

@@ -5,10 +5,10 @@ from datetime import date, datetime  # noqa: F401
 
 from typing import List, Dict  # noqa: F401
 
-from swagger_server.models.base_model_ import Model
-from swagger_server.models.dependenceitem import Dependenceitem
-from swagger_server.models.attr import Attr
-from swagger_server import util
+from spider.models.base_model_ import Model
+from spider.models.dependenceitem import Dependenceitem
+from spider.models.attr import Attr
+from spider import util
 
 
 class Entity(Model):

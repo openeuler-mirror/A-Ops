@@ -5,9 +5,9 @@ from datetime import date, datetime  # noqa: F401
 
 from typing import List, Dict  # noqa: F401
 
-from swagger_server.models.base_model_ import Model
-from swagger_server.models.entity import Entity
-from swagger_server import util
+from spider.models.base_model_ import Model
+from spider.models.entity import Entity
+from spider import util
 
 
 class EntitiesResponse(Model):
@@ -25,8 +25,8 @@ class EntitiesResponse(Model):
         :type msg: str
         :param timestamp: The timestamp of this EntitiesResponse.  # noqa: E501
         :type timestamp: int
-        :param entityids: The entityids of this EntitiesResponse.  # noqa: E501
-        :type entityids: List[str]
+        :type entit        :param entityids: The entityids of this EntitiesResponse.  # noqa: E501
+yids: List[str]
         :param entities: The entities of this EntitiesResponse.  # noqa: E501
         :type entities: List[Entity]
         """
