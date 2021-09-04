@@ -1,13 +1,8 @@
 <template>
   <div class="cardInfo">
     <div>
-      <p>描述：{{remark}}</p>
-      <!--<p>{{ activeUser }}</p>-->
+      <p>描述：{{ remark }}</p>
     </div>
-    <!--<div>-->
-      <!--<p>新增用户</p>-->
-      <!--<p>{{ newUser }}</p>-->
-    <!--</div>-->
   </div>
 </template>
 

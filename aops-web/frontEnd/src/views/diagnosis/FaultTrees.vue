@@ -5,12 +5,12 @@
         <img class="avatar-img" src="~@/assets/huawei_logo_h.png">
         <div class="content-div">
           <div class="title">
-            <span style="padding-right: 5px">{{faultTree.tree_name}}</span>
+            <span style="padding-right: 5px">{{ faultTree.tree_name }}</span>
             <a-tag>内核</a-tag>
             <a-tag>软件故障</a-tag>
             <a-tag>配置</a-tag>
           </div>
-          <div class="remark">描述：{{faultTree.description}}</div>
+          <div class="remark">描述：{{ faultTree.description }}</div>
           <div class="btn-box">
             <a>编辑</a>
             <a>导出</a>

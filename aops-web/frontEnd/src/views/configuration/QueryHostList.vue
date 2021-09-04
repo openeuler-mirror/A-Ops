@@ -398,6 +398,9 @@
       this.setTimeoutKey_statusInterval = setInterval(function () {
         _this.refreshDomainStatus()
       }, defaultSettings.domainStatusRefreshInterval)
+    },
+    destroyed: function () {
+      clearInterval(this.setTimeoutKey_statusInterval)
     }
   }
 </script>

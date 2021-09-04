@@ -5,10 +5,11 @@
     :data-source="tableData"
     :pagination="pagination"
     @change="handleTableChange"
-    bordered>
-        <span slot="index" slot-scope="text, record, index">
-          {{ index + firstIndex }}
-        </span>
+    bordered
+  >
+    <span slot="index" slot-scope="text, record, index">
+      {{ index + firstIndex }}
+    </span>
   </a-table>
 </template>
 

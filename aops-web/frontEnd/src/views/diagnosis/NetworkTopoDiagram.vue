@@ -1,35 +1,6 @@
 <template>
   <my-page-header-wrapper>
-    <div style="height: 110px;position: relative;">
-      <img class="avatar-img" :src="faultTree.avatar">
-      <div class="content-div">
-        <div class="title">
-          <span style="padding-right: 5px">{{faultTree.tree_name}}</span>
-          <a-tag>内核</a-tag>
-          <a-tag>软件故障</a-tag>
-          <a-tag>配置</a-tag>
-        </div>
-        <div class="remark">描述：{{faultTree.content}}</div>
-        <div class="btn-box">
-          <a>编辑</a>
-          <a>导出</a>
-          <a>删除</a>
-        </div>
-      </div>
-      <a-button type="primary" style="position: absolute;right: 0;top: -8px">
-        故障诊断<a-icon type="plus"/>
-      </a-button>
-    </div>
-    <a-tabs default-active-key="1">
-      <a-tab-pane key="1" tab="树图">
-        <span>树图...</span>
-      </a-tab-pane>
-      <a-tab-pane key="2" tab="文件" force-render>
-        <p>1、文件1</p>
-        <p>2、文件2</p>
-        <p>2、文件...</p>
-      </a-tab-pane>
-    </a-tabs>
+    架构感知
   </my-page-header-wrapper>
 </template>
 
@@ -53,9 +24,9 @@ export default {
   methods: {
     getFaultTree () {
       this.faultTree = {
-        tree_name: '故障树2',
-        avatar: 'https://gw.alipayobjects.com/zos/rmsportal/WdGqmHpayyMjiEhcKoVE.png',
-        content: '这里可以放一两项简单描述，仅可点击查看详情2'
+        tree_name: 'netWork',
+        avatar: '',
+        content: ''
       }
     }
   }

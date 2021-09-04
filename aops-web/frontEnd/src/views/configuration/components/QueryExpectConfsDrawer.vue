@@ -1,8 +1,8 @@
 
 <template>
   <div>
-    <div>主机：{{host.hostId}}</div>
-    <div>IP地址：{{host.ip}}</div>
+    <div>主机：{{ host.hostId }}</div>
+    <div>IP地址：{{ host.ip }}</div>
     <div>
       <a-collapse>
         <a-collapse-panel v-for="(item,index) in collapseData" :key="index" :header="'配置项：'+item.filePath">

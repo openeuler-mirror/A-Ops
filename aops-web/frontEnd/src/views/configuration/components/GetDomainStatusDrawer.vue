@@ -113,6 +113,4 @@
   .ip-left{
     margin-left: 10px;
   }
-  .sync-button{
-  }
 </style>

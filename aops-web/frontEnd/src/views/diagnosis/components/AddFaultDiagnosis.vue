@@ -5,11 +5,11 @@
         <a-form-item label="起始日期">
           <a-date-picker
             v-decorator="[
-                  'startTime',
-                  {
-                    rules: [{ required: true, message: '请选择起始日期' }],
-                  },
-                ]"
+              'startTime',
+              {
+                rules: [{ required: true, message: '请选择起始日期' }],
+              },
+            ]"
             style="width: 100%"
             :get-popup-container="trigger => trigger.parentNode"
             show-time
@@ -23,11 +23,11 @@
         <a-form-item label="结束日期">
           <a-date-picker
             v-decorator="[
-                  'endTime',
-                  {
-                    rules: [{ required: true, message: '请选择结束日期' }],
-                  },
-                ]"
+              'endTime',
+              {
+                rules: [{ required: true, message: '请选择结束日期' }],
+              },
+            ]"
             style="width: 100%"
             :get-popup-container="trigger => trigger.parentNode"
             show-time
@@ -67,11 +67,11 @@
         <a-form-item label="所需诊断主机">
           <a-textarea
             v-decorator="[
-                  'host_list',
-                  {
-                    rules: [{ required: true, message: '请输入需要诊断的主机，主机间用;号隔开' }],
-                  },
-                ]"
+              'host_list',
+              {
+                rules: [{ required: true, message: '请输入需要诊断的主机，主机间用;号隔开' }],
+              },
+            ]"
             :rows="4"
             placeholder="请输入需要诊断的主机，主机间用;号隔开"
           />
@@ -95,8 +95,16 @@ import { executeDiag } from '@/api/diagnosis'
       }
     },
     props: {
-      faultTreeList: Array,
-      saveSuccess: Function
+      faultTreeList: {
+        type: Array,
+        default: function () {
+          return []
+        }
+      },
+      saveSuccess: {
+        type: Function,
+        default: function () {}
+      }
     },
     mounted: function () {
       this.setButtons({ callBack: this.save, text: '保存' })

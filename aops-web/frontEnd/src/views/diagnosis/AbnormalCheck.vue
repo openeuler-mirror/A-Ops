@@ -10,7 +10,7 @@
           <div style="height: 100%;width: calc(100% - 75px);float: left;position:relative;">
             <div class="content">
               <div style="color: #999;">异常检测规则数量</div>
-              <div style="color: #333;font-size: 32px;line-height: 1em">{{ ruleCount.toString().replace(/(\d)(?=(?:\d{3})+$)/g, '$1,')}}</div>
+              <div style="color: #333;font-size: 32px;line-height: 1em">{{ ruleCount.toString().replace(/(\d)(?=(?:\d{3})+$)/g, '$1,') }}</div>
             </div>
           </div>
         </div>
@@ -108,7 +108,7 @@
             @confirm="deleteResult(result)"
           ><span href="#">删除</span></a-popconfirm>
           <a-divider type="vertical" />
-          <a-icon type="down"  style="color: #999"/>
+          <a-icon type="down" style="color: #999"/>
         </span>
         <div slot="expandedRowRender" slot-scope="result" style="width: 100%;margin: 1px;padding-left: 50px;">
           <check-result-expanded :dataSource="result.data_list"></check-result-expanded>

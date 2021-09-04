@@ -33,17 +33,18 @@
           :pagination="pagination"
           :row-selection="rowSelection"
           @change="handleTableChange"
-          :loading="tableIsLoading">
-              <span slot="action" slot-scope="record">
-                <a-popconfirm title="你确定执行这个任务吗?" ok-text="确认" cancel-text="取消" @confirm="executeTask(record)">
-                  <a>执行</a>
-                </a-popconfirm>
-                <a-divider type="vertical" />
-                <a-popconfirm title="你确定删除这个任务吗?" ok-text="确认" cancel-text="取消" @confirm="deleteTask(record)">
-                  <a-icon slot="icon" type="close-circle" style="color: red" />
-                  <a>删除</a>
-                </a-popconfirm>
-              </span>
+          :loading="tableIsLoading"
+        >
+          <span slot="action" slot-scope="record">
+            <a-popconfirm title="你确定执行这个任务吗?" ok-text="确认" cancel-text="取消" @confirm="executeTask(record)">
+              <a>执行</a>
+            </a-popconfirm>
+            <a-divider type="vertical" />
+            <a-popconfirm title="你确定删除这个任务吗?" ok-text="确认" cancel-text="取消" @confirm="deleteTask(record)">
+              <a-icon slot="icon" type="close-circle" style="color: red" />
+              <a>删除</a>
+            </a-popconfirm>
+          </span>
         </a-table>
       </div>
     </a-card>
@@ -70,8 +71,8 @@
                     <img class="avatar-img" src="~@/assets/huawei_logo_h.png">
                   </div>
                   <div class="content-div">
-                    <div class="title">{{item.template_name}}</div>
-                    <div class="remark">{{item.description}}</div>
+                    <div class="title">{{ item.template_name }}</div>
+                    <div class="remark">{{ item.description }}</div>
                   </div>
                 </div>
                 <template slot="actions">

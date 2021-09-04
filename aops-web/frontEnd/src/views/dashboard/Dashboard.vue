@@ -9,7 +9,7 @@
           <div style="height: 100%;width: calc(100% - 100px);float: left;position:relative;">
             <div class="content">
               <div style="color: #999;">主机数量<a-icon type="question-circle" style="float: right"/></div>
-              <div style="color: #333;font-size: 32px;line-height: 1em">{{ hostCount.toString().replace(/(\d)(?=(?:\d{3})+$)/g, '$1,')}}</div>
+              <div style="color: #333;font-size: 32px;line-height: 1em">{{ hostCount.toString().replace(/(\d)(?=(?:\d{3})+$)/g, '$1,') }}</div>
             </div>
           </div>
         </div>
@@ -20,7 +20,7 @@
           <div style="height: 100%;width: calc(100% - 100px);float: left;position:relative;">
             <div class="content">
               <div style="color: #999;">异常检测规则数量<a-icon type="question-circle" style="float: right"/></div>
-              <div style="color: #333;font-size: 32px;line-height: 1em">{{ ruleCount.toString().replace(/(\d)(?=(?:\d{3})+$)/g, '$1,')}}</div>
+              <div style="color: #333;font-size: 32px;line-height: 1em">{{ ruleCount.toString().replace(/(\d)(?=(?:\d{3})+$)/g, '$1,') }}</div>
             </div>
           </div>
         </div>
@@ -30,7 +30,7 @@
         <div style="font-size: 32px;padding-left: 15px;line-height: 45px">78%</div>
         <div><a-progress :percent="78" :show-info="false" :strokeWidth="12" :strokeColor="'#1890ee'"/></div>
         <div style="border-top: 1px solid #ccc;margin-top: 15px;color: #999;padding-top: 5px">未同步业务域</div>
-        <div style="font-size: 32px;padding-left: 15px;line-height: 45px;color: #FA5151">{{ '1345'.toString().replace(/(\d)(?=(?:\d{3})+$)/g, '$1,')}}</div>
+        <div style="font-size: 32px;padding-left: 15px;line-height: 45px;color: #FA5151">{{ '1345'.toString().replace(/(\d)(?=(?:\d{3})+$)/g, '$1,') }}</div>
       </div>
       <drawer-view title="异常检测结果统计">
         <template slot="click">

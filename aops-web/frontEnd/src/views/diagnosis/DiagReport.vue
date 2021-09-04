@@ -5,18 +5,18 @@
         <img class="avatar-img" src="~@/assets/huawei_logo_h.png">
         <div class="content-div">
           <div class="title">
-            <span style="padding-right: 5px">报告ID：{{report.id}}</span>
+            <span style="padding-right: 5px">报告ID：{{ report.id }}</span>
           </div>
           <div style="height: 60px;line-height: 28px">
             <a-row>
-              <a-col :span="8">主机名称：{{report.hostName}}</a-col>
-              <a-col :span="8">任务ID：{{report.taskId}}</a-col>
-              <a-col :span="8">诊断时间：{{report.diagTime}}</a-col>
+              <a-col :span="8">主机名称：{{ report.hostName }}</a-col>
+              <a-col :span="8">任务ID：{{ report.taskId }}</a-col>
+              <a-col :span="8">诊断时间：{{ report.diagTime }}</a-col>
             </a-row>
             <a-row>
               <a-col :span="24">
                 所用故障树：
-                <a-tag v-for="(item,key) in report.faultTreeList" :key="key">{{item.tree_name}}</a-tag>
+                <a-tag v-for="(item,key) in report.faultTreeList" :key="key">{{ item.tree_name }}</a-tag>
               </a-col>
             </a-row>
           </div>
@@ -83,18 +83,18 @@ export default {
         hostName: 'Host111',
         taskId: '1234123421',
         diagTime: '2021-08-20 12:32',
-        avatar: 'https://gw.alipayobjects.com/zos/rmsportal/WdGqmHpayyMjiEhcKoVE.png',
+        avatar: '',
         faultTreeList: [{
           tree_name: '故障树2',
-          avatar: 'https://gw.alipayobjects.com/zos/rmsportal/WdGqmHpayyMjiEhcKoVE.png',
+          avatar: '',
           content: '这里可以放一两项简单描述，仅可点击查看详情2'
         }, {
           tree_name: '故障树2',
-          avatar: 'https://gw.alipayobjects.com/zos/rmsportal/WdGqmHpayyMjiEhcKoVE.png',
+          avatar: '',
           content: '这里可以放一两项简单描述，仅可点击查看详情2'
         }, {
           tree_name: '故障树2',
-          avatar: 'https://gw.alipayobjects.com/zos/rmsportal/WdGqmHpayyMjiEhcKoVE.png',
+          avatar: '',
           content: '这里可以放一两项简单描述，仅可点击查看详情2'
         }]
       }

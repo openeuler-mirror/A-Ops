@@ -28,15 +28,16 @@
           :pagination="pagination"
           :row-selection="rowSelection"
           @change="handleTableChange"
-          :loading="tableIsLoading">
-              <span slot="progress" slot-scope="record">
-                <a-progress :percent="record.progress" size="small" status="active" />
-              </span>
-              <span slot="action" slot-scope="record">
-                <router-link :to="{ path: '/diagnosis/diag-report/'+record.task_id }" target="_blank">查看报告</router-link>
-                <a-divider type="vertical" />
-                <a href="#" @click="diagnosisDelete(record)">删除</a>
-              </span>
+          :loading="tableIsLoading"
+        >
+          <span slot="progress" slot-scope="record">
+            <a-progress :percent="record.progress" size="small" status="active" />
+          </span>
+          <span slot="action" slot-scope="record">
+            <router-link :to="{ path: '/diagnosis/diag-report/'+record.task_id }" target="_blank">查看报告</router-link>
+            <a-divider type="vertical" />
+            <a href="#" @click="diagnosisDelete(record)">删除</a>
+          </span>
         </a-table>
       </div>
     </a-card>
@@ -64,8 +65,8 @@
                       <img class="avatar-img" src="~@/assets/huawei_logo_h.png">
                     </div>
                     <div class="content-div">
-                      <div class="title">{{item.tree_name}}</div>
-                      <div class="remark">{{item.description}}</div>
+                      <div class="title">{{ item.tree_name }}</div>
+                      <div class="remark">{{ item.description }}</div>
                     </div>
                   </div>
                   <template slot="actions">
@@ -173,7 +174,8 @@ import { dateFormat } from '@/views/utils/Utils'
         tableIsLoading: false,
         treeData: [],
         showIndex: 6,
-        loading: true
+        loading: true,
+        loadProgressInterval: ''
       }
     },
     computed: {
@@ -199,11 +201,14 @@ import { dateFormat } from '@/views/utils/Utils'
       this.refreshFaultDiagnosisList()
       this.getDiagTree()
       const _this = this
-      setInterval(function () {
+      this.loadProgressInterval = setInterval(function () {
         if (_this.taskList.length > 0) {
           _this.loadDiagProgress(_this.taskList)
         }
       }, 30000)
+    },
+    destroyed: function () {
+      clearInterval(this.loadProgressInterval)
     },
     methods: {
       addDiagTreeSuccess () {

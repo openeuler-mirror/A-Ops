@@ -36,7 +36,10 @@
     components: { Uploader },
     inject: ['setButtons', 'close', 'showSpin', 'closeSpin'], // 来自祖辈们provide中声明的参数、方法
     props: {
-      addSuccess: Function
+      addSuccess: {
+        type: Function,
+        default: function () {}
+      }
     },
     data () {
       return {

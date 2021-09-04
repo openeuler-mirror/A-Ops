@@ -29,9 +29,13 @@ export default {
       type: String,
       default: ''
     },
+    /* eslint-disable */
+    // this props.value can not set default value because of the rule of antd form.
+    // and this prop is not used in this component for now.
     value: {
       type: [String, Object, Array]
     }
+    /* eslint-disable */
   },
   methods: {
     // call this.$refs.<refName>.getFile() to get file content in parent component
