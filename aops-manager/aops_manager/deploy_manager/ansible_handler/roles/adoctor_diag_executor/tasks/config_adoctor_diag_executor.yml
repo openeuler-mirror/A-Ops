@@ -11,4 +11,3 @@
     backup: yes
   with_items :
     - {src: diag_executor.ini.j2, dst: diag_executor.ini }
-    - {src: system.ini.j2, dst: system.ini }

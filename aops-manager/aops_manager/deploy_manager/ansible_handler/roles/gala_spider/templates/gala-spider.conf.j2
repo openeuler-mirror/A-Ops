@@ -4,7 +4,7 @@ ui_source = "neo4j"
 
 [kafka]
 topic = gala_gopher
-broker = ["{{ ansible_host }}:{{ kafka_port }}"]
+broker = ["{{ gala_spider_kafka_host }}:{{ gala_spider_listening_kafka_port }}"]
 
 [promecheus]
 broker =

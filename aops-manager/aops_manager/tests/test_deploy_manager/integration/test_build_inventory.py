@@ -84,7 +84,6 @@ def get_all_host_list():
         LOGGER.debug("Get %s host list %s", host_file_name, host_file)
         build_inventory(host_file, host_file_name, TMP_PATH)
         inventory_file_path = os.path.join(CURRENT_PATH, TMP_PATH)
-        InventoryBuilder.move_host_to_inventory(inventory_file_path, host_file_name)
 
 
 if __name__ == "__main__":

@@ -6,3 +6,6 @@ gala_gopher_hosts:
     192.168.1.2:
       ansible_host: 192.168.1.2
       ansible_python_interpreter: /usr/bin/python3
+    192.168.1.3:
+      ansible_host: 192.168.1.3
+      ansible_python_interpreter: /usr/bin/python3

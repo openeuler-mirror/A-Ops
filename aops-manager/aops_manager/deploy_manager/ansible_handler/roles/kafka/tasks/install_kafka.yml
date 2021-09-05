@@ -1,5 +1,5 @@
 ---
-- name: Repo config for elasticsearch
+- name: Repo config for kafka
   become: true
   become_user: root
   yum_repository:

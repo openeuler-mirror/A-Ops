@@ -11,8 +11,7 @@
     backup: yes
   with_items :
     - {src: diag_scheduler.ini.j2, dst: diag_scheduler.ini }
-    - {src: system.ini.j2, dst: system.ini }
-
+    
 - name: Check firewalld status
   command: systemctl is-active firewalld
   ignore_errors: yes
