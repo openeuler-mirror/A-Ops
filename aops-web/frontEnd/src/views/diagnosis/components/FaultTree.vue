@@ -68,7 +68,7 @@ export default {
       const id = target.get('modelId');
       const item = this.tree.findById(id);
       const nodeModel = item.getModel();
-      nodeModel.collapsed = !nodeModel.collapsed;console.log(nodeModel)
+      nodeModel.collapsed = !nodeModel.collapsed;
       this.tree.layout();
       this.tree.setItemState(item, 'collapse', nodeModel.collapsed);
     }

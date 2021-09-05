@@ -204,5 +204,25 @@ export default {
       float: right;
     }
   }
+
+  .login-button {
+    background: #002FA7;
+    border-color: #002FA7;
+    color: #fff;
+  }
+
+  /deep/ .ant-input {
+      border: 0 !important;
+      border-bottom: 1px solid #ccc !important;
+    }
+
+  /deep/ .ant-tabs-ink-bar {
+      background: #002FA7;
+    }
+
+  /deep/ .ant-tabs-nav .ant-tabs-tab-active {
+    color: #002FA7;
+  }
+
 }
 </style>

@@ -13,7 +13,7 @@
           <uploader
             toJSON
             uid="treeUploader"
-            fileType="json"
+            fileType="yaml"
             v-decorator="['template_content',{rules: [{ required: true, message: '请上传JSON文件' }]}]"
           />
         </a-form-item>

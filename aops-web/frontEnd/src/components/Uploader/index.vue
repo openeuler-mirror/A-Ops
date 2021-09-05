@@ -5,6 +5,7 @@
 </template>
 
 <script>
+import yaml from 'js-yaml'
 const TYPE_ENUM = {
   'json': 'application/json',
   'yaml': 'application/x-yaml'
@@ -59,7 +60,11 @@ export default {
           reader.onload = function (e) {
             let content = e.target.result
             if (_this.toJSON) {
-              content = JSON.parse(content)
+              if (TYPE_ENUM[_this.fileType] = 'application/x-yaml') {
+                content = yaml.load(content)
+              } else {
+                content = JSON.parse(content)
+              }
             }
             _this.$emit('load', content)
             _this.$emit('change', content)

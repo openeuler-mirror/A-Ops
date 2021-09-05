@@ -3,30 +3,35 @@
   <div id="userLayout" :class="['user-layout-wrapper', isMobile && 'mobile']">
     <div class="container">
       <div class="user-layout-content">
-        <div class="top">
-          <div class="header">
-            <a href="/">
-              <img src="~@/assets/huawei_logo_h.png" class="logo" alt="logo">
-              <span class="title">A-OPS</span>
-            </a>
-          </div>
-          <div class="desc">
-            {{ $t('layouts.userLayout.title') }}
-          </div>
-        </div>
-
-        <router-view />
-
-        <div class="footer">
-          <div class="links">
-            <a href="_self">帮助</a>
-            <a href="_self">隐私</a>
-            <a href="_self">条款</a>
-          </div>
-          <div class="copyright">
-            Copyright &copy;
-          </div>
-        </div>
+        <a-row style="height: 100vh" type="flex">
+          <a-col class="left-side" :xs="{span: 24, order: 2}" :lg="{span: 12, order: 1}">
+            <img src="~@/assets/loginPage.png" />
+          </a-col>
+          <a-col class="right-side" :xs="{span: 24, order: 1}" :lg="{span: 12, order: 2}">
+            <div class="top">
+              <div class="header">
+                <a href="/">
+                  <img src="~@/assets/huawei_logo_h.png" class="logo" alt="logo">
+                  <span class="title">A-OPS</span>
+                </a>
+              </div>
+              <div class="desc">
+                {{ $t('layouts.userLayout.title') }}
+              </div>
+            </div>
+            <router-view />
+            <div class="footer">
+              <div class="links">
+                <a href="_self">帮助</a>
+                <a href="_self">隐私</a>
+                <a href="_self">条款</a>
+              </div>
+              <div class="copyright">
+                Copyright &copy;
+              </div>
+            </div>
+          </a-col>
+        </a-row>
       </div>
     </div>
   </div>
@@ -60,10 +65,27 @@ export default {
     }
   }
 
+  .left-side {
+    height: 100%;
+    background: #EDEFF3;
+    img {
+      display: block;
+      position: relative;
+      margin: auto;
+      top: 50vh;
+      margin-top: -180px;
+    }
+  }
+  .right-side {
+    height: 100%;
+    background: #fff;
+    padding-top:25vh;
+  }
+
   .container {
     width: 100%;
     min-height: 100%;
-    background: #f0f2f5 url(~@/assets/background.svg) no-repeat 50%;
+    // background: #f0f2f5 url(~@/assets/background.svg) no-repeat 50%;
     background-size: 100%;
     position: relative;
 
@@ -86,7 +108,6 @@ export default {
     }
 
     .user-layout-content {
-      padding: 32px 0 24px;
 
       .top {
         text-align: center;
