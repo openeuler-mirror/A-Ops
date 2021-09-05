@@ -85,7 +85,7 @@ export default {
       getDiagTree({
         treeList
       }).then(function (res) {
-        _this.faultTree = res.trees[0]
+        _this.faultTree = res.trees[0] || {}
         if (!_this.faultTree.tree_content || !_this.faultTree.tree_content['node name']) {
           _this.$message.error('数据错误')
         }

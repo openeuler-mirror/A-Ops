@@ -34,7 +34,7 @@
             <a-progress :percent="record.progress" size="small" status="active" />
           </span>
           <span slot="action" slot-scope="record">
-            <router-link :to="{ path: '/diagnosis/diag-report/'+record.task_id }" target="_blank">查看报告</router-link>
+            <a @click="handleReportListOpen(record.task_id)">查看报告</a>
             <a-divider type="vertical" />
             <a href="#" @click="diagnosisDelete(record)">删除</a>
           </span>
@@ -111,12 +111,32 @@
       </div>
       <div style="text-align: center" v-if="treeData.length>showIndex"><a @click="showIndex = showIndex+6">加载更多</a></div>
     </a-card>
+    <a-drawer
+      title="诊断报告列表"
+      :width="520"
+      :visible="reportListVisible"
+      @close="handleReportListClose"
+    >
+      <div>
+        已生成/总报告数：
+      </div>
+      <a-table
+        rowKey="report_id"
+        :dataSource="reportList"
+        :loading="reportListLoading"
+        :columns="reportListColumns"
+      >
+        <span slot="check" slot-scope="report">
+          <router-link :to="{ path: '/diagnosis/diag-report/'+report.report_id }" target="_blank">查看</router-link>
+        </span>
+      </a-table>
+    </a-drawer>
   </my-page-header-wrapper>
 </template>
 
 <script>
 import MyPageHeaderWrapper from '@/views/utils/MyPageHeaderWrapper'
-  import { getTaskList, getProgress, getDiagTree, delDiagReport, delDiagTree } from '@/api/diagnosis'
+  import { getTaskList, getProgress, getReportList, getDiagTree, delDiagReport, delDiagTree } from '@/api/diagnosis'
   import DrawerView from '@/views/utils/DrawerView'
   import AddFaultTree from '@/views/diagnosis/components/AddFaultTree'
   import AddFaultDiagnosis from '@/views/diagnosis/components/AddFaultDiagnosis'
@@ -135,7 +155,7 @@ import { dateFormat } from '@/views/utils/Utils'
     },
     {
       title: '诊断时间段',
-      customRender: (text, item) => item.time_range.map(time => dateFormat('YYYY-mm-dd HH:MM:SS', time)).join(' 至 ')
+      customRender: (text, item) => item.time_range.map(time => dateFormat('YYYY-mm-dd HH:MM:SS', time * 1000)).join(' 至 ')
     },
     {
       key: 'progress',
@@ -146,6 +166,29 @@ import { dateFormat } from '@/views/utils/Utils'
       key: 'operation',
       title: '操作',
       scopedSlots: { customRender: 'action' }
+    }
+  ]
+  const reportListColumns = [
+    {
+      key: 'check',
+      title: '查看',
+      scopedSlots: { customRender: 'check' }
+    },
+    {
+      dataIndex: 'host_id',
+      key: 'host_id',
+      title: '主机名'
+    },
+    {
+      dataIndex: 'tree_name',
+      key: 'tree_name',
+      title: '所用故障树',
+      sorter: false
+    },
+    {
+      key: 'tiemRange',
+      title: '诊断时间段',
+      customRender: (text, item) => `${dateFormat('YYYY-mm-dd HH:MM', item.start * 1000)} - ${dateFormat('YYYY-mm-dd HH:MM', item.end * 1000)}`
     }
   ]
   export default {
@@ -170,12 +213,17 @@ import { dateFormat } from '@/views/utils/Utils'
         filters: {},
         sorter: {},
         columns,
+        reportListColumns,
         selectedRowKeys: [],
         tableIsLoading: false,
         treeData: [],
         showIndex: 6,
         loading: true,
-        loadProgressInterval: ''
+        loadProgressInterval: '',
+        reportListVisible: false,
+        taskId: undefined,
+        reportList: [],
+        reportListLoading: false
       }
     },
     computed: {
@@ -360,6 +408,19 @@ import { dateFormat } from '@/views/utils/Utils'
           _this.$message.error(err.response.data.msg)
         }).finally(function () {
         })
+      },
+      handleReportListOpen (taskId) {
+        const _this = this
+        this.reportListVisible = true
+        this.reportListLoading = true
+        getReportList({ taskId }).then(function (res) {
+          _this.reportList = res.result || []
+        }).catch(function (err) {
+          _this.$message.error(err.response.data.msg)
+        }).finally(function () { _this.reportListLoading = false })
+      },
+      handleReportListClose () {
+        this.reportListVisible = false
       }
     }
   }

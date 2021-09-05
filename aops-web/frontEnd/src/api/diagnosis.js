@@ -58,11 +58,13 @@ export function getProgress (taskList) {
   })
 }
 // 获取故障诊断报告列表
-export function getReportList ({ tableInfo, ...parameter }) {
+export function getReportList (parameter) {
   return request({
     url: api.reportlist,
     method: 'post',
-    data: {}
+    data: {
+      task_id: parameter.taskId
+    }
   })
 }
 // 获取故障诊断报告

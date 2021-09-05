@@ -5,19 +5,13 @@
         <img class="avatar-img" src="~@/assets/huawei_logo_h.png">
         <div class="content-div">
           <div class="title">
-            <span style="padding-right: 5px">报告ID：{{ report.id }}</span>
+            <span style="padding-right: 5px">报告ID：{{ reportData.report_id }}</span>
           </div>
           <div style="height: 60px;line-height: 28px">
             <a-row>
-              <a-col :span="8">主机名称：{{ report.hostName }}</a-col>
-              <a-col :span="8">任务ID：{{ report.taskId }}</a-col>
-              <a-col :span="8">诊断时间：{{ report.diagTime }}</a-col>
-            </a-row>
-            <a-row>
-              <a-col :span="24">
-                所用故障树：
-                <a-tag v-for="(item,key) in report.faultTreeList" :key="key">{{ item.tree_name }}</a-tag>
-              </a-col>
+              <a-col :span="4">主机名称：{{ reportData.host_id }}</a-col>
+              <a-col :span="10">任务ID：{{ reportData.task_id }}</a-col>
+              <a-col :span="10">诊断时间：{{ reportData.timeRange }}</a-col>
             </a-row>
           </div>
           <div class="btn-box">
@@ -34,12 +28,15 @@
       </div>
       <a-tabs default-active-key="1" style="min-height: 350px">
         <a-tab-pane key="1" tab="树图">
-          <span>树图...</span>
+          <fault-tree
+            :treeData="reportData.report || {}"
+            :treeDataLoading="reportLoading"
+          />
         </a-tab-pane>
         <a-tab-pane key="2" tab="文件" force-render>
-          <p>1、文件1</p>
-          <p>2、文件2</p>
-          <p>2、文件...</p>
+          <a-card style="white-space: pre-wrap;">
+            <div>{{ reportData.report }}</div>
+          </a-card>
         </a-tab-pane>
       </a-tabs>
     </a-card>
@@ -49,11 +46,14 @@
 <script>
 import MyPageHeaderWrapper from '@/views/utils/MyPageHeaderWrapper'
 import { getdiagreport } from '@/api/diagnosis'
+import { dateFormat } from '@/views/utils/Utils'
+import FaultTree from './components/FaultTree.vue'
 
 export default {
-  name: 'NetworkTopoDiagram',
+  name: 'DiagReport',
   components: {
-    MyPageHeaderWrapper
+    MyPageHeaderWrapper,
+    FaultTree
   },
   created () {
     this.getDiagReport()
@@ -62,7 +62,8 @@ export default {
     return {
       task_id: this.$route.params.id,
       report: {},
-      reportData: []
+      reportData: [],
+      reportLoading: false
     }
   },
   methods: {
@@ -70,34 +71,23 @@ export default {
       const _this = this
       const reportList = []
       reportList.push(_this.task_id)
+      this.reportLoading = true
       getdiagreport(reportList).then(function (res) {
         if (res.code === 200) {
-          _this.reportData = res.result
+          const temp = res.result[0] || {}
+          _this.reportData = {
+            ...temp,
+            timeRange: `${dateFormat('YYYY-mm-dd HH:MM', temp.start * 1000)} - ${dateFormat('YYYY-mm-dd HH:MM', temp.end * 1000)}`
+          }
+          if (!_this.reportData.report || !_this.reportData.report['node name']) {
+            _this.$message.error('数据错误')
+         }
         }
       }).catch(function (err) {
         _this.$message.error(err.response.data.msg)
       }).finally(function () {
+        _this.reportLoading = false
       })
-      this.report = {
-        id: '2349497',
-        hostName: 'Host111',
-        taskId: '1234123421',
-        diagTime: '2021-08-20 12:32',
-        avatar: '',
-        faultTreeList: [{
-          tree_name: '故障树2',
-          avatar: '',
-          content: '这里可以放一两项简单描述，仅可点击查看详情2'
-        }, {
-          tree_name: '故障树2',
-          avatar: '',
-          content: '这里可以放一两项简单描述，仅可点击查看详情2'
-        }, {
-          tree_name: '故障树2',
-          avatar: '',
-          content: '这里可以放一两项简单描述，仅可点击查看详情2'
-        }]
-      }
     },
     deleteReport () {
       // console.log('删除！')// 删除后当前页不存在，可能要跳回列表页

@@ -58,6 +58,9 @@ export default {
       if (cfg.id === '0') {
         return '#3265F2'
       }
+      if (cfg.value === true) {
+        return '#f00'
+      }
       return '#8cc33e'
     },
     handleCollapse (e) {
