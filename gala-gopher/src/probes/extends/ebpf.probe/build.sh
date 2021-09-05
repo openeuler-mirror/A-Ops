@@ -14,7 +14,6 @@ function gen_vmlinux_header_file()
     if [ ! -f "bpftool" ];then
 	ln -s bpftool_${ARCH} bpftool
     fi
-    ./gen_vmlinux_h.sh
 }
 
 function compile_probe()

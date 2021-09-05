@@ -46,7 +46,7 @@ def diagnose(message_value):
     time_range = message_value.pop("time_range")
     message_value["start"] = time_range[0]
     message_value["end"] = time_range[1]
-    message_value['report'] = ""
+    message_value['report'] = json.dumps({})
     message_value["report_id"] = _create_task_id()
 
     try:

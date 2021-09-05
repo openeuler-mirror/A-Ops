@@ -288,7 +288,7 @@ class TestHostDatabase(unittest.TestCase):
         }
         res = self.proxy.add_host(data)
         self.assertEqual(res[0], DATABASE_INSERT_ERROR)
-        self.assertEqual(res[1]['fail_list'], ["host1", "host2"])
+        self.assertEqual(len(res[1]['fail_list']), 2)
 
         # ==============get host=====================
         args = {

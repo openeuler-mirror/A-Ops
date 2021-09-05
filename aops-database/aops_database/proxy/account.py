@@ -87,8 +87,6 @@ class UserDatabase(MysqlProxy):
 
             if res:
                 LOGGER.info("user login succeed")
-                if username == "admin" and password == 'changeme':
-                    return CHANGE_PASSWORD
                 return SUCCEED
 
             LOGGER.error("login with wrong password")
