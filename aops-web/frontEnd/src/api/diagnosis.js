@@ -63,7 +63,9 @@ export function getReportList (parameter) {
     url: api.reportlist,
     method: 'post',
     data: {
-      task_id: parameter.taskId
+      task_id: parameter.taskId,
+      page: parameter.pagination.current,
+      per_page: parameter.pagination.pageSize
     }
   })
 }

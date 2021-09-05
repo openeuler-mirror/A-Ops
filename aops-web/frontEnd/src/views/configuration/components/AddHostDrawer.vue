@@ -165,6 +165,7 @@ export default {
                 _this.$message.success('添加成功')
                 _this.form.resetFields()
                 _this.close()
+                _this.$emit('addHostSuccess')
               })
               .catch(function (err) {
                 _this.$message.error(err.response.data.message)

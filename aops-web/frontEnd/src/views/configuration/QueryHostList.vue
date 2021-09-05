@@ -116,7 +116,7 @@
     <!--添加主机抽屉-->
     <drawer-view title="添加主机" ref="addHostDrawer" :bodyStyle="{ paddingBottom: '80px' }">
       <template slot="drawerView">
-        <add-host-drawer></add-host-drawer>
+        <add-host-drawer @addHostSuccess="addHostSuccess"></add-host-drawer>
       </template>
     </drawer-view>
     <!--主机当前配置抽屉-->
@@ -268,7 +268,7 @@
         }).then(function (res) {
             _this.statusData = res.hostStatus || []
           }).catch(function (err) {
-          _this.$message.error(err.response.data.msg)
+          _this.$message.error(err.response.data.msg || err.response.data.detail)
         }).finally(function () { _this.domainStatusIsLoading = false })
       },
       handleRefresh () {
@@ -388,6 +388,9 @@
         }).finally(function () {
           _this.confsOfDomainLoading = false
         })
+      },
+      addHostSuccess () {
+        this.handleRefresh()
       }
     },
     mounted: function () {

@@ -10,6 +10,10 @@ const TYPE_ENUM = {
   'json': 'application/json',
   'yaml': 'application/x-yaml'
 }
+const REG_TYPE_ENUM = {
+  'json': /.json$/,
+  'yaml': /.yaml$/
+}
 
 export default {
   name: 'Uploader',
@@ -48,11 +52,11 @@ export default {
           if (!file) {
             throw new Error('请上传文件')
           }
-
-          if (_this.fileType && TYPE_ENUM[_this.fileType] !== file.type) {
+          
+          if (_this.fileType && TYPE_ENUM[_this.fileType] !== file.type && !file.name.match(REG_TYPE_ENUM[_this.fileType])) {
             throw new Error(`请上传${_this.fileType}类型文件!`)
           }
-          if (_this.sizeLimit && _this.sizeLimit < file.size) {
+          if (_this.sizeLimit && _this.sizeLimit < file.size && !file.name.match(REG_TYPE_ENUM[_this.fileType])) {
             throw new Error(`文件大小超过${_this.sizeLimit / 1024}KB`)
           }
           const reader = new FileReader()

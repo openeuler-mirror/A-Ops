@@ -34,10 +34,10 @@
           :loading="tableIsLoading"
         >
           <span slot="progress" slot-scope="record">
-            <a-progress :percent="record.progress" size="small" status="active" />
+            <a-progress :percent="record.progressPercent" size="small" :status="record.progressPercent === 100 ? 'success' : 'active'" />
           </span>
           <span slot="action" slot-scope="record">
-            <a @click="handleReportListOpen(record.task_id)">查看报告</a>
+            <a @click="handleReportListOpen(record)">查看报告</a>
             <a-divider type="vertical" />
             <a href="#" @click="diagnosisDelete(record)">删除</a>
           </span>
@@ -121,13 +121,15 @@
       @close="handleReportListClose"
     >
       <div>
-        已生成/总报告数：
+        {{ `已生成/总报告数：${taskProgressStatus.finished} / ${taskProgressStatus.total}` }}
       </div>
       <a-table
         rowKey="report_id"
         :dataSource="reportList"
         :loading="reportListLoading"
         :columns="reportListColumns"
+        :pagination="reportListPagination"
+        @change="reportListChange"
       >
         <span slot="check" slot-scope="report">
           <router-link :to="{ path: '/diagnosis/diag-report/'+report.report_id }" target="_blank">查看</router-link>
@@ -138,12 +140,14 @@
 </template>
 
 <script>
-import MyPageHeaderWrapper from '@/views/utils/MyPageHeaderWrapper'
+  import MyPageHeaderWrapper from '@/views/utils/MyPageHeaderWrapper'
   import { getTaskList, getProgress, getReportList, getDiagTree, delDiagReport, delDiagTree } from '@/api/diagnosis'
   import DrawerView from '@/views/utils/DrawerView'
   import AddFaultTree from '@/views/diagnosis/components/AddFaultTree'
   import AddFaultDiagnosis from '@/views/diagnosis/components/AddFaultDiagnosis'
-import { dateFormat } from '@/views/utils/Utils'
+  import { dateFormat } from '@/views/utils/Utils'
+
+  import defaultSettings from '@/config/defaultSettings'
   // import CardInfo from './components/CardInfo'
   const columns = [
     {
@@ -158,7 +162,7 @@ import { dateFormat } from '@/views/utils/Utils'
     },
     {
       title: '诊断时间段',
-      customRender: (text, item) => item.time_range.map(time => dateFormat('YYYY-mm-dd HH:MM:SS', time)).join(' 至 ')
+      customRender: (text, item) => item.time_range.map(time => dateFormat('YYYY-mm-dd HH:MM:SS', time * 1000)).join(' 至 ')
     },
     {
       key: 'progress',
@@ -191,7 +195,7 @@ import { dateFormat } from '@/views/utils/Utils'
     {
       key: 'tiemRange',
       title: '诊断时间段',
-      customRender: (text, item) => `${dateFormat('YYYY-mm-dd HH:MM', item.start)} - ${dateFormat('YYYY-mm-dd HH:MM', item.end)}`
+      customRender: (text, item) => `${dateFormat('YYYY-mm-dd HH:MM', item.start * 1000)} - ${dateFormat('YYYY-mm-dd HH:MM', item.end * 1000)}`
     }
   ]
   export default {
@@ -226,7 +230,16 @@ import { dateFormat } from '@/views/utils/Utils'
         reportListVisible: false,
         taskId: undefined,
         reportList: [],
-        reportListLoading: false
+        reportListLoading: false,
+        reportListPagination: {
+          current: 1,
+          pageSize: 10
+        },
+        taskOfReportList: undefined,
+        taskProgressStatus: {
+          finished: 0,
+          total: 0
+        }
       }
     },
     computed: {
@@ -256,7 +269,7 @@ import { dateFormat } from '@/views/utils/Utils'
         if (_this.taskList.length > 0) {
           _this.loadDiagProgress(_this.taskList)
         }
-      }, 30000)
+      }, defaultSettings.faultDiagnosisPropressInterval)
     },
     destroyed: function () {
       clearInterval(this.loadProgressInterval)
@@ -264,11 +277,9 @@ import { dateFormat } from '@/views/utils/Utils'
     methods: {
       addDiagTreeSuccess () {
         this.getDiagTree()
-        // console.log('刷新故障树列表页')
       },
       addFaultDiagnosisSuccess () {
         this.refreshFaultDiagnosisList()
-        // console.log('刷新故障诊断列表页')
       },
       handleTableChange (pagination, filters, sorter) {
         // 设置翻页状态
@@ -280,7 +291,6 @@ import { dateFormat } from '@/views/utils/Utils'
         })
       },
       onSelectChange (selectedRowKeys, selectedRows) {
-        // console.log(`selectedRowKeys: ${selectedRowKeys}`, 'selectedRows: ', selectedRows)
         this.selectedRowKeys = selectedRowKeys
       },
       refreshFaultDiagnosisList () {
@@ -296,10 +306,10 @@ import { dateFormat } from '@/views/utils/Utils'
         const pagination = that.pagination || {}
         that.tableIsLoading = true
         getTaskList(tableInfo).then(function (data) {
-          var taskList = data.task_infos
+          that.taskList = data.task_infos
           var taskMap = {}
           var taskIdArray = []
-          taskList.forEach(function (task) {
+          that.taskList.forEach(function (task) {
             taskMap[task.task_id] = task
             taskIdArray.push(task.task_id)
           })
@@ -309,15 +319,10 @@ import { dateFormat } from '@/views/utils/Utils'
             pageSize: pagination.pageSize,
             total: data.total_count || (data.total_count === 0 ? 0 : pagination.total)
           }
-          getProgress(taskIdArray).then(function (data) {
-            data.result.forEach(function (progress) {
-              taskMap[progress.task_id].progress = progress.progress
-            })
-            that.taskList = taskList
-            that.tableIsLoading = false
-          }).catch(function (err) {
-            that.$message.error(err.response.data.msg)
-          })
+
+          if (taskIdArray.length > 0) {
+            that.updateProgress(taskIdArray)
+          }
         }).catch(function (err) {
           that.$message.error(err.response.data.msg)
           that.tableIsLoading = false
@@ -370,19 +375,15 @@ import { dateFormat } from '@/views/utils/Utils'
             })
         })
       },
-      // 获取故障诊断进度
-      loadDiagProgress (taskData) {
-          const _this = this
-          const taskList = []
-          taskData.forEach(function (item) {
-            taskList.push(item.task_id)
-          })
-        getProgress(taskList).then(function (res) {
+      updateProgress (taskIdList) {
+        const _this = this
+        getProgress(taskIdList).then(function (res) {
             const newTableData = []
             _this.taskList.forEach(function (item) {
-              res.result.forEach(function (childItem) {
-                if (item.task_id === childItem.task_id) {
-                  item.progress = childItem.progress
+              res.result.forEach(function (progressItem) {
+                if (item.task_id === progressItem.task_id) {
+                  item.progress = progressItem.progress
+                  item.progressPercent = Math.floor((progressItem.progress / item.expected_report_num) * 100)
                 }
               })
               newTableData.push(item)
@@ -391,11 +392,19 @@ import { dateFormat } from '@/views/utils/Utils'
           }).catch(function (err) {
             _this.$message.error(err.response.data.msg)
         }).finally(function () {
+          _this.tableIsLoading = false
         })
+      },
+      // 获取故障诊断进度
+      loadDiagProgress (taskData) {
+          const taskList = []
+          taskData.forEach(function (item) {
+            taskList.push(item.task_id)
+          })
+          this.updateProgress(taskList)
       },
       // 导出故障树
       getdiagtree () {
-        // console.log('导出故障树')
       },
       // 删除故障树
       deletediagtree (treeName) {
@@ -412,18 +421,45 @@ import { dateFormat } from '@/views/utils/Utils'
         }).finally(function () {
         })
       },
-      handleReportListOpen (taskId) {
-        const _this = this
+      handleReportListOpen (task) {
+        this.taskOfReportList = task.task_id
+        this.taskProgressStatus = {
+          finished: task.progress,
+          total: task.expected_report_num
+        }
+        this.reportListPagination = {
+          current: 1,
+          pageSize: 10
+        }
         this.reportListVisible = true
-        this.reportListLoading = true
-        getReportList({ taskId }).then(function (res) {
-          _this.reportList = res.result || []
-        }).catch(function (err) {
-          _this.$message.error(err.response.data.msg)
-        }).finally(function () { _this.reportListLoading = false })
+        this.handleGetReportList(task.task_id)
       },
       handleReportListClose () {
         this.reportListVisible = false
+      },
+      reportListChange (pagination) {
+        this.reportListPagination = pagination
+        this.handleGetReportList(this.taskOfReportList)
+      },
+      handleGetReportList (taskId) {
+        const _this = this
+        const reportListPagination = this.reportListPagination || {}
+
+        this.reportListLoading = true
+        getReportList({
+          taskId,
+          pagination: reportListPagination
+        }).then(function (res) {
+          _this.reportList = res.result || []
+          _this.reportListPagination = {
+            ..._this.reportListPagination,
+            current: reportListPagination.current,
+            pageSize: reportListPagination.pageSize,
+            total: res.total_count || (res.total_count === 0 ? 0 : reportListPagination.total)
+          }
+        }).catch(function (err) {
+          _this.$message.error(err.response.data.msg)
+        }).finally(function () { _this.reportListLoading = false })
       }
     }
   }

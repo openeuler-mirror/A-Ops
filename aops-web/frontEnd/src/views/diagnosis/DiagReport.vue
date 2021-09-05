@@ -77,7 +77,7 @@ export default {
           const temp = res.result[0] || {}
           _this.reportData = {
             ...temp,
-            timeRange: `${dateFormat('YYYY-mm-dd HH:MM', temp.start * 1000)} - ${dateFormat('YYYY-mm-dd HH:MM', temp.end * 1000)}`
+            timeRange: `${dateFormat('YYYY-mm-dd HH:MM:SS', temp.start * 1000)} - ${dateFormat('YYYY-mm-dd HH:MM:SS', temp.end * 1000)}`
           }
           if (!_this.reportData.report || !_this.reportData.report['node name']) {
             _this.$message.error('数据错误')

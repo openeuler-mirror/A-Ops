@@ -172,7 +172,7 @@ Vue.use(Transfer)
       getUnixTime (dateStr) {
         const newStr = dateStr.replace(/-/g, '/')
         const date = new Date(newStr)
-        return date.getTime()
+        return date.getTime() / 1000
       },
       handleChange (selectedItems) {
         this.selectedItems = selectedItems
