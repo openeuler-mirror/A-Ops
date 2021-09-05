@@ -14,12 +14,14 @@
 Description: task  method's entrance for custom commands
 Class:TaskCommand
 """
+import sys
 
-from aops_cli.base_cmd import BaseCommand, cli_request, add_access_token, add_query_args
+from aops_cli.base_cmd import BaseCommand
 from aops_utils.validate import name_check, str_split
 from aops_utils.conf.constant import GENERATE_TASK, DELETE_TASK, GET_TASK, EXECUTE_TASK
 from aops_utils.restful.helper import make_manager_url
-from aops_utils.cli_utils import add_page
+from aops_utils.cli_utils import add_page, cli_request, add_access_token, add_query_args
+
 
 class TaskCommand(BaseCommand):
     """
@@ -111,8 +113,12 @@ class TaskCommand(BaseCommand):
         """
         params = kwargs.get('params')
         task_name = str_split(params.task_name)
-        templates = str_split(params.template_name)
+        if len(task_name) != 1:
+            print("Only one valid task can be accepted by generate command.")
+            print("Please try again, and use task name without ','.")
+            sys.exit(0)
         name_check(task_name)
+        templates = str_split(params.template_name)
         name_check(templates)
         manager_url, header = make_manager_url(GENERATE_TASK)
 
@@ -136,7 +142,8 @@ class TaskCommand(BaseCommand):
         """
         params = kwargs.get('params')
         action = kwargs.get('action')
-        task_ids = str_split(params.task_list) if params.task_list is not None else []
+        task_ids = str_split(params.task_list)
+
         name_check(task_ids)
         url_dict = {
             'execute': [make_manager_url(EXECUTE_TASK), 'POST'],
@@ -149,7 +156,7 @@ class TaskCommand(BaseCommand):
         if url_operation == 'DELETE' and len(task_ids) == 0:
             print("No task will be deleted, because of the empty task list.")
             print("Please check your task list if you want to delete tasks.")
-
+            sys.exit(0)
         pyload = {
             "task_list": task_ids,
         }

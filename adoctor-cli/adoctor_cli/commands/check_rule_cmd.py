@@ -17,14 +17,12 @@ Class:CheckRuleCommand
 import json
 import sys
 
-from adoctor_cli.base_cmd import BaseCommand, cli_request
-from adoctor_cli.base_cmd import add_access_token
-from aops_utils.log.log import LOGGER
+from adoctor_cli.base_cmd import BaseCommand
 from aops_utils.restful.helper import make_check_url
 from aops_utils.readconfig import read_json_config_file
 from aops_utils.conf.constant import CHECK_IMPORT_RULE, CHECK_GET_RULE, CHECK_DELETE_RULE
 from aops_utils.validate import name_check, str_split
-from aops_utils.cli_utils import add_page
+from aops_utils.cli_utils import add_page, cli_request, add_access_token
 
 
 class CheckRuleCommand(BaseCommand):
@@ -99,8 +97,7 @@ class CheckRuleCommand(BaseCommand):
         """
         conf_json = read_json_config_file(params.conf)
         if conf_json is None:
-            LOGGER.error("invalid json conf imported by user.")
-            print("please import valid json file and try again")
+            print("Invalid json config file, please import valid json file and try again")
             sys.exit(0)
         pyload = conf_json
         check_url, header = make_check_url(CHECK_IMPORT_RULE)

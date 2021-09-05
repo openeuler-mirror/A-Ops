@@ -17,6 +17,7 @@ Description: url set
 """
 from aops_manager.host_manager import view as host_view
 from aops_manager.deploy_manager import view as deploy_view
+from aops_manager.config_manager import view as config_view
 from aops_manager.account_manager import view as account_view
 from aops_utils.conf.constant import ADD_HOST, DELETE_HOST, GET_HOST_COUNT,\
     QUERY_HOST, QUERY_HOST_DETAIL, ADD_GROUP, DELETE_GROUP, GET_GROUP,\
@@ -54,6 +55,9 @@ SPECIFIC_URLS = {
         (deploy_view.DeleteTask, DELETE_TASK),
         (deploy_view.ExecuteTask, EXECUTE_TASK),
         (deploy_view.GetTask, GET_TASK),
+    ],
+    "CONFIG_URLS": [
+        (config_view.CollectConfig, COLLECT_CONFIG)
     ]
 }
 

@@ -17,11 +17,12 @@ Class:FaultreeCommand
 import sys
 import json
 
-from adoctor_cli.base_cmd import BaseCommand, cli_request, add_access_token
+from adoctor_cli.base_cmd import BaseCommand
 from aops_utils.restful.helper import make_diag_url
 from aops_utils.conf.constant import DIAG_IMPORT_TREE, DIAG_GET_TREE, DIAG_DELETE_TREE
 from aops_utils.readconfig import read_json_config_file
 from aops_utils.validate import name_check, str_split
+from aops_utils.cli_utils import cli_request, add_access_token
 
 
 class FaultreeCommand(BaseCommand):

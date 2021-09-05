@@ -58,7 +58,7 @@ class TestCheckCli(unittest.TestCase):
             }
             mock_get_response.return_value = expected_res
             cmd.do_command(args)
-            ignore_list = ['sub_parse_name', 'access_token', 'start', 'end', 'sort', 'direction']
+            ignore_list = ['sub_parse_name', 'access_token', 'start', 'end']
             args_dict = vars(args)
             args_dict['time_range'] = time_check_generate(args_dict['start'], args_dict['end'])
             args_dict['check_items'] = str_split(args_dict['check_items'])

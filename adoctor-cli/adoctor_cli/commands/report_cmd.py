@@ -15,13 +15,12 @@ Description: report method's entrance for custom commands
 Class:ReportCommand
 """
 
-from adoctor_cli.base_cmd import BaseCommand, cli_request
-from adoctor_cli.base_cmd import add_access_token, add_start_and_end
+from adoctor_cli.base_cmd import BaseCommand
 from aops_utils.restful.helper import make_diag_url
 from aops_utils.conf.constant import DIAG_GET_REPORT_LIST, DIAG_DELETE_REPORT, DIAG_GET_REPORT
 from aops_utils.time_utils import time_check_generate
 from aops_utils.validate import name_check, str_split
-from aops_utils.cli_utils import add_page
+from aops_utils.cli_utils import add_page, cli_request, add_access_token, add_start_and_end
 
 
 class ReportCommand(BaseCommand):
@@ -117,7 +116,9 @@ class ReportCommand(BaseCommand):
         if params.report_list is not None:
             reports = str_split(params.report_list)
             name_check(reports)
-            pyload['report_list'] = reports
+            pyload = {
+                'report_list': reports
+            }
             diag_url, header = make_diag_url(DIAG_GET_REPORT)
             return cli_request('POST', diag_url, pyload, header, params.access_token)
         if params.host_list is not None:
