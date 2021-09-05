@@ -7,14 +7,17 @@
           <a-col>
             <a-row type="flex" :gutter="16">
               <a-col>
-                <drawer-view title="新建故障诊断">
+                <drawer-view title="新建故障诊断" :bodyStyle="{ paddingBottom: '80px' }">
                   <template slot="click">
                     <a-button type="primary">
                       故障诊断<a-icon type="plus"/>
                     </a-button>
                   </template>
                   <template slot="drawerView">
-                    <add-fault-diagnosis :saveSuccess="addFaultDiagnosisSuccess" :faultTreeList="treeData"></add-fault-diagnosis>
+                    <add-fault-diagnosis
+                      :saveSuccess="addFaultDiagnosisSuccess"
+                      :faultTreeList="treeData"
+                    ></add-fault-diagnosis>
                   </template>
                 </drawer-view>
               </a-col>
@@ -155,7 +158,7 @@ import { dateFormat } from '@/views/utils/Utils'
     },
     {
       title: '诊断时间段',
-      customRender: (text, item) => item.time_range.map(time => dateFormat('YYYY-mm-dd HH:MM:SS', time * 1000)).join(' 至 ')
+      customRender: (text, item) => item.time_range.map(time => dateFormat('YYYY-mm-dd HH:MM:SS', time)).join(' 至 ')
     },
     {
       key: 'progress',
@@ -188,7 +191,7 @@ import { dateFormat } from '@/views/utils/Utils'
     {
       key: 'tiemRange',
       title: '诊断时间段',
-      customRender: (text, item) => `${dateFormat('YYYY-mm-dd HH:MM', item.start * 1000)} - ${dateFormat('YYYY-mm-dd HH:MM', item.end * 1000)}`
+      customRender: (text, item) => `${dateFormat('YYYY-mm-dd HH:MM', item.start)} - ${dateFormat('YYYY-mm-dd HH:MM', item.end)}`
     }
   ]
   export default {

@@ -86,7 +86,7 @@ export default {
         if (this.domainData.length > 0) {
           return [{}].concat(this.domainData).slice(0, this.showNumber)
         } else {
-          return []
+          return [{}]
         }
       }
     },
@@ -96,7 +96,7 @@ export default {
         this.domainLoading = true
         domainList().then(function (res) {
           // 特殊处理
-          _this.domainData = res
+          _this.domainData = res || []
         }).catch(function (err) {
           _this.$message.error(err.response.data.msg)
         }).finally(function () { _this.domainLoading = false })

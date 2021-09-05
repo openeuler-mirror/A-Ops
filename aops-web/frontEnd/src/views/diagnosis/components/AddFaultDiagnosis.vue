@@ -65,6 +65,7 @@
     <a-row :gutter="16">
       <a-col :span="24">
         <a-form-item label="所需诊断主机">
+          <!------
           <a-textarea
             v-decorator="[
               'host_list',
@@ -75,6 +76,14 @@
             :rows="4"
             placeholder="请输入需要诊断的主机，主机间用;号隔开"
           />
+          -------->
+          <a-transfer
+            :data-source="hostListAll"
+            :titles="['源主机列表', '目标列表']"
+            :target-keys="targetKeys"
+            :render="item => item.host_name"
+            @change="handleTransferChange"
+          />
         </a-form-item>
       </a-col>
     </a-row>
@@ -82,7 +91,11 @@
 </template>
 
 <script>
+ import Vue from 'vue'
+import { Transfer } from 'ant-design-vue'
 import { executeDiag } from '@/api/diagnosis'
+import { hostList } from '@/api/assest'
+Vue.use(Transfer)
 
   export default {
     name: 'AddFaultTree',
@@ -91,7 +104,9 @@ import { executeDiag } from '@/api/diagnosis'
       return {
         form: this.$form.createForm(this),
         selectedItems: [],
-        dateFormat: 'YYYY/MM/DD HH:mm'
+        dateFormat: 'YYYY/MM/DD HH:mm',
+        hostListAll: [],
+        targetKeys: []
       }
     },
     props: {
@@ -107,7 +122,8 @@ import { executeDiag } from '@/api/diagnosis'
       }
     },
     mounted: function () {
-      this.setButtons({ callBack: this.save, text: '保存' })
+      this.setButtons({ callBack: this.save, text: '执行诊断', type: 'primary' })
+      this.getHostListAll()
     },
     computed: {
       filteredOptions () {
@@ -120,12 +136,16 @@ import { executeDiag } from '@/api/diagnosis'
         const that = this
         this.form.validateFields((err, values) => {
           if (!err) {
+            if (this.targetKeys.length < 1) {
+              that.$notification.info({
+                message: '没有添加主机',
+                description: '请添加主机后再提交'
+              })
+                return
+            }
             that.showSpin()
             const data = {}
-            data.host_list = []
-            values.host_list.split(',').forEach(function (host) {
-              data.host_list.push(host)
-            })
+            data.host_list = that.targetKeys
             data.time_range = []
             data.time_range.push(that.getUnixTime(values['startTime'].format('YYYY-MM-DD HH:mm:ss')))
             data.time_range.push(that.getUnixTime(values['endTime'].format('YYYY-MM-DD HH:mm:ss')))
@@ -140,6 +160,11 @@ import { executeDiag } from '@/api/diagnosis'
               that.$message.error(err.response.data.msg)
             }).finally(function () {
               that.closeSpin()
+              that.close()
+              that.$notification.info({
+                message: '执行诊断任务',
+                description: '已执行诊断任务'
+              })
             })
           }
         })
@@ -152,6 +177,28 @@ import { executeDiag } from '@/api/diagnosis'
       handleChange (selectedItems) {
         this.selectedItems = selectedItems
         this.form.setFieldsValue({ 'tree_list': selectedItems })
+      },
+      getHostListAll () {
+        const _this = this
+        hostList({
+          tableInfo: {
+            pagination: {},
+            filters: {},
+            sorter: {}
+          }
+        }).then(function (res) {
+          _this.hostListAll = res.host_infos.map(host => {
+            return {
+              ...host,
+              key: host.host_id
+            }
+          }) || []
+        }).catch(function (err) {
+            _this.$message.error(err.response.data.msg)
+        }).finally(function () { _this.tableIsLoading = false })
+      },
+      handleTransferChange (nextTargetKeys) {
+        this.targetKeys = nextTargetKeys
       }
     }
   }
