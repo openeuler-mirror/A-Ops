@@ -1,7 +1,7 @@
 #needsrootforbuild
 Name:		A-Ops
-Version:	1.0.0
-Release:	5
+Version:	1.0.1
+Release:	1
 Summary:	The intelligent ops toolkit for openEuler
 License:	MulanPSL2
 URL:		https://gitee.com/openeuler/A-Ops
@@ -433,8 +433,9 @@ fi
 
 
 %changelog
-* Sun Sep 5 2021 Lostwayzxc<luoshengwei@huawei.com> - 1.0.0-5
-- add five subpackages of adoctor
+* Mon Sep 6 2021 Lostwayzxc<luoshengwei@huawei.com> - 1.0.1-1
+- update src, add intelligent check and diagnosis module, and 
+- add web of the aops
 
 * Thu Sep 2 2021 zhaoyuxing<zhaoyuxsing2@huawei.com> - 1.0.0-4
 - add service file in gala-spider
