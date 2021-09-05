@@ -20,6 +20,7 @@ from flask_restful import Resource
 
 from aops_database.function.helper import SESSION, operate
 from aops_database.proxy.host import HostDatabase, HostInfoDatabase
+from aops_database.proxy.check import CheckDatabase
 from aops_utils.restful.status import make_response
 from aops_database.views import BaseResource
 
@@ -49,13 +50,13 @@ class AddHost(BaseResource):
         return self.do_action('add_host', HostDatabase(), SESSION)
 
 
-class DeleteHost(BaseResource):
+class DeleteHost(Resource):
     """
     Interface for delete host.
     Restful API: DELETE
     """
-
-    def delete(self):
+    @staticmethod
+    def delete():
         """
         Delete host
 
@@ -66,7 +67,18 @@ class DeleteHost(BaseResource):
         Returns:
             dict: response body
         """
-        return self.do_action('delete_host', HostDatabase(), SESSION)
+        args = request.get_json()
+        proxy = HostDatabase()
+        response = make_response(operate(proxy, args, "delete_host", SESSION))
+        succeed_list = response.get('succeed_list')
+        if succeed_list:
+            check_args = {
+                "username": args['username'],
+                "host_list": succeed_list
+            }
+            proxy = CheckDatabase()
+            make_response(operate(proxy, check_args, "delete_check_result"))
+        return jsonify(response)
 
 
 class GetHost(BaseResource):

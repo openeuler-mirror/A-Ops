@@ -73,7 +73,7 @@ class HostDatabase(MysqlProxy):
             for host_info in data['host_list']:
                 host_group = group_map.get(host_info['host_group_name'])
                 if host_group is None:
-                    result['fail_list'].append(host_info['host_name'])
+                    result['fail_list'].append(host_info)
                     continue
                 host_group.host_count += 1
                 host_info['host_group_id'] = host_group.host_group_id
@@ -81,13 +81,13 @@ class HostDatabase(MysqlProxy):
                 host = Host(**host_info)
                 if host in hosts:
                     LOGGER.error("host %s exist", host_info['host_name'])
-                    result['fail_list'].append(host_info['host_name'])
+                    result['fail_list'].append(host_info)
                     continue
                 host.host_group = host_group
                 host.owner = user
                 self.session.add(host)
                 self.session.commit()
-                result['succeed_list'].append(host_info['host_name'])
+                result['succeed_list'].append(host_info)
             status_code = judge_return_code(result, DATABASE_INSERT_ERROR)
             return status_code, result
         except sqlalchemy.exc.SQLAlchemyError as error:
