@@ -5,9 +5,8 @@ from spider.util.conf import kafka_broker
 from spider.util.conf import base_table
 from spider.util.conf import other_table
 from spider.util.conf import exclude_ip
-
-TMP_TCP_FILE = "tcpline.txt"
-TMP_OTHER_FILE = "otherline.txt"
+from spider.util.conf import temp_tcp_file
+from spider.util.conf import temp_other_file
 
 def db_kafka_agent():
     print("------------- kafka process --------------")
@@ -30,12 +29,12 @@ def db_kafka_agent():
                 continue
             if line_json.get("server_ip") in checkip:
                 continue
-            with open(TMP_TCP_FILE, 'a+') as d_file:
+            with open(temp_tcp_file, 'a+') as d_file:
                 d_file.write(lines)
                 d_file.write('\n')
-                print(lines)
+                #print(lines)
         if line_json.get("table_name") in eval(other_table):
-            with open(TMP_OTHER_FILE, 'a+') as o_file:
+            with open(temp_other_file, 'a+') as o_file:
                 o_file.write(lines)
                 o_file.write('\n')
                 #print(lines)

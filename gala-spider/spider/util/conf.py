@@ -23,3 +23,8 @@ neo4j_pwd = cf.get("neo4j", "password")
 base_table = cf.get("table_info", "base_table_name")
 other_table = cf.get("table_info", "other_table_name")
 exclude_ip = cf.get("option", "exclude_addr")
+
+temp_tcp_file = cf.get("temp_path", "temp_tcp_file")
+temp_other_file = cf.get("temp_path", "temp_other_file")
+
+spider_port = cf.get("spider", "port")
