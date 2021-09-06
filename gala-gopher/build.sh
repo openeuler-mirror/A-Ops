@@ -113,9 +113,61 @@ function compile_extend_probes()
     done
 }
 
-load_tailor
-prepare_probes
-compile_daemon
-compile_extend_probes $1
-clean_env
+# Check dependent packages and install automatically
+function prepare_dependence()
+{
+
+    # for build framework
+    yum install -y cmake
+    if [ $? -ne 0 ];then
+        echo "Error: Failed to install cmake."
+        return 1
+    fi
+
+    # for gala-gopher framework sending message to kafka
+    yum install -y librdkafka-devel
+    if [ $? -ne 0 ];then
+        echo "Error: Failed to install librdkafka-devel."
+        return 1
+    fi
+
+    # for gala-gopher framework http server
+    yum install -y libmicrohttpd-devel
+    if [ $? -ne 0 ];then
+        echo "Error: Failed to install libmicrohttpd-devel."
+        return 1
+    fi
+
+    # for gala-gopher configrations
+    yum install -y libconfig-devel
+    if [ $? -ne 0 ];then
+        echo "Error: Failed to install libconfig-devel."
+        return 1
+    fi
+
+    return 0
+}
+
+if [ "$1" == "help" ]; then
+    echo build.sh help :Show this message.
+    echo build.sh check:Check the environment including arch/os/kernel/packages.
+    echo build.sh build:Build the gala-gopher binary.
+fi
+
+if [ "$1" == "check" ]; then
+    prepare_dependence
+fi
+if [ $? -ne 0 ];then
+    echo "Error: prepare dependence softwares failed"
+    exit
+fi
+
+if [ "$1" = "build" ];then
+    load_tailor
+    prepare_probes
+    compile_daemon
+    compile_extend_probes $1
+    clean_env
+    exit
+fi
 
