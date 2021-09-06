@@ -9,7 +9,6 @@ from spider.models.runon import Runon
 from spider.models.attr import Attr
 from spider import util
 from spider.data_process.data_to_entity import node_entity_process
-from spider.util.entityid import entity_name
 
 def get_observed_entity_list(timestamp=None):  # noqa: E501
     """get observed entity list
@@ -32,15 +31,14 @@ def get_observed_entity_list(timestamp=None):  # noqa: E501
             right_call = Call(type = "PROCESS",
                               id = edges_table[key]['dst'])
 
-            linkcount_attr = Attr(key = "link_count",
-                              value = edges_infos[key][7])
-            rx_bytes_attr = Attr(key = "rx_bytes",
-                              value = edges_infos[key][0])
-            tx_bytes_attr = Attr(key = "tx_bytes",
-                              value = edges_infos[key][1])
-            edge_attrs.append(linkcount_attr)
-            edge_attrs.append(rx_bytes_attr)
-            edge_attrs.append(tx_bytes_attr)
+            edge_attrs.append(Attr(key = "link_count", value = edges_infos[key][7]))
+            edge_attrs.append(Attr(key = "rx_bytes", value = edges_infos[key][0]))
+            edge_attrs.append(Attr(key = "tx_bytes", value = edges_infos[key][1]))
+            edge_attrs.append(Attr(key="packets_out", value=edges_infos[key][2]))
+            edge_attrs.append(Attr(key="packets_in", value=edges_infos[key][3]))
+            edge_attrs.append(Attr(key="retran_packets", value=edges_infos[key][4]))
+            edge_attrs.append(Attr(key="lost_packets", value=edges_infos[key][5]))
+            edge_attrs.append(Attr(key="rtt", value=edges_infos[key][6]))
             entity = Entity(entityid = edges_table[key]['edge'],
                             type = "TCP-LINK",
                             name = edges_table[key]['edge'],
@@ -86,7 +84,6 @@ def get_observed_entity_list(timestamp=None):  # noqa: E501
                         dependeditems = left_call,
                         dependingitems = right_calls)
         entities.append(entity)
-
     entities_res = EntitiesResponse(code = 200,
                                     msg = "option successfully",
                                     timestamp = 111,
