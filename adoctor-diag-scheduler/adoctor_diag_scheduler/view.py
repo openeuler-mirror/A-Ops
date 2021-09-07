@@ -23,6 +23,7 @@ from aops_utils.restful.helper import make_datacenter_url
 from aops_utils.restful.response import MyResponse
 from aops_utils.restful.status import StatusCode, SUCCEED, SERVER_ERROR
 from aops_utils.log.log import LOGGER
+from aops_utils.kafka.kafka_exception import ProducerInitError
 from aops_utils.conf.constant import DATA_ADD_DIAG_TREE, DATA_GET_DIAG_TREE, \
     DATA_DELETE_DIAG_REPORT, DATA_DELETE_DIAG_TREE, DATA_GET_DIAG_TASK, DATA_GET_DIAG_PROCESS, \
     DATA_GET_DIAG_REPORT, DATA_GET_DIAG_REPORT_LIST
@@ -161,7 +162,7 @@ class ExecuteDiag(Resource):
             response["task_id"] = task_id
             response["expected_report_num"] = jobs_num
 
-        except (KeyError, KafkaError) as err:
+        except (ProducerInitError, KeyError, KafkaError) as err:
             LOGGER.error(err)
             response = StatusCode.make_response(SERVER_ERROR)
             response["task_id"] = None
