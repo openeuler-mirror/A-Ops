@@ -4,7 +4,7 @@ After=network.target
 StartLimitIntervalSec=5
 
 [Service]
-Type=forking
+Type=simple
 ExecStart=/usr/bin/adoctor-check-scheduler start
 ExecStop=/usr/bin/adoctor-check-scheduler stop
 Restart=on-failure
