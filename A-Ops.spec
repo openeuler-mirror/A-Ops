@@ -1,7 +1,7 @@
 #needsrootforbuild
 Name:		A-Ops
 Version:	1.0.1
-Release:	1
+Release:	2
 Summary:	The intelligent ops toolkit for openEuler
 License:	MulanPSL2
 URL:		https://gitee.com/openeuler/A-Ops
@@ -15,6 +15,9 @@ BuildRequires:	librdkafka-devel libmicrohttpd-devel
 # build for ragdoll & aops basic module
 BuildRequires:  python3-setuptools python3-connexion python3-werkzeug python3-libyang
 BuildRequires:	git python3-devel systemd
+
+# build for spider & aops basic module
+BuildRequires:  python3-setuptools python3-kafka-python python3-connexion
 
 # build for web
 BuildRequires: nodejs node-gyp npm
@@ -136,6 +139,21 @@ Requires: python3-werkzeug python3-connexion python3-swagger-ui-bundle
 python3 pakcage of gala-ragdoll
 
 
+%package -n gala-spider
+Summary:	Configuration traceability
+
+%description -n gala-spider
+Configuration traceability
+
+
+%package -n python3-gala-spider
+Summary: python3 pakcage of gala-spider
+Requires: gala-spider = %{version}-%{release} python3-kafka-python python3-connexion
+
+%description -n python3-gala-spider
+python3 pakcage of gala-spider
+
+
 %package -n aops-web
 Summary:    website for A-Ops
 Requires:   nginx
@@ -211,6 +229,11 @@ popd
 
 #build for gala-ragdoll
 pushd gala-ragdoll
+%py3_build
+popd
+
+#build for gala-spider
+pushd gala-spider
 %py3_build
 popd
 
@@ -302,6 +325,17 @@ mkdir -p %{buildroot}/%{_prefix}/lib/systemd/system
 install service/gala-ragdoll.service %{buildroot}/%{_prefix}/lib/systemd/system
 popd
 
+#install for gala-spider
+pushd gala-spider
+%py3_install
+mkdir -p %{buildroot}/%{_sysconfdir}/spider
+install config/*.conf %{buildroot}/%{_sysconfdir}/spider/
+mkdir %{buildroot}/%{python3_sitelib}/spider/config
+install config/*.conf %{buildroot}/%{python3_sitelib}/spider/config
+mkdir -p %{buildroot}/%{_prefix}/lib/systemd/system
+install service/gala-spider.service %{buildroot}/%{_prefix}/lib/systemd/system
+popd
+
 
 %post -n gala-gopher
 %systemd_post gala-gopher.service
@@ -326,6 +360,21 @@ fi
 
 %postun -n python3-gala-ragdoll
 %systemd_postun gala-ragdoll.service
+
+
+%pre -n python3-gala-spider
+if [ -f "%{systemd_dir}/gala-spider.service" ] ; then
+        systemctl enable gala-spider.service || :
+fi
+
+%post -n python3-gala-spider
+%systemd_post gala-spider.service
+
+%preun -n python3-gala-spider
+%systemd_preun gala-spider.service
+
+%postun -n python3-gala-spider
+%systemd_postun gala-spider.service
 
 
 
@@ -426,6 +475,19 @@ fi
 %{python3_sitelib}/ragdoll-*.egg-info
 
 
+%files -n gala-spider
+%doc gala-spider/doc/*
+%license gala-spider/LICENSE
+/%{_sysconfdir}/spider/gala-spider.conf
+%{_bindir}/spider
+%{_prefix}/lib/systemd/system/gala-spider.service
+
+
+%files -n python3-gala-spider
+%{python3_sitelib}/spider/*
+%{python3_sitelib}/spider-*.egg-info
+
+
 %files -n aops-web
 %attr(0755, root, root) /opt/aops_web/dist/*
 %attr(0755, root, root) %{_sysconfdir}/nginx/aops-nginx.conf
@@ -433,6 +495,9 @@ fi
 
 
 %changelog
+* Tue Sep 7 2021 zhaoyuxing<zhaoyuxing2@huawei.com> - 1.0.1-2
+- add gala-spider in spec
+
 * Mon Sep 6 2021 Lostwayzxc<luoshengwei@huawei.com> - 1.0.1-1
 - update src, add intelligent check and diagnosis module, and 
 - add web of the aops

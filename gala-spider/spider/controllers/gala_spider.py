@@ -70,12 +70,13 @@ def get_observed_entity_list(timestamp=None):  # noqa: E501
                 lb_runon = Runon(type = val[1],
                                 id = val[0])
                 lb_runons.append(lb_runon)
-        node_attrs.append(Attr(key='example', value = "0xabcd", vtype = "int"))
+        on_runon = Runon(type = "VM", id = nodes_table[key]['host'])
+        node_attrs.append(Attr(key = 'example', value = "0xabcd", vtype = "int"))
         entity = Entity(entityid = key,
                         type = "PROCESS",
                         name = key,
                         dependeditems = Dependenceitem(calls = left_calls, run_ons = lb_runons),
-                        dependingitems = Dependenceitem(calls = right_calls),
+                        dependingitems = Dependenceitem(calls = right_calls, run_ons = on_runon),
                         attrs = node_attrs)
         entities.append(entity)
     for key in lb_tables.keys():
