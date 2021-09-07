@@ -1,1 +1,0 @@
-{"timestamp": 1083799816, "hostname": "DD", "table_name": "nginx", "client_ip": "10.137.16.99", "virtual_ip": "10.137.16.11", "server_ip": "10.137.16.12", "server_port": "80", "is_l7": "1", "link_count": "1"}
