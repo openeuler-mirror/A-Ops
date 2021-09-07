@@ -6,7 +6,7 @@ info:
   title: "Topo Graph Engine Service"
   contact:
     email: "zhengxian@huawei.com"
-host: "10.136.117.116:11115"
+host: "0.0.0.0:11115"
 basePath: "/gala-spider/api/v1"
 tags:
 - name: "gala-spider"

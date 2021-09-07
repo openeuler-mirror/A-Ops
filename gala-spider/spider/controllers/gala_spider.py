@@ -10,6 +10,7 @@ from spider.models.runon import Runon
 from spider.models.attr import Attr
 from spider import util
 from spider.data_process.data_to_entity import node_entity_process
+from spider.data_process.data_to_entity import clear_tmp
 
 def get_observed_entity_list(timestamp=None):  # noqa: E501
     """get observed entity list
@@ -107,4 +108,6 @@ def get_topo_graph_status():  # noqa: E501
 
     :rtype: BaseResponse
     """
-    return 'do get_topo_graph_status!'
+
+    clear_tmp()
+    return 'clear tmp files!'

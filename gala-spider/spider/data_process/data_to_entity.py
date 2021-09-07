@@ -1,5 +1,6 @@
 import os
 import sys
+import ast
 import json
 from spider.util.entityid import node_entity_name
 from spider.util.entityid import edge_entity_name
@@ -12,8 +13,8 @@ def tcp_entity_process():
     c_edges_infos = {}
     edges_table = {}
     edges_infos = {}
-    if os.path.exists(temp_tcp_file):
-        f = open(temp_tcp_file)
+    if os.path.exists(ast.literal_eval(temp_tcp_file)):
+        f = open(ast.literal_eval(temp_tcp_file))
     else:
         print("/var/tmp/spider/tcpline.txt not here.")
         sys.exit()
@@ -74,8 +75,8 @@ def tcp_entity_process():
 
 def lb_entity_process():
     lb_tables = {}
-    if os.path.exists(temp_other_file):
-        f = open(temp_other_file)
+    if os.path.exists(ast.literal_eval(temp_other_file)):
+        f = open(ast.literal_eval(temp_other_file))
     else:
         print("/var/tmp/spider/otherline.txt not here.")
         sys.exit()
@@ -153,3 +154,8 @@ def node_entity_process():
 
     return edges_table, edges_infos, nodes_table, lb_tables
 
+def clear_tmp():
+    with open(ast.literal_eval(temp_tcp_file), 'wb') as file_t:
+        file_t.truncate(0)
+    with open(ast.literal_eval(temp_other_file), 'wb') as file_o:
+        file_o.truncate(0)
