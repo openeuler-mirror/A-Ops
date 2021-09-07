@@ -4,4 +4,4 @@
   become_user: root
   service:
     name: gala-gopher
-    state: started
+    state: restarted

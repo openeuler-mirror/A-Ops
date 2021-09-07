@@ -19,8 +19,6 @@ description: constant of check scheduler
 
 from dataclasses import dataclass
 
-# Indicates the minimum timestamp, which is the end point of a historical task.
-MIN_TIMESTAMP = 61
 # Default ID of a common forward task
 FORWARD_TASK_ID = -1
 # Default ID of a common backward task

@@ -662,7 +662,7 @@ class Literal(SourceElement):
         Raise:
             ExpressionError
         """
-        if self.type in ('NUM', 'CHAR_LITERAL', 'STRING_LITERAL'):
+        if self.type in ('NUM', 'CHAR_LITERAL', 'STRING_LITERAL', 'SCI_NUM'):
             return ast.literal_eval(self.value)
         if self.type in ('TRUE', 'FALSE'):
             return bool(self.value.lower() == 'true')

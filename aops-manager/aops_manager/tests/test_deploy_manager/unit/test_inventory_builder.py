@@ -184,6 +184,20 @@ class TestInventoryBuilder(unittest.TestCase):
         inventory_builder.remove_host_vars_in_inventory()
         self.assertFalse(os.path.exists(HOST_VARS_PATH), msg="host_vars has benn deleted")
 
+    def test_remove_specified_host_vars(self):
+        inventory_builder = InventoryBuilder()
+        inventory_builder._add_host_vars("host1", "ip", "127.0.0.1", False)
+        inventory_builder._add_host_vars("host1", "pwd", "12345", True)
+        inventory_builder._dump_host_vars("54321", TestInventoryBuilder.output_path)
+        host_vars_path = os.path.join(CURRENT_PATH,
+                                      TestInventoryBuilder.output_path)
+        host_name_list = ["host1", "host2"]
+        inventory_builder.remove_specified_host_vars(host_name_list, host_vars_path)
+        for host_name in host_name_list:
+            host_vars_dir = os.path.join(CURRENT_PATH,
+                                         TestInventoryBuilder.output_path, "host_vars", host_name)
+            self.assertFalse(os.path.exists(host_vars_dir), msg="host_vars has benn deleted")
+
 
 if __name__ == "__main__":
     unittest.main()

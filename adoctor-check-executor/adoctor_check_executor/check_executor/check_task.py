@@ -17,7 +17,7 @@ docs: check_task.py
 description: Check task
 """
 from adoctor_check_executor.check_executor.check_item_manager import check_item_manager
-from adoctor_check_executor.common.constant import CheckTopic, CheckResultType
+from adoctor_check_executor.common.constant import CheckTopic, CheckResultType, BACKWARD_TASK_ID
 from adoctor_check_executor.common.config import executor_check_config
 from adoctor_check_executor.common.check_msg import CheckMsgToolKit
 from aops_utils.kafka.producer import BaseProducer
@@ -99,6 +99,10 @@ class CheckTask:
         # Save check result to database
         if len(abnormal_data_result) > 0:
             CheckMsgToolKit.save_check_result_to_database(abnormal_data_result)
+
+        # backward task no need retry
+        if task_id == BACKWARD_TASK_ID:
+            return
 
         # Send retry msg to scheduler
         try:

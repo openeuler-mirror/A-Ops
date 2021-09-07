@@ -20,7 +20,6 @@ description: check timer
 import time
 from aops_utils.singleton import singleton
 from adoctor_check_scheduler.common.config import scheduler_check_config
-from adoctor_check_scheduler.common.constant import MIN_TIMESTAMP
 
 
 @singleton
@@ -44,7 +43,7 @@ class CheckTimeKeeper:
         self._start_time = int(time.time())
         self._last_forward = self._start_time
         self._last_backward = self._start_time
-        self._min_time_stamp = MIN_TIMESTAMP
+        self._min_time_stamp = scheduler_check_config.check_scheduler.get("BACKWARD_MIN_TIMESTAMP")
         self._backward_task_step = scheduler_check_config.check_scheduler.get("BACKWARD_TASK_STEP")
         self._forward_max_task_step = int(scheduler_check_config.check_scheduler.get(
             "FORWARD_MAX_TASK_STEP"))

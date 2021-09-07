@@ -23,6 +23,13 @@ from adoctor_check_executor.check_rule_plugins.expression_parser.data_backpack i
 
 expression_bin_operator = [
     # simple test for each operator
+    ('1+2 >=1.0e-3', True),
+    ('1+2 >=-9.99E+9', True),
+    ('1-3 >= 1e-06', False),
+    ('1+2 >=1e-066', True),
+    ('1+2 >=.1e12', False),
+    ('1+2 >=-4.70e+9', True),
+    ('1+2 >=-.2E-4', True),
     ('True', True),
     ('1+2', 3),
     (' 1 + 2 ', 3),

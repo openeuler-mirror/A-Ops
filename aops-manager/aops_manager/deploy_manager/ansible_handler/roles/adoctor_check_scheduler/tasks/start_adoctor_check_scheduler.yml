@@ -4,7 +4,7 @@
   become_user: root
   service:
     name: adoctor-check-scheduler
-    state: started
+    state: restarted
 
 # Checking the Service Status
 - name: verify adoctor_check_scheduler is listening on {{ check_scheduler_port }}

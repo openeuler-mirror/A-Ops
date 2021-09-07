@@ -2,7 +2,9 @@
 - name: Start gala ragdoll
   become: true
   become_user: root
-  shell: "systemctl start gala-ragdoll"
+    service:
+    name: gala-ragdoll
+    state: restarted
 
 # Checking the Service Status
 - name: Verify gala ragdoll is listening on {{ gala_ragdoll_port }}

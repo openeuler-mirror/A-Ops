@@ -15,5 +15,5 @@ zk_client_port: 2181
 # elasticsearch repo config
 repo_name: "Kafka"
 repo_description: "kafka repository"
-repo_base_url: "https://repo.oepkgs.net/openEuler/rpm/openEuler-20.03-LTS-SP1/budding-openeuler/aarch64/"
+repo_base_url: "https://repo.openeuler.org/openEuler-20.03-LTS-SP2/everything/$baseurl"
 repo_file: "kafka"
