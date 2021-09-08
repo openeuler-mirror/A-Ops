@@ -10,6 +10,7 @@ from spider.models.runon import Runon
 from spider.models.attr import Attr
 from spider import util
 from spider.data_process.data_to_entity import node_entity_process
+from spider.data_process.data_to_entity import clear_tmp
 
 def get_observed_entity_list(timestamp=None):  # noqa: E501
     """get observed entity list
@@ -69,12 +70,13 @@ def get_observed_entity_list(timestamp=None):  # noqa: E501
                 lb_runon = Runon(type = val[1],
                                 id = val[0])
                 lb_runons.append(lb_runon)
-        node_attrs.append(Attr(key='example', value = "0xabcd", vtype = "int"))
+        on_runon = Runon(type = "VM", id = nodes_table[key]['host'])
+        node_attrs.append(Attr(key = 'example', value = "0xabcd", vtype = "int"))
         entity = Entity(entityid = key,
                         type = "PROCESS",
                         name = key,
                         dependeditems = Dependenceitem(calls = left_calls, run_ons = lb_runons),
-                        dependingitems = Dependenceitem(calls = right_calls),
+                        dependingitems = Dependenceitem(calls = right_calls, run_ons = on_runon),
                         attrs = node_attrs)
         entities.append(entity)
     for key in lb_tables.keys():
@@ -107,4 +109,6 @@ def get_topo_graph_status():  # noqa: E501
 
     :rtype: BaseResponse
     """
-    return 'do get_topo_graph_status!'
+
+    clear_tmp()
+    return 'clear tmp files!'

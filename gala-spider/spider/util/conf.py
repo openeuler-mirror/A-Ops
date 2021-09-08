@@ -1,7 +1,7 @@
 import os
 import configparser
 
-CONFIG = "D:\code\A-Ops\gala-spider\config\gala-spider.conf"
+CONFIG = "/etc/spider/gala-spider.conf"
 
 # analysis configuration
 cf = configparser.ConfigParser()

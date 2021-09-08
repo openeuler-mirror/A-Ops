@@ -1,4 +1,5 @@
 from kafka import KafkaConsumer
+import ast
 import json
 from spider.util.conf import kafka_topic
 from spider.util.conf import kafka_broker
@@ -14,27 +15,27 @@ def db_kafka_agent():
     consumer = KafkaConsumer(
         kafka_topic,
         group_id="group2",
-        bootstrap_servers=eval(kafka_broker)
+        bootstrap_servers=ast.literal_eval(kafka_broker)
     )
     # can specify a type of IP that isn't recorded
-    checkip = eval(exclude_ip)
+    checkip = ast.literal_eval(exclude_ip)
     # consuming
     for msg in consumer:
         lines = bytes.decode(msg.value)
         line_json = json.loads(lines)
         if line_json.get("process_name") in ["sshd", "rdk:broker0"]:
             continue
-        if line_json.get("table_name") in eval(base_table):
+        if line_json.get("table_name") in ast.literal_eval(base_table):
             if line_json.get("client_ip") in checkip:
                 continue
             if line_json.get("server_ip") in checkip:
                 continue
-            with open(temp_tcp_file, 'a+') as d_file:
+            with open(ast.literal_eval(temp_tcp_file), 'a+') as d_file:
                 d_file.write(lines)
                 d_file.write('\n')
-                #print(lines)
-        if line_json.get("table_name") in eval(other_table):
-            with open(temp_other_file, 'a+') as o_file:
+                print(lines)
+        if line_json.get("table_name") in ast.literal_eval(other_table):
+            with open(ast.literal_eval(temp_other_file), 'a+') as o_file:
                 o_file.write(lines)
                 o_file.write('\n')
                 #print(lines)
