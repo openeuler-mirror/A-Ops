@@ -47,13 +47,15 @@ def add_management_confs_in_domain(body=None):  # noqa: E501
     # check whether the domain exists
     isExist = Format.isDomainExist(domain)
     if not isExist:
-        base_rsp = BaseResponse(400, "The current domain does not exist, please create the domain first.")
-        return base_rsp
+        codeNum = 400
+        base_rsp = BaseResponse(codeNum, "The current domain does not exist, please create the domain first.")
+        return base_rsp, codeNum
 
     # check whether the conf_files is null
     if len(conf_files) == 0:
-        base_rsp = BaseResponse(400, "The path of file can't be empty")
-        return base_rsp
+        codeNum = 400
+        base_rsp = BaseResponse(codeNum, "The path of file can't be empty")
+        return base_rsp, codeNum
 
     # Check all conf_files and check whether contents is empty. If so, the query actual configuration 
     # interface is called. If not, the conversion is performed directly.
@@ -124,6 +126,12 @@ def add_management_confs_in_domain(body=None):  # noqa: E501
             return base_rsp, codeNum
 
         reps = json.loads(response.text).get("resp")
+        if not reps or len(reps) == 0:
+            codeNum = 500
+            codeString = "Failed to obtain the actual configuration, please check the host info for conf/collect."
+            base_rsp = BaseResponse(codeNum, codeString)
+            return base_rsp, codeNum
+
         for d_res in reps:
             failedlist = d_res.get("fail_files")
             if len(failedlist) > 0:
@@ -189,14 +197,16 @@ def delete_management_confs_in_domain(body=None):  # noqa: E501
     print("body is : {}".format(body))
     isExist = Format.isDomainExist(domain)
     if not isExist:
-        base_rsp = BaseResponse(400, "The current domain does not exist")
-        return base_rsp
+        codeNum = 400
+        base_rsp = BaseResponse(codeNum, "The current domain does not exist")
+        return base_rsp, codeNum
     
     # Check whether path is null in advance
     conf_files = body.conf_files
     if len(conf_files) == 0:
-        base_rsp = BaseResponse(400, "The conf_files path can't be empty")
-        return base_rsp
+        codeNum = 400
+        base_rsp = BaseResponse(codeNum, "The conf_files path can't be empty")
+        return base_rsp, codeNum
 
     # Conf to record successes and failures
     successConf = []
