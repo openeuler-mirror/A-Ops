@@ -309,7 +309,7 @@ export const asyncRouterMap = [
         path: routeMap.networkTopo.path,
         name: 'networkTopo',
         component: () => import('@/views/networkTopo/NetworkTopo'),
-        meta: { title: routeMap.networkTopo.title, icon: 'dashboard', permission: ['networkTopo'] }
+        meta: { title: routeMap.networkTopo.title, icon: 'deployment-unit', permission: ['networkTopo'] }
       }
     ]
   },
