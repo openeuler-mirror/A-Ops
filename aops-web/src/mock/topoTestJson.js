@@ -55,6 +55,791 @@ export const testJson = {
   ]
 }
 
+export const topoSimple = {
+  "code": 200,
+  "entities": [
+    {
+      "attrs": [
+        {
+          "key": "link_count",
+          "value": "1",
+          "vtype": "string"
+        },
+        {
+          "key": "rx_bytes",
+          "value": "3613",
+          "vtype": "string"
+        },
+        {
+          "key": "tx_bytes",
+          "value": "1590412",
+          "vtype": "string"
+        },
+        {
+          "key": "packets_out",
+          "value": "1452",
+          "vtype": "string"
+        },
+        {
+          "key": "packets_in",
+          "value": "655",
+          "vtype": "string"
+        },
+        {
+          "key": "retran_packets",
+          "value": "6",
+          "vtype": "string"
+        },
+        {
+          "key": "lost_packets",
+          "value": "0",
+          "vtype": "string"
+        },
+        {
+          "key": "rtt",
+          "value": "172",
+          "vtype": "string"
+        }
+      ],
+      "dependeditems": {
+        "calls": {
+          "id": "exe.ffmpeg",
+          "type": "PROCESS"
+        }
+      },
+      "dependingitems": {
+        "calls": {
+          "id": "ipvs-fnat.ipvs",
+          "type": "PROCESS"
+        }
+      },
+      "entityid": "exe.ffmpeg.ipvs-fnat.ipvs.tcp_link",
+      "name": "exe.ffmpeg.ipvs-fnat.ipvs.tcp_link",
+      "type": "TCP-LINK"
+    },
+    {
+      "attrs": [
+        {
+          "key": "link_count",
+          "value": "1",
+          "vtype": "string"
+        },
+        {
+          "key": "rx_bytes",
+          "value": "1737381",
+          "vtype": "string"
+        },
+        {
+          "key": "tx_bytes",
+          "value": "142",
+          "vtype": "string"
+        },
+        {
+          "key": "packets_out",
+          "value": "326",
+          "vtype": "string"
+        },
+        {
+          "key": "packets_in",
+          "value": "365",
+          "vtype": "string"
+        },
+        {
+          "key": "retran_packets",
+          "value": "0",
+          "vtype": "string"
+        },
+        {
+          "key": "lost_packets",
+          "value": "0",
+          "vtype": "string"
+        },
+        {
+          "key": "rtt",
+          "value": "114",
+          "vtype": "string"
+        }
+      ],
+      "dependeditems": {
+        "calls": {
+          "id": "haproxy1.haproxy",
+          "type": "PROCESS"
+        }
+      },
+      "dependingitems": {
+        "calls": {
+          "id": "vlb-origin.nginx",
+          "type": "PROCESS"
+        }
+      },
+      "entityid": "haproxy1.haproxy.vlb-origin.nginx.tcp_link",
+      "name": "haproxy1.haproxy.vlb-origin.nginx.tcp_link",
+      "type": "TCP-LINK"
+    },
+    {
+      "attrs": [
+        {
+          "key": "link_count",
+          "value": "1",
+          "vtype": "string"
+        },
+        {
+          "key": "rx_bytes",
+          "value": "1737381",
+          "vtype": "string"
+        },
+        {
+          "key": "tx_bytes",
+          "value": "91",
+          "vtype": "string"
+        },
+        {
+          "key": "packets_out",
+          "value": "336",
+          "vtype": "string"
+        },
+        {
+          "key": "packets_in",
+          "value": "386",
+          "vtype": "string"
+        },
+        {
+          "key": "retran_packets",
+          "value": "0",
+          "vtype": "string"
+        },
+        {
+          "key": "lost_packets",
+          "value": "0",
+          "vtype": "string"
+        },
+        {
+          "key": "rtt",
+          "value": "5413",
+          "vtype": "string"
+        }
+      ],
+      "dependeditems": {
+        "calls": {
+          "id": "exe.curl",
+          "type": "PROCESS"
+        }
+      },
+      "dependingitems": {
+        "calls": {
+          "id": "ipvs-fnat.ipvs",
+          "type": "PROCESS"
+        }
+      },
+      "entityid": "exe.curl.ipvs-fnat.ipvs.tcp_link",
+      "name": "exe.curl.ipvs-fnat.ipvs.tcp_link",
+      "type": "TCP-LINK"
+    },
+    {
+      "attrs": [
+        {
+          "key": "link_count",
+          "value": "1",
+          "vtype": "string"
+        },
+        {
+          "key": "rx_bytes",
+          "value": "3613",
+          "vtype": "string"
+        },
+        {
+          "key": "tx_bytes",
+          "value": "1590415",
+          "vtype": "string"
+        },
+        {
+          "key": "packets_out",
+          "value": "1446",
+          "vtype": "string"
+        },
+        {
+          "key": "packets_in",
+          "value": "614",
+          "vtype": "string"
+        },
+        {
+          "key": "retran_packets",
+          "value": "0",
+          "vtype": "string"
+        },
+        {
+          "key": "lost_packets",
+          "value": "0",
+          "vtype": "string"
+        },
+        {
+          "key": "rtt",
+          "value": "151",
+          "vtype": "string"
+        }
+      ],
+      "dependeditems": {
+        "calls": {
+          "id": "exe.ffmpeg",
+          "type": "PROCESS"
+        }
+      },
+      "dependingitems": {
+        "calls": {
+          "id": "ipvs-fnat.ipvs",
+          "type": "PROCESS"
+        }
+      },
+      "entityid": "exe.ffmpeg.ipvs-fnat.ipvs.tcp_link",
+      "name": "exe.ffmpeg.ipvs-fnat.ipvs.tcp_link",
+      "type": "TCP-LINK"
+    },
+    {
+      "attrs": [
+        {
+          "key": "link_count",
+          "value": "1",
+          "vtype": "string"
+        },
+        {
+          "key": "rx_bytes",
+          "value": "1599435",
+          "vtype": "string"
+        },
+        {
+          "key": "tx_bytes",
+          "value": "94",
+          "vtype": "string"
+        },
+        {
+          "key": "packets_out",
+          "value": "253",
+          "vtype": "string"
+        },
+        {
+          "key": "packets_in",
+          "value": "283",
+          "vtype": "string"
+        },
+        {
+          "key": "retran_packets",
+          "value": "0",
+          "vtype": "string"
+        },
+        {
+          "key": "lost_packets",
+          "value": "0",
+          "vtype": "string"
+        },
+        {
+          "key": "rtt",
+          "value": "409",
+          "vtype": "string"
+        }
+      ],
+      "dependeditems": {
+        "calls": {
+          "id": "exe.curl",
+          "type": "PROCESS"
+        }
+      },
+      "dependingitems": {
+        "calls": {
+          "id": "ipvs-fnat.ipvs",
+          "type": "PROCESS"
+        }
+      },
+      "entityid": "exe.curl.ipvs-fnat.ipvs.tcp_link",
+      "name": "exe.curl.ipvs-fnat.ipvs.tcp_link",
+      "type": "TCP-LINK"
+    },
+    {
+      "attrs": [
+        {
+          "key": "link_count",
+          "value": "1",
+          "vtype": "string"
+        },
+        {
+          "key": "rx_bytes",
+          "value": "1598608",
+          "vtype": "string"
+        },
+        {
+          "key": "tx_bytes",
+          "value": "113",
+          "vtype": "string"
+        },
+        {
+          "key": "packets_out",
+          "value": "327",
+          "vtype": "string"
+        },
+        {
+          "key": "packets_in",
+          "value": "366",
+          "vtype": "string"
+        },
+        {
+          "key": "retran_packets",
+          "value": "0",
+          "vtype": "string"
+        },
+        {
+          "key": "lost_packets",
+          "value": "0",
+          "vtype": "string"
+        },
+        {
+          "key": "rtt",
+          "value": "114",
+          "vtype": "string"
+        }
+      ],
+      "dependeditems": {
+        "calls": {
+          "id": "nginx1.nginx",
+          "type": "PROCESS"
+        }
+      },
+      "dependingitems": {
+        "calls": {
+          "id": "vlb-origin.nginx",
+          "type": "PROCESS"
+        }
+      },
+      "entityid": "nginx1.nginx.vlb-origin.nginx.tcp_link",
+      "name": "nginx1.nginx.vlb-origin.nginx.tcp_link",
+      "type": "TCP-LINK"
+    },
+    {
+      "attrs": [
+        {
+          "key": "link_count",
+          "value": "1",
+          "vtype": "string"
+        },
+        {
+          "key": "rx_bytes",
+          "value": "0",
+          "vtype": "string"
+        },
+        {
+          "key": "tx_bytes",
+          "value": "1537",
+          "vtype": "string"
+        },
+        {
+          "key": "packets_out",
+          "value": "3",
+          "vtype": "string"
+        },
+        {
+          "key": "packets_in",
+          "value": "1",
+          "vtype": "string"
+        },
+        {
+          "key": "retran_packets",
+          "value": "0",
+          "vtype": "string"
+        },
+        {
+          "key": "lost_packets",
+          "value": "0",
+          "vtype": "string"
+        },
+        {
+          "key": "rtt",
+          "value": "247",
+          "vtype": "string"
+        }
+      ],
+      "dependeditems": {
+        "calls": {
+          "id": "ipvs-fnat.ipvs",
+          "type": "PROCESS"
+        }
+      },
+      "dependingitems": {
+        "calls": {
+          "id": "vlb-origin.nginx",
+          "type": "PROCESS"
+        }
+      },
+      "entityid": "ipvs-fnat.ipvs.vlb-origin.nginx.tcp_link",
+      "name": "ipvs-fnat.ipvs.vlb-origin.nginx.tcp_link",
+      "type": "TCP-LINK"
+    },
+    {
+      "attrs": [
+        {
+          "key": "link_count",
+          "value": "1",
+          "vtype": "string"
+        },
+        {
+          "key": "rx_bytes",
+          "value": "0",
+          "vtype": "string"
+        },
+        {
+          "key": "tx_bytes",
+          "value": "90",
+          "vtype": "string"
+        },
+        {
+          "key": "packets_out",
+          "value": "3",
+          "vtype": "string"
+        },
+        {
+          "key": "packets_in",
+          "value": "0",
+          "vtype": "string"
+        },
+        {
+          "key": "retran_packets",
+          "value": "0",
+          "vtype": "string"
+        },
+        {
+          "key": "lost_packets",
+          "value": "0",
+          "vtype": "string"
+        },
+        {
+          "key": "rtt",
+          "value": "220",
+          "vtype": "string"
+        }
+      ],
+      "dependeditems": {
+        "calls": {
+          "id": "ipvs-fnat.ipvs",
+          "type": "PROCESS"
+        }
+      },
+      "dependingitems": {
+        "calls": {
+          "id": "haproxy1.haproxy",
+          "type": "PROCESS"
+        }
+      },
+      "entityid": "ipvs-fnat.ipvs.haproxy1.haproxy.tcp_link",
+      "name": "ipvs-fnat.ipvs.haproxy1.haproxy.tcp_link",
+      "type": "TCP-LINK"
+    },
+    {
+      "attrs": [
+        {
+          "key": "link_count",
+          "value": "1",
+          "vtype": "string"
+        },
+        {
+          "key": "rx_bytes",
+          "value": "0",
+          "vtype": "string"
+        },
+        {
+          "key": "tx_bytes",
+          "value": "93",
+          "vtype": "string"
+        },
+        {
+          "key": "packets_out",
+          "value": "3",
+          "vtype": "string"
+        },
+        {
+          "key": "packets_in",
+          "value": "1",
+          "vtype": "string"
+        },
+        {
+          "key": "retran_packets",
+          "value": "0",
+          "vtype": "string"
+        },
+        {
+          "key": "lost_packets",
+          "value": "0",
+          "vtype": "string"
+        },
+        {
+          "key": "rtt",
+          "value": "266",
+          "vtype": "string"
+        }
+      ],
+      "dependeditems": {
+        "calls": {
+          "id": "ipvs-fnat.ipvs",
+          "type": "PROCESS"
+        }
+      },
+      "dependingitems": {
+        "calls": {
+          "id": "nginx1.nginx",
+          "type": "PROCESS"
+        }
+      },
+      "entityid": "ipvs-fnat.ipvs.nginx1.nginx.tcp_link",
+      "name": "ipvs-fnat.ipvs.nginx1.nginx.tcp_link",
+      "type": "TCP-LINK"
+    },
+    {
+      "attrs": [
+        {
+          "key": "example",
+          "value": "0xabcd",
+          "vtype": "int"
+        }
+      ],
+      "dependeditems": {
+        "calls": [],
+        "runOns": []
+      },
+      "dependingitems": {
+        "calls": [
+          {
+            "id": "exe.ffmpeg.ipvs-fnat.ipvs.tcp_link",
+            "type": "TCP_LINK"
+          },
+          {
+            "id": "exe.ffmpeg.ipvs-fnat.ipvs.tcp_link",
+            "type": "TCP_LINK"
+          }
+        ],
+        "runOns": {
+          "id": "exe",
+          "type": "VM"
+        }
+      },
+      "entityid": "exe.ffmpeg",
+      "name": "exe.ffmpeg",
+      "type": "PROCESS"
+    },
+    {
+      "attrs": [
+        {
+          "key": "example",
+          "value": "0xabcd",
+          "vtype": "int"
+        }
+      ],
+      "dependeditems": {
+        "calls": [
+          {
+            "id": "exe.curl.ipvs-fnat.ipvs.tcp_link",
+            "type": "TCP_LINK"
+          },
+          {
+            "id": "exe.ffmpeg.ipvs-fnat.ipvs.tcp_link",
+            "type": "TCP_LINK"
+          },
+          {
+            "id": "exe.curl.ipvs-fnat.ipvs.tcp_link",
+            "type": "TCP_LINK"
+          },
+          {
+            "id": "exe.ffmpeg.ipvs-fnat.ipvs.tcp_link",
+            "type": "TCP_LINK"
+          }
+        ],
+        "runOns": []
+      },
+      "dependingitems": {
+        "calls": [
+          {
+            "id": "ipvs-fnat.ipvs.nginx1.nginx.tcp_link",
+            "type": "TCP_LINK"
+          },
+          {
+            "id": "ipvs-fnat.ipvs.haproxy1.haproxy.tcp_link",
+            "type": "TCP_LINK"
+          },
+          {
+            "id": "ipvs-fnat.ipvs.vlb-origin.nginx.tcp_link",
+            "type": "TCP_LINK"
+          }
+        ],
+        "runOns": {
+          "id": "ipvs-fnat",
+          "type": "VM"
+        }
+      },
+      "entityid": "ipvs-fnat.ipvs",
+      "name": "ipvs-fnat.ipvs",
+      "type": "PROCESS"
+    },
+    {
+      "attrs": [
+        {
+          "key": "example",
+          "value": "0xabcd",
+          "vtype": "int"
+        }
+      ],
+      "dependeditems": {
+        "calls": [
+          {
+            "id": "ipvs-fnat.ipvs.haproxy1.haproxy.tcp_link",
+            "type": "TCP_LINK"
+          }
+        ],
+        "runOns": []
+      },
+      "dependingitems": {
+        "calls": [
+          {
+            "id": "haproxy1.haproxy.vlb-origin.nginx.tcp_link",
+            "type": "TCP_LINK"
+          }
+        ],
+        "runOns": {
+          "id": "haproxy1",
+          "type": "VM"
+        }
+      },
+      "entityid": "haproxy1.haproxy",
+      "name": "haproxy1.haproxy",
+      "type": "PROCESS"
+    },
+    {
+      "attrs": [
+        {
+          "key": "example",
+          "value": "0xabcd",
+          "vtype": "int"
+        }
+      ],
+      "dependeditems": {
+        "calls": [
+          {
+            "id": "ipvs-fnat.ipvs.vlb-origin.nginx.tcp_link",
+            "type": "TCP_LINK"
+          },
+          {
+            "id": "nginx1.nginx.vlb-origin.nginx.tcp_link",
+            "type": "TCP_LINK"
+          },
+          {
+            "id": "haproxy1.haproxy.vlb-origin.nginx.tcp_link",
+            "type": "TCP_LINK"
+          }
+        ],
+        "runOns": []
+      },
+      "dependingitems": {
+        "calls": [],
+        "runOns": {
+          "id": "vlb-origin",
+          "type": "VM"
+        }
+      },
+      "entityid": "vlb-origin.nginx",
+      "name": "vlb-origin.nginx",
+      "type": "PROCESS"
+    },
+    {
+      "attrs": [
+        {
+          "key": "example",
+          "value": "0xabcd",
+          "vtype": "int"
+        }
+      ],
+      "dependeditems": {
+        "calls": [],
+        "runOns": []
+      },
+      "dependingitems": {
+        "calls": [
+          {
+            "id": "exe.curl.ipvs-fnat.ipvs.tcp_link",
+            "type": "TCP_LINK"
+          },
+          {
+            "id": "exe.curl.ipvs-fnat.ipvs.tcp_link",
+            "type": "TCP_LINK"
+          }
+        ],
+        "runOns": {
+          "id": "exe",
+          "type": "VM"
+        }
+      },
+      "entityid": "exe.curl",
+      "name": "exe.curl",
+      "type": "PROCESS"
+    },
+    {
+      "attrs": [
+        {
+          "key": "example",
+          "value": "0xabcd",
+          "vtype": "int"
+        }
+      ],
+      "dependeditems": {
+        "calls": [
+          {
+            "id": "ipvs-fnat.ipvs.nginx1.nginx.tcp_link",
+            "type": "TCP_LINK"
+          }
+        ],
+        "runOns": [
+          {
+            "id": "ipvs-fnat.ipvs.vlb-origin.nginx.nginx_link",
+            "type": "NGINX-LINK"
+          }
+        ]
+      },
+      "dependingitems": {
+        "calls": [
+          {
+            "id": "nginx1.nginx.vlb-origin.nginx.tcp_link",
+            "type": "TCP_LINK"
+          }
+        ],
+        "runOns": {
+          "id": "nginx1",
+          "type": "VM"
+        }
+      },
+      "entityid": "nginx1.nginx",
+      "name": "nginx1.nginx",
+      "type": "PROCESS"
+    },
+    {
+      "dependeditems": {
+        "calls": {
+          "id": "ipvs-fnat.ipvs",
+          "type": "PROCESS"
+        }
+      },
+      "dependingitems": {
+        "calls": {
+          "id": "vlb-origin.nginx",
+          "type": "PROCESS"
+        },
+        "runOns": {
+          "id": "nginx1.nginx",
+          "type": "PROCESS"
+        }
+      },
+      "entityid": "ipvs-fnat.ipvs.vlb-origin.nginx.nginx_link",
+      "name": "ipvs-fnat.ipvs.vlb-origin.nginx.nginx_link",
+      "type": "NGINX-LINK"
+    }
+  ],
+  "msg": "Successful",
+  "timestamp": 12345678
+}
+
+
 export const treeTestData = {
   "label":"重启类故障树（简）",
   "node_id": 'n1',

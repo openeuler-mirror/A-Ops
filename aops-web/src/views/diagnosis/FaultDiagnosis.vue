@@ -116,7 +116,7 @@
     </a-card>
     <a-drawer
       title="诊断报告列表"
-      :width="520"
+      :width="720"
       :visible="reportListVisible"
       @close="handleReportListClose"
     >

@@ -87,7 +87,7 @@ export default {
       }).then(function (res) {
         _this.faultTree = res.trees[0] || {}
         if (!_this.faultTree.tree_content || !_this.faultTree.tree_content['node name']) {
-          _this.$message.error('数据错误')
+          console.warn('no data for tree')
         }
       }).catch(function (err) {
         _this.$message.error(err.response.data.msg)

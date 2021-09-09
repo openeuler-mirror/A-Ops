@@ -55,5 +55,6 @@ export default {
     'menu.configuration.transcation-domain-configurations': '业务域配置管理',
     'menu.configuration.host-configurations': '主机配置管理',
     'menu.task': '部署管理',
-    'menu.task.task-management': '部署任务'
+    'menu.task.task-management': '部署任务',
+    'menu.networkTopo': '架构感知'
 }

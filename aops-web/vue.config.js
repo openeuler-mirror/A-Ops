@@ -126,6 +126,14 @@ const vueConfig = {
           '^/api': ''
         }
       },
+      '/api/gala-spider': {
+        target: 'http://123.60.114.22:11115',
+        ws: false,
+        changeOrigin: true,
+        pathRewrite: {
+          '^/api': ''
+        }
+      },
       '/api': {
         target: 'http://123.60.114.22:11111',
         ws: false,

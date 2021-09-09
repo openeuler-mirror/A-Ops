@@ -50,7 +50,7 @@
     </a-card>
     <a-card :bordered="false" style="margin-top: 12px">
       <div class="ant-pro-pages-list-applications-filterCardList">
-        <a-list :loading="templateIsLoading" :data-source="currentTemplateData" :grid="{ gutter: 24, xl: 3, lg: 3, md: 3, sm: 2, xs: 1 }" >
+        <a-list :loading="templateIsLoading" :data-source="templateData.slice(0,showIndex)" :grid="{ gutter: 24, xl: 3, lg: 3, md: 3, sm: 2, xs: 1 }" >
           <a-list-item slot="renderItem" slot-scope="item">
             <template v-if="!item.template_name">
               <drawer-view title="新增playbook模板">
@@ -111,7 +111,7 @@
           </a-list-item>
         </a-list>
       </div>
-      <div style="text-align: center"><a @click="getMoreTemplate">加载更多</a></div>
+      <div style="text-align: center" v-if="templateData.length>showIndex"><a @click="showIndex = showIndex+6">加载更多</a></div>
     </a-card>
   </my-page-header-wrapper>
 </template>
@@ -195,8 +195,7 @@
         selectedRows: [],
         tableIsLoading: false,
         templateData: [],
-        currentTemplateData: [],
-        currentTemplateData_index: 0,
+        showIndex: 6,
         templateIsLoading: true
       }
     },
@@ -324,39 +323,13 @@
         this.templateIsLoading = true
         getTemplateList({})
           .then(function (res) {
-          _this.templateData = res.template_infos
-          _this.currentTemplateData = [{}]
-          if (_this.templateData.length > 4) {
-            for (let i = 0; i < 5; i++) {
-              _this.currentTemplateData.push(_this.templateData[i])
-            }
-            _this.currentTemplateData_index = 5
-          } else {
-            _this.currentTemplateData.push(..._this.templateData)
-            _this.currentTemplateData_index = _this.templateData.length
-          }
-          _this.templateIsLoading = false
-        }).catch(function (err) {
+            _this.templateData = [{}]
+            _this.templateData.push(...res.template_infos)
+          }).catch(function (err) {
           _this.$message.error(err.response.data.msg)
-          _this.templateIsLoading = false
         }).finally(function () {
           _this.templateIsLoading = false
         })
-      },
-      // 加载更多playbook模板
-      getMoreTemplate () {
-        const _this = this
-        if (_this.templateData.length > _this.currentTemplateData_index + 6) {
-          for (let i = _this.currentTemplateData_index; i < _this.currentTemplateData_index + 6; i++) {
-            _this.currentTemplateData.push(_this.templateData[i])
-          }
-          _this.currentTemplateData_index = _this.currentTemplateData_index + 6
-        } else {
-          for (let i = _this.currentTemplateData_index; i < _this.templateData.length; i++) {
-            _this.currentTemplateData.push(_this.templateData[i])
-            _this.currentTemplateData_index = _this.templateData.length
-          }
-        }
       },
       // 删除playbook模板
       deleteTemplate (templateName) {
@@ -380,15 +353,16 @@
 <style lang="less" scoped>
   .avatar-div {
     float: left;
-    width: 60px;
+    width: 80px;
   }
   .avatar-img {
     height: 60px;
-    width: 60px
+    width: 80px;
   }
   .content-div {
-    float: left;margin-left: 10px;
-    width: 77%;
+    float: left;
+    margin-left: 10px;
+    width: calc(100% - 90px);
   }
   .title {
     font-weight: 600;
@@ -419,6 +393,6 @@
     background-color: #fff;
     border-radius: 2px;
     width: 100%;
-    height: 158px;
+    height: 157px;
   }
 </style>

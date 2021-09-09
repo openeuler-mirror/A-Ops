@@ -1,59 +1,57 @@
 <template>
   <my-page-header-wrapper>
-    <div style="width: 100%;height: 200px">
-      <div style="width: 250px;height:100%;float: left;">
-        <div style="width: 100%;height: calc(50% - 5px);background: #fff">
-          <div style="height: 100%;width: 85px;float: left;position:relative;">
-            <a-avatar :size="64" icon="database" style="background: #1890ee;position: absolute;top: 50%;left: 50%;margin-top: -32px;margin-left: -32px"/>
+    <a-row class="topBox">
+      <a-col span="12" :xl="5" class="topItem">
+        <div style="margin-right:10px;height: calc(50% - 6px);background: #fff;padding: 15px 10px;">
+          <div style="height: 100%;width:calc(40% - 5px);margin-right: 5px; float: left;position:relative;overflow: hidden">
+            <router-link :to="{ path: '/assests/hosts-management' }">
+              <a-avatar :size="64" icon="database" style="background: #1890ee;position: absolute;top: 50%;left: 50%;margin-top: -32px;margin-left: -32px"/>
+            </router-link>
           </div>
-          <div style="height: 100%;width: calc(100% - 100px);float: left;position:relative;">
+          <div style="height: 100%;width:60%;float: left;position:relative;">
             <div class="content">
-              <div style="color: #999;">主机数量<a-icon type="question-circle" style="float: right"/></div>
-              <div style="color: #333;font-size: 32px;line-height: 1em">{{ hostCount.toString().replace(/(\d)(?=(?:\d{3})+$)/g, '$1,') }}</div>
+              <div style="color: #999;overflow: hidden">主机数量<a-icon type="question-circle" style="float: right"/></div>
+              <div style="color: #333;font-size: 32px;line-height: 1em;overflow: hidden">{{ hostCount.toString().replace(/(\d)(?=(?:\d{3})+$)/g, '$1,') }}</div>
             </div>
           </div>
         </div>
-        <div style="width: 100%;height: calc(50% - 5px);background: #fff;margin-top: 10px">
-          <div style="height: 100%;width: 85px;float: left;position:relative;">
-            <a-avatar :size="64" icon="database" style="background: #1890ee;position: absolute;top: 50%;left: 50%;margin-top: -32px;margin-left: -32px"/>
+        <div style="margin: 12px 10px 0 0;height: calc(50% - 6px);background: #fff;padding: 15px 10px;">
+          <div style="height: 100%;width:calc(40% - 5px);margin-right: 5px; float: left;position:relative;overflow: hidden">
+            <router-link :to="{ path: '/diagnosis/abnormal-check' }">
+              <a-avatar :size="64" icon="database" style="background: #1890ee;position: absolute;top: 50%;left: 50%;margin-top: -32px;margin-left: -32px"/>
+            </router-link>
           </div>
-          <div style="height: 100%;width: calc(100% - 100px);float: left;position:relative;">
+          <div style="height: 100%;width:60%;float: left;position:relative;">
             <div class="content">
-              <div style="color: #999;">异常检测规则数量<a-icon type="question-circle" style="float: right"/></div>
-              <div style="color: #333;font-size: 32px;line-height: 1em">{{ ruleCount.toString().replace(/(\d)(?=(?:\d{3})+$)/g, '$1,') }}</div>
+              <div style="color: #999;overflow: hidden">异常检测规则数量<a-icon type="question-circle" style="float: right"/></div>
+              <div style="color: #333;font-size: 32px;line-height: 1em;overflow: hidden">{{ ruleCount.toString().replace(/(\d)(?=(?:\d{3})+$)/g, '$1,') }}</div>
             </div>
           </div>
         </div>
-      </div>
-      <div style="width: 250px;height:100%;float: left;background: #fff;margin-left: 10px;padding: 15px 20px;">
-        <div style="color: #999;">业务域同步率<a-icon type="question-circle" style="float: right"/></div>
-        <div style="font-size: 32px;padding-left: 15px;line-height: 45px">78%</div>
-        <div><a-progress :percent="78" :show-info="false" :strokeWidth="12" :strokeColor="'#1890ee'"/></div>
-        <div style="border-top: 1px solid #ccc;margin-top: 15px;color: #999;padding-top: 5px">未同步业务域</div>
-        <div style="font-size: 32px;padding-left: 15px;line-height: 45px;color: #FA5151">{{ '1345'.toString().replace(/(\d)(?=(?:\d{3})+$)/g, '$1,') }}</div>
-      </div>
-      <drawer-view title="异常检测结果统计">
-        <template slot="click">
-          <div class="showAllResult">查看全部结果</div>
-        </template>
-        <template slot="drawerView">
-          <get-check-result-drawer></get-check-result-drawer>
-        </template>
-      </drawer-view>
-      <div style="width: calc(100% - 555px);height: 100%;float: right;background: #fff;padding: 5px;padding-top: 10px">
-        <a-row style="width: 100%;height: 100%">
+      </a-col>
+      <a-col span="12" :xl="5" class="topItem">
+        <div style="margin: 0 10px;background: #fff;padding: 15px 20px;height: 100%">
+          <div style="color: #999;">业务域同步率<a-icon type="question-circle" style="float: right"/></div>
+          <div style="font-size: 32px;padding-left: 15px;line-height: 45px">78%</div>
+          <div><a-progress :percent="78" :show-info="false" :strokeWidth="12" :strokeColor="'#1890ee'"/></div>
+          <div style="border-top: 1px solid #ccc;margin-top: 15px;color: #999;padding-top: 5px">未同步业务域</div>
+          <div style="font-size: 32px;padding-left: 15px;line-height: 45px;color: #FA5151">{{ '1345'.toString().replace(/(\d)(?=(?:\d{3})+$)/g, '$1,') }}</div>
+        </div>
+      </a-col>
+      <a-col span="24" :xl="14" class="topItem">
+        <a-row style="width: calc(100% - 45px);height: 100%;padding:10px 5px 5px;margin-left: 10px;background: #fff; float: left">
           <a-col style="height: 100%;" :span="12">
             <div style="width: 100%;height: 40%;">
               <div style="padding-left: 20px;font-size: 18px;line-height: 40px;height: calc(100% - 30px);color: #000;font-weight: bold">异常检测结果统计</div>
               <a-row style="color: #999;line-height: 30px">
-                <a-col :span="3" style="text-align: center">排名</a-col>
-                <a-col :span="15">主机名IP地址</a-col>
+                <a-col :span="4" style="text-align: center">排名</a-col>
+                <a-col :span="14">主机名IP地址</a-col>
                 <a-col :span="6">异常数</a-col>
               </a-row>
             </div>
             <a-row class="myRow" v-for="(item,index) in resultCountList.slice(0, 3)" :key="index">
-              <a-col :span="3"><a-tag style="background: #1890ee;color: #fff;border-color:#1890ee">{{ index+1 }}</a-tag></a-col>
-              <a-col :span="15">
+              <a-col :span="4"><a-tag style="background: #1890ee;color: #fff;border-color:#1890ee">{{ index+1 }}</a-tag></a-col>
+              <a-col :span="14">
                 <p style="margin: 0">{{ item.hostName }}</p>
                 <p style="margin: 0">{{ item.ip }}</p>
               </a-col>
@@ -62,8 +60,8 @@
           </a-col>
           <a-col style="float: left;height: 100%;" :span="12">
             <a-row class="myRow" v-for="(item,index) in resultCountList.slice(3, 8)" :key="index">
-              <a-col :span="3"><a-tag>{{ index+4 }}</a-tag></a-col>
-              <a-col :span="15">
+              <a-col :span="4"><a-tag>{{ index+4 }}</a-tag></a-col>
+              <a-col :span="14">
                 <p style="margin: 0">{{ item.hostName }}</p>
                 <p style="margin: 0">{{ item.ip }}</p>
               </a-col>
@@ -71,9 +69,17 @@
             </a-row>
           </a-col>
         </a-row>
-      </div>
-    </div>
-    <a-card style="width: 100%;float: left;margin-top: 10px">
+        <drawer-view title="异常检测结果统计">
+          <template slot="click">
+            <div class="showAllResult">查看全部结果</div>
+          </template>
+          <template slot="drawerView">
+            <get-check-result-drawer></get-check-result-drawer>
+          </template>
+        </drawer-view>
+      </a-col>
+    </a-row>
+    <a-card style="width: 100%;margin-top: 10px">
       <div style="font-weight: bold;font-size: 18px;margin-top: -12px;margin-bottom: 10px">异常检测记录</div>
       <a-table
         rowKey="host_id"
@@ -212,11 +218,17 @@ const columns = [
 </script>
 
 <style lang="less" scoped>
-.content{position: absolute;width: 100%;height: 60px;top: 50%;margin-top: -30px;padding-left: 5px}
+.topBox{display:inline-block;width: 100%}
+.topItem{height:200px;float: left;margin-bottom: 10px;}
+.topItem:nth-child(1){min-width: 170px;}
+.topItem:nth-child(2){min-width: 170px;}
+.topItem:nth-child(3){min-width: 490px;}
+.showAllResult{width: 35px;height:200px;float: right;background:#1890ee;border: 1px solid #fff;color: #fff;padding: 36px 5px;text-align: center;cursor: pointer}
+.showAllResult:hover{background: #0075d0;}
+
+.content{position: absolute;width: 100%;height: 60px;top: 50%;margin-top: -30px;}
 .myBtn{width: calc(50% - 1px);height: 100%;background:#1890ee;text-align: center;cursor: pointer}
 .myBtn:hover{background: #0075d0;}
-.showAllResult{width: 35px;height: 100%;background:#1890ee;float: right;border: 1px solid #fff;color: #fff;padding: 15px 5px;text-align: center;cursor: pointer}
-.showAllResult:hover{background: #0075d0;}
 .myRow{height: calc(20% - 5px);width: 100%;margin-bottom:5px}
 .myRow>.ant-col:nth-child(1){position: relative;height: 100%}
 .myRow>.ant-col:nth-child(1) .ant-tag{border-radius: 50%;padding: 0 1px 0 0;width: 24px;height: 24px;line-height: 22px;text-align: center;position: absolute;top: 50%;left: 50%;margin-top: -12px;margin-left: -12px}

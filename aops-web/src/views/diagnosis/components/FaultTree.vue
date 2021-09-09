@@ -7,7 +7,6 @@
 </template>
 
 <script>
-/* eslint-disable */
 import G6 from '@antv/g6'
 import { PageHeaderWrapper } from '@ant-design-vue/pro-layout'
 import { treeDataProcesser } from '../utils/treeDataProcesser'
@@ -26,7 +25,7 @@ export default {
   props: {
     treeData: {
       type: Object,
-      defualt: {}
+      default: () => {}
     },
     treeDataLoading: {
       type: Boolean,
@@ -44,7 +43,7 @@ export default {
         this.tree.render()
         this.tree.fitView()
       }
- 
+
       this.tree.on('collapse-text:click', function (e) {
         _this.handleCollapse(e)
       })
@@ -55,22 +54,17 @@ export default {
   },
   methods: {
     getColor (cfg) {
-      if (cfg.id === '0') {
-        return '#3265F2'
-      }
-      if (cfg.value === true) {
-        return '#f00'
-      }
+      // return color depends on params in cfg
       return '#8cc33e'
     },
     handleCollapse (e) {
-      const target = e.target;
-      const id = target.get('modelId');
-      const item = this.tree.findById(id);
-      const nodeModel = item.getModel();
-      nodeModel.collapsed = !nodeModel.collapsed;
-      this.tree.layout();
-      this.tree.setItemState(item, 'collapse', nodeModel.collapsed);
+      const target = e.target
+      const id = target.get('modelId')
+      const item = this.tree.findById(id)
+      const nodeModel = item.getModel()
+      nodeModel.collapsed = !nodeModel.collapsed
+      this.tree.layout()
+      this.tree.setItemState(item, 'collapse', nodeModel.collapsed)
     }
   },
   mounted: function () {
@@ -78,7 +72,7 @@ export default {
       draw: (cfg, group) => {
         const rootNode = cfg.id === '0'
         const fontSize = 16
-        const width = G6.Util.getTextSize(cfg.label, fontSize)[0];
+        const width = G6.Util.getTextSize(cfg.label, fontSize)[0]
 
         if (cfg.children && cfg.children.length) {
           let controlX = width * 2
@@ -99,11 +93,11 @@ export default {
               height: 16,
               stroke: 'rgba(0, 0, 0, 0.25)',
               cursor: 'pointer',
-              fill: '#fff',
+              fill: '#fff'
             },
             name: 'collapse-back',
-            modelId: cfg.id,
-          });
+            modelId: cfg.id
+          })
 
           // collpase text
           group.addShape('text', {
@@ -115,12 +109,12 @@ export default {
               text: cfg.collapsed ? '+' : '-',
               fontSize,
               cursor: 'pointer',
-              fill: 'rgba(0, 0, 0, 0.25)',
+              fill: 'rgba(0, 0, 0, 0.25)'
             },
             name: 'collapse-text',
-            modelId: cfg.id,
-          });
-        }  
+            modelId: cfg.id
+          })
+        }
 
         if (rootNode) {
           const rect = group.addShape('rect', {
@@ -135,26 +129,23 @@ export default {
               radius: 4
             },
             name: 'rect-shape',
-            draggable: true,
-          });
-          const label = group.addShape('text', {
+            draggable: true
+          })
+          group.addShape('text', {
             attrs: {
               text: cfg.label,
               fill: '#fff',
               fontSize: 24,
               textBaseline: 'middle',
               x: width / 4 + 8,
-              y: fontSize * 2,
+              y: fontSize * 2
             },
             cursor: 'pointer',
             name: 'label-shape',
-            draggable: true,
-          });
-          
-          // const labelBBox = label.getBBox();
-          // const bboxWidth = label.getBBox().width * 1.5;
-          // rect.attr({ width: bboxWidth });
-          return rect;
+            draggable: true
+          })
+
+          return rect
         } else {
           const rect = group.addShape('rect', {
             attrs: {
@@ -165,11 +156,11 @@ export default {
               height: fontSize * 3,
               radius: 4,
               lineWidth: 0,
-              opacity: 1,
+              opacity: 1
             },
             name: 'rect-shape',
-            draggable: true,
-          });
+            draggable: true
+          })
 
           const label = group.addShape('text', {
             attrs: {
@@ -177,15 +168,15 @@ export default {
               fill: '#000',
               fontSize: fontSize * 1.5,
               x: width / 4 - 4,
-              y: fontSize * 2 + 4,
+              y: fontSize * 2 + 4
             },
             cursor: 'pointer',
             name: 'label-shape',
-            draggable: true,
-          });
+            draggable: true
+          })
 
           // const labelBBox = label.getBBox();
-          const bboxWidth = label.getBBox().width;
+          const bboxWidth = label.getBBox().width
           // rect.attr({ width: bboxWidth });
 
           group.addShape('path', {
@@ -195,28 +186,28 @@ export default {
               stroke: '#ccc',
               path: [
                 ['M', 0, 0],
-                ['L', bboxWidth, 0],
-              ],
+                ['L', bboxWidth, 0]
+              ]
             },
             name: 'path-shape',
-            draggable: true,
-          });
-          return rect;
+            draggable: true
+          })
+          return rect
         }
       },
-      setState(name, value, item) {
+      setState (name, value, item) {
         if (name === 'collapse') {
-          const group = item.getContainer();
-          const collapseText = group.find((e) => e.get('name') === 'collapse-text');
+          const group = item.getContainer()
+          const collapseText = group.find((e) => e.get('name') === 'collapse-text')
           if (collapseText) {
             if (!value) {
               collapseText.attr({
-                text: '-',
-              });
+                text: '-'
+              })
             } else {
               collapseText.attr({
-                text: '+',
-              });
+                text: '+'
+              })
             }
           }
         }
@@ -225,16 +216,30 @@ export default {
         if (type.id === '0') {
           return [
           [0, 0.5],
-          [1, 0.5],
-        ];
+          [1, 0.5]
+        ]
         } else {
           return [
           [0, 1],
-          [1, 1],
-        ];
+          [1, 1]
+        ]
         }
+      }
+    })
+
+    const tooltip = new G6.Tooltip({
+      offsetX: 10,
+      offsetY: 10,
+      itemTypes: ['node'],
+      getContent: (e) => {
+        const model = e.item.getModel()
+        return model.description || ''
       },
-    });
+      shouldBegin: (e) => {
+        const model = e.item.getModel()
+        return !!model.description
+      }
+    })
 
     this.tree = new G6.TreeGraph({
       container: 'graph-container',
@@ -244,7 +249,7 @@ export default {
         type: 'compactBox',
         direction: 'LR',
         getWidth: (node) => {
-          return G6.Util.getTextSize(node.label, 16)[0] *3
+          return G6.Util.getTextSize(node.label, 16)[0] * 3
         },
         getVGap: () => {
           return 20
@@ -266,12 +271,10 @@ export default {
       minZoom: 0.5,
       modes: {
         default: [
-          // {
-          //   type: 'collapse-expand',
-          // }
           'drag-canvas', 'zoom-canvas'
         ]
-      }
+      },
+      plugins: [tooltip]
     })
   }
 }
