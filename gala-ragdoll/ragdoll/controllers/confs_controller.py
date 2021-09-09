@@ -332,6 +332,11 @@ def query_real_confs(body=None):  # noqa: E501
         base_rsp = BaseResponse(codeNum, codeString)
         return base_rsp, codeNum
 
+    if not reps or len(reps) == 0:
+        codeNum = 500
+        codeString = "Failed to obtain the actual configuration, please check the host info for conf/collect."
+        base_rsp = BaseResponse(codeNum, codeString)
+        return base_rsp, codeNum
     success_lists = {}
     failed_lists = {}
     for d_res in reps:

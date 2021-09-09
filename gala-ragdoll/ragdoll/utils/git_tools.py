@@ -151,12 +151,20 @@ class GitTools(object):
         first_message = gitLogMessageList[count - 1]
         first_message.post_value = Format.get_file_content_by_read(path)
 
-        # git check to the first message
-        shell = ['git checkout {}'.format(gitLogMessageList[0].change_id)]
-        output = self.run_shell_return_output(shell)
         print("################# gitMessage end ################")
         os.chdir(cwdDir)
         return gitLogMessageList
+
+    def gitCheckToHead(self):
+        """
+        desc: git checkout to the HEAD in this git.
+        """
+        cwdDir = os.getcwd()
+        os.chdir(self._target_dir)
+        cmd = ['git checkout master']
+        output = self.run_shell_return_code(cmd)
+        os.chdir(cwdDir)
+        return output
 
     def getLogMessageByPath(self, confPath):
         """
@@ -166,5 +174,5 @@ class GitTools(object):
         """
         logMessage = self.gitLog(confPath)
         gitMessage = self.makeGitMessage(confPath, logMessage.decode('utf-8'))
-
+        checoutResult = self.gitCheckToHead()
         return gitMessage
