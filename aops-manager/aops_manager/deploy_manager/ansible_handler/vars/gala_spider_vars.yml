@@ -3,7 +3,7 @@
 log_path: "/var/log/spider"
 
 # install path
-install_dir: "/opt/spider/"
+install_dir: "/etc/spider"
 
 # kafka host
 gala_spider_kafka_host: 192.168.1.1

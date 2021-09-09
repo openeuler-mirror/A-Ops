@@ -5,4 +5,5 @@
   dnf:
     state: present
     name:
+      - gala-spider
       - python3-gala-spider
