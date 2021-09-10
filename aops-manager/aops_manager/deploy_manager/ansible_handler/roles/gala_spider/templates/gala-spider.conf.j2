@@ -1,6 +1,6 @@
 [global]
 data_source = "kafka"
-ui_source = "neo4j"
+ui_source = "xxx"
 
 [kafka]
 topic = gala_gopher
@@ -20,3 +20,10 @@ exclude_addr = {{ exclude_addr }}
 address = http://localhost:7474
 username = neo4j
 password =
+
+[spider]
+port = {{ gala_spider_port }}
+
+[temp_path]
+temp_tcp_file = "/var/tmp/spider/tcpline.txt"
+temp_other_file = "/var/tmp/spider/otherline.txt"
