@@ -111,6 +111,10 @@ const routeMap = {
         path: '/task/task-management'
       }
     }
+  },
+  networkTopo: {
+    title: 'menu.networkTopo',
+    path: '/networkTopo'
   }
 }
 
@@ -300,6 +304,12 @@ export const asyncRouterMap = [
             meta: { title: routeMap.task.children.TaskManagement.title, permission: ['task'] }
           }
         ]
+      },
+      {
+        path: routeMap.networkTopo.path,
+        name: 'networkTopo',
+        component: () => import('@/views/networkTopo/NetworkTopo'),
+        meta: { title: routeMap.networkTopo.title, icon: 'deployment-unit', permission: ['networkTopo'] }
       }
     ]
   },

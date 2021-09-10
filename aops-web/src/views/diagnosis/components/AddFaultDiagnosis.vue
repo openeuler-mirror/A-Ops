@@ -14,6 +14,7 @@
             :get-popup-container="trigger => trigger.parentNode"
             show-time
             format="YYYY-MM-DD HH:mm:ss"
+            :disabledDate="disabledDate"
           />
         </a-form-item>
       </a-col>
@@ -32,13 +33,20 @@
             :get-popup-container="trigger => trigger.parentNode"
             show-time
             format="YYYY-MM-DD HH:mm:ss"
+            :disabledDate="disabledDate"
           />
         </a-form-item>
       </a-col>
     </a-row>
     <a-row :gutter="16">
       <a-col :span="24">
-        <a-form-item label="区间间隔">
+        <a-form-item>
+          <span slot="label">
+            区间间隔&nbsp;
+            <a-tooltip title="区间间隔(单位：秒),只能输入数字!">
+              <a-icon type="question-circle-o" />
+            </a-tooltip>
+          </span>
           <a-input
             v-decorator="['interval', { rules: [{ required: true, message: '请输入区间间隔(单位：秒),只能输入数字!',pattern: new RegExp(/^[1-9]\d*$/, 'g') }] }]"
             placeholder="请输入区间间隔(单位：秒)"
@@ -143,6 +151,13 @@ Vue.use(Transfer)
               })
                 return
             }
+            if (!that.compareDate(values['startTime'].format('YYYY-MM-DD HH:mm:ss'), values['endTime'].format('YYYY-MM-DD HH:mm:ss'))) {
+              that.$notification.info({
+                message: '起始日期不能在结束日期之后',
+                description: '请重新选择日期'
+              })
+              return
+            }
             that.showSpin()
             const data = {}
             data.host_list = that.targetKeys
@@ -173,6 +188,18 @@ Vue.use(Transfer)
         const newStr = dateStr.replace(/-/g, '/')
         const date = new Date(newStr)
         return date.getTime() / 1000
+      },
+      compareDate (startTime, endTime) {
+        const start = new Date(startTime)
+        const end = new Date(endTime)
+        if (start.getTime() - end.getTime() < 0) {
+          return true
+        } else {
+          return false
+        }
+      },
+      disabledDate (current) {
+        return current && current > new Date()
       },
       handleChange (selectedItems) {
         this.selectedItems = selectedItems

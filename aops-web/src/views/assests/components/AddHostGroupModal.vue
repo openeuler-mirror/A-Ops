@@ -21,7 +21,7 @@
           <a-input
             :maxLength="50"
             placeholder="请输入"
-            v-decorator="['name', { rules: [{ required: true, message: '请输入名称' }] }]"
+            v-decorator="['name', { rules: [{ required: true, message: '请输入名称' }, { validator: checkHostGroupName }] }]"
           >
             <a-tooltip slot="suffix" title="最大长度50个字符，由数字、小写字母、英文下划线_组成。以小写字母开头，且结尾不能是英文下划线_">
               <a-icon type="info-circle" style="color: rgba(0,0,0,.45)" />
@@ -32,7 +32,7 @@
           <a-textarea
             placeholder="请输入描述"
             :rows="4"
-            v-decorator="['description', { rules: [{ required: true, message: '请输人描述' }] }]"
+            v-decorator="['description', { rules: [{ required: true, message: '请输人描述' }, { validator: checkHostGroupdesc }] }]"
           />
         </a-form-item>
       </a-form>
@@ -86,6 +86,42 @@ export default {
                     })
                 }
             })
+        },
+        checkHostGroupName (rule, value, cb) {
+          if (/[^0-9a-z_]/.test(value)) {
+            /* eslint-disable */
+            cb('名称应由数字、小写字母、英文下划线组成')
+            /* eslint-enable */
+            return
+          }
+          if (/^[^a-z]/.test(value)) {
+            /* eslint-disable */
+            cb('以小写字母开头，且结尾不能是英文下划线')
+            /* eslint-enable */
+            return
+          }
+          if (/[_]$/.test(value)) {
+            /* eslint-disable */
+            cb('以小写字母开头，且结尾不能是英文下划线')
+            /* eslint-enable */
+            return
+          }
+          cb()
+        },
+        checkHostGroupdesc (rule, value, cb) {
+          if (value.length > 256) {
+            /* eslint-disable */
+            cb('长度不超过256个字符')
+            /* eslint-enable */
+            return
+          }
+          if (/[<>]/.test(value)) {
+            /* eslint-disable */
+            cb('不能有><符号')
+            /* eslint-enable */
+            return
+          }
+          cb()
         }
     }
 }

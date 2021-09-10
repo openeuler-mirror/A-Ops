@@ -1,20 +1,20 @@
 
 <template>
   <my-page-header-wrapper>
-    <div style="width: 100%;height: 180px">
-      <div style="width: 220px;height:100%;float: left;background: #fff">
-        <div style="width: 100%;height: calc(100% - 35px)">
-          <div style="height: 100%;width: 75px;float: left;position:relative;">
+    <a-row class="topBox">
+      <a-col span="24" :xl="5" class="topItem">
+        <div style="height: calc(100% - 35px);padding: 15px 10px;">
+          <div style="height: 100%;width:calc(40% - 5px);margin-right: 5px; float: left;position:relative;overflow: hidden">
             <a-avatar :size="64" icon="database" style="background: #1890ee;position: absolute;top: 50%;left: 50%;margin-top: -32px;margin-left: -32px"/>
           </div>
-          <div style="height: 100%;width: calc(100% - 75px);float: left;position:relative;">
+          <div style="height: 100%;width:60%;float: left;position:relative;">
             <div class="content">
               <div style="color: #999;">异常检测规则数量</div>
               <div style="color: #333;font-size: 32px;line-height: 1em">{{ ruleCount.toString().replace(/(\d)(?=(?:\d{3})+$)/g, '$1,') }}</div>
             </div>
           </div>
         </div>
-        <div style="width: 100%;height: 34px;line-height: 32px;color: #fff;padding: 0 2px">
+        <div style="width: 100%;height: 34px;line-height: 32px;color: #fff;padding:0 2px">
           <drawer-view title="新建异常检测规则">
             <template slot="click">
               <div class="myBtn" style="float: left">
@@ -26,63 +26,63 @@
             </template>
           </drawer-view>
           <router-link :to="{ path: '/diagnosis/abnormal-check/rule-management' }" target="_blank">
-            <div class="myBtn" style="float: right;color: #fff">
+            <div class="myBtn" style="float: right;color: #fff;margin-right: 1px">
               <a-icon type="file-add" style="margin-right: 5px;"/>管理规则
             </div>
           </router-link>
         </div>
-      </div>
-      <drawer-view title="异常检测结果统计">
-        <template slot="click">
-          <div class="showAllResult">查看全部结果</div>
-        </template>
-        <template slot="drawerView">
-          <get-check-result-drawer></get-check-result-drawer>
-        </template>
-      </drawer-view>
-      <div style="width: calc(100% - 275px);height: 100%;float: right;background: #fff;padding: 5px;padding-top: 10px">
-        <a-row style="width: 100%;height: 100%">
+      </a-col>
+      <a-col span="24" :xl="19" class="topItem">
+        <a-row style="width: calc(100% - 45px);height: 100%;padding:10px 5px 5px;margin-left: 10px;background: #fff; float: left">
           <a-col style="height: 100%;" :span="8">
-            <div style="width: 100%;height: 50%;">
+            <div style="width: 100%;height: 40%;">
               <div style="padding-left: 20px;font-size: 18px;line-height: 40px;height: calc(100% - 30px);color: #000;font-weight: bold">异常检测结果统计</div>
               <a-row style="color: #999;line-height: 30px">
-                <a-col :span="3" style="text-align: center">排名</a-col>
-                <a-col :span="15">主机名IP地址</a-col>
-                <a-col :span="6">异常数</a-col>
+                <a-col :span="4" style="text-align: center" class="oneRow">排名</a-col>
+                <a-col :span="14" class="oneRow">主机名IP地址</a-col>
+                <a-col :span="6" class="oneRow">异常数</a-col>
               </a-row>
             </div>
             <a-row class="myRow" v-for="(item,index) in resultCountList.slice(0, 2)" :key="index">
-              <a-col :span="3"><a-tag style="background: #1890ee;color: #fff;border-color:#1890ee">{{ index+1 }}</a-tag></a-col>
-              <a-col :span="15">
+              <a-col :span="4"><a-tag style="background: #1890ee;color: #fff;border-color:#1890ee">{{ index+1 }}</a-tag></a-col>
+              <a-col :span="14">
                 <p style="margin: 0">{{ item.hostName }}</p>
                 <p style="margin: 0">{{ item.ip }}</p>
               </a-col>
-              <a-col :span="6" style="color: #ff58ab">{{ item.count }}项</a-col>
+              <a-col :span="6" style="color: #ff58ab" class="oneRow">{{ item.count }}项</a-col>
             </a-row>
           </a-col>
           <a-col style="float: left;height: 100%;" :span="8">
             <a-row class="myRow" v-for="(item,index) in resultCountList.slice(2, 6)" :key="index">
-              <a-col :span="3"><a-tag>{{ index+3 }}</a-tag></a-col>
-              <a-col :span="15">
+              <a-col :span="4"><a-tag>{{ index+3 }}</a-tag></a-col>
+              <a-col :span="14">
                 <p style="margin: 0">{{ item.hostName }}</p>
                 <p style="margin: 0">{{ item.ip }}</p>
               </a-col>
-              <a-col :span="6">{{ item.count }}项</a-col>
+              <a-col :span="6" class="oneRow">{{ item.count }}项</a-col>
             </a-row>
           </a-col>
           <a-col style="float: left;height: 100%;" :span="8">
-            <a-row class="myRow" v-for="(item,index) in resultCountList.slice(6, 10)" :key="index">
-              <a-col :span="3"><a-tag>{{ index+7 }}</a-tag></a-col>
-              <a-col :span="15">
+            <a-row class="myRow" v-for="(item,index) in resultCountList.slice(6, 9)" :key="index">
+              <a-col :span="4"><a-tag>{{ index+7 }}</a-tag></a-col>
+              <a-col :span="14">
                 <p style="margin: 0">{{ item.hostName }}</p>
                 <p style="margin: 0">{{ item.ip }}</p>
               </a-col>
-              <a-col :span="6">{{ item.count }}项</a-col>
+              <a-col :span="6" class="oneRow">{{ item.count }}项</a-col>
             </a-row>
           </a-col>
         </a-row>
-      </div>
-    </div>
+        <drawer-view title="异常检测结果统计">
+          <template slot="click">
+            <div class="showAllResult">查看全部结果</div>
+          </template>
+          <template slot="drawerView">
+            <get-check-result-drawer></get-check-result-drawer>
+          </template>
+        </drawer-view>
+      </a-col>
+    </a-row>
     <a-card style="width: 100%;float: left;margin-top: 10px">
       <div style="font-weight: bold;font-size: 18px;margin-top: -12px;margin-bottom: 10px">异常检测记录</div>
       <a-table
@@ -250,11 +250,24 @@ import CheckResultExpanded from '@/views/diagnosis/components/CheckResultExpande
 </script>
 
 <style lang="less" scoped>
+.topBox{display:inline-block;width: 100%}
+.topItem{height:170px;float: left;}
+.topItem:nth-child(1){min-width: 170px;background: #fff;}
+.topItem:nth-child(2){min-width: 670px;}
+.showAllResult{width: 35px;height:100%;float: right;background:#1890ee;border: 1px solid #fff;color: #fff;padding: 21px 5px;text-align: center;cursor: pointer}
+.showAllResult:hover{background: #0075d0;}
+.oneRow{
+  text-overflow: -o-ellipsis-lastline;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  display: -webkit-box;
+  -webkit-line-clamp: 1;
+  line-clamp: 1;
+  -webkit-box-orient: vertical;
+}
   .content{position: absolute;width: 100%;height: 60px;top: 50%;margin-top: -30px;padding-left: 5px}
-  .myBtn{width: calc(50% - 1px);height: 100%;background:#1890ee;text-align: center;cursor: pointer}
+  .myBtn{width: calc(50% - 2px);height: 100%;background:#1890ee;text-align: center;cursor: pointer}
   .myBtn:hover{background: #0075d0;}
-  .showAllResult{width: 35px;height: 100%;background:#1890ee;float: right;border: 1px solid #fff;color: #fff;padding: 15px 5px;text-align: center;cursor: pointer}
-  .showAllResult:hover{background: #0075d0;}
   .myRow{height: calc(25% - 5px);width: 100%;margin-bottom:5px}
   .myRow>.ant-col:nth-child(1){position: relative;height: 100%}
   .myRow>.ant-col:nth-child(1) .ant-tag{border-radius: 50%;padding: 0 1px 0 0;width: 24px;height: 24px;line-height: 22px;text-align: center;position: absolute;top: 50%;left: 50%;margin-top: -12px;margin-left: -12px}
