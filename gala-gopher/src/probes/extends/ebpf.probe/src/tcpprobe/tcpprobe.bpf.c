@@ -6,11 +6,11 @@
 
 char g_linsence[] SEC("license") = "GPL";
 
-#define _(P)                                   \
-    ({                                         \
-        typeof(P) val;                         \
-        bpf_probe_read(&val, sizeof(val), &P); \
-        val;                                   \
+#define _(P)                                   		  \
+    ({                                         		  \
+        typeof(P) val;                         		  \
+        bpf_probe_read_kernel(&val, sizeof(val), &P); \
+        val;                                   		  \
     })
 
 struct bpf_map_def SEC("maps") long_link_map = {

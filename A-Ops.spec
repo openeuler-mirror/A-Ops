@@ -224,7 +224,7 @@ popd
 
 #build for gala-gopher
 pushd gala-gopher
-sh build.sh package
+sh build.sh build
 popd
 
 #build for gala-ragdoll
