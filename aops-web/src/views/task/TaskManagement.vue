@@ -68,7 +68,7 @@
               <a-card>
                 <div>
                   <div class="avatar-div">
-                    <img class="avatar-img" src="~@/assets/huawei_logo_h.png">
+                    <img class="avatar-img" src="~@/assets/vertical-left.png">
                   </div>
                   <div class="content-div">
                     <div class="title">{{ item.template_name }}</div>

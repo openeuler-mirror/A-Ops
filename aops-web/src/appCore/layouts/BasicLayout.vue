@@ -12,7 +12,7 @@
   >
     <template v-slot:menuHeaderRender>
       <div>
-        <img src="~@/assets/huawei_logo_h.png" class="logo" alt="logo">
+        <img src="~@/assets/vertical-left.png" class="logo" alt="logo">
         <h1>{{ title }}</h1>
       </div>
     </template>

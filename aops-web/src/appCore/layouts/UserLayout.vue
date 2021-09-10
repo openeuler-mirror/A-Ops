@@ -11,8 +11,7 @@
             <div class="top">
               <div class="header">
                 <a href="/">
-                  <img src="~@/assets/huawei_logo_h.png" class="logo" alt="logo">
-                  <span class="title">A-OPS</span>
+                  <img src="~@/assets/vertical-left.png" class="logo" alt="logo">
                 </a>
               </div>
               <div class="desc">
@@ -69,17 +68,18 @@ export default {
     height: 100%;
     background: #EDEFF3;
     img {
+      width: 500px;
       display: block;
       position: relative;
       margin: auto;
       top: 50vh;
-      margin-top: -180px;
+      margin-top: -150px;
     }
   }
   .right-side {
     height: 100%;
     background: #fff;
-    padding-top:25vh;
+    padding-top: 18vh;
   }
 
   .container {
@@ -113,9 +113,6 @@ export default {
         text-align: center;
 
         .header {
-          height: 44px;
-          line-height: 44px;
-
           .badge {
             position: absolute;
             display: inline-block;
@@ -127,7 +124,7 @@ export default {
           }
 
           .logo {
-            height: 44px;
+            height: 80px;
             vertical-align: top;
             margin-right: 16px;
             border-style: none;

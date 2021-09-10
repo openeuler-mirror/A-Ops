@@ -2,14 +2,14 @@
   <my-page-header-wrapper>
     <a-card>
       <div style="height: 110px;position: relative;">
-        <img class="avatar-img" src="~@/assets/huawei_logo_h.png">
+        <img class="avatar-img" src="~@/assets/vertical-left.png">
         <div class="content-div">
           <div class="title">
             <span style="padding-right: 5px">报告ID：{{ reportData.report_id }}</span>
           </div>
           <div style="height: 60px;line-height: 28px">
             <a-row>
-              <a-col :span="4">主机名称：{{ reportData.host_id }}</a-col>
+              <a-col :span="10">主机名称：{{ reportData.host_id }}</a-col>
               <a-col :span="10">任务ID：{{ reportData.task_id }}</a-col>
               <a-col :span="10">诊断时间：{{ reportData.timeRange }}</a-col>
             </a-row>
@@ -31,6 +31,7 @@
           <fault-tree
             :treeData="reportData.report || {}"
             :treeDataLoading="reportLoading"
+            :highLightError="true"
           />
         </a-tab-pane>
         <a-tab-pane key="2" tab="文件" force-render>
@@ -80,7 +81,7 @@ export default {
             timeRange: `${dateFormat('YYYY-mm-dd HH:MM:SS', temp.start * 1000)} - ${dateFormat('YYYY-mm-dd HH:MM:SS', temp.end * 1000)}`
           }
           if (!_this.reportData.report || !_this.reportData.report['node name']) {
-            _this.$message.error('数据错误')
+            console.warn('no data for tree')
          }
         }
       }).catch(function (err) {

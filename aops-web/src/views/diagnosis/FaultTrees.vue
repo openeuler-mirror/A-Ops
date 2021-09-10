@@ -2,7 +2,7 @@
   <my-page-header-wrapper>
     <a-card>
       <div style="height: 110px;position: relative;">
-        <img class="avatar-img" src="~@/assets/huawei_logo_h.png">
+        <img class="avatar-img" src="~@/assets/vertical-left.png">
         <div class="content-div">
           <div class="title">
             <span style="padding-right: 5px">{{ faultTree.tree_name }}</span>

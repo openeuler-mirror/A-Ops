@@ -199,15 +199,9 @@ export default {
         router.go(-1)
       },
       checkNameInput (rule, value, cb) {
-        if (/[^0-9a-z_]/.test(value)) {
+        if (/[^0-9a-z_.]/.test(value)) {
           /* eslint-disable */
-          cb('只能输入数字、小写字母和英文下划线')
-          /* eslint-enable */
-          return
-        }
-        if (/^[^a-z]/.test(value)) {
-          /* eslint-disable */
-          cb('首字母应为小写字母')
+          cb('只能输入数字、小写字母和英文.和_')
           /* eslint-enable */
           return
         }
