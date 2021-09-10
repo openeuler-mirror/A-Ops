@@ -17,13 +17,14 @@ Class:DiagCommand
 import sys
 import time
 
-from adoctor_cli.base_cmd import BaseCommand, str_split, cli_request
-from adoctor_cli.base_cmd import add_start_and_end, add_access_token
+from adoctor_cli.base_cmd import BaseCommand
 from aops_utils.log.log import LOGGER
 from aops_utils.restful.helper import make_diag_url
 from aops_utils.restful.status import SUCCEED
 from aops_utils.conf.constant import DIAG_EXECUTE_DIAG, DIAG_GET_PROGRESS, DIAG_GET_REPORT_LIST
 from aops_utils.time_utils import time_check_generate
+from aops_utils.validate import name_check, str_split
+from aops_utils.cli_utils import add_start_and_end, add_access_token, cli_request
 
 SECONDS = 5  # polling interval
 
@@ -88,8 +89,10 @@ class DiagCommand(BaseCommand):
             dict: response body
         """
 
-        hosts = str_split(params.host_list) if params.host_list is not None else []
-        trees = str_split(params.tree_list) if params.tree_list is not None else []
+        hosts = str_split(params.host_list)
+        trees = str_split(params.tree_list)
+        name_check(hosts)
+        name_check(trees)
         diag_url, header = make_diag_url(DIAG_EXECUTE_DIAG)
 
         pyload = {
@@ -141,7 +144,7 @@ class DiagCommand(BaseCommand):
 
             except ConnectionError:
                 print("Connection failed, please try again.")
-                break
+                sys.exit(0)
 
         print("Diagnosis task complete.")
 

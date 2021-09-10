@@ -65,8 +65,8 @@ def make_diag_url(route):
     Returns:
         tuple: url, header
     """
-    diag_ip = configuration.diagnose.get("IP")  # pylint: disable=E1101
-    diag_port = configuration.diagnose.get("PORT")  # pylint: disable=E1101
+    diag_ip = configuration.diag_scheduler.get("IP")  # pylint: disable=E1101
+    diag_port = configuration.diag_scheduler.get("PORT")  # pylint: disable=E1101
     diag_url = URL_FORMAT % (diag_ip, diag_port, route)
     diag_header = {
         "Content-Type": "application/json; charset=UTF-8"
@@ -82,8 +82,8 @@ def make_check_url(route):
     Returns:
         tuple: url, header
     """
-    check_ip = configuration.check.get("IP")  # pylint: disable=E1101
-    check_port = configuration.check.get("PORT")  # pylint: disable=E1101
+    check_ip = configuration.check_scheduler.get("IP")  # pylint: disable=E1101
+    check_port = configuration.check_scheduler.get("PORT")  # pylint: disable=E1101
     check_url = URL_FORMAT % (check_ip, check_port, route)
     check_header = {
         "Content-Type": "application/json; charset=UTF-8"

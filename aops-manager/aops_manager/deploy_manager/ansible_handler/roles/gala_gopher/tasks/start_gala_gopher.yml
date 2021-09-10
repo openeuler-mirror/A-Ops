@@ -1,7 +1,8 @@
-#Start fluentd service
+#Start gala-Gopher service
 - name: Start gala-Gopher
   become: true
   become_user: root
   service:
     name: gala-gopher
     state: restarted
+

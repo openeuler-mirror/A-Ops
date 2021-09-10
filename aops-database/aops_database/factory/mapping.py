@@ -194,7 +194,8 @@ MAPPINGS = {
                     "type": "text"
                 },
                 "value": {
-                    "type": "text"
+                    "type": "keyword",
+                    "ignore_above": 256
                 },
                 "data_list": {
                     "type": "nested",

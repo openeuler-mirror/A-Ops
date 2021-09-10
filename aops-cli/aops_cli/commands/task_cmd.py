@@ -14,10 +14,13 @@
 Description: task  method's entrance for custom commands
 Class:TaskCommand
 """
+import sys
 
-from aops_cli.base_cmd import BaseCommand, str_split, cli_request, add_access_token, add_query_args
+from aops_cli.base_cmd import BaseCommand
+from aops_utils.validate import name_check, str_split
 from aops_utils.conf.constant import GENERATE_TASK, DELETE_TASK, GET_TASK, EXECUTE_TASK
 from aops_utils.restful.helper import make_manager_url
+from aops_utils.cli_utils import add_page, cli_request, add_access_token, add_query_args
 
 
 class TaskCommand(BaseCommand):
@@ -71,6 +74,7 @@ class TaskCommand(BaseCommand):
 
         add_access_token(self.sub_parse)
         add_query_args(self.sub_parse, ['task_name'])
+        add_page(self.sub_parse)
 
     def do_command(self, params):
         """
@@ -84,16 +88,16 @@ class TaskCommand(BaseCommand):
         action = params.action
 
         action_dict = {
-            'generate': self.manage_requests_generate_task,  # /manage/generate_task
-            'execute': self.manage_requests_query_delete_execute,  # /manage/execute_task
-            'delete': self.manage_requests_query_delete_execute,  # /manage/delete_task
-            'query': self.manage_requests_query_delete_execute  # /manage/get_task
+            'generate': self.manage_requests_generate_task,
+            'execute': self.manage_requests_query_delete_execute,
+            'delete': self.manage_requests_query_delete_execute,
+            'query': self.manage_requests_query_delete_execute
         }
         kwargs = {
-                "action": action,
-                "params": params
+            "action": action,
+            "params": params
 
-                }
+        }
         action_dict.get(action)(**kwargs)
 
     @staticmethod
@@ -108,11 +112,18 @@ class TaskCommand(BaseCommand):
         Raises:
         """
         params = kwargs.get('params')
-
-        templates = str_split(params.template_name) if params.template_name is not None else []
+        task_name = str_split(params.task_name)
+        if len(task_name) != 1:
+            print("Only one valid task can be accepted by generate command.")
+            print("Please try again, and use task name without ','.")
+            sys.exit(0)
+        name_check(task_name)
+        templates = str_split(params.template_name)
+        name_check(templates)
         manager_url, header = make_manager_url(GENERATE_TASK)
+
         pyload = {
-            "task_name": params.task_name,
+            "task_name": task_name[0],
             "description": params.description,
             "template_name": templates,
         }
@@ -131,8 +142,9 @@ class TaskCommand(BaseCommand):
         """
         params = kwargs.get('params')
         action = kwargs.get('action')
-        tasks_ids = str_split(params.task_list) if params.task_list is not None else []
+        task_ids = str_split(params.task_list)
 
+        name_check(task_ids)
         url_dict = {
             'execute': [make_manager_url(EXECUTE_TASK), 'POST'],
             'delete': [make_manager_url(DELETE_TASK), 'DELETE'],
@@ -141,7 +153,14 @@ class TaskCommand(BaseCommand):
 
         manager_url, header = url_dict.get(action)[0]
         url_operation = url_dict.get(action)[1]
+        if url_operation == 'DELETE' and len(task_ids) == 0:
+            print("No task will be deleted, because of the empty task list.")
+            print("Please check your task list if you want to delete tasks.")
+            sys.exit(0)
         pyload = {
-            "task_list": tasks_ids,
+            "task_list": task_ids,
         }
+        if action == 'query':
+            pyload['page'] = params.page
+            pyload['per_page'] = params.per_page
         return cli_request(url_operation, manager_url, pyload, header, params.access_token)

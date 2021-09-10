@@ -120,6 +120,15 @@ class TestCheckDatabase(unittest.TestCase):
         res = self.proxy.get_check_rule(data)
         self.assertEqual(expected_res, res[1])
 
+        data = {
+            "username": "test",
+            "check_items": [],
+            "sort": "check_item",
+            "direction": "desc",
+        }
+        res = self.proxy.get_check_rule(data)
+        self.assertEqual(4, len(res[1]['check_items']))
+
         # =============delete rule =================
         data = {
             "username": "test",
@@ -147,7 +156,7 @@ class TestCheckDatabase(unittest.TestCase):
                     "end": 7,
                     "check_item": "cpu_usage",
                     "condition": "xxx",
-                    "value": "1"
+                    "value": "Abnormal"
                 },
                 {
                     "username": "test",
@@ -157,7 +166,7 @@ class TestCheckDatabase(unittest.TestCase):
                     "end": 7,
                     "check_item": "mem_usage",
                     "condition": "xxx",
-                    "value": "1"
+                    "value": "No data"
                 },
                 {
                     "username": "test",
@@ -167,7 +176,7 @@ class TestCheckDatabase(unittest.TestCase):
                     "end": 9,
                     "check_item": "disk_usage",
                     "condition": "xxx",
-                    "value": "1"
+                    "value": "Abnormal"
                 },
                 {
                     "username": "test",
@@ -177,7 +186,17 @@ class TestCheckDatabase(unittest.TestCase):
                     "end": 22,
                     "check_item": "disk_usage",
                     "condition": "xxx",
-                    "value": "1"
+                    "value": "Abnormal"
+                },
+                {
+                    "username": "test",
+                    "host_id": "id3",
+                    "data_list": [{"name": "a", "type":"kpi", "label": {"mode": "irq", "a": 1}}, {"name": 2}],
+                    "start": 15,
+                    "end": 22,
+                    "check_item": "disk_usage",
+                    "condition": "xxx",
+                    "value": "No data"
                 }
             ]
         }
@@ -194,7 +213,7 @@ class TestCheckDatabase(unittest.TestCase):
                     "end": 7,
                     "check_item": "mem_usage",
                     "condition": "xxx",
-                    "value": "cao"
+                    "value": "Abnormal"
                 },
                 {
                     "username": "test",
@@ -204,7 +223,7 @@ class TestCheckDatabase(unittest.TestCase):
                     "end": 10,
                     "check_item": "cpu_usage",
                     "condition": "xxx",
-                    "value": "1"
+                    "value": "Abnormal"
                 }
             ]
         }
@@ -233,7 +252,7 @@ class TestCheckDatabase(unittest.TestCase):
                     "end": 7,
                     "check_item": "mem_usage",
                     "condition": "xxx",
-                    "value": "cao",
+                    "value": "Abnormal",
                     "host_id": "id1",
                 },
                 {
@@ -242,7 +261,7 @@ class TestCheckDatabase(unittest.TestCase):
                     "end": 9,
                     "check_item": "disk_usage",
                     "condition": "xxx",
-                    "value": "1",
+                    "value": "Abnormal",
                     "host_id": "id2",
                 }
             ]
@@ -270,7 +289,7 @@ class TestCheckDatabase(unittest.TestCase):
                     "end": 7,
                     "check_item": "cpu_usage",
                     "condition": "xxx",
-                    "value": "1"
+                    "value": "Abnormal"
                 },
                 {
                     "host_id": "id1",
@@ -279,12 +298,21 @@ class TestCheckDatabase(unittest.TestCase):
                     "end": 10,
                     "check_item": "cpu_usage",
                     "condition": "xxx",
-                    "value": "1"
+                    "value": "Abnormal"
                 }
             ]
         }
         res = self.proxy.get_check_result(data)
         self.assertEqual(res[1], expected_res)
+
+        data = {
+            "username": "test",
+            "time_range": [],
+            "check_items": [],
+            "host_list": []
+        }
+        res = self.proxy.get_check_result(data)
+        self.assertEqual(5, len(res[1]['check_result']))
 
         # ============delete check result=============
         data = {

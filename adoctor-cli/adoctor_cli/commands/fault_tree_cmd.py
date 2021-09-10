@@ -15,12 +15,14 @@ Description: faultree method's entrance for custom commands
 Class:FaultreeCommand
 """
 import sys
+import json
 
-from adoctor_cli.base_cmd import BaseCommand, str_split, cli_request, add_access_token
-from aops_utils.log.log import LOGGER
+from adoctor_cli.base_cmd import BaseCommand
 from aops_utils.restful.helper import make_diag_url
 from aops_utils.conf.constant import DIAG_IMPORT_TREE, DIAG_GET_TREE, DIAG_DELETE_TREE
 from aops_utils.readconfig import read_json_config_file
+from aops_utils.validate import name_check, str_split
+from aops_utils.cli_utils import cli_request, add_access_token
 
 
 class FaultreeCommand(BaseCommand):
@@ -84,9 +86,9 @@ class FaultreeCommand(BaseCommand):
         action = params.action
 
         action_dict = {
-            'add': self.manage_requests_import_fault_tree,  # /manage/import_faultree
-            'delete': self.manage_requests_delete_get_fault_tree,  # /manage/delete_faultree
-            'get': self.manage_requests_delete_get_fault_tree  # /manage/get_faultree
+            'add': self.manage_requests_import_fault_tree,
+            'delete': self.manage_requests_delete_get_fault_tree,
+            'get': self.manage_requests_delete_get_fault_tree
         }
 
         kwargs = {
@@ -106,20 +108,17 @@ class FaultreeCommand(BaseCommand):
             dict: body of response
         """
         params = kwargs.get('params')
-        trees = str_split(params.tree_list) if params.tree_list is not None else []
+        trees = str_split(params.tree_list)
         if len(trees) != 1:
-            LOGGER.error('More than one try is imported by user.')
-            print("Only one tree can be accepted or tree name contains ','.")
-            print("Please try again.")
+            print("Only one valid tree can be accepted and ',' cannot be contained in name.")
+            print("Please try again with valid --tree_list <tree_list>.")
             sys.exit(0)
         if params.conf is not None:
             conf = read_json_config_file(params.conf)
         else:
-            LOGGER.error('Invalid conf file added by user.')
             print('conf must be included in add command, please try again')
             sys.exit(0)
         if conf is None:
-            LOGGER.error('Null conf file added by user.')
             print("The config file is None, please import a valid config file.")
             sys.exit(0)
         diag_url, header = make_diag_url(DIAG_IMPORT_TREE)
@@ -146,7 +145,8 @@ class FaultreeCommand(BaseCommand):
         """
         params = kwargs.get('params')
         action = kwargs.get('action')
-        trees = str_split(params.tree_list) if params.tree_list is not None else []
+        trees = str_split(params.tree_list)
+        name_check(trees)
         pyload = {"tree_list": trees}
 
         if action == 'delete':
@@ -154,4 +154,13 @@ class FaultreeCommand(BaseCommand):
             return cli_request('DELETE', diag_url, pyload, header, params.access_token)
 
         diag_url, header = make_diag_url(DIAG_GET_TREE)
-        return cli_request('POST', diag_url, pyload, header, params.access_token)
+        res = cli_request('POST', diag_url, pyload, header, params.access_token)
+
+        path = params.export
+        if path is None:
+            return res
+        with open(path, 'w', encoding='utf-8') as file:
+            out_file = {'trees': res['trees']}
+            file.write(json.dumps(out_file, ensure_ascii=False))
+
+        return res

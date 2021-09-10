@@ -16,12 +16,13 @@ Class:HostCommand
 """
 import sys
 
-from aops_cli.base_cmd import BaseCommand, str_split, cli_request, add_access_token, add_query_args
+from aops_cli.base_cmd import BaseCommand
+from aops_utils.validate import name_check, str_split
 from aops_utils.restful.response import MyResponse
 from aops_utils.restful.helper import make_manager_url
 from aops_utils.conf.constant import ADD_HOST, DELETE_HOST, QUERY_HOST, QUERY_HOST_DETAIL
 from aops_utils.restful.status import SUCCEED
-from aops_utils.log.log import LOGGER
+from aops_utils.cli_utils import add_page, cli_request, add_access_token, add_query_args
 
 
 class HostCommand(BaseCommand):
@@ -128,6 +129,7 @@ class HostCommand(BaseCommand):
 
         add_access_token(self.sub_parse)
         add_query_args(self.sub_parse, ['host_name', 'host_group_name'])
+        add_page(self.sub_parse)
 
     def do_command(self, params):
         """
@@ -138,9 +140,9 @@ class HostCommand(BaseCommand):
 
         action = params.action
         action_dict = {
-            'add': self.manage_requests_add,  # /manage/add_host
-            'delete': self.manage_requests_delete,  # /manage/delete_host
-            'query': self.manage_requests_query  # /manage/get_host
+            'add': self.manage_requests_add,
+            'delete': self.manage_requests_delete,
+            'query': self.manage_requests_query
         }
         return action_dict.get(action)(params)
 
@@ -156,14 +158,19 @@ class HostCommand(BaseCommand):
 
         manager_url, header = make_manager_url(ADD_HOST)
         management = True if params.management == "True" else False
-
+        host_name = str_split(params.host_name)
+        if len(host_name) != 1:
+            print("Invalid host name or more than one host is added.")
+            print("',' cannot be contained in host_name, please try again.")
+            sys.exit(0)
+        name_check(host_name)
         if params.management is None:
             params.management = False
         pyload = {
             "key": params.key,
             "host_list": [
                 {
-                    "host_name": params.host_name,
+                    "host_name": host_name[0],
                     "host_group_name": params.host_group_name,
                     "public_ip": params.public_ip,
                     "ssh_port": params.ssh_port,
@@ -185,12 +192,19 @@ class HostCommand(BaseCommand):
             params: Command line parameters
         Returns:
             dict: response of the backend
-        Raises:
         """
-
-        groups = str_split(params.host_group_name) if params.host_group_name is not None else []
+        if params.host_group_name is None:
+            print("Host_group_name cannot be none, please input valid host_group_name.")
+            sys.exit(0)
+        if params.management is None:
+            print("Management cannot be none, please input valid management value.")
+            sys.exit(0)
+        groups = str_split(params.host_group_name)
+        name_check(groups)
         pyload = {
-            "host_group_list": groups
+            "host_group_list": groups,
+            "page": params.page,
+            "per_page": params.per_page
         }
         if params.sort is not None:
             pyload['sort'] = params.sort
@@ -203,7 +217,7 @@ class HostCommand(BaseCommand):
         header['access_token'] = params.access_token
         result_basic = MyResponse.get_response('POST', manager_url, pyload, header)
         if result_basic.get('code') != SUCCEED:
-            LOGGER.error("Query request with bad response.")
+            print("Query request with bad response.")
             print(result_basic)
             sys.exit(0)
         verbose = True if params.verbose == "True" else False
@@ -218,7 +232,7 @@ class HostCommand(BaseCommand):
             header['access_token'] = params.access_token
             result_details = MyResponse.get_response('POST', manager_url, pyload, header)
             if result_details.get('code') != SUCCEED:
-                LOGGER.error("Query request with bad response.")
+                print("Query request with bad response.")
                 print(result_details)
                 sys.exit(0)
             for info in result_details['host_infos']:
@@ -239,8 +253,12 @@ class HostCommand(BaseCommand):
         Returns:
             dict: response of the backend
         """
-        hosts = str_split(params.host_list) if params.host_list is not None else []
-
+        hosts = str_split(params.host_list)
+        if len(hosts) == 0:
+            print("No host will be deleted, because of the empty host list.")
+            print("Please check your host list if you want to delete hosts.")
+            sys.exit(0)
+        name_check(hosts)
         pyload = {
             "host_list": hosts,
         }

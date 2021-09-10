@@ -19,7 +19,7 @@ import pathlib as pl
 import unittest
 from unittest import mock
 from adoctor_cli.commands.check_rule_cmd import CheckRuleCommand
-from adoctor_cli.base_cmd import str_split
+from aops_utils.validate import str_split
 from aops_utils.restful.response import MyResponse
 
 
@@ -118,6 +118,8 @@ class TestCheckRuleCli(unittest.TestCase):
             cmd.do_command(args)
             args_dict = dict()
             args_dict['check_items'] = str_split(vars(args)['check_items'])
+            args_dict['page'] = 1
+            args_dict['per_page'] = 20
             self.assertEqual(args_dict, mock_get_response.call_args_list[0][0][2])
 
     def test_get_check_rule_export(self):
@@ -143,7 +145,7 @@ class TestCheckRuleCli(unittest.TestCase):
             }
             mock_get_response.return_value = expected_res
             cmd.do_command(args)
-            args_dict = {'check_items': str_split(vars(args)['check_items'])}
+            args_dict = {'check_items': str_split(vars(args)['check_items']), 'page': 1, 'per_page': 20}
             self.assertEqual(args_dict, mock_get_response.call_args_list[0][0][2])
             path = pl.Path(vars(args)['export'])
             self.assertTrue(path.is_file())

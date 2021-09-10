@@ -39,6 +39,12 @@ def create_domain(body=None):  # noqa: E501
 
     for domain in body:
         tempDomainName = domain.domain_name
+        isVerFication = Format.domainCheck(tempDomainName)
+        if not isVerFication:
+            codeNum = 400
+            codeString = "Interface input parameters verification failed. Please check the input parameters."
+            base_rsp = BaseResponse(codeNum, codeString)
+            return base_rsp, codeNum
         isExist = Format.isDomainExist(tempDomainName)
         if isExist:
             failedDomain.append(tempDomainName)
@@ -70,18 +76,17 @@ def delete_domain(domainName):  # noqa: E501
     :rtype: BaseResponse
     """
     if len(domainName) == 0:
-        base_rsp = BaseResponse(400, "The entered domian is empty")
-        return base_rsp
+        codeNum = 400
+        base_rsp = BaseResponse(codeNum, "The entered domian is empty")
+        return base_rsp, codeNum
 
     successDomain = []
     failedDomain = []
 
-    print("domainName is : {}".format(domainName))
     for tempDomainName in domainName:
-        domainPath = os.path.join(TARGETDIR, tempDomainName)
-        isExist = Format.isDomainExist(domainPath)
-        print("isExist is : {}".format(isExist))
+        isExist = Format.isDomainExist(tempDomainName)
         if isExist:
+            domainPath = os.path.join(TARGETDIR, tempDomainName)
             successDomain.append(tempDomainName)
             shutil.rmtree(domainPath)
         else:
@@ -95,8 +100,6 @@ def delete_domain(domainName):  # noqa: E501
         codeString = Format.splicErrorString("domain", "delete", successDomain, failedDomain)
 
     base_rsp = BaseResponse(codeNum, codeString)
-    logging.info('delete domain')
-
     return base_rsp, codeNum
 
 

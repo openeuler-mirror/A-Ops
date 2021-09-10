@@ -18,7 +18,7 @@ Description:
 import unittest
 from aops_cli.commands.host_cmd import HostCommand
 from unittest import mock
-from aops_cli.base_cmd import str_split
+from aops_utils.validate import str_split
 from aops_utils.restful.response import MyResponse
 
 
@@ -64,14 +64,21 @@ class TestHostCli(unittest.TestCase):
             }
             mock_get_response.return_value = expected_res
             cmd.do_command(args)
-            ignore_list = ['verbose', 'action', 'host_list', 'sub_parse_name', 'sort', 'direction', 'access_token']
+            ignore_list = ['page', 'per_page','verbose', 'action', 'host_list',
+                           'sub_parse_name', 'sort', 'direction', 'access_token']
             args_dict = vars(args)
             for item in ignore_list:
                 args_dict.pop(item)
             act_res = mock_get_response.call_args_list[0][0][2]
             self.assertEqual(args_dict.pop('key'), act_res['key'])
             for k in args_dict.keys():
-                self.assertEqual(args_dict[k], act_res['host_list'][0][k])
+                if args_dict[k] == 'True':
+                    key = True
+                elif args_dict[k] == 'False':
+                    key = False
+                else:
+                    key = args_dict[k]
+                self.assertEqual(key, act_res['host_list'][0][k])
 
     def test_deletehost(self):
         print("Execute the delete host test case")
@@ -123,6 +130,8 @@ class TestHostCli(unittest.TestCase):
                 args_dict[item] = vars(args)[item]
             host_name = args_dict.pop('host_group_name')
             args_dict['host_group_list'] = host_name
+            args_dict['page'] = 1
+            args_dict['per_page'] = 20
             self.assertEqual(args_dict, mock_get_response.call_args_list[0][0][2])
 
     def test_gethost_verbose(self):
@@ -171,7 +180,7 @@ class TestHostCli(unittest.TestCase):
             args_dict = dict()
             args_list = str_split(vars(args)['host_group_name'])
             args_dict['host_group_list'] = args_list
-            param_list = ['sort', 'direction']
+            param_list = ['sort', 'direction', 'page', 'per_page']
             for item in param_list:
                 args_dict[item] = vars(args)[item]
             self.assertEqual(args_dict, mock_get_response.call_args_list[0][0][2])

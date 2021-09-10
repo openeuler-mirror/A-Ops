@@ -23,7 +23,7 @@ from werkzeug.security import generate_password_hash
 from aops_database.proxy.host import HostDatabase
 from aops_database.factory.table import Host, User
 from aops_database.function.helper import create_tables, drop_tables, create_database_engine
-from aops_utils.restful.status import DATA_EXIST, SUCCEED, DATA_DEPENDENCY_ERROR
+from aops_utils.restful.status import DATA_EXIST, PARTIAL_SUCCEED, SUCCEED, DATA_DEPENDENCY_ERROR, DATABASE_INSERT_ERROR
 from aops_utils.compare import compare_two_object
 
 
@@ -240,7 +240,7 @@ class TestHostDatabase(unittest.TestCase):
         }
 
         res = self.proxy.add_host(data)
-        self.assertEqual(res, SUCCEED)
+        self.assertEqual(res[0], SUCCEED)
 
         condition = {}
         res = self.proxy.select([Host], condition)
@@ -264,6 +264,31 @@ class TestHostDatabase(unittest.TestCase):
         res = self.proxy.get_host_group(args)
         self.assertEqual(res[0], SUCCEED)
         self.assertEqual(res[1]['host_group_infos'], expected_res)
+
+        data = {
+            "username": "admin",
+            "host_list": [
+                {
+                    "host_name": "host1",
+                    "host_group_name": "group99",
+                    "host_id": "id1",
+                    "public_ip": "127.0.0.1",
+                    "management": False,
+                    "ssh_port": 22
+                },
+                {
+                    "host_name": "host2",
+                    "host_group_name": "group1",
+                    "host_id": "id1",
+                    "public_ip": "127.0.0.2",
+                    "management": False,
+                    "ssh_port": 22
+                }
+            ]
+        }
+        res = self.proxy.add_host(data)
+        self.assertEqual(res[0], DATABASE_INSERT_ERROR)
+        self.assertEqual(len(res[1]['fail_list']), 2)
 
         # ==============get host=====================
         args = {
@@ -402,10 +427,12 @@ class TestHostDatabase(unittest.TestCase):
         # ==============delete host===================
         args = {
             "username": "admin",
-            "host_list": ["id1"]
+            "host_list": ["id1", "id9"]
         }
         res = self.proxy.delete_host(args)
-        self.assertEqual(res, SUCCEED)
+        self.assertEqual(res[0], PARTIAL_SUCCEED)
+        self.assertEqual(res[1]["fail_list"][0], "id9")
+        self.assertEqual(res[1]['succeed_list'][0], "id1")
 
         args = {
             "host_group_list": ["group1"],

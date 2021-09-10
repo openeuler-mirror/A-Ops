@@ -18,7 +18,6 @@ Description:
 import unittest
 from unittest import mock
 from aops_cli.commands.account_cmd import AccountCommand
-from aops_cli.base_cmd import str_split
 from aops_utils.restful.response import MyResponse
 
 
@@ -60,7 +59,7 @@ class TestAccountCli(unittest.TestCase):
             mock_get_response.return_value = expected_res
             cmd.do_command(args)
             args_dict = vars(args)
-            ignore_list = ['key', 'action', 'access_token', 'sub_parse_name']
+            ignore_list = ['action', 'access_token', 'sub_parse_name']
             for k in ignore_list:
                 args_dict.pop(k)
             self.assertEqual(args_dict, mock_get_response.call_args_list[0][0][2])

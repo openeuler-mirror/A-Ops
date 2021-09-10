@@ -14,12 +14,13 @@
 Description: check method's entrance for custom commands
 Class:CheckCommand
 """
-from adoctor_cli.base_cmd import BaseCommand, str_split, cli_request
-from adoctor_cli.base_cmd import add_start_and_end
-from adoctor_cli.base_cmd import add_access_token, add_query_args
+from adoctor_cli.base_cmd import BaseCommand
 from aops_utils.restful.helper import make_check_url
 from aops_utils.conf.constant import CHECK_GET_RESULT
 from aops_utils.time_utils import time_check_generate
+from aops_utils.validate import name_check, str_split
+from aops_utils.cli_utils import add_page, add_access_token, add_query_args, cli_request
+from aops_utils.cli_utils import add_start_and_end
 
 
 class CheckCommand(BaseCommand):
@@ -52,6 +53,7 @@ class CheckCommand(BaseCommand):
         add_start_and_end(self.sub_parse)
         add_access_token(self.sub_parse)
         add_query_args(self.sub_parse, ['check_item', 'start', 'end'])
+        add_page(self.sub_parse)
 
     def do_command(self, params):
         """
@@ -77,12 +79,16 @@ class CheckCommand(BaseCommand):
             dict: body of response
         """
 
-        hosts = str_split(params.host_list) if params.host_list is not None else []
-        checks = str_split(params.check_items) if params.check_items is not None else []
+        hosts = str_split(params.host_list)
+        checks = str_split(params.check_items)
+        name_check(hosts)
+        name_check(checks)
         pyload = {
             "time_range": time_list,
             "check_items": checks,
             "host_list": hosts,
+            "page": params.page,
+            "per_page": params.per_page
         }
         if params.sort is not None:
             pyload['sort'] = params.sort

@@ -26,7 +26,8 @@ class AddHostSchema(Schema):
     """
     validators for parameter of /manage/host/add_host
     """
-    host_list = fields.List(fields.Dict(), required=True)
+    host_list = fields.List(fields.Dict(), required=True,
+                            validate=lambda s: len(s) > 0)
     key = fields.String(required=True, validate=lambda s: len(s) > 0)
 
 
@@ -54,7 +55,8 @@ class DeleteHostSchema(Schema):
     """
     validators for parameter of /manage/host/delete_host
     """
-    host_list = fields.List(fields.String(), required=True)
+    host_list = fields.List(fields.String(), required=True,
+                            validate=lambda s: len(s) > 0)
 
 
 class GetHostSchema(Schema):
@@ -84,7 +86,8 @@ class DeleteHostGroupSchema(Schema):
     """
     validators for parameter of /manage/host/delete_host_group
     """
-    host_group_list = fields.List(fields.String(), required=True)
+    host_group_list = fields.List(
+        fields.String(), required=True, validate=lambda s: len(s) > 0)
 
 
 class GetHostGroupSchema(Schema):

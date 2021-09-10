@@ -5,29 +5,26 @@ PRJ_DIR=$(dirname $(readlink -f "$0"))
 
 TOOLS_DIR=${PRJ_DIR}/tools
 SRC_DIR=${PRJ_DIR}/src
-#echo ${PRJ_DIR}
-#echo ${TOOLS_DIR}
-#echo ${SRC_DIR}
+
 function gen_vmlinux_header_file()
 {
     cd ${TOOLS_DIR}
     if [ ! -f "bpftool" ];then
 	ln -s bpftool_${ARCH} bpftool
     fi
-    ./gen_vmlinux_h.sh
 }
 
 function compile_probe()
 {
     cd ${SRC_DIR}
-    echo "=======compile_probe:" ${EBPF_PROBES}
+    echo "=======Begin to compile ebpf-based probes======:" ${EBPF_PROBES}
     make
 }
 
 function checkout_libbpf()
 {
     cd ${PRJ_DIR}
-    if [ ! -f "libbpf" ];then
+    if [ ! -d "libbpf" ];then
 	git clone https://github.com/libbpf/libbpf.git
         cd libbpf
         git checkout v0.3
@@ -67,17 +64,37 @@ function compile_clean()
     make clean
 }
 
-if [ "$1" = "clean" ];then
+if [ -z "$1"  -o  "$1" == "-h"  -o  "$1" == "--help" ];
+then
+    echo build.sh -h/--help : Show this message.
+    echo build.sh    --check: Check the environment including arch/os/kernel/packages.
+    echo build.sh -g/--gen  : Generate the linux header file.
+    echo build.sh -c/--clean: Clean the built binary.
+    echo build.sh -b/--build: Build all the probes.
+    exit
+fi
+
+if [ "$1" == "--check" ];
+then
+    checkout_libbpf
+    prepare_dep
+    exit
+fi
+
+if [ "$1" == "-g"  -o  "$1" == "--gen" ];
+then
+    gen_vmlinux_header_file
+    exit
+fi
+
+if [ "$1" == "-b"  -o  "$1" == "--build" ];
+then
+    compile_probe
+    exit
+fi
+
+if [ "$1" == "-c"  -o  "$1" == "--clean" ];
+then
     compile_clean
     exit
 fi
-if [ "$1" != "package" ]; then
-    prepare_dep
-fi
-if [ $? -ne 0 ];then
-    echo "Error: prepare dependence softwares failed"
-    exit
-fi
-checkout_libbpf
-gen_vmlinux_header_file
-compile_probe

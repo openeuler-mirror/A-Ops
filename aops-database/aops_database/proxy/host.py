@@ -21,6 +21,7 @@ from sqlalchemy.sql.expression import desc, asc
 from sqlalchemy import func
 
 from aops_utils.log.log import LOGGER
+from aops_database.function.helper import judge_return_code
 from aops_database.proxy.proxy import MysqlProxy, ElasticsearchProxy
 from aops_database.factory.table import Host, HostGroup, User
 from aops_database.conf.constant import HOST_INFO_INDEX
@@ -57,30 +58,45 @@ class HostDatabase(MysqlProxy):
             int
         """
         group_map = {}
+        result = {
+            "succeed_list": [],
+            "fail_list": []
+        }
         try:
             user = self.session.query(User).filter(
                 User.username == data['username']).first()
             host_groups = user.host_groups
+            hosts = user.hosts
             # create a map that map host_group_name to host_group
             group_map = dict(
                 map(lambda item: (item.host_group_name, item), host_groups))
             for host_info in data['host_list']:
-                host_group = group_map[host_info['host_group_name']]
+                host_group = group_map.get(host_info['host_group_name'])
+                if host_group is None:
+                    result['fail_list'].append(host_info)
+                    continue
                 host_group.host_count += 1
                 host_info['host_group_id'] = host_group.host_group_id
                 host_info['user'] = data['username']
                 host = Host(**host_info)
+                if host in hosts:
+                    LOGGER.error("host %s exist", host_info['host_name'])
+                    result['fail_list'].append(host_info)
+                    continue
                 host.host_group = host_group
                 host.owner = user
                 self.session.add(host)
                 self.session.commit()
-            LOGGER.info("add host succeed")
-            return SUCCEED
+                result['succeed_list'].append(host_info)
+            status_code = judge_return_code(result, DATABASE_INSERT_ERROR)
+            return status_code, result
         except sqlalchemy.exc.SQLAlchemyError as error:
             LOGGER.debug(error)
             LOGGER.error("add host fail")
             self.session.rollback()
-            return DATABASE_INSERT_ERROR
+            result['fail_list'] = result['succeed_list'] + result['fail_list']
+            result['succeed_list'] = []
+            return DATABASE_INSERT_ERROR, result
 
     def delete_host(self, data):
         """
@@ -97,7 +113,11 @@ class HostDatabase(MysqlProxy):
             int
         """
         host_list = data['host_list']
-
+        result = {
+            "succeed_list": [],
+            "fail_list": []
+        }
+        host_info = {}
         try:
             # query matched host
             hosts = self.session.query(Host).filter(
@@ -106,15 +126,20 @@ class HostDatabase(MysqlProxy):
                 host_group = host.host_group
                 host_group.host_count -= 1
                 self.session.delete(host)
-
+                result['succeed_list'].append(host.host_id)
+                host_info[host.host_id] = host.host_name
             self.session.commit()
-            LOGGER.info("delete host %s succeed", host_list)
-            return SUCCEED
+            result['fail_list'] = list(set(host_list) - set(result['succeed_list']))
+            status_code = judge_return_code(result, DATABASE_DELETE_ERROR)
+            result['host_info'] = host_info
+            return status_code, result
         except sqlalchemy.exc.SQLAlchemyError as error:
             LOGGER.debug(error)
             LOGGER.error("delete host %s fail", host_list)
             self.session.rollback()
-            return DATABASE_DELETE_ERROR
+            result['fail_list'] = host_list
+            result['succeed_list'] = []
+            return DATABASE_DELETE_ERROR, result
 
     def get_host(self, data):
         """
@@ -416,10 +441,9 @@ class HostDatabase(MysqlProxy):
 
         host_group_list = data['host_group_list']
         username = data['username']
-        result = {}
+        result = {"deleted": []}
         deleted = []
         not_deleted = []
-        result["deleted"] = deleted
         try:
             # Filter the group if there are hosts in the group
             host_groups = self.session.query(HostGroup).\
@@ -432,6 +456,7 @@ class HostDatabase(MysqlProxy):
                 deleted.append(host_group.host_group_name)
                 self.session.delete(host_group)
             self.session.commit()
+            result["deleted"] = deleted
             if not_deleted:
                 LOGGER.error(
                     "host group %s deleted, groups %s delete fail", deleted, not_deleted)

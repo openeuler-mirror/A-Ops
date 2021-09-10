@@ -3,6 +3,7 @@ import six
 import os
 import json
 import re
+import ast
 
 from ragdoll.models.base_response import BaseResponse  # noqa: E501
 from ragdoll.models.domain_name import DomainName  # noqa: E501

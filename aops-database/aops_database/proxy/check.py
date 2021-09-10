@@ -178,16 +178,21 @@ class CheckDatabase(ElasticsearchProxy):
         if status_code != SUCCEED or total_count == 0:
             return status_code, result
 
-        total_page = self._make_es_paginate_body(data, total_count, query_body)
+        flag, total_page, res = self._query_or_scan(
+            CHECK_RULE_INDEX, query_body, total_count, data,
+            ['check_item', 'data_list', 'condition', 'description', 'plugin'])
 
-        res = self.query(CHECK_RULE_INDEX, query_body, [
-            'check_item', 'data_list', 'condition', 'description', 'plugin'])
         if res[0]:
             LOGGER.info("query check rule succeed")
             result["total_count"] = total_count
             result["total_page"] = total_page
-            for item in res[1]['hits']['hits']:
-                result["check_items"].append(item['_source'])
+            # query by es scan
+            if flag:
+                result['check_items'] = res[1]
+            # query by es query
+            else:
+                for item in res[1]['hits']['hits']:
+                    result["check_items"].append(item['_source'])
             return SUCCEED, result
 
         LOGGER.error("query check rule fail")
@@ -409,7 +414,6 @@ class CheckDatabase(ElasticsearchProxy):
             "total_count": 0,
             "check_result": []
         }
-
         query_body = self._generate_query_result_body(data)
         count_res = self.count(CHECK_RESULT_INDEX, query_body)
         if not count_res[0]:
@@ -420,18 +424,22 @@ class CheckDatabase(ElasticsearchProxy):
             return SUCCEED, result
 
         total_count = count_res[1]
-        total_page = self._make_es_paginate_body(data, total_count, query_body)
+        flag, total_page, res = self._query_or_scan(
+            CHECK_RESULT_INDEX, query_body, total_count, data,
+            ['check_item', 'data_list', 'condition',
+             'value', 'host_id', 'start', 'end'])
 
-        res = self.query(CHECK_RESULT_INDEX, query_body, [
-            'check_item', 'data_list', 'condition',
-            'value', 'host_id', 'start', 'end'])
         if res[0]:
             LOGGER.info("query check result succeed")
             result["total_count"] = total_count
             result["total_page"] = total_page
-
-            for item in res[1]['hits']['hits']:
-                result["check_result"].append(item['_source'])
+            # query by es scan
+            if flag:
+                result['check_result'] = res[1]
+            # query by es query
+            else:
+                for item in res[1]['hits']['hits']:
+                    result["check_result"].append(item['_source'])
             return SUCCEED, result
 
         LOGGER.error("query check result fail")
@@ -451,7 +459,10 @@ class CheckDatabase(ElasticsearchProxy):
         time_range = data.get('time_range')
         check_items = data.get('check_items')
         query_body = self._general_body(data)
-
+        # only show abnormal
+        query_body["query"]["bool"]["must"].append(
+            {"match": {"value": "Abnormal"}}
+        )
         if host_list:
             query_body["query"]["bool"]["must"].append(
                 {"terms": {"host_id": host_list}})
@@ -548,6 +559,10 @@ class CheckDatabase(ElasticsearchProxy):
         if host_list:
             query_body["query"]["bool"]["must"].append(
                 {"terms": {"host_id": host_list}})
+        # only show abnormal
+        query_body["query"]["bool"]["must"].append(
+            {"match": {"value": "Abnormal"}}
+        )
         # do not return all data
         query_body["size"] = 0
         # aggregate by host id
@@ -564,3 +579,31 @@ class CheckDatabase(ElasticsearchProxy):
                     "_key": direction}
 
         return query_body
+
+    def _query_or_scan(self, index, query_body, total_count, data, source):
+        """
+        Use elasticsearch query or scan, query is used when need paginated or sorted
+
+        Args:
+            index(str): es index
+            query_body(dict): query dsl
+            total_count(int): total num
+            data(dict): params
+            source(list): query field
+
+        Returns:
+            bool: true means using scan
+            int: total page
+            tuple: result 
+        """
+        if data.get('page') and data.get('per_page'):
+            flag = False
+            total_page = self._make_es_paginate_body(
+                data, total_count, query_body)
+            res = self.query(index, query_body, source)
+        else:
+            flag = True
+            total_page = 1
+            res = self.scan(index, query_body, source)
+
+        return flag, total_page, res

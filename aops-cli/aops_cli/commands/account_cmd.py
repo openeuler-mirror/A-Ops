@@ -15,10 +15,10 @@ Description: acconut method's entrance for custom commands
 Class:AccountCommand
 """
 
-from aops_cli.base_cmd import BaseCommand, cli_request, add_access_token
+from aops_cli.base_cmd import BaseCommand
 from aops_utils.conf.constant import USER_LOGIN, CHANGE_PASSSWORD
 from aops_utils.restful.helper import make_manager_url
-from aops_utils.restful.response import MyResponse
+from aops_utils.cli_utils import cli_request
 
 
 class AccountCommand(BaseCommand):
@@ -76,8 +76,8 @@ class AccountCommand(BaseCommand):
 
         action = params.action
         action_dict = {
-            'login': self.manage_requests_login,  # /account/login
-            'change': self.manage_requests_change  # /account/change
+            'login': self.manage_requests_login,
+            'change': self.manage_requests_change
         }
         return action_dict.get(action)(params)
 
@@ -96,8 +96,7 @@ class AccountCommand(BaseCommand):
             "password": params.password
         }
 
-        response = MyResponse.get_response('POST', manager_url, pyload, header)
-        print(response)
+        return cli_request('POST', manager_url, pyload, header)
 
     @staticmethod
     def manage_requests_change(params):

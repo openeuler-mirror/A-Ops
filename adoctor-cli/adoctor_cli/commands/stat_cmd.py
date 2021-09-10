@@ -14,12 +14,11 @@
 Description: statistics method's entrance for custom commands
 Class:StatCommand
 """
-import sys
 
-from adoctor_cli.base_cmd import BaseCommand, cli_request, add_access_token
+from adoctor_cli.base_cmd import BaseCommand
 from aops_utils.conf.constant import CHECK_COUNT_RULE, CHECK_COUNT_RESULT
 from aops_utils.restful.helper import make_check_url
-from aops_utils.log.log import LOGGER
+from aops_utils.cli_utils import cli_request, add_access_token
 
 
 class StatCommand(BaseCommand):

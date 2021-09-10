@@ -44,7 +44,7 @@ class StatusCode:  # pylint: disable=R0903
     """
     mappings = {
         SUCCEED: {
-            "msg": "openration succeed"
+            "msg": "operation succeed"
         },
         SERVER_ERROR: {
             "msg": "internal server error"
