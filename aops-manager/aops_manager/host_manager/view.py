@@ -140,6 +140,15 @@ class DeleteHost(Resource):
             args, DeleteHostSchema, access_token)
         response = MyResponse.get_result(
             verify_res, 'delete', database_url, args)
+        succeed_list = response.get('succeed_list')
+        host_name_list = []
+        if succeed_list:
+            host_info = response.pop('host_info')
+            for host_id in succeed_list:
+                host_name_list.append(host_info[host_id])
+            inventory = InventoryBuilder()
+            inventory.remove_specified_host_vars(
+                host_name_list, configuration.manager['HOST_VAULT_DIR'])
 
         return jsonify(response)
 

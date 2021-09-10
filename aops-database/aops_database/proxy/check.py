@@ -459,7 +459,10 @@ class CheckDatabase(ElasticsearchProxy):
         time_range = data.get('time_range')
         check_items = data.get('check_items')
         query_body = self._general_body(data)
-
+        # only show abnormal
+        query_body["query"]["bool"]["must"].append(
+            {"match": {"value": "Abnormal"}}
+        )
         if host_list:
             query_body["query"]["bool"]["must"].append(
                 {"terms": {"host_id": host_list}})
@@ -556,6 +559,10 @@ class CheckDatabase(ElasticsearchProxy):
         if host_list:
             query_body["query"]["bool"]["must"].append(
                 {"terms": {"host_id": host_list}})
+        # only show abnormal
+        query_body["query"]["bool"]["must"].append(
+            {"match": {"value": "Abnormal"}}
+        )
         # do not return all data
         query_body["size"] = 0
         # aggregate by host id

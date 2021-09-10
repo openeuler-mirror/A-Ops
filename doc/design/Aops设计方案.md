@@ -770,7 +770,6 @@ Mulan V2
       "deleted": ["id1"]
   }
   ```
-```
   
 
 #### 3.8.1.7、/manage/host/group/get
@@ -797,7 +796,7 @@ Mulan V2
       "page": 1,
       "per_page": 50
   }
-```
+  ```
 
 - 返回体参数：
 
