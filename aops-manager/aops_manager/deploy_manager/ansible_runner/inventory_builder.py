@@ -133,6 +133,25 @@ class InventoryBuilder:
         shutil.rmtree(HOST_VARS_PATH)
 
     @staticmethod
+    def remove_specified_host_vars(host_name_list, host_vars_path):
+        """
+        Delete the host_vars directory of a host (host_name) in
+        a specified directory (host_vars_path).
+        Args:
+            host_name_list (list): host name is the name of the host's vars dir
+            host_vars_path (str): the host_vars path
+
+        Returns:
+            None
+        """
+        for hots_name in host_name_list:
+            host_vars_dir = os.path.join(host_vars_path, "host_vars", hots_name)
+            if not os.path.exists(host_vars_dir):
+                LOGGER.debug("HOST_VARS_PATH %s is not existed", host_vars_dir)
+                continue
+            shutil.rmtree(host_vars_dir)
+
+    @staticmethod
     def move_host_to_inventory(inventory_file_path, file_name):
         """
         Move inventory files to "ansible_handler/inventory/"

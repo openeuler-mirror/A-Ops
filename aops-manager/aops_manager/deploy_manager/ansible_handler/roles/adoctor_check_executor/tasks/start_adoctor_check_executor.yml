@@ -4,4 +4,4 @@
   become_user: root
   service:
     name: adoctor-check-executor
-    state: started
+    state: restarted

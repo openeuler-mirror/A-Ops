@@ -3,7 +3,7 @@
   become: true
   become_user: root
   dnf:
-    state: present
+    state: latest
     name:
       - gala-spider
       - python3-gala-spider

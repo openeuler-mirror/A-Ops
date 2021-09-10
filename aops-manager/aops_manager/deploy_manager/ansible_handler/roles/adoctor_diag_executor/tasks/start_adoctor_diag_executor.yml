@@ -4,4 +4,4 @@
   become_user: root
   service:
     name: adoctor-diag-executor
-    state: started
+    state: restarted

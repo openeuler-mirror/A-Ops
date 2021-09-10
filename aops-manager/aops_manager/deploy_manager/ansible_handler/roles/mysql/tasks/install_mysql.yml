@@ -3,6 +3,6 @@
   become: true
   become_user: root
   dnf:
-    state: present
+    state: latest
     name:
       - mysql-server

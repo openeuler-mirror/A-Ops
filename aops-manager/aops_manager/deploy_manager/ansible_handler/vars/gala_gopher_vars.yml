@@ -3,7 +3,7 @@
 install_dir: "/opt/gala-gopher/"
 
 # kafka host
-gala_gopher_kafka_host: 172.168.128.61
+gala_gopher_kafka_host: 192.168.1.1
 # Listening kafka port
 gala_gopher_listening_kafka_port: 9092
 

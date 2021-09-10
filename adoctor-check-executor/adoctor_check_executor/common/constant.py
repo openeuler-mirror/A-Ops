@@ -20,6 +20,9 @@ from dataclasses import dataclass
 
 MAIN_DATA_MACRO = "$0"
 
+# Default ID of a common backward task
+BACKWARD_TASK_ID = -2
+
 
 @dataclass
 class CheckTopic:

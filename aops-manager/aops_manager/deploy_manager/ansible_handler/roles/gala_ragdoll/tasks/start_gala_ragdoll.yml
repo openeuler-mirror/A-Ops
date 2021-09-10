@@ -2,9 +2,10 @@
 - name: Start gala ragdoll
   become: true
   become_user: root
-  service:
+    service:
     name: gala-ragdoll
-    state: started
+    state: restarted
+
 
 # Checking the Service Status
 - name: Verify gala ragdoll is listening on {{ gala_ragdoll_port }}
