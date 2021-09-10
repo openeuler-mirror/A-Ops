@@ -109,7 +109,7 @@ function compile_extend_probes()
     for BUILD_PATH in ${EXT_PROBE_BUILD_LIST}
     do
 	echo "==== BUILD_PATH: " ${BUILD_PATH}
-        ${BUILD_PATH} $1
+        ${BUILD_PATH} --$1
     done
 }
 

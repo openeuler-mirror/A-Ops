@@ -504,7 +504,7 @@ static int IMDB_Record2Json(IMDB_DataBaseMgr *mgr, IMDB_Table *table, IMDB_Recor
     time(&now);
 
     memset(jsonStr, 0, jsonStrLen);
-    ret = snprintf(json_cursor, maxLen, "{\"timestamp\": %d", now * 1000);
+    ret = snprintf(json_cursor, maxLen, "{\"timestamp\": %lld", now * 1000);
     if (ret < 0) {
         return -1;
     }

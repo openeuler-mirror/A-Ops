@@ -219,8 +219,16 @@ int main(int argc, char **argv)
     }
 
     uprobe_offset1 = get_func_offset("haproxy", "back_establish", bin_file_path);
+	if (uprobe_offset1 <= 0) {
+        printf("Failed to get func(back_establish) offset.\n");
+        return 0;
+    }
     uprobe_offset2 = get_func_offset("haproxy", "stream_free", bin_file_path);
-    //fprintf(stderr, "HAPROXY DEBUG GET OFFSET1 = %ld OFFSET2 = %ld\n", uprobe_offset1, uprobe_offset2);
+    if (uprobe_offset2 <= 0) {
+        printf("Failed to get func(stream_free) offset.\n");
+        return 0;
+    }
+	//fprintf(stderr, "HAPROXY DEBUG GET OFFSET1 = %ld OFFSET2 = %ld\n", uprobe_offset1, uprobe_offset2);
 
     /* Attach tracepoint handler */
     skel->links.haproxy_probe_estabilsh = bpf_program__attach_uprobe(skel->progs.haproxy_probe_estabilsh,

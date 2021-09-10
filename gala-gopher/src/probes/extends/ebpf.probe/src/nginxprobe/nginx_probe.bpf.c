@@ -4,11 +4,11 @@
 #include <bpf/bpf_tracing.h>
 #include "nginx_probe.h"
 
-#define _(P)                                   \
-    ({                                         \
-        typeof(P) val;                         \
-        bpf_probe_read(&val, sizeof(val), &P); \
-        val;                                   \
+#define _(P)                                   		\
+    ({                                         		\
+        typeof(P) val;                         		\
+        bpf_probe_read_user(&val, sizeof(val), &P); \
+        val;                                   		\
     })
 char LICENSE[] SEC("license") = "GPL";
 /* 4 LB

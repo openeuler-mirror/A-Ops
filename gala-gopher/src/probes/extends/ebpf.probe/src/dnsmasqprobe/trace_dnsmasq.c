@@ -166,6 +166,10 @@ int main(int argc, char **argv)
     }
 
     uprobe_offset = get_func_offset("dnsmasq", "send_from", bin_file_path);
+	if (uprobe_offset <= 0) {
+        printf("Failed to get func(send_from) offset.\n");
+        return 0;
+    }
     
     /* Attach tracepoint handler */
     skel->links.dnsmasq_probe_send_from = bpf_program__attach_uprobe(skel->progs.dnsmasq_probe_send_from,
