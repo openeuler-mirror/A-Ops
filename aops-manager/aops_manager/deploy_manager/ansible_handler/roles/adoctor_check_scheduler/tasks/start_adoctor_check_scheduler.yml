@@ -8,4 +8,4 @@
 
 # Checking the Service Status
 - name: verify adoctor_check_scheduler is listening on {{ check_scheduler_port }}
-  wait_for: host={{ ansible_host }} port={{ check_scheduler_port }} timeout=1
+  wait_for: port={{ check_scheduler_port }} timeout=1

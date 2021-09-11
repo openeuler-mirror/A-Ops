@@ -94,5 +94,4 @@ class ExpressionCheckRule(CheckRulePlugin):
         if not self._syntax_tree:
             raise CheckItemError("syntax tree is None")
         ret = self._syntax_tree.calculate(data_backpack)
-        LOGGER.debug("judge condition result %s", ret)
         return ret
