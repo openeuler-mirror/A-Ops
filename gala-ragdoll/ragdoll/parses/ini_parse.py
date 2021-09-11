@@ -29,6 +29,8 @@ class IniJsonParse(object):
         desc: return an json listfrom the obj object
         """
         dic = {}
+        if not obj:
+            return dic
         sections = obj.sections()
         for d_sec in sections:
             d_dic = {}
