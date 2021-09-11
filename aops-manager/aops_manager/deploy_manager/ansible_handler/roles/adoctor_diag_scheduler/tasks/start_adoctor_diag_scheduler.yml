@@ -4,7 +4,7 @@
   become_user: root
   service:
     name: adoctor-diag-scheduler
-    state: started
+    state: restarted
 
 # Checking the Service Status
 - name: verify adoctor_diag_scheduler is listening on {{ diag_scheduler_port }}

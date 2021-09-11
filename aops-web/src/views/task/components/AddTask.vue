@@ -3,7 +3,7 @@
     <a-row :gutter="16">
       <a-col :span="24">
         <a-form-item label="任务名称">
-          <a-input placeholder="请输入任务名称，不超过20个字符" v-decorator="['task_name',{trigger:'blur',rules: [{ required: true, message: '请输入任务名称' },{ max: 20, message: '任务名称不能超过20个字符' }]}]" />
+          <a-input placeholder="请输入任务名称，不超过20个字符" v-decorator="['task_name',{rules: [{ required: true, message: '请输入任务名称' },{ max: 50, message: '任务名称不能超过50个字符' },{ validator: checkTaskName }]}]" />
         </a-form-item>
       </a-col>
     </a-row>
@@ -28,7 +28,7 @@
       <a-col :span="24">
         <a-form-item label="任务描述">
           <a-textarea
-            v-decorator="['description',{rules: [{ required: true, message: '请输入该配置任务的描述' }]}]"
+            v-decorator="['description',{rules: [{ required: true, message: '请输入该配置任务的描述' }, { validator: checkTaskdesc }]}]"
             :rows="4"
             placeholder="请输入该配置任务的描述"
           />
@@ -108,7 +108,43 @@ import { getTemplateList, generateTask } from '@/api/task'
       handleChange (selectedItems) {
         this.selectedItems = selectedItems
         this.form.setFieldsValue({ 'template_name': selectedItems })
-      }
+      },
+      checkTaskName (rule, value, cb) {
+          if (/[^0-9a-z_]/.test(value)) {
+            /* eslint-disable */
+            cb('名称应由数字、小写字母、英文下划线组成')
+            /* eslint-enable */
+            return
+          }
+          if (/^[^a-z]/.test(value)) {
+            /* eslint-disable */
+            cb('以小写字母开头，且结尾不能是英文下划线')
+            /* eslint-enable */
+            return
+          }
+          if (/[_]$/.test(value)) {
+            /* eslint-disable */
+            cb('以小写字母开头，且结尾不能是英文下划线')
+            /* eslint-enable */
+            return
+          }
+          cb()
+        },
+        checkTaskdesc (rule, value, cb) {
+          if (value.length > 256) {
+            /* eslint-disable */
+            cb('长度不超过256个字符')
+            /* eslint-enable */
+            return
+          }
+          if (/[<>]/.test(value)) {
+            /* eslint-disable */
+            cb('不能有><符号')
+            /* eslint-enable */
+            return
+          }
+          cb()
+        }
     }
   }
 </script>

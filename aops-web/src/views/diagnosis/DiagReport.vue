@@ -45,7 +45,7 @@
 
 <script>
 import MyPageHeaderWrapper from '@/views/utils/MyPageHeaderWrapper'
-import { getdiagreport } from '@/api/diagnosis'
+import { getdiagreport, delDiagReport } from '@/api/diagnosis'
 import { dateFormat } from '@/views/utils/Utils'
 import FaultTree from './components/FaultTree.vue'
 
@@ -91,7 +91,18 @@ export default {
     },
     deleteReport () {
       // console.log('删除！')// 删除后当前页不存在，可能要跳回列表页
-      this.$message.success('诊断报告已删除！')
+      const _this = this
+      const reportList = []
+      reportList.push(_this.reportData.report_id)
+      delDiagReport(reportList).then(function (res) {
+        if (res.code === 200) {
+          _this.$message.success('诊断报告已删除！')
+          _this.$router.push('/diagnosis/fault-diagnosis')
+        }
+      }).catch(function (err) {
+        _this.$message.error(err.response.data.msg)
+      }).finally(function () {
+      })
     }
   }
 }

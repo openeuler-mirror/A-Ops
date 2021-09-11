@@ -33,7 +33,8 @@ class ExecuteTaskSchema(Schema):
     """
     validators for parameter of /manage/task/execute_task
     """
-    task_list = fields.List(fields.String(), required=True)
+    task_list = fields.List(fields.String(), required=True,
+                            validate=lambda s: len(s) > 0)
 
 
 class GetTaskSchema(Schema):
@@ -51,9 +52,10 @@ class GetTaskSchema(Schema):
 
 class DeleteTaskSchema(Schema):
     """
-    validators for parameter of /manage/task/generate_task
+    validators for parameter of /manage/task/delete_task
     """
-    task_list = fields.List(fields.String(), required=True)
+    task_list = fields.List(fields.String(), required=True,
+                            validate=lambda s: len(s) > 0)
 
 
 class ImportTemplateSchema(Schema):
@@ -69,7 +71,8 @@ class DeleteTemplateSchema(Schema):
     """
     validators for parameter of /manage/template/delete_template
     """
-    template_list = fields.List(fields.String(), required=True)
+    template_list = fields.List(
+        fields.String(), required=True, validate=lambda s: len(s) > 0)
 
 
 class GetTemplateSchema(Schema):

@@ -192,9 +192,13 @@ class HostCommand(BaseCommand):
             params: Command line parameters
         Returns:
             dict: response of the backend
-        Raises:
         """
-
+        if params.host_group_name is None:
+            print("Host_group_name cannot be none, please input valid host_group_name.")
+            sys.exit(0)
+        if params.management is None:
+            print("Management cannot be none, please input valid management value.")
+            sys.exit(0)
         groups = str_split(params.host_group_name)
         name_check(groups)
         pyload = {

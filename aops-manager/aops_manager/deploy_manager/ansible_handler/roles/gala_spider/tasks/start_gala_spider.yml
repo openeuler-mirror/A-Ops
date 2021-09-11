@@ -1,6 +1,10 @@
 # Checking the Service Status
 - name: Start gala spider
-  shell: "/usr/bin/spider"
+  become: true
+  become_user: root
+  service:
+    name: gala-spider
+    state: started
 
 # Checking the Service Status
 - name: Verify gala spider is listening on {{ gala_spider_port }}

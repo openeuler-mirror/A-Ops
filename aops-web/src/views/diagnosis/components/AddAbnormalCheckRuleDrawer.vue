@@ -1,8 +1,8 @@
 <template>
   <a-form :form="form" layout="vertical" hide-required-mark>
     <a-form-item label="导入异常检测规则文件：">
-      <div style="border: 1px solid #ccc;padding: 2px;border-radius: 3px;display: inline-block;cursor: pointer">
-        <uploader toJSON uid="luleUploader" fileType="json" v-decorator="['ruleList',{rules: [{ required: true, message: '请上传文件' }]}]" />
+      <div style="border: 1px solid #ccc;border-radius: 3px;display: inline-block;cursor: pointer">
+        <uploader hidefocus toJSON uid="luleUploader" fileType="json" v-decorator="['ruleList',{rules: [{ required: true, message: '请上传文件' }]}]" />
       </div>
       <div style="padding-left: 15px;color: #999;display: inline-block">支持文件扩展名：<span style="border-bottom: 1px solid;padding: 0 2px">.json</span> ...</div>
     </a-form-item>
@@ -99,5 +99,5 @@
     cursor: not-allowed;
     opacity: 0.5;
   }
-
+  #luleUploader{padding: 2px;outline:none}
 </style>

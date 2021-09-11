@@ -39,7 +39,7 @@ class Lexer:
 
     tokens = [
                  'NAME', 'MARCO',
-                 'NUM', 'MIN', 'SEC', 'HOUR',
+                 'NUM', 'MIN', 'SEC', 'HOUR', 'SCI_NUM',
                  'CHAR_LITERAL',
                  'STRING_LITERAL',
                  'OR', 'AND',
@@ -50,6 +50,7 @@ class Lexer:
     literals = '()+-*/=?:,.^|&~!=[]{};<>@%'
 
     t_NUM = r'\.?[0-9][0-9eE_lLdDa-fA-F.xXpP]*'
+    t_SCI_NUM = r'-?([1-9]{1}|[1-9]?\.[0-9]+)[eE][+\-]?0?[1-9]+0*'
     t_CHAR_LITERAL = r'\'([^\\\n]|(\\.))*?\''
     t_STRING_LITERAL = r'\"([^\\\n]|(\\.))*?\"'
 
@@ -472,6 +473,7 @@ class TypeParser:
     @staticmethod
     def p_literal(production):
         '''literal : NUM
+                   | SCI_NUM
                    | CHAR_LITERAL
                    | STRING_LITERAL
                    | TRUE

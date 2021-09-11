@@ -3,7 +3,7 @@ Description=aops-database service
 After=network.target
 
 [Service]
-Type=forking
+Type=simple
 ExecStart=/usr/bin/aops-database start
 ExecStop=/usr/bin/aops-database stop
 Restart=on-failure

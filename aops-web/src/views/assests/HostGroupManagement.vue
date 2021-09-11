@@ -78,7 +78,9 @@
             :data-source="this.hostListDataStore[this.hostGroupName] || []"
             :loading="hostListIsLoading ? true : false"
             :pagination="false"
-          ></a-table>
+          >
+            <span slot="isManagement" slot-scope="isMana">{{ isMana ? '是' : '否' }}</span>
+          </a-table>
         </a-drawer>
       </div>
     </a-card>
@@ -118,7 +120,8 @@ const hostListColumns = [
     {
         dataIndex: 'management',
         key: 'management',
-        title: '管理节点'
+        title: '管理节点',
+        scopedSlots: { customRender: 'isManagement' }
     }
 ]
 

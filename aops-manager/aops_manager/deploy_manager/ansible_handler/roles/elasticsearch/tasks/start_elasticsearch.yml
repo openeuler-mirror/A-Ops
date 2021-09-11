@@ -4,7 +4,7 @@
   become_user: "{{ user }}"
   service:
     name: elasticsearch
-    state: started
+    state: restarted
 
 # Checking the Service Status
 - name: Verify elasticsearch is listening on {{ elasticsearch_listen_port }}

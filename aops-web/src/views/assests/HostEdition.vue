@@ -4,7 +4,17 @@
       <a-card :bordered="false">
         <a-form @submit="handleAddHost" :form="form" :label-col="{ span: 5 }" :wrapper-col="{ span: 10 }">
           <a-form-item label="主机名称">
-            <a-input :maxLength="50" v-decorator="['host_name', { rules: [{ required: true, message: '请输入主机名称' }] }]" placeholder="请输入">
+            <a-input
+              :maxLength="50"
+              v-decorator="[
+                'host_name',
+                { rules: [
+                  {required: true, message: '请输入主机名称' },
+                  { validator: checkNameInput }
+                ]}
+              ]"
+              placeholder="请输入"
+            >
               <a-tooltip slot="suffix" title="最大长度50个字符，由数字、小写字母、英文下划线_组成。以小写字母开头，且结尾不能是英文下划线_">
                 <a-icon type="info-circle" style="color: rgba(0,0,0,.45)" />
               </a-tooltip>
@@ -52,20 +62,20 @@
             </a-radio-group>
           </a-form-item>
           <a-form-item label="主机用户名">
-            <a-input v-decorator="['username', { rules: [{ required: true, message: '请输入主机用户名' }] }]" placeholder="请输入">
+            <a-input v-decorator="['username', { rules: [{ required: true, message: '请输入主机用户名' }, { validator: checkHostUserName }] }]" placeholder="请输入" :maxLength="16">
               <a-tooltip slot="suffix" title="登录主机时使用的用户名">
                 <a-icon type="info-circle" style="color: rgba(0,0,0,.45)" />
               </a-tooltip>
             </a-input>
           </a-form-item>
           <a-form-item label="主机登录密码">
-            <a-input-password v-decorator="['password', { rules: [{ required: true, message: '请输入主机登录密码' }] }]" placeholder="请输入"></a-input-password>
+            <a-input-password v-decorator="['password', { rules: [{ required: true, message: '请输入主机登录密码' }, { validator: passwordCheck }] }]" placeholder="请输入"></a-input-password>
           </a-form-item>
           <a-form-item label="主机sudo密码">
-            <a-input-password v-decorator="['sudo_password', { rules: [{ required: true, message: '请输入主机sudo密码' }] }]" placeholder="请输入"/>
+            <a-input-password v-decorator="['sudo_password', { rules: [{ required: true, message: '请输入主机sudo密码' }, { validator: passwordCheck }] }]" placeholder="请输入"/>
           </a-form-item>
           <a-form-item label="加密密钥">
-            <a-input-password v-decorator="['key', { rules: [{ required: true, message: '请输入加密密钥' }] }]" placeholder="请输入"/>
+            <a-input-password v-decorator="['key', { rules: [{ required: true, message: '请输入加密密钥' }, { validator: passwordCheck }] }]" placeholder="请输入"/>
           </a-form-item>
           <a-form-item :wrapper-col="{ span: 10, offset: 5 }">
             <a-button @click="handleCancel">取消</a-button>
@@ -187,6 +197,79 @@ export default {
       handleCancel () {
         store.dispatch('resetHostInfo')
         router.go(-1)
+      },
+      checkNameInput (rule, value, cb) {
+        if (/[^0-9a-z_]/.test(value)) {
+          /* eslint-disable */
+          cb('只能输入数字、小写字母和英文下划线')
+          /* eslint-enable */
+          return
+        }
+        if (/^[^a-z]/.test(value)) {
+          /* eslint-disable */
+          cb('首字母应为小写字母')
+          /* eslint-enable */
+          return
+        }
+        if (/[_]$/.test(value)) {
+          /* eslint-disable */
+          cb('结尾不能是英文下划线')
+          /* eslint-enable */
+          return
+        }
+        cb()
+      },
+      checkHostUserName (rule, value, cb) {
+        if (/[^0-9a-zA-Z_\-~`!?.;(){}[\]@#$^*+|=]/.test(value)) {
+          /* eslint-disable */
+          cb('用户名为数字、英文字母或特殊字符组成，不能包含空格和以下特殊字符：:<>&,\'"\\/%。')
+          /* eslint-enable */
+          return
+        }
+        if (/[<>\\]/.test(value)) {
+          /* eslint-disable */
+          cb('用户名为数字、英文字母或特殊字符组成，不能包含空格和以下特殊字符：:<>&,\'"\\/%。')
+          /* eslint-enable */
+          return
+        }
+        if (/^[#+-]/.test(value)) {
+          /* eslint-disable */
+          cb('首字符不能是“#”、“+”或“-”')
+          /* eslint-enable */
+          return
+        }
+        cb()
+      },
+      passwordCheck (rule, value, cb) {
+        if (/[^0-9a-zA-Z_~`!?,.:;\-'"(){}[\]/<>@#$%^&*+|\\=\s]/.test(value)) {
+          /* eslint-disable */
+          cb('只允许大小写字母、数字、空格和特殊字符')
+          /* eslint-enable */
+          return
+        }
+        if (value.length < 8 || value.length > 20) {
+          /* eslint-disable */
+          cb('长度应为8-20字符')
+          /* eslint-enable */
+          return
+        }
+        if (!(/[_~`!?,.:;\-'"(){}[\]/<>@#$%^&*+|\\=\s]/.test(value))) {
+          /* eslint-disable */
+          cb('至少应包含一个空格和特殊字符')
+          /* eslint-enable */
+          return
+        }
+        let count = 0
+        if (/[a-z]/.test(value)) count += 1
+        if (/[A-Z]/.test(value)) count += 1
+        if (/[0-9]/.test(value)) count += 1
+        if (count < 2) {
+          /* eslint-disable */
+          cb('至少包含大写字母、小写字母、数字中的两种')
+          /* eslint-enable */
+          return
+        }
+        cb()
       }
     },
     mounted: function () {

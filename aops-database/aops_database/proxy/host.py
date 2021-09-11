@@ -117,6 +117,7 @@ class HostDatabase(MysqlProxy):
             "succeed_list": [],
             "fail_list": []
         }
+        host_info = {}
         try:
             # query matched host
             hosts = self.session.query(Host).filter(
@@ -126,10 +127,11 @@ class HostDatabase(MysqlProxy):
                 host_group.host_count -= 1
                 self.session.delete(host)
                 result['succeed_list'].append(host.host_id)
-
+                host_info[host.host_id] = host.host_name
             self.session.commit()
             result['fail_list'] = list(set(host_list) - set(result['succeed_list']))
             status_code = judge_return_code(result, DATABASE_DELETE_ERROR)
+            result['host_info'] = host_info
             return status_code, result
         except sqlalchemy.exc.SQLAlchemyError as error:
             LOGGER.debug(error)
@@ -439,10 +441,9 @@ class HostDatabase(MysqlProxy):
 
         host_group_list = data['host_group_list']
         username = data['username']
-        result = {}
+        result = {"deleted": []}
         deleted = []
         not_deleted = []
-        result["deleted"] = deleted
         try:
             # Filter the group if there are hosts in the group
             host_groups = self.session.query(HostGroup).\
@@ -455,6 +456,7 @@ class HostDatabase(MysqlProxy):
                 deleted.append(host_group.host_group_name)
                 self.session.delete(host_group)
             self.session.commit()
+            result["deleted"] = deleted
             if not_deleted:
                 LOGGER.error(
                     "host group %s deleted, groups %s delete fail", deleted, not_deleted)

@@ -4,7 +4,7 @@
   become_user: "{{ user }}"
   service:
     name: node_exporter
-    state: started
+    state: restarted
 
 # Checking the Service Status
 - name: verify node_exporter is listening on {{ node_exporter_listen_port }}
