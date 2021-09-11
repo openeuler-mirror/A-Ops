@@ -31,7 +31,7 @@ def create_domain(body=None):  # noqa: E501
         body = [Domain.from_dict(d) for d in connexion.request.get_json()]  # noqa: E501
 
     if len(body) == 0:
-        base_rsp = BaseResponse(400, "The entered domian is empty")
+        base_rsp = BaseResponse(400, "The input domain cannot be empty, please check the domain.")
         return base_rsp
 
     successDomain = []
@@ -39,14 +39,9 @@ def create_domain(body=None):  # noqa: E501
 
     for domain in body:
         tempDomainName = domain.domain_name
-        isVerFication = Format.domainCheck(tempDomainName)
-        if not isVerFication:
-            codeNum = 400
-            codeString = "Interface input parameters verification failed. Please check the input parameters."
-            base_rsp = BaseResponse(codeNum, codeString)
-            return base_rsp, codeNum
+        checkRes = Format.domainCheck(tempDomainName)
         isExist = Format.isDomainExist(tempDomainName)
-        if isExist:
+        if isExist or not checkRes:
             failedDomain.append(tempDomainName)
         else:
             successDomain.append(tempDomainName)
@@ -84,8 +79,9 @@ def delete_domain(domainName):  # noqa: E501
     failedDomain = []
 
     for tempDomainName in domainName:
+        checkRes = Format.domainCheck(tempDomainName)
         isExist = Format.isDomainExist(tempDomainName)
-        if isExist:
+        if checkRes and isExist:
             domainPath = os.path.join(TARGETDIR, tempDomainName)
             successDomain.append(tempDomainName)
             shutil.rmtree(domainPath)

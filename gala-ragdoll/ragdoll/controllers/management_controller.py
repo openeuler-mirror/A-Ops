@@ -44,6 +44,13 @@ def add_management_confs_in_domain(body=None):  # noqa: E501
     domain = body.domain_name
     conf_files = body.conf_files
 
+    # check the input domain
+    checkRes = Format.domainCheck(domain)
+    if not checkRes:
+        num = 400
+        base_rsp = BaseResponse(num, "Failed to verify the input parameter, please check the input parameters.")
+        return base_rsp, num
+
     # check whether the domain exists
     isExist = Format.isDomainExist(domain)
     if not isExist:
@@ -70,7 +77,8 @@ def add_management_confs_in_domain(body=None):  # noqa: E501
             contents_list_null.append(d_conf)
         else:
             codeNum = 400
-            base_rsp = BaseResponse(codeNum, "Invalid input exists.")
+            base_rsp = BaseResponse(codeNum, "The input parameters are not compliant, " +
+                                             "please check the input parameters.")
             return base_rsp, codeNum
 
     successConf = []
@@ -81,7 +89,17 @@ def add_management_confs_in_domain(body=None):  # noqa: E501
     # Content is not an empty scene and is directly analyed and parsed
     if len(contents_list_non_null) > 0:
         for d_conf in contents_list_non_null:
+            if not d_conf.contents.strip():
+                codeNum = 400
+                base_rsp = BaseResponse(codeNum, "The input parameters are not compliant, " +
+                                                 "please check the input parameters.")
+                return base_rsp, codeNum
             content_string = object_parse.parse_content_to_json(d_conf.file_path, d_conf.contents)
+            if not json.loads(content_string):
+                codeNum = 400
+                base_rsp = BaseResponse(codeNum, "Input configuration content verification failed, " +
+                                                 "please check the config.")
+                return base_rsp, codeNum
             # create the file and expected value in domain
             feature_path = yang_module.get_feature_by_real_path(domain, d_conf.file_path)
             result = conf_tools.wirteFileInPath(feature_path, content_string + '\n')
@@ -144,6 +162,11 @@ def add_management_confs_in_domain(body=None):  # noqa: E501
                 content = d_file.get("content")
                 content_string = object_parse.parse_content_to_json(file_path, content)
                 # create the file and expected value in domain
+                if not json.loads(content_string):
+                    codeNum = 400
+                    base_rsp = BaseResponse(codeNum, "Input configuration content verification failed," + 
+                                                     "please check the config in the host.")
+                    return base_rsp, codeNum
                 feature_path = yang_module.get_feature_by_real_path(domain, file_path)
                 result = conf_tools.wirteFileInPath(feature_path, content_string)
                 if result:
@@ -194,7 +217,14 @@ def delete_management_confs_in_domain(body=None):  # noqa: E501
 
     #  check whether the domain exists
     domain = body.domain_name
-    print("body is : {}".format(body))
+
+    # check the input domain
+    checkRes = Format.domainCheck(domain)
+    if not checkRes:
+        num = 400
+        base_rsp = BaseResponse(num, "Failed to verify the input parameter, please check the input parameters.")
+        return base_rsp, num
+
     isExist = Format.isDomainExist(domain)
     if not isExist:
         codeNum = 400
@@ -279,9 +309,17 @@ def get_management_confs_in_domain(body=None):  # noqa: E501
     """
     if connexion.request.is_json:
         body = DomainName.from_dict(connexion.request.get_json())  # noqa: E501
-    
+
     # Check whether the domain exists
     domain = body.domain_name
+
+    # check the input domain
+    checkRes = Format.domainCheck(domain)
+    if not checkRes:
+        num = 400
+        base_rsp = BaseResponse(num, "Failed to verify the input parameter, please check the input parameters.")
+        return base_rsp, num
+
     isExist = Format.isDomainExist(domain)
     if not isExist:
         base_rsp = BaseResponse(400, "The current domain does not exist")
@@ -293,7 +331,6 @@ def get_management_confs_in_domain(body=None):  # noqa: E501
 
     # get the path in domain
     domainPath = os.path.join(TARGETDIR, domain)
-    print("########## domainPath is : {} ########## ".format(domainPath))
 
     # When there is a file path is the path of judgment for the configuration items
     for root, dirs, files in os.walk(domainPath):
@@ -338,6 +375,14 @@ def query_changelog_of_management_confs_in_domain(body=None):  # noqa: E501
     #  check whether the domain exists
     domain = body.domain_name
     print("body is : {}".format(body))
+
+    # check the input domain
+    checkRes = Format.domainCheck(domain)
+    if not checkRes:
+        num = 400
+        base_rsp = BaseResponse(num, "Failed to verify the input parameter, please check the input parameters.")
+        return base_rsp, num
+
     isExist = Format.isDomainExist(domain)
     if not isExist:
         base_rsp = BaseResponse(400, "The current domain does not exist")

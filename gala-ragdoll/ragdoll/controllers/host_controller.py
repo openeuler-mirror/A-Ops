@@ -34,10 +34,16 @@ def add_host_in_domain(body=None):  # noqa: E501
     # check whether host_infos is empty
     if len(host_infos) == 0:
         num = 400
-        base_rsp = BaseResponse(num, "The entered host is empty")
+        base_rsp = BaseResponse(num, "Enter host info cannot be empty, please check the host info.")
         return base_rsp, num
 
-    #  check whether the domain exists
+    checkRes = Format.domainCheck(domain)
+    if not checkRes:
+        num = 400
+        base_rsp = BaseResponse(num, "Failed to verify the input parameter, please check the input parameters.")
+        return base_rsp, num
+
+    # check whether the domain exists
     isExist = Format.isDomainExist(domain)
     if not isExist:
         num = 400
@@ -103,6 +109,13 @@ def delete_host_in_domain(body=None):  # noqa: E501
 
     domain = body.domain_name
     hostInfos = body.host_infos
+
+    # check the input domain
+    checkRes = Format.domainCheck(domain)
+    if not checkRes:
+        num = 400
+        base_rsp = BaseResponse(num, "Failed to verify the input parameter, please check the input parameters.")
+        return base_rsp, num
 
     #  check whether the domain exists
     isExist = Format.isDomainExist(domain)
@@ -199,6 +212,13 @@ def get_host_by_domain_name(body=None):  # noqa: E501
         body = DomainName.from_dict(connexion.request.get_json())  # noqa: E501
 
     domain = body.domain_name
+
+    # check the input domain
+    checkRes = Format.domainCheck(domain)
+    if not checkRes:
+        num = 400
+        base_rsp = BaseResponse(num, "Failed to verify the input parameter, please check the input parameters.")
+        return base_rsp, num
 
     #  check whether the domain exists
     isExist = Format.isDomainExist(domain)

@@ -46,6 +46,12 @@ def get_the_sync_status_of_domain(body=None):  # noqa: E501
 
     domain = body.domain_name
 
+    checkRes = Format.domainCheck(domain)
+    if not checkRes:
+        num = 400
+        base_rsp = BaseResponse(num, "Failed to verify the input parameter, please check the input parameters.")
+        return base_rsp, num
+
     # check the domian is exist
     isExist = Format.isDomainExist(domain)
     if not isExist:
@@ -240,12 +246,20 @@ def query_real_confs(body=None):  # noqa: E501
 
     domain = body.domain_name
     hostList = body.host_ids
+
+    checkRes = Format.domainCheck(domain)
+    if not checkRes:
+        num = 400
+        base_rsp = BaseResponse(num, "Failed to verify the input parameter, please check the input parameters.")
+        return base_rsp, num
+
     # check the domain is Exist
     isExist = Format.isDomainExist(domain)
     if not isExist:
         codeNum = 400
         base_rsp = BaseResponse(codeNum, "The current domain does not exist, please create the domain first.")
         return base_rsp, codeNum
+
     # check whether the host is configured in the domain
     isHostListExist = Format.isHostInDomain(domain)
     print("isHostListExist is : {}".format(isHostListExist))
@@ -260,6 +274,8 @@ def query_real_confs(body=None):  # noqa: E501
     # If hostList is not empty, the actual contents of the currently given host are queried.
     conf_tools = ConfTools()
     port = conf_tools.load_port_by_conf()
+    existHost = []
+    failedHost = []
     if len(hostList) > 0:
         hostTool = HostTools()
         existHost, failedHost = hostTool.getHostExistStatus(domain, hostList)
@@ -273,7 +289,6 @@ def query_real_confs(body=None):  # noqa: E501
         resCode = response.status_code
         resText = json.loads(response.text)
         print("host/getHost return code is : {}".format(response.status_code))
-
 
     if len(existHost) == 0 or len(failedHost) == len(hostList):
         codeNum = 400
@@ -404,6 +419,13 @@ def sync_conf_to_host_from_domain(body=None):  # noqa: E501
 
     domain = body.domain_name
     hostList = body.host_ids
+
+    # check the input domain
+    checkRes = Format.domainCheck(domain)
+    if not checkRes:
+        num = 400
+        base_rsp = BaseResponse(num, "Failed to verify the input parameter, please check the input parameters.")
+        return base_rsp, num
 
     #  check whether the domain exists
     isExist = Format.isDomainExist(domain)

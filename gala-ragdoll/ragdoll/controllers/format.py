@@ -14,14 +14,12 @@ class Format(object):
     @staticmethod
     def domainCheck(domainName):
         res = True
-        if domainName == "" or domainName == " " or domainName == "/" or (" " in domainName):
+        if not re.match(r"^[A-Za-z0-9_\.-]*$", domainName) or domainName == "" or len(domainName) > 255:
             return False
         return res
 
     @staticmethod
     def isDomainExist(domainName):
-        if domainName == "" or domainName == " " or domainName == "/" or (" " in domainName):
-            return False
         TARGETDIR = Format.get_git_dir()
         domainPath = os.path.join(TARGETDIR, domainName)
         if os.path.exists(domainPath):
