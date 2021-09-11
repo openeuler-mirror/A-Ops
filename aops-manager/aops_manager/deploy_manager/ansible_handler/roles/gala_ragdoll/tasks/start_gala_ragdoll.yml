@@ -2,7 +2,7 @@
 - name: Start gala ragdoll
   become: true
   become_user: root
-    service:
+  service:
     name: gala-ragdoll
     state: restarted
 
