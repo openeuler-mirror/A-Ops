@@ -65,7 +65,11 @@ gala-spider用于架构感知探测结果呈现，可以根据各个节点上报
 
 ### 运行架构
 
-![topo_logic](D:\code\A-Ops\gala-spider\doc\pic\topo_logic.png)
+![topo_logic](doc/pic/topo_logic.png)
+
+### 接口文档
+
+[Restful API](doc/swagger.yaml)
 
 ## 详细介绍
 
