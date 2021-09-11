@@ -33,7 +33,7 @@ def db_kafka_agent():
             with open(ast.literal_eval(temp_tcp_file), 'a+') as d_file:
                 d_file.write(lines)
                 d_file.write('\n')
-                print(lines)
+                #print(lines)
         if line_json.get("table_name") in ast.literal_eval(other_table):
             with open(ast.literal_eval(temp_other_file), 'a+') as o_file:
                 o_file.write(lines)

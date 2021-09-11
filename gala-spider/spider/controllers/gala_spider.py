@@ -98,6 +98,7 @@ def get_observed_entity_list(timestamp=None):  # noqa: E501
                                     msg = "Successful",
                                     timestamp = 12345678,
                                     entities = entities)
+    clear_tmp()
     return entities_res, 200
 
 
