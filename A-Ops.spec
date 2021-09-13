@@ -334,6 +334,7 @@ mkdir %{buildroot}/%{python3_sitelib}/spider/config
 install config/*.conf %{buildroot}/%{python3_sitelib}/spider/config
 mkdir -p %{buildroot}/%{_prefix}/lib/systemd/system
 install service/gala-spider.service %{buildroot}/%{_prefix}/lib/systemd/system
+mkdir -p %{buildroot}/%{_tmppath}/spider
 popd
 
 
@@ -481,6 +482,7 @@ fi
 /%{_sysconfdir}/spider/gala-spider.conf
 %{_bindir}/spider
 %{_prefix}/lib/systemd/system/gala-spider.service
+%dir %{_tmppath}/spider
 
 
 %files -n python3-gala-spider
@@ -495,6 +497,9 @@ fi
 
 
 %changelog
+* Mon Sep 13 2021 zhaoyuxing<zhaoyuxing2@huawei.com> - 1.0.1-3
+- modify gala-spider add tmp files
+
 * Tue Sep 7 2021 zhaoyuxing<zhaoyuxing2@huawei.com> - 1.0.1-2
 - add gala-spider in spec
 

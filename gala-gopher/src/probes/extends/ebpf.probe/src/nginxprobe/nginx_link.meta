@@ -2,7 +2,7 @@ version = "1.0.0"
 measurements:
 (
     {
-        name: "nginx_statistic",
+        name: "nginx_link",
         fields:
         (
             {
@@ -19,6 +19,11 @@ measurements:
                 description: "server_ip",
                 type: "Unknown",
                 name: "server_ip",
+            },
+            {
+                description: "virtual port",
+                type: "Unknown",
+                name: "virtual_port",
             },
             {
                 description: "server port",

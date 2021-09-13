@@ -480,18 +480,19 @@ gala-gopher					    -- dr-xr-x---.
 
       以上，可以将基本的拓扑绘制出来，并可标记数据流方向；
 
-  - nginx_statistic
+  - nginx_link
 
     nginx观测指标，指标项：
 
-    | 指标项      | 含义                      | 备注 |
-    | ----------- | ------------------------- | ---- |
-    | client_ip   | 客户端ip                  |      |
-    | virtual_ip  | 服务ip（nginx对外服务ip） |      |
-    | server_ip   | backend ip                |      |
-    | server_port | backend port              |      |
-    | is_l7       | 是否七层LB转发            |      |
-    | link_count  | 链路数                    |      |
+    | 指标项       | 含义                      | 备注 |
+    | ------------ | ------------------------- | ---- |
+    | client_ip    | 客户端ip                  |      |
+    | virtual_ip   | 服务ip（nginx对外服务ip） |      |
+    | server_ip    | backend ip                |      |
+    | virtual_port | virtual port              |      |
+    | server_port  | backend port              |      |
+    | is_l7        | 是否七层LB转发            |      |
+    | link_count   | 链路数                    |      |
 
     - 拓扑绘制思路
 
@@ -618,7 +619,7 @@ gala-gopher					    -- dr-xr-x---.
   
   [table_info]					   // 配置关注的指标数据
   base_table_name = ["tcp_link", "lvs_link"]
-  other_table_name = ["nginx_statistic" , "lvs_link" , "haproxy_link" , "dnsmasq_link"]
+  other_table_name = ["nginx_link" , "lvs_link" , "haproxy_link" , "dnsmasq_link"]
   
   [option]						
   exclude_addr = "192.168.150"		// 指定排除哪些地址
