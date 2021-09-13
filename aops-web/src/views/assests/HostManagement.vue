@@ -126,7 +126,7 @@ export default {
                 {
                     dataIndex: 'public_ip',
                     key: 'public_ip',
-                    title: '公网IP地址'
+                    title: 'IP地址'
                 },
                 {
                     dataIndex: 'ssh_port',

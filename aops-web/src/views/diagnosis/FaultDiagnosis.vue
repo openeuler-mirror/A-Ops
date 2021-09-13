@@ -276,7 +276,14 @@
     },
     methods: {
       addDiagTreeSuccess () {
-        this.getDiagTree()
+        this.refreshgDiagTree()
+      },
+      refreshgDiagTree () {
+        const _this = this
+        this.loading = true
+        setTimeout(function () {
+          _this.getDiagTree()
+        }, 1500)
       },
       addFaultDiagnosisSuccess () {
         this.refreshFaultDiagnosisList()
@@ -295,10 +302,13 @@
       },
       refreshFaultDiagnosisList () {
         const that = this
-        that.getTaskList({
+        that.tableIsLoading = true
+        setTimeout(function () {
+          that.getTaskList({
             pagination: that.tablePagination,
             sorter: that.tableSorter
-        })
+          })
+        }, 1500)
       },
       // 获取诊断任务列表
       getTaskList (tableInfo) {
@@ -325,6 +335,7 @@
           }
         }).catch(function (err) {
           that.$message.error(err.response.data.msg)
+        }).finally(() => {
           that.tableIsLoading = false
         })
       },
@@ -391,9 +402,7 @@
             _this.taskList = newTableData
           }).catch(function (err) {
             _this.$message.error(err.response.data.msg)
-        }).finally(function () {
-          _this.tableIsLoading = false
-        })
+        }).finally(function () {})
       },
       // 获取故障诊断进度
       loadDiagProgress (taskData) {
@@ -415,7 +424,7 @@
           treeList
         }).then(function (res) {
             _this.$message.success('删除成功')
-            _this.getDiagTree()
+            _this.refreshgDiagTree()
           }).catch(function (err) {
           _this.$message.error(err.response.data.msg)
         }).finally(function () {

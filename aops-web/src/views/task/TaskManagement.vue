@@ -126,7 +126,7 @@
 
   const defaultPagination = {
     current: 1,
-    pageSize: 2,
+    pageSize: 10,
     showSizeChanger: true,
     showQuickJumper: true
   }
@@ -214,7 +214,7 @@
     methods: {
       // 新增playbook模板
       addTemplateSuccess () {
-        this.getTemplateList()
+        this.refreshTemplateList()
       },
       // 新增部署任务
       addTaskSuccess () {
@@ -267,11 +267,15 @@
       },
       // 刷新列表数据
       handleRefresh () {
+        const _this = this
         this.pagination = defaultPagination
         this.sorter = null
         this.filters = null
         this.selectedRowKeys = []
-        this.getTaskList()
+        this.tableIsLoading = true
+        setTimeout(function () {
+          _this.getTaskList()
+        }, 1500)
       },
       // 删除配置任务
       deleteTask (record) {
@@ -331,6 +335,13 @@
           _this.templateIsLoading = false
         })
       },
+      refreshTemplateList () {
+        const _this = this
+        this.templateIsLoading = true
+        setTimeout(function () {
+          _this.getTemplateList()
+        }, 1500)
+      },
       // 删除playbook模板
       deleteTemplate (templateName) {
         const _this = this
@@ -340,7 +351,7 @@
           templateList
         }).then(function (res) {
           _this.$message.success('删除成功')
-          _this.getTemplateList()
+          _this.refreshTemplateList()
         }).catch(function (err) {
           _this.$message.error(err.response.data.msg)
         }).finally(function () {

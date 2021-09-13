@@ -109,7 +109,7 @@ export default {
           cb()
         },
         checkHostGroupdesc (rule, value, cb) {
-          if (value.length > 256) {
+          if (value && value.length > 256) {
             /* eslint-disable */
             cb('长度不超过256个字符')
             /* eslint-enable */

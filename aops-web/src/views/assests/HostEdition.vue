@@ -241,7 +241,7 @@ export default {
           /* eslint-enable */
           return
         }
-        if (value.length < 8 || value.length > 20) {
+        if (value && (value.length < 8 || value.length > 20)) {
           /* eslint-disable */
           cb('长度应为8-20字符')
           /* eslint-enable */

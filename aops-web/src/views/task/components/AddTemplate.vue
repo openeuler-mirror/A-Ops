@@ -3,7 +3,7 @@
     <a-row :gutter="16">
       <a-col :span="24">
         <a-form-item label="playbook名称">
-          <a-input placeholder="请输入playbook名称，不超过20个字符" v-decorator="['template_name',{rules: [{ required: true, message: '请输入playbook名称' },{ max: 64, message: 'playbook名称不能超过64个字符' }, { validator: checkTemplateName}]}]" />
+          <a-input placeholder="请输入playbook名称，不超过64个字符" v-decorator="['template_name',{rules: [{ required: true, message: '请输入playbook名称' },{ max: 64, message: 'playbook名称不能超过64个字符' }, { validator: checkTemplateName}]}]" />
         </a-form-item>
       </a-col>
     </a-row>
@@ -25,7 +25,7 @@
           <a-textarea
             v-decorator="['description',{rules: [{ required: true, message: '请输入playbook描述' },{ max: 256, message: 'playbook描述不能超过256个字符' }, { validator: checkTemplatedesc }]}]"
             :rows="4"
-            placeholder="请输入playbook描述，不超过100个字符"
+            placeholder="请输入playbook描述，不超过256个字符"
           />
         </a-form-item>
       </a-col>
@@ -80,7 +80,7 @@ import Uploader from '@/components/Uploader'
         })
       },
       checkTemplateName (rule, value, cb) {
-        if (value.length > 64) {
+        if (value && value.length > 64) {
           /* eslint-disable */
           cb('长度不超过64个字符')
           /* eslint-enable */
@@ -95,7 +95,7 @@ import Uploader from '@/components/Uploader'
         cb()
       },
       checkTemplatedesc (rule, value, cb) {
-        if (value.length > 256) {
+        if (value && value.length > 256) {
           /* eslint-disable */
           cb('长度不超过256个字符')
           /* eslint-enable */

@@ -178,6 +178,21 @@ export const asyncRouterMap = [
         ]
       },
       {
+        path: routeMap.task.path,
+        name: 'task',
+        redirect: routeMap.task.children.TaskManagement.path,
+        component: RouteView,
+        meta: { title: routeMap.task.title, icon: 'robot', permission: ['task'] },
+        children: [
+          {
+            path: routeMap.task.children.TaskManagement.path,
+            name: 'TaskManagement',
+            component: () => import('@/views/task/TaskManagement'),
+            meta: { title: routeMap.task.children.TaskManagement.title, permission: ['task'] }
+          }
+        ]
+      },
+      {
         path: routeMap.diagnosis.path,
         name: 'diagnosis',
         redirect: '/diagnosis/abnormal-check',
@@ -287,21 +302,6 @@ export const asyncRouterMap = [
                 { breadcrumbName: routeMap.configuration.children.TranscationDomainManagement.title, path: routeMap.configuration.children.TranscationDomainConfigurations.path },
                 { breadcrumbName: routeMap.configuration.children.queryHostList.title, path: routeMap.configuration.children.queryHostList.path }
               ] }
-          }
-        ]
-      },
-      {
-        path: routeMap.task.path,
-        name: 'task',
-        redirect: routeMap.task.children.TaskManagement.path,
-        component: RouteView,
-        meta: { title: routeMap.task.title, icon: 'robot', permission: ['task'] },
-        children: [
-          {
-            path: routeMap.task.children.TaskManagement.path,
-            name: 'TaskManagement',
-            component: () => import('@/views/task/TaskManagement'),
-            meta: { title: routeMap.task.children.TaskManagement.title, permission: ['task'] }
           }
         ]
       },
