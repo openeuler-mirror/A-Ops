@@ -3,7 +3,7 @@
     <a-row :gutter="16">
       <a-col :span="24">
         <a-form-item label="任务名称">
-          <a-input placeholder="请输入任务名称，不超过20个字符" v-decorator="['task_name',{rules: [{ required: true, message: '请输入任务名称' },{ max: 50, message: '任务名称不能超过50个字符' },{ validator: checkTaskName }]}]" />
+          <a-input placeholder="请输入任务名称，不超过50个字符" v-decorator="['task_name',{rules: [{ required: true, message: '请输入任务名称' },{ max: 50, message: '任务名称不能超过50个字符' },{ validator: checkTaskName }]}]" />
         </a-form-item>
       </a-col>
     </a-row>
@@ -131,7 +131,7 @@ import { getTemplateList, generateTask } from '@/api/task'
           cb()
         },
         checkTaskdesc (rule, value, cb) {
-          if (value.length > 256) {
+          if (value && value.length > 256) {
             /* eslint-disable */
             cb('长度不超过256个字符')
             /* eslint-enable */

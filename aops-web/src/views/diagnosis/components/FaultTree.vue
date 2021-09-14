@@ -30,6 +30,10 @@ export default {
     treeDataLoading: {
       type: Boolean,
       default: false
+    },
+    highLightError: {
+      type: Boolean,
+      default: false
     }
   },
   computed: {
@@ -54,6 +58,9 @@ export default {
   },
   methods: {
     getColor (cfg) {
+      if (this.highLightError && cfg.value) {
+        return '#c00'
+      }
       // return color depends on params in cfg
       return '#8cc33e'
     },
@@ -162,7 +169,7 @@ export default {
             draggable: true
           })
 
-          const label = group.addShape('text', {
+          group.addShape('text', {
             attrs: {
               text: cfg.label,
               fill: '#000',
@@ -176,7 +183,8 @@ export default {
           })
 
           // const labelBBox = label.getBBox();
-          const bboxWidth = label.getBBox().width
+          const bboxWidth = rect.getBBox().width
+          const bboxHeight = rect.getBBox().height
           // rect.attr({ width: bboxWidth });
 
           group.addShape('path', {
@@ -185,8 +193,8 @@ export default {
               fill: '#ccc',
               stroke: '#ccc',
               path: [
-                ['M', 0, 0],
-                ['L', bboxWidth, 0]
+                ['M', 0, bboxHeight],
+                ['L', bboxWidth, bboxHeight]
               ]
             },
             name: 'path-shape',
@@ -241,10 +249,14 @@ export default {
       }
     })
 
+    const _this = this
+    const container = document.getElementById('graph-container')
+    const width = container.scrollWidth
+    const height = (container.scrollHeight || 500) - 20
     this.tree = new G6.TreeGraph({
-      container: 'graph-container',
-      width: 800,
-      height: 600,
+      container: container,
+      width: width,
+      height: height,
       layout: {
         type: 'compactBox',
         direction: 'LR',
@@ -276,6 +288,13 @@ export default {
       },
       plugins: [tooltip]
     })
+    if (typeof window !== 'undefined') {
+      window.onresize = () => {
+        if (!_this.tree || _this.tree.get('destroyed')) return
+        if (!container || !container.scrollWidth || !container.scrollHeight) return
+        _this.tree.changeSize(container.scrollWidth, container.scrollHeight)
+      }
+    }
   }
 }
 </script>

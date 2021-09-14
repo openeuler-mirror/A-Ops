@@ -199,15 +199,9 @@ export default {
         router.go(-1)
       },
       checkNameInput (rule, value, cb) {
-        if (/[^0-9a-z_]/.test(value)) {
+        if (/[^0-9a-z_.]/.test(value)) {
           /* eslint-disable */
-          cb('只能输入数字、小写字母和英文下划线')
-          /* eslint-enable */
-          return
-        }
-        if (/^[^a-z]/.test(value)) {
-          /* eslint-disable */
-          cb('首字母应为小写字母')
+          cb('只能输入数字、小写字母和英文.和_')
           /* eslint-enable */
           return
         }
@@ -247,7 +241,7 @@ export default {
           /* eslint-enable */
           return
         }
-        if (value.length < 8 || value.length > 20) {
+        if (value && (value.length < 8 || value.length > 20)) {
           /* eslint-disable */
           cb('长度应为8-20字符')
           /* eslint-enable */
