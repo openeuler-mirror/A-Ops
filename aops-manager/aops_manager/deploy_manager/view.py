@@ -19,9 +19,10 @@ import uuid
 from flask import request
 from flask import jsonify
 from flask_restful import Resource
+import threading
 
 from aops_utils.log.log import LOGGER
-from aops_utils.restful.status import StatusCode, SUCCEED, PARAM_ERROR
+from aops_utils.restful.status import StatusCode, SUCCEED, PARAM_ERROR, TASK_EXECUTION_FAIL
 from aops_utils.restful.response import MyResponse
 from aops_utils.restful.helper import make_datacenter_url
 from aops_utils.conf.constant import DATA_ADD_TASK, DATA_ADD_TEMPLATE, DATA_DELETE_TASK,\
@@ -160,9 +161,6 @@ class ExecuteTask(Resource):
         task_list = args.get('task_list')
         LOGGER.info("Start run task %s", task_list)
 
-        succeed_list = []
-        fail_list = []
-
         database_url = make_datacenter_url(DATA_GET_TASK)
         pyload = {
                 "task_list": task_list,
@@ -177,24 +175,30 @@ class ExecuteTask(Resource):
             if not task_info.get('host_list'):
                 return StatusCode.make_response(PARAM_ERROR)
             for host in task_info['host_list']:
-                print(configuration.manager.get('HOST_VARS'), host['host_name'])
+                LOGGER.info(configuration.manager.get('HOST_VARS'), host['host_name'])
                 inventory.move_host_vars_to_inventory(configuration.manager.get('HOST_VARS'),
                                                       host['host_name'])
-            res = TaskRunner.run_task(task_id, HostKey.key)
-            if res:
-                succeed_list.append(task_id)
-                LOGGER.info("task %s execute succeed", task_id)
-                inventory.remove_host_vars_in_inventory()
-                continue
-            else:
-                fail_list.append(task_id)
-                LOGGER.warning("task %s execute fail", task_id)
+            task_thread = threading.Thread(target=ExecuteTask.task_with_remove,
+                                           args=(task_id, inventory))
+            task_thread.start()
+            if task_thread.is_alive():
+                response = StatusCode.make_response(SUCCEED)
+                return jsonify(response)
+            response = StatusCode.make_response(TASK_EXECUTION_FAIL)
+            return jsonify(response)
 
-        response = StatusCode.make_response(SUCCEED)
-        response['succeed_list'] = succeed_list
-        response['fail_list'] = fail_list
-
-        return jsonify(response)
+    @staticmethod
+    def task_with_remove(task_id, inventory):
+        """
+        Execute task and remove relative files after execution.
+        Args:
+            task_id(str): id of a task.
+        Returns:
+            bool: The execution flag of the task
+        """
+        res = TaskRunner.run_task(task_id, HostKey.key)
+        inventory.remove_host_vars_in_inventory()
+        return res
 
 
 class ImportTemplate(Resource):

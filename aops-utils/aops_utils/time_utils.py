@@ -42,7 +42,7 @@ def time_transfer(start_time, end_time):
         start_time = 0
     else:
         if '-' not in start_time:
-            start_time += '-0:0:0'
+            start_time += '19000101-00:00:00'
         if not validate_time(start_time, TIME_FORMAT):
             LOGGER.error(
                 'The start time format is not correct, please refer to %s', TIME_FORMAT)
@@ -59,7 +59,7 @@ def time_transfer(start_time, end_time):
         end_time = now
     else:
         if '-' not in end_time:
-            end_time += '-23:59:59'
+            end_time += '21001230-23:59:59'
         if not validate_time(end_time, TIME_FORMAT):
             LOGGER.error(
                 'The end time format is not correct, please refer to %s', TIME_FORMAT)
@@ -84,8 +84,6 @@ def time_check_generate(starttime, endtime):
         endtime: endtime of the command
     Returns:
         [starttime, endtime]: list of starttime and endtime
-    Raises:
-
     """
 
     if starttime == "":

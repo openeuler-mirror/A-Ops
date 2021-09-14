@@ -20,9 +20,9 @@ import json
 from adoctor_cli.base_cmd import BaseCommand
 from aops_utils.restful.helper import make_diag_url
 from aops_utils.conf.constant import DIAG_IMPORT_TREE, DIAG_GET_TREE, DIAG_DELETE_TREE
-from aops_utils.readconfig import read_json_config_file
 from aops_utils.validate import name_check, str_split
 from aops_utils.cli_utils import cli_request, add_access_token
+from aops_utils.excel2dict.diag_tree_dict import generate_tree_dict, PaintingRuleError
 
 
 class FaultreeCommand(BaseCommand):
@@ -114,11 +114,15 @@ class FaultreeCommand(BaseCommand):
             print("Please try again with valid --tree_list <tree_list>.")
             sys.exit(0)
         if params.conf is not None:
-            conf = read_json_config_file(params.conf)
+            try:
+                json_file = generate_tree_dict(params.conf)
+            except PaintingRuleError as err:
+                print("The diag tree fild import failed. %s" % err)
+                sys.exit(0)
         else:
             print('conf must be included in add command, please try again')
             sys.exit(0)
-        if conf is None:
+        if json_file is None:
             print("The config file is None, please import a valid config file.")
             sys.exit(0)
         diag_url, header = make_diag_url(DIAG_IMPORT_TREE)
@@ -126,7 +130,7 @@ class FaultreeCommand(BaseCommand):
             "trees": [
                 {
                     "tree_name": trees[0],
-                    "tree_content": conf,
+                    "tree_content": json_file,
                     "description": params.description
                 }
             ]

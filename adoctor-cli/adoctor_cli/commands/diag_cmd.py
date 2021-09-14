@@ -18,13 +18,13 @@ import sys
 import time
 
 from adoctor_cli.base_cmd import BaseCommand
-from aops_utils.log.log import LOGGER
+from aops_utils.cli_utils import add_start_and_end, add_access_token, cli_request, request_without_print
+from aops_utils.conf.constant import DIAG_EXECUTE_DIAG, DIAG_GET_PROGRESS, DIAG_GET_REPORT_LIST
+from aops_utils.conf.constant import DIAG_GET_TASK
 from aops_utils.restful.helper import make_diag_url
 from aops_utils.restful.status import SUCCEED
-from aops_utils.conf.constant import DIAG_EXECUTE_DIAG, DIAG_GET_PROGRESS, DIAG_GET_REPORT_LIST
 from aops_utils.time_utils import time_check_generate
 from aops_utils.validate import name_check, str_split
-from aops_utils.cli_utils import add_start_and_end, add_access_token, cli_request
 
 SECONDS = 5  # polling interval
 
@@ -94,6 +94,7 @@ class DiagCommand(BaseCommand):
         name_check(hosts)
         name_check(trees)
         diag_url, header = make_diag_url(DIAG_EXECUTE_DIAG)
+        times = 4
 
         pyload = {
             "host_list": hosts,
@@ -101,29 +102,58 @@ class DiagCommand(BaseCommand):
             "tree_list": trees,
             "interval": params.interval
         }
-        result = cli_request('POST', diag_url, pyload, header, params.access_token)
+        result = request_without_print('POST', diag_url, pyload, header, params.access_token)
 
         if result.get('code') != SUCCEED:
-            LOGGER.error("diag execute error")
             print("diag execute error: please try again")
             sys.exit(0)
+        total = result['expected_report_num']
 
         print("Diagnosis task start......")
 
         task_id = result['task_id']
+        print("The task id is: ", task_id)
         pyload = {
             "task_list": [task_id]
         }
+        diag_url, header = make_diag_url(DIAG_GET_TASK)
 
+        while times:
+            time.sleep(1)
+            result = request_without_print('POST', diag_url, pyload, header, params.access_token)
+            if result.get('code') != SUCCEED:
+                print("Task info query failed, please check your diag_scheduler or database.")
+                sys.exit(0)
+            if len(result.get('task_infos')) != 0:
+
+                print("The diagnosis execution will run with:\n"
+                      "hosts: {}\n"
+                      "trees: {}\n"
+                      "If there exists differences from your inputs,"
+                      "please check whether hosts and trees are valid."
+                      .format(result.get('task_infos')[0].get('host_list'),
+                              result.get('task_infos')[0].get('tree_list')))
+
+                DiagCommand.query_diag_process(pyload, params, total)
+                print("Diagnosis task complete.")
+                diag_url, header = make_diag_url(DIAG_GET_REPORT_LIST)
+                pyload = {
+                    "task_id": task_id
+                }
+                return cli_request('POST', diag_url, pyload, header, params.access_token)
+            times -= 1
+        print("There is no task can be found in diagnosis scheduler, please try again.")
+
+    @staticmethod
+    def query_diag_process(pyload, params, total):
         finished = 0
-        total = result['expected_report_num']
         wait_time = 0
         diag_url, header = make_diag_url(DIAG_GET_PROGRESS)
 
         while finished != total:
             try:
                 time.sleep(SECONDS)
-                result = cli_request('POST', diag_url, pyload, header, params.access_token)
+                result = request_without_print('POST', diag_url, pyload, header, params.access_token)
 
                 if result.get('code') != SUCCEED:
                     print('Execution failed, please check your connection or params.')
@@ -145,11 +175,3 @@ class DiagCommand(BaseCommand):
             except ConnectionError:
                 print("Connection failed, please try again.")
                 sys.exit(0)
-
-        print("Diagnosis task complete.")
-
-        diag_url, header = make_diag_url(DIAG_GET_REPORT_LIST)
-        pyload = {
-            "task_id": task_id
-        }
-        return cli_request('POST', diag_url, pyload, header, params.access_token)

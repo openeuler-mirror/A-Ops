@@ -20,7 +20,7 @@ from adoctor_cli.commands.report_cmd import ReportCommand
 from unittest import mock
 from aops_utils.validate import str_split
 from aops_utils.restful.response import MyResponse
-from aops_utils.time_utils import time_check_generate
+from aops_utils.time_utils import time_transfer
 
 
 class Redirect:
@@ -83,7 +83,7 @@ class TestReportCli(unittest.TestCase):
             cmd.do_command(args)
             ignore_list = ['sub_parse_name', 'access_token', 'action', 'start', 'end', 'task_id', 'report_list']
             args_dict = vars(args)
-            args_dict['time_range'] = time_check_generate(args_dict['start'], args_dict['end'])
+            args_dict['time_range'] = time_transfer(args_dict['start'], args_dict['end'])
             for item in ignore_list:
                 args_dict.pop(item)
             args_dict['tree_list'] = str_split(args_dict['tree_list'])

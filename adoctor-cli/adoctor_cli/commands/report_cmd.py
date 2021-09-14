@@ -18,7 +18,7 @@ Class:ReportCommand
 from adoctor_cli.base_cmd import BaseCommand
 from aops_utils.restful.helper import make_diag_url
 from aops_utils.conf.constant import DIAG_GET_REPORT_LIST, DIAG_DELETE_REPORT, DIAG_GET_REPORT
-from aops_utils.time_utils import time_check_generate
+from aops_utils.time_utils import time_check_generate, time_transfer
 from aops_utils.validate import name_check, str_split
 from aops_utils.cli_utils import add_page, cli_request, add_access_token, add_start_and_end
 
@@ -108,7 +108,7 @@ class ReportCommand(BaseCommand):
             dict: body of response
         """
         params = kwargs.get('params')
-        time_list = kwargs.get('time_list')
+        time_list = time_transfer(params.start, params.end)
         pyload = {
             "page": params.page,
             "per_page": params.per_page

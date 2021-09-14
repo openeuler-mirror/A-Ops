@@ -53,12 +53,12 @@ def traversal_ansible_output(status, **kwargs):
     fail_files = kwargs.get('fail_files')
     success_files = kwargs.get('success_files')
     infos = kwargs.get('infos')
-    public_ip = str(info['public_ip'])
-    path = os.path.join('/home/dest/', public_ip)
+    host_name = str(info['host_name'])
+    path = os.path.join('/home/dest/', host_name)
     if not res_data[status]:
         return
     for host in res_data[status].keys():
-        if host != public_ip:
+        if host != host_name:
             continue
         host_res = res_data[status][host]
         if host_res['task_name'] == "Check that if the file exists":
@@ -148,29 +148,41 @@ def generate_ansible_input_json(host_infos, inventory, params):
         host_infos(list): host infos get from database
         inventory(InventoryBuilder): Inventory class
         params(dict):  params of the requests
-
     Returns:
-
+        dict: The ansible output
     """
     ansible_input_json = {'read_config_hosts': {}}
     for info in host_infos:
 
         # move host dir to vars
         inventory.move_host_vars_to_inventory(configuration.manager.get('HOST_VARS'),
-                                              str(info['public_ip']))
+                                              str(info['host_name']))
 
         # read_config.json generate
-        ansible_input_json_host = {'ansible_host': info['public_ip'],
-                                   'ansible_python_interpreter': '/usr/bin/python3',
-                                   'config_list': []}
-        for item in params['infos']:
-            if item['host_id'] == info['host_id']:
-                for config in item['config_list']:
-                    ansible_input_json_host['config_list'] \
-                        .append({"src": config, "dest": "/home/dest"})
-                break
-        ansible_input_json['read_config_hosts'][info['public_ip']] = ansible_input_json_host
+        ansible_input_json_host = generate_host_dict(info, params)
+        ansible_input_json['read_config_hosts'][info['host_name']] = ansible_input_json_host
     return ansible_input_json
+
+
+def generate_host_dict(info, params):
+    """
+    Generate ansible host dict
+    Args:
+        info(dict): info of a host
+        params(dict): params of the requests
+    Returns:
+        dict: dict of ansible host
+    """
+    ansible_input_json_host = {'ansible_host': info['public_ip'],
+                               'ansible_python_interpreter': '/usr/bin/python3',
+                               'config_list': []}
+    for item in params['infos']:
+        if item['host_id'] == info['host_id']:
+            for config in item['config_list']:
+                ansible_input_json_host['config_list'] \
+                    .append({"src": config, "dest": "/home/dest"})
+                break
+    return ansible_input_json_host
 
 
 def generate_yaml_vars():
@@ -211,21 +223,13 @@ class CollectConfig(Resource):
     def post():
         """
         Get config
-
         Args:
             request(json): {
-                    "infos": [
-                        {
-                            "host_id": "f",
-                            "config_list": ["/xx", "/exxxo"]
-                        },
-                        {
-                            "host_id": "f",
-                            "config_list": ["/exc/hoxxame"]
-                        }
-                    ]
+                "infos": [{
+                    "host_id": "f",
+                    "config_list": ["/xx", "/exxxo"]
+                }]
             }
-
         Returns:
             dict: response body
         """

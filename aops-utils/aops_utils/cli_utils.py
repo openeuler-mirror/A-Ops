@@ -62,6 +62,25 @@ def cli_request(action, manager_url, pyload, header, access_token=None):
     return result
 
 
+def request_without_print(action, manager_url, pyload, header, access_token=None):
+    """
+    cli request without print
+    Args:
+        action(str): actions of requests
+        manager_url(str): route
+        pyload(dict): request body
+        header(dict): request header
+        access_token(str): access token of users
+
+    Returns:
+        json: response of manager
+    """
+    if access_token is not None:
+        header['access_token'] = access_token
+    result = MyResponse.get_response(action, manager_url, pyload, header)
+    return result
+
+
 def add_query_args(sub_parse, item_list):
     """
     Add query args of the sub parse.

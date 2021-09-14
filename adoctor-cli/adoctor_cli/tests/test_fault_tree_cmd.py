@@ -47,7 +47,7 @@ class TestTreeCli(unittest.TestCase):
         args = cmd.parser.parse_args(['faultree',
                                       '--action=add',
                                       '--tree_list=tree1',
-                                      '--conf=./test.json',
+                                      '--conf=./right_tree2.xls',
                                       '--description=Null description',
                                       "--access_token=123321"])
         with mock.patch.object(MyResponse, "get_response") as mock_get_response:

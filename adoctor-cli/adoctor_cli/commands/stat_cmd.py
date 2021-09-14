@@ -14,6 +14,7 @@
 Description: statistics method's entrance for custom commands
 Class:StatCommand
 """
+import sys
 
 from adoctor_cli.base_cmd import BaseCommand
 from aops_utils.conf.constant import CHECK_COUNT_RULE, CHECK_COUNT_RESULT
@@ -77,7 +78,9 @@ class StatCommand(BaseCommand):
         Returns:
             dict: body of responese
         """
-
+        if params.field is None:
+            print("please input the field of the statistics, using --field <field>.")
+            sys.exit(0)
         pyload = {}
         if params.field == 'check_rule':
             check_url, header = make_check_url(CHECK_COUNT_RULE)

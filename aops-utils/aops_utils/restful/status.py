@@ -36,6 +36,7 @@ KEY_ERROR = 1203
 CHANGE_PASSWORD = 1204
 REPEAT_PASSWORD = 1205
 CHANGE_PASSWORD_FAIL = 1206
+TASK_EXECUTION_FAIL = 1301
 
 
 class StatusCode:  # pylint: disable=R0903
@@ -102,6 +103,9 @@ class StatusCode:  # pylint: disable=R0903
         },
         PARAM_ERROR: {
             "msg": "request parameter error"
+        },
+        TASK_EXECUTION_FAIL: {
+            "msg": "Task execution failed."
         }
     }
 
