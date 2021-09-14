@@ -134,6 +134,10 @@
           <a-divider type="vertical" />
           <a href="#" @click="diagnosisDelete(report)">删除</a>
         </span>
+        <span slot="hName" slot-scope="hostName">
+          <a-spin v-if="hostInfoLoading" />
+          <span v-else>{{ hostName }}</span>
+        </span>
       </a-table>
     </a-drawer>
   </my-page-header-wrapper>
@@ -142,7 +146,7 @@
 <script>
   import MyPageHeaderWrapper from '@/views/utils/MyPageHeaderWrapper'
   import { getTaskList, getProgress, getReportList, getDiagTree, delDiagReport, delDiagTree } from '@/api/diagnosis'
-  // import { hostBasicInfo } from '@/api/assest'
+  import { hostInfo } from '@/api/assest'
   import DrawerView from '@/views/utils/DrawerView'
   import AddFaultTree from '@/views/diagnosis/components/AddFaultTree'
   import AddFaultDiagnosis from '@/views/diagnosis/components/AddFaultDiagnosis'
@@ -183,9 +187,10 @@
       scopedSlots: { customRender: 'check' }
     },
     {
-      dataIndex: 'host_id',
-      key: 'host_id',
-      title: '主机名'
+      dataIndex: 'host_name',
+      key: 'host_name',
+      title: '主机名',
+      scopedSlots: { customRender: 'hName' }
     },
     {
       dataIndex: 'tree_name',
@@ -196,7 +201,7 @@
     {
       key: 'tiemRange',
       title: '诊断时间段',
-      customRender: (text, item) => `${dateFormat('YYYY-mm-dd HH:MM', item.start * 1000)} - ${dateFormat('YYYY-mm-dd HH:MM', item.end * 1000)}`
+      customRender: (text, item) => `${dateFormat('YYYY-mm-dd HH:MM:SS', item.start * 1000)} - ${dateFormat('YYYY-mm-dd HH:MM:SS', item.end * 1000)}`
     }
   ]
   export default {
@@ -240,7 +245,8 @@
         taskProgressStatus: {
           finished: 0,
           total: 0
-        }
+        },
+        hostInfoLoading: false
       }
     },
     computed: {
@@ -396,7 +402,11 @@
               res.result.forEach(function (progressItem) {
                 if (item.task_id === progressItem.task_id) {
                   item.progress = progressItem.progress
-                  item.progressPercent = Math.floor((progressItem.progress / item.expected_report_num) * 100)
+                  if (progressItem.progress === 0 && item.expected_report_num === 0) {
+                    item.progressPercent = 100
+                  } else {
+                    item.progressPercent = Math.floor((progressItem.progress / item.expected_report_num) * 100)
+                  }
                 }
               })
               newTableData.push(item)
@@ -474,6 +484,31 @@
             current: reportListPagination.current,
             pageSize: reportListPagination.pageSize,
             total: res.total_count || (res.total_count === 0 ? 0 : reportListPagination.total)
+          }
+          // 获取列表时，根据列表数量更新
+          _this.taskProgressStatus = Object.assign({}, {
+            ..._this.taskProgressStatus,
+            finished: res.total_count
+          })
+          if (res.result.length > 0) {
+            _this.hostInfoLoading = true
+            hostInfo({
+              basic: true,
+              host_list: res.result.map(report => report.host_id)
+            }).then(function (res) {
+              _this.reportList = _this.reportList.map(report => {
+                const temp = Object.assign({}, report)
+                const matchedItem = res.host_infos.filter(host => host.host_id === report.host_id)[0]
+                if (matchedItem) {
+                  temp.host_name = matchedItem.host_name
+                }
+                return temp
+              })
+            }).catch(function (err) {
+              _this.$message.error(err.response.data.msg)
+            }).finally(() => {
+              _this.hostInfoLoading = false
+            })
           }
         }).catch(function (err) {
           _this.$message.error(err.response.data.msg)

@@ -82,7 +82,6 @@
     <a-card style="width: 100%;margin-top: 10px">
       <div style="font-weight: bold;font-size: 18px;margin-top: -12px;margin-bottom: 10px">异常检测记录</div>
       <a-table
-        rowKey="host_id"
         :columns="columns"
         :data-source="resultList"
         :pagination="false"
@@ -167,7 +166,12 @@ export default {
     getResultList () {
       var that = this
       getResult({ perPage: 5 }).then(function (data) {
-        that.resultList = data.check_result
+        that.resultList = data.check_result ? data.check_result.map(result => {
+            return {
+              ...result,
+              key: `${result.host_id}+${result.check_item}+${result.start}+${result.end}`
+            }
+          }) : []
       }).catch(function (err) {
         that.$message.error(err.response.data.msg)
       })

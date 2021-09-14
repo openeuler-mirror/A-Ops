@@ -36,9 +36,7 @@
           :loading="tableIsLoading"
         >
           <span slot="action" slot-scope="record">
-            <a-popconfirm title="你确定执行这个任务吗?" ok-text="确认" cancel-text="取消" @confirm="executeTask(record)">
-              <a>执行</a>
-            </a-popconfirm>
+            <a @click="executeTask(record)">执行</a>
             <a-divider type="vertical" />
             <a-popconfirm title="你确定删除这个任务吗?" ok-text="确认" cancel-text="取消" @confirm="deleteTask(record)">
               <a-icon slot="icon" type="close-circle" style="color: red" />
@@ -301,7 +299,21 @@
       },
       // 执行配置任务
       executeTask (record) {
-        return this.handleExecuteTask([record.task_id])
+        console.log(record)
+        const hostNameList = record.host_list && record.host_list.map(host => host.host_name)
+        const _this = this
+        this.$confirm({
+            title: (<div><p>{ `确认执行任务：${record.task_name}？` }</p></div>),
+            content: (<div><p>{hostNameList ? `该任务可能会修改以下主机配置：${hostNameList.join('、')}` : ''}</p>
+                <p>详情请查看任务描述。</p>
+              </div>
+            ),
+            icon: () => <a-icon type="exclamation-circle" />,
+            okType: 'danger',
+            okText: '执行',
+            onOk: function () { return _this.handleExecuteTask([record.task_id]) },
+            onCancel () {}
+        })
       },
       // 执行部署任务
       handleExecuteTask (taskList, isBash) {
