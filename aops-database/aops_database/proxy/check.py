@@ -427,7 +427,7 @@ class CheckDatabase(ElasticsearchProxy):
         flag, total_page, res = self._query_or_scan(
             CHECK_RESULT_INDEX, query_body, total_count, data,
             ['check_item', 'data_list', 'condition',
-             'value', 'host_id', 'start', 'end'])
+             'description', 'host_id', 'start', 'end'])
 
         if res[0]:
             LOGGER.info("query check result succeed")
