@@ -22,7 +22,7 @@
               </div>
             </template>
             <template slot="drawerView">
-              <add-abnormal-check-rule-drawer></add-abnormal-check-rule-drawer>
+              <add-abnormal-check-rule-drawer :addSuccess="handleAddRuleSuccess"></add-abnormal-check-rule-drawer>
             </template>
           </drawer-view>
           <router-link :to="{ path: '/diagnosis/abnormal-check/rule-management' }" target="_blank">
@@ -198,6 +198,9 @@ import CheckResultExpanded from '@/views/diagnosis/components/CheckResultExpande
       },
       deleteResult (result) {
         this.$message.success('记录删除成功')
+      },
+      handleAddRuleSuccess () {
+        this.getRuleCount()
       }
     }
   }

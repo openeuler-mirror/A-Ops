@@ -62,17 +62,23 @@ export default {
           const reader = new FileReader()
           reader.readAsText(file)
           reader.onload = function (e) {
-            let content = e.target.result
-            if (_this.toJSON) {
-              if (TYPE_ENUM[_this.fileType] = 'application/x-yaml') {
-                content = yaml.load(content)
-              } else {
-                content = JSON.parse(content)
+            try {
+              let content = e.target.result
+              if (_this.toJSON) {
+                if (TYPE_ENUM[_this.fileType] === 'application/x-yaml') {
+                  content = yaml.load(content)
+                } else {
+                  content = JSON.parse(content)
+                }
               }
+              _this.$emit('load', content)
+              _this.$emit('change', content)
+              resolve(content)
+            } catch (err_async) {
+              _this.$emit('error', err_async)
+              _this.$emit('change')
+              reject(err_async)
             }
-            _this.$emit('load', content)
-            _this.$emit('change', content)
-            resolve(content)
           }
         } catch (err) {
           _this.$emit('error', err)

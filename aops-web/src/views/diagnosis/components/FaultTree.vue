@@ -182,10 +182,8 @@ export default {
             draggable: true
           })
 
-          // const labelBBox = label.getBBox();
           const bboxWidth = rect.getBBox().width
           const bboxHeight = rect.getBBox().height
-          // rect.attr({ width: bboxWidth });
 
           group.addShape('path', {
             attrs: {

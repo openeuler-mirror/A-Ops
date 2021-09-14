@@ -14,16 +14,6 @@
               <a-col :span="10">诊断时间：{{ reportData.timeRange }}</a-col>
             </a-row>
           </div>
-          <div class="btn-box">
-            <a-popconfirm
-              title="你确定要删除这份报告吗?"
-              ok-text="确定"
-              cancel-text="取消"
-              @confirm="deleteReport"
-            >
-              <a href="#">删除</a>
-            </a-popconfirm>
-          </div>
         </div>
       </div>
       <a-tabs default-active-key="1" style="min-height: 350px">
@@ -46,7 +36,7 @@
 
 <script>
 import MyPageHeaderWrapper from '@/views/utils/MyPageHeaderWrapper'
-import { getdiagreport, delDiagReport } from '@/api/diagnosis'
+import { getdiagreport } from '@/api/diagnosis'
 import { dateFormat } from '@/views/utils/Utils'
 import FaultTree from './components/FaultTree.vue'
 
@@ -88,21 +78,6 @@ export default {
         _this.$message.error(err.response.data.msg)
       }).finally(function () {
         _this.reportLoading = false
-      })
-    },
-    deleteReport () {
-      // console.log('删除！')// 删除后当前页不存在，可能要跳回列表页
-      const _this = this
-      const reportList = []
-      reportList.push(_this.reportData.report_id)
-      delDiagReport(reportList).then(function (res) {
-        if (res.code === 200) {
-          _this.$message.success('诊断报告已删除！')
-          _this.$router.push('/diagnosis/fault-diagnosis')
-        }
-      }).catch(function (err) {
-        _this.$message.error(err.response.data.msg)
-      }).finally(function () {
       })
     }
   }

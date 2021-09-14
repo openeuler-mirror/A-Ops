@@ -38,8 +38,6 @@
           </span>
           <span slot="action" slot-scope="record">
             <a @click="handleReportListOpen(record)">查看报告</a>
-            <a-divider type="vertical" />
-            <a href="#" @click="diagnosisDelete(record)">删除</a>
           </span>
         </a-table>
       </div>
@@ -133,6 +131,8 @@
       >
         <span slot="check" slot-scope="report">
           <router-link :to="{ path: '/diagnosis/diag-report/'+report.report_id }" target="_blank">查看</router-link>
+          <a-divider type="vertical" />
+          <a href="#" @click="diagnosisDelete(report)">删除</a>
         </span>
       </a-table>
     </a-drawer>
@@ -142,6 +142,7 @@
 <script>
   import MyPageHeaderWrapper from '@/views/utils/MyPageHeaderWrapper'
   import { getTaskList, getProgress, getReportList, getDiagTree, delDiagReport, delDiagTree } from '@/api/diagnosis'
+  // import { hostBasicInfo } from '@/api/assest'
   import DrawerView from '@/views/utils/DrawerView'
   import AddFaultTree from '@/views/diagnosis/components/AddFaultTree'
   import AddFaultDiagnosis from '@/views/diagnosis/components/AddFaultDiagnosis'
@@ -359,10 +360,10 @@
       diagnosisDelete (record) {
         const _this = this
         const reportList = []
-        reportList.push(record.task_id)
+        reportList.push(record.report_id)
         this.$confirm({
-          title: (<div><p>删除后无法恢复</p><p>请确认删除以下故障诊断报告:</p></div>),
-          content: () => record.task_id,
+          title: (<div><p>删除后无法恢复</p></div>),
+          content: () => '请确认删除该报告',
           icon: () => <a-icon type="exclamation-circle" />,
           okType: 'danger',
           okText: '删除',
@@ -377,6 +378,7 @@
           delDiagReport(reportList).then((res) => {
               _this.$message.success('删除成功')
               _this.refreshFaultDiagnosisList()
+              _this.refreshReportList()
               if (isBash) _this.selectedRowKeys = []
               resolve()
             })
@@ -449,6 +451,13 @@
       reportListChange (pagination) {
         this.reportListPagination = pagination
         this.handleGetReportList(this.taskOfReportList)
+      },
+      refreshReportList () {
+        const _this = this
+        this.reportListLoading = true
+        setTimeout(function () {
+          _this.handleGetReportList(_this.taskOfReportList)
+        }, 1500)
       },
       handleGetReportList (taskId) {
         const _this = this
