@@ -8,6 +8,7 @@
       :body-style="bodyStyle"
       :visible="visible"
       @close="visible = false"
+      destroyOnClose
     >
       <slot name="drawerView"></slot>
       <div class="drawerBtn" v-if="hasButtonOnBottom">

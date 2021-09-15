@@ -88,19 +88,38 @@
     </a-row>
     <a-card style="width: 100%;float: left;margin-top: 10px">
       <div style="font-weight: bold;font-size: 18px;margin-top: -12px;margin-bottom: 10px">异常检测记录</div>
-      <a-row class="filters-row" type="flex" :gutter="10">
-        <a-col >
-          <a-range-picker
-            :show-time="{ format: 'HH:mm:ss' }"
-            format="YYYY-MM-DD HH:mm:ss"
-            :placeholder="['开始时间', '结束时间']"
-            @change="handleTimeSelect"
-            @ok="handleTimeSelect"
-            style="width: 380px"
-          />
+      <a-row class="filters-row" type="flex" justify="space-between">
+        <a-col>
+          <a-row type="flex" :gutter="10">
+            <a-col >
+              <a-range-picker
+                :show-time="{ format: 'HH:mm:ss' }"
+                format="YYYY-MM-DD HH:mm:ss"
+                :placeholder="['开始时间', '结束时间']"
+                @change="handleTimeSelect"
+                @ok="handleTimeSelect"
+                style="width: 380px"
+              />
+            </a-col>
+            <a-col>
+              <a-button @click="filterByTime">按时间筛选</a-button>
+            </a-col>
+          </a-row>
         </a-col>
         <a-col>
-          <a-button @click="filterByTime">按时间筛选</a-button>
+          <drawer-view title="新建故障诊断" :bodyStyle="{ paddingBottom: '80px' }">
+            <template slot="click">
+              <a-button type="primary">
+                故障诊断<a-icon type="plus"/>
+              </a-button>
+            </template>
+            <template slot="drawerView">
+              <add-fault-diagnosis
+                :saveSuccess="addFaultDiagnosisSuccess"
+                :faultTreeList="treeDataAll"
+              ></add-fault-diagnosis>
+            </template>
+          </drawer-view>
         </a-col>
       </a-row>
       <a-table
@@ -113,19 +132,6 @@
         :expandIconColumnIndex="3">
         <span slot="index" slot-scope="text, record, index">
           {{ index + firstIndex }}
-        </span>
-        <span slot="action" slot-scope="result">
-          <span>查看报告</span>
-          <a-divider type="vertical" />
-          <a-popconfirm
-            title="确认要删除这条异常检测记录?"
-            ok-text="确认"
-            cancel-text="取消"
-            :disabled="true"
-            @confirm="deleteResult(result)"
-          ><span href="#">删除</span></a-popconfirm>
-          <a-divider type="vertical" />
-          <a-icon type="down" style="color: #999"/>
         </span>
         <div slot="expandedRowRender" slot-scope="result" style="width: 100%;margin: 1px;padding-left: 50px;">
           <check-result-expanded :dataSource="result.data_list"></check-result-expanded>
@@ -140,7 +146,9 @@ import MyPageHeaderWrapper from '@/views/utils/MyPageHeaderWrapper'
 import DrawerView from '@/views/utils/DrawerView'
 import GetCheckResultDrawer from '@/views/diagnosis/components/GetCheckResultDrawer'
 import AddAbnormalCheckRuleDrawer from '@/views/diagnosis/components/AddAbnormalCheckRuleDrawer'
+import AddFaultDiagnosis from '@/views/diagnosis/components/AddFaultDiagnosis'
 import { getRuleAll, getRuleCount, getResultCountTopTen, getResult } from '@/api/check'
+import { getDiagTree } from '@/api/diagnosis'
 import { hostList } from '@/api/assest'
 import { dateFormat } from '@/views/utils/Utils'
 import CheckResultExpanded from '@/views/diagnosis/components/CheckResultExpanded'
@@ -154,7 +162,8 @@ const defaultPagination = { current: 1, pageSize: 10, showSizeChanger: true, sho
       DrawerView,
       AddAbnormalCheckRuleDrawer,
       GetCheckResultDrawer,
-      CheckResultExpanded
+      CheckResultExpanded,
+      AddFaultDiagnosis
     },
     mounted: function () {
       this.getRuleCount()
@@ -162,6 +171,8 @@ const defaultPagination = { current: 1, pageSize: 10, showSizeChanger: true, sho
       this.getResultList({})
       // 获取筛选数据列表
       this.getFilterListData()
+      // 获取故障树列表
+      this.getDiagTreeList()
     },
     computed: {
       columns () {
@@ -211,18 +222,13 @@ const defaultPagination = { current: 1, pageSize: 10, showSizeChanger: true, sho
             title: '检测条件'
           },
           {
-            dataIndex: 'value',
-            key: 'value',
-            title: '检测结果'
+            dataIndex: 'description',
+            key: 'description',
+            title: '描述'
           },
           {
             title: '检测时间段',
             customRender: (text, record, index) => dateFormat('YYYY-mm-dd HH:MM:SS', record.start * 1000) + ' 至 ' + dateFormat('YYYY-mm-dd HH:MM:SS', record.end * 1000)
-          },
-          {
-            title: '操作',
-            key: 'action',
-            scopedSlots: { customRender: 'action' }
           }
         ]
       },
@@ -241,10 +247,22 @@ const defaultPagination = { current: 1, pageSize: 10, showSizeChanger: true, sho
         filters: null,
         sorter: null,
         ruleAllList: [],
-        hostAllList: []
+        hostAllList: [],
+        treeDataAll: []
       }
     },
     methods: {
+      getDiagTreeList () {
+        const _this = this
+        getDiagTree({
+          treeList: []
+        }).then(function (res) {
+          _this.treeDataAll = [{}].concat(res.trees)
+        }).catch(function (err) {
+          _this.$message.error(err.response.data.msg)
+        }).finally(function () {
+        })
+      },
       filterByTime () {
         this.pagination = defaultPagination
         this.getResultList()
@@ -305,12 +323,16 @@ const defaultPagination = { current: 1, pageSize: 10, showSizeChanger: true, sho
         // this.getResultList({})
       },
       handleTableChange (pagination, filters, sorter) {
+        const timeFilter = this.filters && this.filters.timeRange
         if (this.paginationChange.current === pagination.current) {
           this.pagination = defaultPagination // 筛选是重置pagination
         } else {
           this.pagination = pagination // 存储翻页状态
         }
-        this.filters = filters
+        this.filters = {
+          ...filters,
+          timeRange: timeFilter
+        }
         this.sorter = sorter
         this.getResultList() // 出发排序、筛选、分页时，重新请求
       },
@@ -350,6 +372,8 @@ const defaultPagination = { current: 1, pageSize: 10, showSizeChanger: true, sho
         const newStr = dateStr.replace(/-/g, '/')
         const date = new Date(newStr)
         return date.getTime() / 1000
+      },
+      addFaultDiagnosisSuccess () {
       }
     }
   }

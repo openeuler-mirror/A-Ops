@@ -104,7 +104,10 @@ export default {
         _this.setGraphData(res.entities || [])
         _this.initialGraph()
       }).catch(err => {
-        _this.$message.error(err.response.data.msg)
+        if (err.response.data && err.response.data.status === 500) {
+          _this.$message.error('服务器错误，请稍后再试')
+        }
+        _this.$message.error(err.response.data.msg || err.response.data.title || '获取架构数据失败，请稍后再试')
       }).finally(() => {
         _this.dataLoading = false
       })

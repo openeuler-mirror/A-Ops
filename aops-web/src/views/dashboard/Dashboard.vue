@@ -209,9 +209,9 @@ const columns = [
     title: '检测条件'
   },
   {
-    dataIndex: 'value',
-    key: 'value',
-    title: '检测结果'
+    dataIndex: 'description',
+    key: 'description',
+    title: '描述'
   },
   {
     title: '检测时间段',

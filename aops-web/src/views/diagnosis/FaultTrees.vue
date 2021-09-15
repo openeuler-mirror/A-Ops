@@ -29,7 +29,10 @@
             </a-button>
           </template>
           <template slot="drawerView">
-            <add-fault-diagnosis :saveSuccess="addFaultDiagnosisSuccess" :faultTreeList="[faultTree]"></add-fault-diagnosis>
+            <add-fault-diagnosis
+              :saveSuccess="addFaultDiagnosisSuccess"
+              :faultTreeList="treeDataAll"
+            />
           </template>
         </drawer-view>
       </div>
@@ -73,8 +76,20 @@ export default {
     return {
       faultTreeId: this.$route.params.id,
       faultTree: {},
-      treeDataLoading: false
+      treeDataLoading: false,
+      treeDataAll: []
     }
+  },
+  mounted () {
+    const _this = this
+    getDiagTree({
+      treeList: []
+    }).then(function (res) {
+      _this.treeDataAll = [{}].concat(res.trees)
+    }).catch(function (err) {
+      _this.$message.error(err.response.data.msg)
+    }).finally(function () {
+    })
   },
   methods: {
     getFaultTree () {
@@ -111,7 +126,6 @@ export default {
       })
     },
     addFaultDiagnosisSuccess () {
-      // console.log('addFaultDiagnosisSuccess')
     }
   }
 }

@@ -29,13 +29,9 @@
           :columns="columns"
           :data-source="taskList"
           :pagination="pagination"
-          :row-selection="rowSelection"
           @change="handleTableChange"
           :loading="tableIsLoading"
         >
-          <span slot="progress" slot-scope="record">
-            <a-progress :percent="record.progressPercent" size="small" :status="record.progressPercent === 100 ? 'success' : 'active'" />
-          </span>
           <span slot="action" slot-scope="record">
             <a @click="handleReportListOpen(record)">查看报告</a>
           </span>
@@ -171,8 +167,8 @@
     },
     {
       key: 'progress',
-      title: '诊断进度',
-      scopedSlots: { customRender: 'progress' }
+      title: '诊断报告',
+      customRender: (text, item) => `${item.progress}/${item.expected_report_num}`
     },
     {
       key: 'operation',
@@ -250,11 +246,6 @@
       }
     },
     computed: {
-      rowSelection () {
-        return {
-          onChange: this.onSelectChange
-        }
-      },
       tablePagination () {
         return {
           current: this.pagination.current,

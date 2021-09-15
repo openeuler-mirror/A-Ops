@@ -22,7 +22,7 @@ export default {
     /* eslint-disable */
     value: {
       type: Object,
-      defualt: undefined
+      default: undefined
     }
     /* eslint-enable */
   },
