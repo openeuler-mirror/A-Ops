@@ -95,14 +95,15 @@ def lb_entity_process():
             s_ip = line_json.get("server_ip")
             s_port = line_json.get("server_port")
             v_port = line_json.get("virtual_port")
-            lb_tables.setdefault((hostname, table_name), {}).setdefault("c-v", (c_ip, v_ip, v_port))
-            lb_tables.setdefault((hostname, table_name), {}).setdefault("v-s", (v_ip, s_ip, s_port))
+            lb_tables.setdefault((c_ip, v_ip, s_ip, v_port, s_port), {}).setdefault("hname", hostname)
+            lb_tables.setdefault((c_ip, v_ip, s_ip, v_port, s_port), {}).setdefault("tname", table_name)
         lines = f.readline()
     return lb_tables
 
 
 def node_entity_process():
     nodes_table = {}
+    vm_table = {}
     edges_table, edges_infos = tcp_entity_process()
     if edges_table is None:
         print("Please wait kafka consumer datas...")
@@ -126,33 +127,36 @@ def node_entity_process():
             nodes_table[dst_node_id].get('l_edge').append((edge_id, "TCP_LINK"))
             if lb_tables is not None:
                 for lb_key in lb_tables.keys():
-                    if lb_tables[lb_key]['c-v'][0] == key[0] and \
-                                    lb_tables[lb_key]['c-v'][1] == key[1] and \
-                                    lb_tables[lb_key]['c-v'][2] == key[2]:
+                    if lb_key[0] == key[0] and lb_key[1] == key[1] and lb_key[3] == key[2]:
                         lb_tables.setdefault(lb_key, {}).setdefault('src', src_node_id)
-                    if lb_tables[lb_key]['v-s'][0] == key[0] and \
-                                    lb_tables[lb_key]['v-s'][1] == key[1] and \
-                                    lb_tables[lb_key]['v-s'][2] == key[2]:
+                    if lb_key[1] == key[0] and lb_key[2] == key[1] and lb_key[4] == key[2]:
                         lb_tables.setdefault(lb_key, {}).setdefault('dst', dst_node_id)
 
     if lb_tables is not None:
         for key in lb_tables.keys():
             print("lb----", key, lb_tables[key])
-            lb_node_id = node_entity_name(key[0], key[1].split("_")[0], None)
+            lb_node_id = node_entity_name(lb_tables[key]['hname'], lb_tables[key]['tname'].split("_")[0], None)
             lb_tables.setdefault(key, {}).setdefault('on', lb_node_id)
             if key[1] == "dnsmasq_link":
                 type = key[1].upper()
                 # Add process code here....
             else:
-                lb_id = edge_entity_name(key[1], None, lb_tables[key]['dst'], None, lb_tables[key]['src'])
-                lb_tables.setdefault(key, {}).setdefault("lb_id", lb_id)
-                nodes_table.setdefault(lb_node_id, {}).setdefault('lb_edge', [])
-                nodes_table[lb_node_id].get('lb_edge').append((lb_tables[key]['lb_id'], key[1].upper()))
+                if lb_tables[key]['dst'] is not None and lb_tables[key]['src'] is not None:
+                    lb_id = edge_entity_name(lb_tables[key]['hname'], None, lb_tables[key]['dst'], None, lb_tables[key]['src'])
+                    lb_tables.setdefault(key, {}).setdefault("lb_id", lb_id)
+                    nodes_table.setdefault(lb_node_id, {}).setdefault('lb_edge', [])
+                    nodes_table[lb_node_id].get('lb_edge').append((lb_tables[key]['lb_id'], lb_tables[key]['tname'].upper()))
 
     for key in nodes_table.keys():
         print("node----", key, nodes_table[key])
+        host = nodes_table[key]['host']
+        vm_table.setdefault(host, {}).setdefault('proc', [])
+        vm_table[host].get('proc').append(key)
 
-    return edges_table, edges_infos, nodes_table, lb_tables
+    for key in vm_table.keys():
+        print("vm-----", key, vm_table[key])
+
+    return edges_table, edges_infos, nodes_table, lb_tables, vm_table
 
 
 def clear_tmp():
