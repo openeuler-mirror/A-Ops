@@ -24,7 +24,7 @@ def get_observed_entity_list(timestamp=None):  # noqa: E501
     """
     entities = []
     # obtain tcp_link entities
-    edges_table, edges_infos, nodes_table, lb_tables = node_entity_process()
+    edges_table, edges_infos, nodes_table, lb_tables, vm_tables = node_entity_process()
     if edges_table is None:
         return 500
     for key in edges_table.keys():
@@ -83,6 +83,8 @@ def get_observed_entity_list(timestamp=None):  # noqa: E501
         entities.append(entity)
     if lb_tables is not None:
         for key in lb_tables.keys():
+            if len(lb_tables[key]) < 4:
+                continue
             lb_attrs = []
             left_call = Call(type = "PROCESS",
                             id = lb_tables[key]['src'])
@@ -92,13 +94,33 @@ def get_observed_entity_list(timestamp=None):  # noqa: E501
                             id = lb_tables[key]['on'])
             lb_attrs.append(Attr(key='example', value = "0.1", vtype = "float"))
             entity = Entity(entityid = lb_tables[key]['lb_id'],
-                            type = "NGINX-LINK",
+                            type = lb_tables[key]['tname'].upper(),
                             name = lb_tables[key]['lb_id'],
                             dependeditems = Dependenceitem(calls = left_call),
                             dependingitems = Dependenceitem(calls = right_call, run_ons = run_on))
             entities.append(entity)
-    entities_res = EntitiesResponse(code = 200,
-                                    msg = "Successful",
+    for key in vm_tables.keys():
+        procs = []
+        for i in range(len(vm_tables[key]['proc'])):
+            val = vm_tables[key]['proc'].pop()
+            proc = Runon(type = "PROCESS",
+                         id = val)
+            procs.append(proc)
+            entity = Entity(entityid = key,
+                            type = "VM",
+                            name = key,
+                            dependeditems = Dependenceitem(run_ons = procs),
+                            dependingitems = Dependenceitem())
+        entities.append(entity)
+
+    if len(entities) == 0:
+        code = 500
+        msg = "Empty"
+    else:
+        code = 200
+        msg = "Successful"
+    entities_res = EntitiesResponse(code = code,
+                                    msg = msg,
                                     timestamp = 12345678,
                                     entities = entities)
     clear_tmp()

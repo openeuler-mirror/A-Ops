@@ -16,7 +16,7 @@ exclude_addr: ["1.2.3.4"]
 
 # basic table name, please don't delete originally contains in the list. And append items in order if necessary:
 base_table_name: ["tcp_link", "lvs_link"]
-other_table_name: ["nginx_statistic" , "lvs_link" , "haproxy_link" , "dnsmasq_link"]
+other_table_name: ["nginx_link" , "lvs_link" , "haproxy_link" , "dnsmasq_link"]
 
 # gala-spider listening port
 gala_spider_port: 11115
