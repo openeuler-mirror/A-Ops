@@ -457,7 +457,8 @@ class DiagDatabase(ElasticsearchProxy):
             data(dict): e.g.
                 {
                     "username": "admin",
-                    "status": "finshed",
+                    "time_range": [1, 2],
+                    "task_list": [],
                     "sort": "tree_name",
                     "direction": "asc",
                     "page": 1,
@@ -511,7 +512,11 @@ class DiagDatabase(ElasticsearchProxy):
         """
         query_body = self._general_body(data)
         time_range = data.get('time_range')
-        if time_range and len(time_range) == 2:
+        task_list = data.get('task_list')
+        if task_list:
+            query_body["query"]["bool"]["must"].append(
+                {"terms": {"task_id": task_list}})
+        elif time_range and len(time_range) == 2:
             query_body["query"]["bool"]["must"].extend(
                 [{"range": {
                     "time": {"gte": time_range[0]}
