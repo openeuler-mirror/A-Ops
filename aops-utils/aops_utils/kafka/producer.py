@@ -86,8 +86,8 @@ class BaseProducer:
         Args:
             record_metadata (record_metadata): message's topic, partition and offset
         """
-        LOGGER.info("Sent successfully. Topic: %s, Partition: %s, Offset: %s",
-                    record_metadata.topic, record_metadata.partition, record_metadata.offset)
+        LOGGER.debug("Sent successfully. Topic: %s, Partition: %s, Offset: %s",
+                     record_metadata.topic, record_metadata.partition, record_metadata.offset)
 
     @staticmethod
     def _send_failed(excp):
@@ -103,7 +103,7 @@ class BaseProducer:
         send one message into broker
         Args:
             topic (str): topic of the message
-            value (str): value of the message
+            value (dict): value of the message
             key (str): messages with same key will be sent to same partition
             partition (str): random if not specified
 

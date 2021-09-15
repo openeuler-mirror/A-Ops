@@ -74,6 +74,7 @@ class GetTaskSchema(Schema):
     page = fields.Integer(required=False)
     per_page = fields.Integer(required=False)
     time_range = fields.List(fields.Integer, required=False, validate=lambda s: len(s) == 2)
+    task_list = fields.List(fields.String(), required=False, validate=lambda s: len(s) > 0)
 
 
 class GetProgressSchema(Schema):

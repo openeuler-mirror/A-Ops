@@ -16,7 +16,7 @@ help functions for producer
 import time
 
 from aops_utils.restful.status import SUCCEED
-from aops_utils.conf.constant import DATA_GET_DIAG_TREE, DATA_SAVE_DIAG_TASK
+from aops_utils.conf.constant import DATA_GET_DIAG_TREE, DATA_SAVE_DIAG_TASK, DATA_GET_HOST_INFO
 from aops_utils.log.log import LOGGER
 from aops_utils.restful.response import MyResponse
 from aops_utils.restful.helper import make_datacenter_url
@@ -36,6 +36,39 @@ def get_time_slices(time_range, interval):
     time_slices = [[time_points[index-1], time_points[index]]
                    for index in range(1, len(time_points))]
     return time_slices
+
+
+def get_validate_hosts(host_list, user_name):
+    """
+    get validate hosts
+    Args:
+        host_list (list): list of host ip
+        user_name (str): user name
+
+    Returns:
+        list
+    """
+    host_info_url = make_datacenter_url(DATA_GET_HOST_INFO)
+    pyload = {"username": user_name, "host_list": host_list, "basic": True}
+
+    response = MyResponse.get_response("POST", host_info_url, pyload)
+    if response["code"] != SUCCEED:
+        LOGGER.error("Request to get validate hosts from database failed. %s" % response["msg"])
+        return []
+
+    LOGGER.info("Request validate hosts %s from database succeed." % host_list)
+
+    validate_hosts = []
+    host_infos = response["host_infos"]
+    for host_info in host_infos:
+        validate_hosts.append(host_info["host_id"])
+
+    invalidate_hosts = list(set(host_list).difference(set(validate_hosts)))
+
+    if invalidate_hosts:
+        LOGGER.error("Host %s not found in database." % ", ".join(invalidate_hosts))
+
+    return validate_hosts
 
 
 def get_trees_content(tree_list, username):

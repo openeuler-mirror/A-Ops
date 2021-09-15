@@ -17,8 +17,10 @@ producer class for producing diagnose messages
 import uuid
 from itertools import product
 
+from aops_utils.log.log import LOGGER
 from aops_utils.kafka.producer import BaseProducer
-from adoctor_diag_scheduler.function.helper import get_trees_content, get_time_slices, save_task
+from adoctor_diag_scheduler.function.helper import get_validate_hosts, \
+    get_trees_content, get_time_slices, save_task
 
 
 class Producer(BaseProducer):
@@ -61,20 +63,26 @@ class Producer(BaseProducer):
         Raises: KeyError
 
         """
-        hosts = job_info['host_list']
-
         # convert time range into int. The verify schema is not that good to get rid of
         # string type int like "111".
         time_range = [int(job_info['time_range'][0]), int(job_info['time_range'][1])]
         # split time range based on interval
         time_slices = get_time_slices(time_range, int(job_info['interval']))
 
+        # get validate host from database
+        hosts = get_validate_hosts(job_info['host_list'], job_info["username"])
         # get validate trees' content from database
         tree_dict = get_trees_content(job_info['tree_list'], job_info["username"])
 
         val_trees = tree_dict.keys()
-        task_id = Producer._create_task_id()
         jobs_num = len(hosts) * len(val_trees) * len(time_slices)
+
+        if jobs_num == 0:
+            return None, 0
+
+        job_info['host_list'] = hosts
+        job_info['tree_list'] = list(val_trees)
+        task_id = Producer._create_task_id()
 
         for host, val_tree, time_slice in product(hosts, val_trees, time_slices):
             msg = {"username": job_info["username"], "host_id": host,
@@ -85,6 +93,7 @@ class Producer(BaseProducer):
         # send msgs in cache
         self._producer.flush()
         self._producer.close()
+        LOGGER.debug("%d kafka messages created." % jobs_num)
 
         save_task(job_info, task_id, jobs_num)
 
