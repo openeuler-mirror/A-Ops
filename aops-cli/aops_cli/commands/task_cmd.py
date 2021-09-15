@@ -20,6 +20,8 @@ from aops_cli.base_cmd import BaseCommand
 from aops_utils.validate import name_check, str_split
 from aops_utils.conf.constant import GENERATE_TASK, DELETE_TASK, GET_TASK, EXECUTE_TASK
 from aops_utils.restful.helper import make_manager_url
+from aops_utils.restful.response import MyResponse
+from aops_utils.restful.status import SUCCEED
 from aops_utils.cli_utils import add_page, cli_request, add_access_token, add_query_args
 
 
@@ -89,9 +91,9 @@ class TaskCommand(BaseCommand):
 
         action_dict = {
             'generate': self.manage_requests_generate_task,
-            'execute': self.manage_requests_query_delete_execute,
-            'delete': self.manage_requests_query_delete_execute,
-            'query': self.manage_requests_query_delete_execute
+            'execute': self.manage_requests_execute,
+            'delete': self.manage_requests_query_delete,
+            'query': self.manage_requests_query_delete
         }
         kwargs = {
             "action": action,
@@ -130,9 +132,9 @@ class TaskCommand(BaseCommand):
         return cli_request('POST', manager_url, pyload, header, params.access_token)
 
     @staticmethod
-    def manage_requests_query_delete_execute(**kwargs):
+    def manage_requests_query_delete(**kwargs):
         """
-        Description: Executing query or delete or excute request
+        Description: Executing query or delete request
         Args:
             params: Command line parameters
             action: task action
@@ -146,7 +148,6 @@ class TaskCommand(BaseCommand):
 
         name_check(task_ids)
         url_dict = {
-            'execute': [make_manager_url(EXECUTE_TASK), 'POST'],
             'delete': [make_manager_url(DELETE_TASK), 'DELETE'],
             'query': [make_manager_url(GET_TASK), 'POST']
         }
@@ -164,3 +165,48 @@ class TaskCommand(BaseCommand):
             pyload['page'] = params.page
             pyload['per_page'] = params.per_page
         return cli_request(url_operation, manager_url, pyload, header, params.access_token)
+
+    @staticmethod
+    def manage_requests_execute(**kwargs):
+        """
+        Description: Executing execute request
+        Args:
+            params: Command line parameters
+            action: task action
+        Returns:
+            dict: response of the backend
+        Raises:
+        """
+        params = kwargs.get('params')
+        task_ids = str_split(params.task_list)
+        name_check(task_ids)
+        manager_url, header = make_manager_url(GET_TASK)
+        pyload = {
+            "task_list": task_ids,
+            'page': params.page,
+            'per_page': params.per_page
+        }
+        header['access_token'] = params.access_token
+        task_response = MyResponse.get_response('POST', manager_url, pyload, header)
+        if task_response.get('code') != SUCCEED:
+            print("There is no such task in the system, please try again.")
+            sys.exit(0)
+        for task_info in task_response.get('task_infos'):
+            desc = task_info.get('description')
+            host_list = []
+            for host in task_info.get('host_list'):
+                host_list.append(host.get('host_name'))
+            print("\n{}\n These tasks may change your previous configuration.\n".format(desc))
+            print("The following host will be involved:")
+            print(host_list)
+            while True:
+                check = input("Please check if you want to continue y/n: ")
+                if check in ('y', 'Y'):
+                    manager_url, header = make_manager_url(EXECUTE_TASK)
+                    pyload = {"task_list": [task_info.get('task_id')]}
+                    cli_request('POST', manager_url, pyload, header, params.access_token)
+                    break
+                if check in ('N', 'n'):
+                    break
+                print("Unknown command, please try agin with Y/y or N/n.")
+        print("\nDone.")

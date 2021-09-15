@@ -14,12 +14,9 @@
 Description: Base method for custom commands
 Class: BaseCommand
 """
-import sys
 import argparse
 from collections import namedtuple
 from abc import abstractmethod
-
-from aops_utils.restful.response import MyResponse
 
 
 class BaseCommand:

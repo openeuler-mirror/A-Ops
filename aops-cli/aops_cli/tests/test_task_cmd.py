@@ -120,21 +120,35 @@ class TestTaskCli(unittest.TestCase):
             args_dict['per_page'] = 20
             self.assertEqual(args_dict, mock_get_response.call_args_list[0][0][2])
 
-    def test_execute_task(self):
+    @mock.patch('builtins.input')
+    def test_execute_task(self, mock_input):
         print("Execute the execute task test case")
         cmd = TaskCommand()
         args = cmd.parser.parse_args(['task',
                                       '--action=execute',
                                       '--task_list=t1',
                                       "--access_token=123321"])
+        mock_input.return_value = 'y'
         with mock.patch.object(MyResponse, "get_response") as mock_get_response:
-            expected_res = {
-                "code": 200,
-                "msg": 'operation succeed'
-            }
-            mock_get_response.return_value = expected_res
+            mock_get_response.side_effect = [
+                {
+                    "code": 200,
+                    "msg": 'operation succeed',
+                    'task_infos': [{
+                            "task_id": "id1",
+                            "host_list": [{"host_name": "host1"}]
+                        }
+                    ]
+                },
+                {
+                    "code": 200,
+                    "msg": 'operation succeed'
+                }
+            ]
             cmd.do_command(args)
             args_dict = dict()
             args_list = str_split(vars(args)['task_list'])
             args_dict['task_list'] = args_list
+            args_dict['page'] = 1
+            args_dict['per_page'] = 20
             self.assertEqual(args_dict, mock_get_response.call_args_list[0][0][2])

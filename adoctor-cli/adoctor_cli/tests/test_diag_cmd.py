@@ -77,6 +77,19 @@ class TestDiagCli(unittest.TestCase):
                     }
                 ]
             }
+            execute_list.append(
+                {
+                    "code": 200,
+                    "msg": 'operation succeed',
+                    "task_infos": [
+                        {
+                            "task_id": "task1",
+                            'host_list': ['host1'],
+                            'tree_list': ['tree1']
+                        }
+                    ]
+                }
+            )
             for i in range(11):
                 execute_list.append(time_out_dict)
             execute_list.append(report_dict)
@@ -102,6 +115,17 @@ class TestDiagCli(unittest.TestCase):
                     "msg": 'operation succeed',
                     "task_id": "task1",
                     "expected_report_num": 5
+                },
+                {
+                    "code": 200,
+                    "msg": 'operation succeed',
+                    "task_infos": [
+                        {
+                            "task_id": "task1",
+                            'host_list': ['host1'],
+                            'tree_list': ['tree1']
+                        }
+                    ]
                 },
                 {
                     "code": 200,
