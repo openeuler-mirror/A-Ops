@@ -55,6 +55,16 @@ export function getRule ({ checkItems, sort, direction, page, perPage }) {
     }
   })
 }
+// 获取全量规则
+export function getRuleAll () {
+  return request({
+    url: api.getRule,
+    method: 'post',
+    data: {
+      check_items: []
+    }
+  })
+}
 // 导⼊异常检测规则
 export function importRule (checkItems) {
   return request({

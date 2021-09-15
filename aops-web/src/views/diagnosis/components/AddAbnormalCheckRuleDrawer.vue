@@ -62,8 +62,14 @@
             if (typeof checkItems === 'object' && typeof checkItems.length === 'number' && checkItems.length > 0) {
               that.showSpin()
               importRule(checkItems).then(function (data) {
-                var msg = '成功添加' + data.succeed_list.length + '条规则！'
-                if (data.fail_list.length > 0) {
+                let msg = ''
+                if (data.succeed_list && data.succeed_list.length > 0) {
+                  msg += '成功添加' + data.succeed_list.length + '条规则！'
+                }
+                if (data.update_list && data.update_list.length > 0) {
+                  msg += '成功更新' + data.update_list.length + '条规则！'
+                }
+                if (data.fail_list && data.fail_list.length > 0) {
                   msg += '另有' + data.fail_list.length + '条规则添加失败！'
                 }
                 that.$message.success(msg)
@@ -72,6 +78,7 @@
                 that.$message.error(err.response.data.message)
               }).finally(function () {
                 that.closeSpin()
+                that.close()
               })
             } else {
               that.$message.error('请上传json格式文件并确保数据格式与规则样例一致！')

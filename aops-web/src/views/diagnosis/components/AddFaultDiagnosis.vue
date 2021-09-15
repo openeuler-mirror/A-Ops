@@ -58,7 +58,7 @@
       <a-col :span="24">
         <a-form-item label="所用故障树">
           <a-select
-            v-decorator="['tree_list',{rules: [{required: true,message: '请选择故障树'}]}]"
+            v-decorator="['tree_list',{rules: [{required: true,message: '请选择故障树'}, { validator: treeSelectCheck }]}]"
             mode="multiple"
             placeholder="请选择故障树"
             style="width: 100%"
@@ -226,6 +226,20 @@ Vue.use(Transfer)
       },
       handleTransferChange (nextTargetKeys) {
         this.targetKeys = nextTargetKeys
+      },
+      treeSelectCheck (rule, value, cb) {
+        if (!value) {
+          /* eslint-disable */
+          return cb('请选择故障树')
+          /* eslint-enable */
+        }
+        if (value.length > 10) {
+          /* eslint-disable */
+          cb('最多选择10个故障树')
+          /* eslint-enable */
+          return
+        }
+        cb()
       }
     }
   }

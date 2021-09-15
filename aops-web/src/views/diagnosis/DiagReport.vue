@@ -9,20 +9,14 @@
           </div>
           <div style="height: 60px;line-height: 28px">
             <a-row>
-              <a-col :span="10">主机名称：{{ reportData.host_id }}</a-col>
+              <a-col :span="10">
+                主机名称：
+                <a-spin v-if="hostInfoLoading" />
+                <span v-else>{{ hostInfo.host_name }}</span>
+              </a-col>
               <a-col :span="10">任务ID：{{ reportData.task_id }}</a-col>
               <a-col :span="10">诊断时间：{{ reportData.timeRange }}</a-col>
             </a-row>
-          </div>
-          <div class="btn-box">
-            <a-popconfirm
-              title="你确定要删除这份报告吗?"
-              ok-text="确定"
-              cancel-text="取消"
-              @confirm="deleteReport"
-            >
-              <a href="#">删除</a>
-            </a-popconfirm>
           </div>
         </div>
       </div>
@@ -46,7 +40,8 @@
 
 <script>
 import MyPageHeaderWrapper from '@/views/utils/MyPageHeaderWrapper'
-import { getdiagreport, delDiagReport } from '@/api/diagnosis'
+import { getdiagreport } from '@/api/diagnosis'
+import { hostInfo } from '@/api/assest'
 import { dateFormat } from '@/views/utils/Utils'
 import FaultTree from './components/FaultTree.vue'
 
@@ -64,7 +59,9 @@ export default {
       task_id: this.$route.params.id,
       report: {},
       reportData: [],
-      reportLoading: false
+      reportLoading: false,
+      hostInfo: {},
+      hostInfoLoading: false
     }
   },
   methods: {
@@ -82,7 +79,8 @@ export default {
           }
           if (!_this.reportData.report || !_this.reportData.report['node name']) {
             console.warn('no data for tree')
-         }
+          }
+          _this.getHostInfo(temp && temp.host_id)
         }
       }).catch(function (err) {
         _this.$message.error(err.response.data.msg)
@@ -90,19 +88,18 @@ export default {
         _this.reportLoading = false
       })
     },
-    deleteReport () {
-      // console.log('删除！')// 删除后当前页不存在，可能要跳回列表页
+    getHostInfo (id) {
       const _this = this
-      const reportList = []
-      reportList.push(_this.reportData.report_id)
-      delDiagReport(reportList).then(function (res) {
-        if (res.code === 200) {
-          _this.$message.success('诊断报告已删除！')
-          _this.$router.push('/diagnosis/fault-diagnosis')
-        }
+      this.hostInfoLoading = true
+      hostInfo({
+        basic: true,
+        host_list: [id]
+      }).then(function (res) {
+        _this.hostInfo = res.host_infos && res.host_infos[0] || {}
       }).catch(function (err) {
         _this.$message.error(err.response.data.msg)
       }).finally(function () {
+        _this.hostInfoLoading = false
       })
     }
   }

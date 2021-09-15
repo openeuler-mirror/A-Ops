@@ -14,7 +14,7 @@
             toJSON
             uid="treeUploader"
             fileType="json"
-            v-decorator="['tree_content',{rules: [{ required: true, message: '请上传文件' }]}]"
+            v-decorator="['tree_content',{rules: [{ required: true, message: '请上传文件JSON类型文件，并确保格式符合要求' }]}]"
           />
         </a-form-item>
       </a-col>

@@ -10,7 +10,10 @@
           <div style="height: 100%;width:60%;float: left;position:relative;">
             <div class="content">
               <div style="color: #999;">异常检测规则数量</div>
-              <div style="color: #333;font-size: 32px;line-height: 1em">{{ ruleCount.toString().replace(/(\d)(?=(?:\d{3})+$)/g, '$1,') }}</div>
+              <div style="color: #333;font-size: 32px;line-height: 1em">
+                <a-spin v-if="countIsLoading" />
+                <span v-else>{{ ruleCount.toString().replace(/(\d)(?=(?:\d{3})+$)/g, '$1,') }}</span>
+              </div>
             </div>
           </div>
         </div>
@@ -22,7 +25,7 @@
               </div>
             </template>
             <template slot="drawerView">
-              <add-abnormal-check-rule-drawer :addSuccess="getRuleList"></add-abnormal-check-rule-drawer>
+              <add-abnormal-check-rule-drawer :addSuccess="handleAddSuccess"></add-abnormal-check-rule-drawer>
             </template>
           </drawer-view>
         </div>
@@ -80,11 +83,22 @@
     </a-row>
     <a-card style="width: 100%;float: left;margin-top: 10px">
       <div style="font-weight: bold;font-size: 18px;margin-top: -12px;margin-bottom: 10px">异常检测规则列表</div>
+      <a-row type="flex" :gutter="16">
+        <a-col>
+          <a-alert type="info" show-icon>
+            <div slot="message">
+              <span>{{ `已选择`+ selectedRowKeys.length +`项` }}</span>
+              <a v-if="selectedRowKeys.length > 0" @click="handleDeleteBash()">批量删除</a>
+            </div>
+          </a-alert>
+        </a-col>
+      </a-row>
       <a-table
         rowKey="check_item"
         :columns="columns"
         :data-source="ruleList"
         :pagination="pagination"
+        :row-selection="rowSelection"
         @change="handleTableChange"
         :loading="tableIsLoading"
         :expandIconAsCell="false"
@@ -93,12 +107,7 @@
           {{ index + firstIndex }}
         </span>
         <span slot="action" slot-scope="rule">
-          <a-popconfirm
-            title="确认要删除这条异常检测记录?"
-            ok-text="确认"
-            cancel-text="取消"
-            @confirm="deleteRule(rule)"
-          ><a href="#">删除</a></a-popconfirm>
+          <a href="#" @click="handleDelete([rule.check_item])">删除</a>
         </span>
         <div slot="expandedRowRender" slot-scope="result" style="width: 100%;margin: 1px;padding-left: 50px;">
           <check-result-expanded :dataSource="result.data_list"></check-result-expanded>
@@ -133,27 +142,43 @@ export default {
   computed: {
     firstIndex () {
       return (this.pagination.current - 1) * this.pagination.pageSize + 1
+    },
+    rowSelection () {
+      return {
+        selectedRowKeys: this.selectedRowKeys,
+        onChange: this.onSelectChange
+      }
     }
   },
   data () {
     return {
       ruleCount: 0,
+      countIsLoading: false,
       filters: null,
       sorter: null,
       tableIsLoading: false,
       columns,
       resultCountList: [],
       ruleList: [],
-      pagination: { current: 1, pageSize: 5, showSizeChanger: true, showQuickJumper: true }
+      pagination: { current: 1, pageSize: 10, showSizeChanger: true, showQuickJumper: true },
+      selectedRowKeys: [],
+      selectedRows: []
     }
   },
   methods: {
+    onSelectChange (selectedRowKeys, selectedRows) {
+      this.selectedRowKeys = selectedRowKeys
+      this.selectedRows = selectedRows
+    },
     getRuleCount () {
       var that = this
+      this.countIsLoading = true
       getRuleCount().then(function (data) {
         that.ruleCount = data.rule_count
       }).catch(function (err) {
         that.$message.error(err.response.data.msg)
+      }).finally(() => {
+        that.countIsLoading = false
       })
     },
     getResultCountTopTen () {
@@ -171,20 +196,68 @@ export default {
     getRuleList () {
       this.ruleList = []
       var that = this
+      this.tableIsLoading = true
       getRule({ perPage: this.pagination.pageSize, page: this.pagination.current }).then(function (data) {
         that.ruleList = data.check_items
         that.pagination = { ...that.pagination }
         that.pagination.total = data.total_count
       }).catch(function (err) {
         that.$message.error(err.response.data.msg)
+      }).finally(() => {
+        that.tableIsLoading = false
       })
     },
-    deleteRule (rule) {
+    deleteRule (chekcItemList) {
       var that = this
-      deleteRule([rule.check_item]).then(function () {
-        that.getRuleList()
-        that.$message.success('记录删除成功')
+      const _this = this
+      return new Promise((resolve, reject) => {
+        deleteRule(chekcItemList)
+        .then((res) => {
+          that.selectedRowKeys = []
+          that.refresh()
+          that.$message.success('记录删除成功')
+          resolve()
+        }).catch((err) => {
+          _this.$message.error(err.response.data.msg)
+          reject(err)
+        })
       })
+    },
+    handleDelete (checkItemList) {
+      const _this = this
+      this.$confirm({
+        title: (<div><p>删除后无法恢复</p></div>),
+        content: () => `确定要删除这条异常检测规则么？`,
+        icon: () => <a-icon type="exclamation-circle" />,
+        okType: 'danger',
+        okText: '删除',
+        onOk: function () { return _this.deleteRule(checkItemList) },
+        onCancel () {}
+      })
+    },
+    handleDeleteBash () {
+      const _this = this
+      this.$confirm({
+        title: (<div><p>删除后无法恢复</p></div>),
+        content: () => `确定要删除选中的${_this.selectedRowKeys.length}项规则么？`,
+        icon: () => <a-icon type="exclamation-circle" />,
+        okType: 'danger',
+        okText: '删除',
+        onOk: function () { return _this.deleteRule(_this.selectedRowKeys) },
+        onCancel () {}
+      })
+    },
+    handleAddSuccess () {
+      this.refresh()
+    },
+    refresh () {
+      const _this = this
+      this.tableIsLoading = true
+      this.countIsLoading = true
+      setTimeout(function () {
+        _this.getRuleCount()
+        _this.getRuleList()
+      }, 1500)
     }
   }
 }

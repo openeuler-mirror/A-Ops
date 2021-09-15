@@ -98,6 +98,7 @@ export default {
           // 特殊处理
           _this.domainData = res || []
         }).catch(function (err) {
+          if (err.response.data.code === 400) return
           _this.$message.error(err.response.data.msg)
         }).finally(function () { _this.domainLoading = false })
       },
