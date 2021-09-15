@@ -93,7 +93,7 @@ class Producer(BaseProducer):
         # send msgs in cache
         self._producer.flush()
         self._producer.close()
-        LOGGER.info("%d kafka messages created." % jobs_num)
+        LOGGER.debug("%d kafka messages created." % jobs_num)
 
         save_task(job_info, task_id, jobs_num)
 
