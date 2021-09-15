@@ -20,6 +20,11 @@
     name:
       - kafka
 
+- name: Copy kafka.service file
+  become: true
+  become_user: root
+  template: src=kafka.service dest=/usr/lib/systemd/system/kafka.service owner=root group=root mode=0644 backup=yes
+
 - name: Create Data Dir
   become: true
   become_user: "{{ user }}"

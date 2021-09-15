@@ -1,8 +1,10 @@
-# Checking the Service Status
-- name: Start Kafka
-  shell: "cd {{ install_dir }}/bin && ./kafka-server-start.sh -daemon ../config/server.properties"
-  become: yes
+#Start kafka service
+- name: Start kafka
+  become: true
   become_user: "{{ user }}"
+  service:
+    name: kafka
+    state: restarted
 
 # Checking the Service Status
 - name: Verify kafka is listening on {{ kafka_port }}
