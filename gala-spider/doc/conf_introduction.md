@@ -47,7 +47,7 @@ password = xxxx
 ```
 [table_info]                                     -- 可支持的技术点
 base_table_name = ["tcp_link", "lvs_link"]
-other_table_name = ["nginx_statistic" , "lvs_link" , "haproxy_link" , "dnsmasq_link"]
+other_table_name = ["nginx_link" , "lvs_link" , "haproxy_link" , "dnsmasq_link"]
 ```
 
 ### option

@@ -17,7 +17,7 @@ def tcp_entity_process():
         f = open(ast.literal_eval(temp_tcp_file))
     else:
         print("/var/tmp/spider/tcpline.txt not here.")
-        sys.exit()
+        return None, None
     lines = f.readline()
     while lines:
         # obtain label = hostname + process_name
@@ -80,7 +80,7 @@ def lb_entity_process():
         f = open(ast.literal_eval(temp_other_file))
     else:
         print("/var/tmp/spider/otherline.txt not here.")
-        sys.exit()
+        return None
     lines = f.readline()
     while lines:
         line_json = json.loads(lines)
@@ -94,14 +94,9 @@ def lb_entity_process():
             v_ip = line_json.get("virtual_ip")
             s_ip = line_json.get("server_ip")
             s_port = line_json.get("server_port")
-            if table_name == "nginx_statistic":
-                process_name = "nginx"
-                lb_tables.setdefault((hostname, process_name), {}).setdefault("c-v", (c_ip, v_ip, s_port))
-                lb_tables.setdefault((hostname, process_name), {}).setdefault("v-s", (v_ip, s_ip, s_port))
-            elif table_name == "haproxy_link":
-                process_name = "haproxy"
-                lb_tables.setdefault((hostname, process_name), {}).setdefault("c-v", (c_ip, v_ip, s_port))
-                lb_tables.setdefault((hostname, process_name), {}).setdefault("v-s", (v_ip, s_ip, s_port))
+            v_port = line_json.get("virtual_port")
+            lb_tables.setdefault((hostname, table_name), {}).setdefault("c-v", (c_ip, v_ip, v_port))
+            lb_tables.setdefault((hostname, table_name), {}).setdefault("v-s", (v_ip, s_ip, s_port))
         lines = f.readline()
     return lb_tables
 
@@ -109,6 +104,9 @@ def lb_entity_process():
 def node_entity_process():
     nodes_table = {}
     edges_table, edges_infos = tcp_entity_process()
+    if edges_table is None:
+        print("Please wait kafka consumer datas...")
+        return None, None, None, None
     lb_tables = lb_entity_process()
     for key in edges_table.keys():
         if len(edges_table[key]) == 2:
@@ -126,32 +124,30 @@ def node_entity_process():
             nodes_table.setdefault(dst_node_id, {}).setdefault('host', edges_table[key]['0']['h'])
             nodes_table.setdefault(dst_node_id, {}).setdefault('l_edge', [])
             nodes_table[dst_node_id].get('l_edge').append((edge_id, "TCP_LINK"))
-            for lb_key in lb_tables.keys():
-                if lb_tables[lb_key]['c-v'][0] == key[0] and \
-                                lb_tables[lb_key]['c-v'][1] == key[1] and \
-                                lb_tables[lb_key]['c-v'][2] == key[2]:
-                    lb_tables.setdefault(lb_key, {}).setdefault('src', src_node_id)
-                if lb_tables[lb_key]['v-s'][0] == key[0] and \
-                                lb_tables[lb_key]['v-s'][1] == key[1] and \
-                                lb_tables[lb_key]['v-s'][2] == key[2]:
-                    lb_tables.setdefault(lb_key, {}).setdefault('dst', dst_node_id)
+            if lb_tables is not None:
+                for lb_key in lb_tables.keys():
+                    if lb_tables[lb_key]['c-v'][0] == key[0] and \
+                                    lb_tables[lb_key]['c-v'][1] == key[1] and \
+                                    lb_tables[lb_key]['c-v'][2] == key[2]:
+                        lb_tables.setdefault(lb_key, {}).setdefault('src', src_node_id)
+                    if lb_tables[lb_key]['v-s'][0] == key[0] and \
+                                    lb_tables[lb_key]['v-s'][1] == key[1] and \
+                                    lb_tables[lb_key]['v-s'][2] == key[2]:
+                        lb_tables.setdefault(lb_key, {}).setdefault('dst', dst_node_id)
 
-    for key in lb_tables.keys():
-        print("lb----", key, lb_tables[key])
-        lb_node_id = node_entity_name(key[0], key[1], None)
-        lb_tables.setdefault(key, {}).setdefault('on', lb_node_id)
-        if key[1] == "dnsmasq":
-            type = "DNSMASQ-LINK"
-        elif key[1] == "nginx":
-            type = "NGINX-LINK"
-            lb_id = edge_entity_name("nginx_link", None, lb_tables[key]['dst'], None, lb_tables[key]['src'])
-            lb_tables.setdefault(key, {}).setdefault("lb_id", lb_id)
-        elif key[1] == "haproxy":
-            lb_id = edge_entity_name("haproxy_link", None, lb_tables[key]['dst'], None, lb_tables[key]['src'])
-            lb_tables.setdefault(key, {}).setdefault("lb_id", lb_id)
-
-        nodes_table.setdefault(lb_node_id, {}).setdefault('lb_edge', [])
-        nodes_table[lb_node_id].get('lb_edge').append((lb_tables[key]['lb_id'], type))
+    if lb_tables is not None:
+        for key in lb_tables.keys():
+            print("lb----", key, lb_tables[key])
+            lb_node_id = node_entity_name(key[0], key[1].split("_")[0], None)
+            lb_tables.setdefault(key, {}).setdefault('on', lb_node_id)
+            if key[1] == "dnsmasq_link":
+                type = key[1].upper()
+                # Add process code here....
+            else:
+                lb_id = edge_entity_name(key[1], None, lb_tables[key]['dst'], None, lb_tables[key]['src'])
+                lb_tables.setdefault(key, {}).setdefault("lb_id", lb_id)
+                nodes_table.setdefault(lb_node_id, {}).setdefault('lb_edge', [])
+                nodes_table[lb_node_id].get('lb_edge').append((lb_tables[key]['lb_id'], key[1].upper()))
 
     for key in nodes_table.keys():
         print("node----", key, nodes_table[key])

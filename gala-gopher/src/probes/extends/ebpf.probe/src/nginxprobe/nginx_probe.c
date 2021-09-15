@@ -108,7 +108,7 @@ void ngxprobe_arg_parse(char opt, char *arg, int idx)
     return;
 }
 
-#define METRIC_STATISTIC_NAME "nginx_statistic"
+#define METRIC_STATISTIC_NAME "nginx_link"
 void print_statistic_map(int fd)
 {
     int ret = 0;
@@ -134,11 +134,12 @@ void print_statistic_map(int fd)
             }
 
             fprintf(stdout,
-                "|%s|%s|%s|%s|%s|%u|%u|\n",
+                "|%s|%s|%s|%s|%u|%s|%u|%u|\n",
                 METRIC_STATISTIC_NAME,
                 cip_str,
                 ngxip_str,
                 nk.sip_str,
+		ntohs(d.ngx_ip.port),
                 (colon ? (colon + 1) : "0"),
                 nk.is_l7,
                 d.link_count);

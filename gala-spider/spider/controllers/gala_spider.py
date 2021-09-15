@@ -25,6 +25,8 @@ def get_observed_entity_list(timestamp=None):  # noqa: E501
     entities = []
     # obtain tcp_link entities
     edges_table, edges_infos, nodes_table, lb_tables = node_entity_process()
+    if edges_table is None:
+        return 500
     for key in edges_table.keys():
         if len(edges_table[key]) == 5:
             edge_attrs = []
@@ -79,21 +81,22 @@ def get_observed_entity_list(timestamp=None):  # noqa: E501
                         dependingitems = Dependenceitem(calls = right_calls, run_ons = on_runon),
                         attrs = node_attrs)
         entities.append(entity)
-    for key in lb_tables.keys():
-        lb_attrs = []
-        left_call = Call(type = "PROCESS",
-                        id = lb_tables[key]['src'])
-        right_call = Call(type = "PROCESS",
-                        id = lb_tables[key]['dst'])
-        run_on = Runon(type = "PROCESS",
-                        id = lb_tables[key]['on'])
-        lb_attrs.append(Attr(key='example', value = "0.1", vtype = "float"))
-        entity = Entity(entityid = lb_tables[key]['lb_id'],
-                        type = "NGINX-LINK",
-                        name = lb_tables[key]['lb_id'],
-                        dependeditems = Dependenceitem(calls = left_call),
-                        dependingitems = Dependenceitem(calls = right_call, run_ons = run_on))
-        entities.append(entity)
+    if lb_tables is not None:
+        for key in lb_tables.keys():
+            lb_attrs = []
+            left_call = Call(type = "PROCESS",
+                            id = lb_tables[key]['src'])
+            right_call = Call(type = "PROCESS",
+                            id = lb_tables[key]['dst'])
+            run_on = Runon(type = "PROCESS",
+                            id = lb_tables[key]['on'])
+            lb_attrs.append(Attr(key='example', value = "0.1", vtype = "float"))
+            entity = Entity(entityid = lb_tables[key]['lb_id'],
+                            type = "NGINX-LINK",
+                            name = lb_tables[key]['lb_id'],
+                            dependeditems = Dependenceitem(calls = left_call),
+                            dependingitems = Dependenceitem(calls = right_call, run_ons = run_on))
+            entities.append(entity)
     entities_res = EntitiesResponse(code = 200,
                                     msg = "Successful",
                                     timestamp = 12345678,
