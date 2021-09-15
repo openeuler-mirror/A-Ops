@@ -21,7 +21,7 @@ from kafka.errors import KafkaError
 
 from aops_utils.restful.helper import make_datacenter_url
 from aops_utils.restful.response import MyResponse
-from aops_utils.restful.status import StatusCode, SUCCEED, SERVER_ERROR
+from aops_utils.restful.status import StatusCode, SUCCEED, SERVER_ERROR, TASK_EXECUTION_FAIL
 from aops_utils.log.log import LOGGER
 from aops_utils.kafka.kafka_exception import ProducerInitError
 from aops_utils.conf.constant import DATA_ADD_DIAG_TREE, DATA_GET_DIAG_TREE, \
@@ -157,12 +157,15 @@ class ExecuteDiag(Resource):
         try:
             producer = Producer(diag_configuration)
             task_id, jobs_num = producer.create_msgs(args)
-            LOGGER.info("%d kafka messages created." % jobs_num)
-            response = StatusCode.make_response(SUCCEED)
-            response["task_id"] = task_id
-            response["expected_report_num"] = jobs_num
 
-        except (ProducerInitError, KeyError, KafkaError) as err:
+            if not task_id:
+                response = StatusCode.make_response(TASK_EXECUTION_FAIL)
+            else:
+                response = StatusCode.make_response(SUCCEED)
+                response["task_id"] = task_id
+                response["expected_report_num"] = jobs_num
+
+        except (KeyError, KafkaError, ProducerInitError) as err:
             LOGGER.error(err)
             response = StatusCode.make_response(SERVER_ERROR)
             response["task_id"] = None
