@@ -16,9 +16,8 @@ import G6 from '@antv/g6'
 import { PageHeaderWrapper } from '@ant-design-vue/pro-layout'
 
 import { getTopoData } from '@/api/topo'
-import { topoData2 } from '@/mock/topoTestJson'
 
-const normalLinkColor = '#eee'
+const normalLinkColor = '#090'
 const nginxLinkColor = '#00f'
 
 export default {
@@ -43,57 +42,63 @@ export default {
       this.edges = []
       this.combos = []
       const _this = this
+      const links = []
+      const processToNodeMap = {}
       dataList.forEach(function (entity) {
         // set nodes
         if (entity.type === 'PROCESS') {
+          // 将进程添加到节点的children下
           const tempNode = entity
-          tempNode.id = entity.entityid
-          tempNode.label = entity.name
-          // get combo info
-          const parentInfo = entity.dependingitems.runOns || {}
-          const comboId = parentInfo.id
-          if (comboId) {
-            if (!_this.combos.filter(item => item.id === comboId)[0]) {
-            _this.combos.push({
-              id: comboId,
-              label: `${parentInfo.type}: ${comboId}`
-              // collapsed: true
+          const matchedNode = _this.nodes.filter(node => node.id === entity.dependingitems.runOns.id)[0]
+          if (matchedNode) {
+            tempNode.id = entity.entityid
+            tempNode.label = entity.name
+            matchedNode.children.push(tempNode)
+          } else {
+            _this.nodes.push({
+              id: entity.dependingitems.runOns.id,
+              children: [tempNode]
             })
           }
-            tempNode.comboId = comboId
-            tempNode.cluster = comboId
-          }
-          _this.nodes.push(tempNode)
-        } else {
-          // set edges
-          const { type, ...tempEdge } = entity
-          tempEdge.link_type = type
-
-          if (entity.type === 'NGINX-LINK') {
-            const leftEdge = {
-              ...tempEdge,
-              id: `${entity.entityid}_${entity.dependingitems.runOns.id}_${entity.dependingitems.calls.id}_left`,
-              source: entity.dependeditems.calls.id,
-              target: entity.dependingitems.runOns.id,
-              siblingId: entity.entityid,
-              style: { stroke: normalLinkColor }
-            }
-            const rightEdge = {
-              ...tempEdge,
-              id: `${entity.entityid}_${entity.dependingitems.runOns.id}_${entity.dependingitems.calls.id}_right`,
-              source: entity.dependingitems.runOns.id,
-              target: entity.dependingitems.calls.id,
-              siblingId: entity.entityid,
-              style: { stroke: normalLinkColor }
-            }
-            _this.edges.push(rightEdge)
-            _this.edges.push(leftEdge)
+          processToNodeMap[entity.entityid] = entity.dependingitems.runOns.id
+        } else if (entity.type === 'VM') {
+          // 添加节点
+          const tempNode = entity
+          const matchedNode = _this.nodes.filter(node => node.id === entity.entityid)[0]
+          if (!matchedNode) {
+            tempNode.id = entity.entityid
+            tempNode.label = entity.name
+            tempNode.children = []
+            _this.nodes.push(tempNode)
           } else {
-            tempEdge.source = entity.dependeditems.calls.id
-            tempEdge.target = entity.dependingitems.calls.id
-            tempEdge.style = { stroke: normalLinkColor }
-            _this.edges.push(tempEdge)
+            matchedNode.label = entity.name
           }
+        } else {
+          links.push(entity)
+        }
+      })
+
+      links.forEach(function (entity) {
+        // set edges
+        const { type, attrs, ...tempEdge } = entity
+        tempEdge.link_type = type
+
+        tempEdge.source = processToNodeMap[entity.dependeditems.calls.id]
+        tempEdge.target = processToNodeMap[entity.dependingitems.calls.id]
+        tempEdge.id = `${tempEdge.source}_${tempEdge.target}`
+        const matchedEdge = _this.edges.filter(edge => edge.id === tempEdge.id)[0]
+        if (matchedEdge) {
+          // 后续需要处理enitiy中的type
+          matchedEdge.children.push(entity)
+        } else {
+          tempEdge.style = { stroke: normalLinkColor }
+          if (tempEdge.source === tempEdge.target) {
+            tempEdge.type = 'loop'
+          } else {
+            tempEdge.type = 'line'
+          }
+          tempEdge.children = [entity]
+          _this.edges.push(tempEdge)
         }
       })
       G6.Util.processParallelEdges(this.edges)
@@ -171,20 +176,50 @@ export default {
         // 自定义 tooltip 内容
         getContent: (e) => {
           const model = e.item.getModel()
-          if (model.isComboEdge) {
-            return `link from ${model.source} to ${model.target}`
-          }
+
           const outDiv = document.createElement('div')
           outDiv.style.width = 'fit-content'
-          // outDiv.style.padding = '0px 0px 20px 0px';
-          let innerHTML = `
-            <h4>${model.type}:${model.name}</h4>
-            <ul>`
-          model.attrs && model.attrs.forEach(attr => {
-            innerHTML += `<li>${attr.key}: ${attr.value}</li>`
-          })
-          innerHTML += `</ul>`
-          outDiv.innerHTML = innerHTML
+
+          const limit = 10
+          if (e.item._cfg.type === 'edge') {
+            let innerHTML = `<div> 
+              <h4>Links from ${model.source} to ${model.target}</h4>
+              <h5>Links: </h5>
+              <ul>`
+            if (model.children) {
+              const list = [...model.children]
+              if (model.children.length > limit) {
+                list.splice(limit, list.length - 1)
+              }
+              list.forEach(edge => {
+                innerHTML += `<li>- ${edge.name}</li>`
+              })
+              if (model.children.length > limit) {
+                innerHTML += `and other ${model.children.length - limit} links`
+              }
+            }
+            innerHTML += `</ul></div>`
+            outDiv.innerHTML = innerHTML
+          } else {
+            let innerHTML = `<div>
+              <h4>Node: ${model.label}</h4>
+              <h5>Processes: </h5>
+              <ul>`
+            if (model.children) {
+              const list = [...model.children]
+              if (model.children.length > limit) {
+                list.splice(limit, list.length - 1)
+              }
+              list.forEach(edge => {
+                innerHTML += `<li>- ${edge.name}</li>`
+              })
+              if (model.children.length > limit) {
+                innerHTML += `and other ${model.children.length - limit} processes`
+              }
+            }
+            innerHTML += `</ul></div>`
+            outDiv.innerHTML = innerHTML
+          }
           return outDiv
         }
       })
@@ -193,37 +228,32 @@ export default {
         width: width,
         height: height,
         plugins: [tooltip],
+        linkCenter: true,
         layout: {
           type: 'force',
-          linkDistance: 50,
-          nodeStrength: -10,
-          nodeSpacing: 10,
-          clustering: true,
-          clusterNodeStrength: -5,
-          clusterEdgeDistance: 200,
-          clusterNodeSize: 50,
-          clusterFociStrength: 1.2,
+          linkDistance: 20,
+          nodeStrength: 10,
+          nodeSpacing: 20,
           edgeStrength: 0.1,
           preventOverlap: true,
           alphaMin: 0.03,
           onLayoutEnd: this.onLayoutEnd
         },
         defaultNode: {
-          size: 20,
+          size: 60,
           style: {
             fill: 'steelblue',
-            stroke: '#666',
+            stroke: 'steelblue',
             lineWidth: 1
           },
           labelCfg: {
             style: {
-              fill: '#000'
+              fill: '#fff'
             }
           }
         },
         defaultEdge: {
           style: {
-            endArrow: true
           }
         },
         defaultCombo: {
@@ -297,6 +327,13 @@ export default {
         })
       })
 
+      this.edges.forEach(edge => {
+        if (!edge.style) {
+          edge.style = {}
+        }
+        edge.style.lineWidth = edge.children.length > 8 ? 8 : (edge.children.length || 1)
+      })
+
       this.graph.data({
         nodes: this.nodes,
         edges: this.edges,
@@ -316,7 +353,7 @@ export default {
     }
   },
   mounted: function () {
-    // this.getGraphDataFromRemote()
+    this.getGraphDataFromRemote()
   }
 }
 </script>
