@@ -19,7 +19,8 @@ import sys
 from adoctor_cli.base_cmd import BaseCommand
 from aops_utils.conf.constant import CHECK_COUNT_RULE, CHECK_COUNT_RESULT
 from aops_utils.restful.helper import make_check_url
-from aops_utils.cli_utils import cli_request, add_access_token
+from aops_utils.cli_utils import cli_request, add_access_token, request_without_print
+from aops_utils.cli_utils import print_row_from_result
 
 
 class StatCommand(BaseCommand):
@@ -84,8 +85,11 @@ class StatCommand(BaseCommand):
         pyload = {}
         if params.field == 'check_rule':
             check_url, header = make_check_url(CHECK_COUNT_RULE)
-        else:
-            check_url, header = make_check_url(CHECK_COUNT_RESULT)
-            pyload['host_list'] = []
+            return cli_request('POST', check_url, pyload, header, params.access_token)
 
-        return cli_request('POST', check_url, pyload, header, params.access_token)
+        check_url, header = make_check_url(CHECK_COUNT_RESULT)
+        pyload['host_list'] = []
+        result = request_without_print('POST', check_url, pyload, header, params.access_token)
+        results = result.pop('results', [])
+        print(result)
+        print_row_from_result(results)

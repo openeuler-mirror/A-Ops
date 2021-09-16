@@ -23,6 +23,7 @@ from aops_utils.restful.helper import make_manager_url
 from aops_utils.restful.response import MyResponse
 from aops_utils.restful.status import SUCCEED
 from aops_utils.cli_utils import add_page, cli_request, add_access_token, add_query_args
+from aops_utils.cli_utils import request_without_print, print_row_from_result
 
 
 class TaskCommand(BaseCommand):
@@ -92,8 +93,8 @@ class TaskCommand(BaseCommand):
         action_dict = {
             'generate': self.manage_requests_generate_task,
             'execute': self.manage_requests_execute,
-            'delete': self.manage_requests_query_delete,
-            'query': self.manage_requests_query_delete
+            'delete': self.manage_requests_delete,
+            'query': self.manage_requests_query
         }
         kwargs = {
             "action": action,
@@ -132,39 +133,49 @@ class TaskCommand(BaseCommand):
         return cli_request('POST', manager_url, pyload, header, params.access_token)
 
     @staticmethod
-    def manage_requests_query_delete(**kwargs):
+    def manage_requests_query(**kwargs):
         """
-        Description: Executing query or delete request
+        Description: Executing query request
         Args:
-            params: Command line parameters
-            action: task action
+            kwargs(dict): dict of params and action
         Returns:
             dict: response of the backend
         Raises:
         """
         params = kwargs.get('params')
-        action = kwargs.get('action')
         task_ids = str_split(params.task_list)
-
         name_check(task_ids)
-        url_dict = {
-            'delete': [make_manager_url(DELETE_TASK), 'DELETE'],
-            'query': [make_manager_url(GET_TASK), 'POST']
-        }
 
-        manager_url, header = url_dict.get(action)[0]
-        url_operation = url_dict.get(action)[1]
-        if url_operation == 'DELETE' and len(task_ids) == 0:
+        manager_url, header = make_manager_url(GET_TASK)
+        pyload = {"task_list": task_ids, 'page': params.page, 'per_page': params.per_page}
+        result = request_without_print('POST', manager_url, pyload, header, params.access_token)
+        task_infos = result.pop('task_infos', [])
+        print(result)
+        print_row_from_result(task_infos)
+
+    @staticmethod
+    def manage_requests_delete(**kwargs):
+        """
+        Description: Executing delete request
+        Args:
+            kwargs(dict): dict of params and action
+        Returns:
+            dict: response of the backend
+        Raises:
+        """
+        params = kwargs.get('params')
+        task_ids = str_split(params.task_list)
+        name_check(task_ids)
+
+        manager_url, header = make_manager_url(DELETE_TASK)
+        if len(task_ids) == 0:
             print("No task will be deleted, because of the empty task list.")
             print("Please check your task list if you want to delete tasks.")
             sys.exit(0)
         pyload = {
             "task_list": task_ids,
         }
-        if action == 'query':
-            pyload['page'] = params.page
-            pyload['per_page'] = params.per_page
-        return cli_request(url_operation, manager_url, pyload, header, params.access_token)
+        return cli_request('DELETE', manager_url, pyload, header, params.access_token)
 
     @staticmethod
     def manage_requests_execute(**kwargs):

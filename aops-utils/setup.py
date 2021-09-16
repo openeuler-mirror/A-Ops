@@ -15,6 +15,8 @@ setup(
         'marshmallow>=3.13.0',
         'xlrd',
         'requests',
+        'prettytable',
+        'pygments',
     ],
     author='cmd-lsw-yyy-zyc',
     data_files=[

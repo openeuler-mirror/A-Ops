@@ -54,7 +54,19 @@ class TestCheckCli(unittest.TestCase):
         with mock.patch.object(MyResponse, "get_response") as mock_get_response:
             expected_res = {
                 "code": 200,
-                "msg": 'operation succeed'
+                "msg": 'operation succeed',
+                "check_results": [{
+                    'host_id': "hid1",
+                    "data_list": [{
+                        "name": "n1",
+                        "type": "log",
+                    }],
+                    "start": 11,
+                    "end": 12,
+                    "condition": "con1",
+                    "check_item": "ck1",
+                    "value": "v1"
+                }],
             }
             mock_get_response.return_value = expected_res
             cmd.do_command(args)
@@ -81,7 +93,19 @@ class TestCheckCli(unittest.TestCase):
         with mock.patch.object(MyResponse, "get_response") as mock_get_response:
             expected_res = {
                 "code": 200,
-                "msg": 'operation succeed'
+                "msg": 'operation succeed',
+                "check_results": [{
+                    'host_id': "hid1",
+                    "data_list": [{
+                        "name": "n1",
+                        "type": "log",
+                    }],
+                    "start": 11,
+                    "end": 12,
+                    "condition": "con1",
+                    "check_item": "ck1",
+                    "value": "v1"
+                }],
             }
             mock_get_response.return_value = expected_res
             cmd.do_command(args)

@@ -23,6 +23,7 @@ from aops_utils.restful.helper import make_manager_url
 from aops_utils.conf.constant import ADD_HOST, DELETE_HOST, QUERY_HOST, QUERY_HOST_DETAIL
 from aops_utils.restful.status import SUCCEED
 from aops_utils.cli_utils import add_page, cli_request, add_access_token, add_query_args
+from aops_utils.cli_utils import print_row_from_result
 
 
 class HostCommand(BaseCommand):
@@ -194,10 +195,10 @@ class HostCommand(BaseCommand):
             dict: response of the backend
         """
         if params.host_group_name is None:
-            print("Host_group_name cannot be none, please input valid host_group_name.")
+            print("Host_group_name cannot be none, please input valid host_group_name")
             sys.exit(0)
         if params.management is None:
-            print("Management cannot be none, please input valid management value.")
+            print("Management cannot be none, please input valid management")
             sys.exit(0)
         groups = str_split(params.host_group_name)
         name_check(groups)
@@ -240,8 +241,9 @@ class HostCommand(BaseCommand):
                     if info['host_id'] == basic_info['host_id']:
                         basic_info['infos'] = info['infos']
                         break
-
+        host_infos = result_basic.pop('host_infos', [])
         print(result_basic)
+        print_row_from_result(host_infos)
         return result_basic
 
     @staticmethod

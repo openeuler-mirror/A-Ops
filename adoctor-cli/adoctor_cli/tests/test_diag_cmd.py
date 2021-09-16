@@ -142,7 +142,12 @@ class TestDiagCli(unittest.TestCase):
                     "msg": "",
                     "result": [
                         {
-                            "host_id": "host1"
+                            "host_id": "host1",
+                            "tree_name": "tree1",
+                            "task_id": "id1",
+                            "report_id": "rid1",
+                            "start": "11",
+                            "end": "12"
                         }
                     ]
                 }]

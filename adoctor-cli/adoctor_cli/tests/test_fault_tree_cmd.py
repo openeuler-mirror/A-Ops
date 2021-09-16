@@ -98,7 +98,10 @@ class TestTreeCli(unittest.TestCase):
                 "trees": [
                     {
                         "tree_name": "tree1",
-                        "content": {}
+                        "tree_content": {"tree_ele": 'ele',
+                                         "tree_eee": 'eee'},
+                        "description": "",
+                        "tag": ['winwin'],
                     }
                 ]
             }

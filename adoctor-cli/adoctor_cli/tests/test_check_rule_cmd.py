@@ -104,15 +104,14 @@ class TestCheckRuleCli(unittest.TestCase):
             expected_res = {
                 "code": 200,
                 "msg": 'operation succeed',
-                "check_items": {
-                    'check_items': [
-                        {'check_item': 'check_item996',
-                         'condition': '$0>1',
-                         'data_list': [{'label': {'cpu': '1', 'mode': 'irq'},
-                                        'name': 'node_cpu_seconds_total',
-                                        'type': 'kpi'}],
-                         'description': 'aaa',
-                         'plugin': ''}]}
+                'check_items': [
+                    {'check_item': 'check_item996',
+                     'condition': '$0>1',
+                     'data_list': [{'label': {'cpu': '1', 'mode': 'irq'},
+                                    'name': 'node_cpu_seconds_total',
+                                    'type': 'kpi'}],
+                     'description': 'aaa',
+                     'plugin': ''}]
             }
             mock_get_response.return_value = expected_res
             cmd.do_command(args)
