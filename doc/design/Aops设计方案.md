@@ -2183,6 +2183,7 @@ Mulan V2
     添加主机时使用，表示主机名
 
   * **`--password`**
+
     用户登录密码
   
   * **`--sudo_password`**
@@ -2204,9 +2205,11 @@ Mulan V2
     `aops host --action add --host_name host1 --public_ip 11.11.11.11 --host_group_name group1 --username xx --password xx --sudo_password xxx --key zzz --access_token aaa`
     
   * 移除机器id1, id2
+
     `aops host --action delete --host_list id1,id2 --access_token aaa`
   
   * 获取group1里的管理节点的详细信息
+
     `aops host --action query --host_group_name group1 --management True --verbose True --access_token aa`
 
 #### 3.8.4.2、操作主机组
@@ -2246,9 +2249,11 @@ Mulan V2
     `aops group --action add --host_group_name group1 --descriptipn aaa --access_token aa`
 
   * 移除主机组group1
+
     `aops group --action delete --host_group_list group1 --access_token aa`
 
   * 获取所有主机组信息
+
     `aops group --action query --access_token aa`
 
 #### 3.8.4.3、模板操作
@@ -2290,6 +2295,7 @@ Mulan V2
     `aops template --action import --template_name name1 --template_content template.yaml --description 'it's a install playbook'`
 
   * 获取所有模板信息
+
     `aops template --action query`
     
   * 删除模板t1
@@ -2336,6 +2342,7 @@ Mulan V2
     `aops task --action generate --task_name a --template_name b --description 'it's a install task' --access_token token`
 
   * 执行部署任务
+
     `aops task --action execute --task_list a --access_token token`
 
   * 查询任务信息
@@ -2348,7 +2355,7 @@ Mulan V2
 
 #### 3.8.4.5、获取异常检测结果
 
-`aops check [--check_items] [items] [--host_list] [list] [--start] [time1] [--end] [time2] [--access_token] [token] `
+`adoctor check [--check_items] [items] [--host_list] [list] [--start] [time1] [--end] [time2] [--access_token] [token] `
 
 * **`可选参数`**
 
@@ -2366,18 +2373,18 @@ Mulan V2
   
   * **`--end`**
   
-    指定异常检测的截止时间，不指定时默认为当前时间
+    指定异常检测的截止时间，不指定时默认为当前时间，两时间均不指定表示所有时间段
   
 * **`举例`**
 
   * 获取指定主机指定时间内指定检测项的异常检测结果
 
-    `aops check --chek_items item1 --host_list host1 --start 20200101-11:11:11 --end 20200101-11:11:51`
+    `adoctor check --chek_items item1 --host_list host1 --start 20200101-11:11:11 --end 20200101-11:11:51`
 
 
 #### 3.8.4.6、异常检测规则操作
 
-`aops checkrule [--action] [action] [--conf] [check.csv] [--check_items] [items] [--export] [path]`
+`adoctor checkrule [--action] [action] [--conf] [check.csv] [--check_items] [items] [--export] [path]`
 
 * **`必选参数`**
 
@@ -2389,7 +2396,7 @@ Mulan V2
 
   * **`--conf`**
 
-    action=add时使用，表示规则文件（csv）
+    action=add时使用，表示规则文件（json）
 
   * **`--check_items`**
 
@@ -2403,19 +2410,19 @@ Mulan V2
 
   * 获取异常检测规则，并导出到/path下
 
-    `aops checkrule --action get --check_items cpu_usage_overflow --export /path`
+    `adoctor checkrule --action get --check_items cpu_usage_overflow --export /path`
 
   * 导入异常检测规则
 
-    `aops checkrule --action add --conf check.json`
+    `adoctor checkrule --action add --conf check.json`
     
    * 删除异常检测规则
   
-     `aops checkrule --action delete --check_items cpu_usage_overflow`
+     `adoctor checkrule --action delete --check_items cpu_usage_overflow`
 
 #### 3.8.4.7、故障树操作
 
-`aops faultree [--action] [action] [--conf] [conf.csv] [--tree_list] [list] [--export] [path] [--access_token] [token]`
+`adoctor faultree [--action] [action] [--conf] [conf.csv] [--tree_list] [list] [--export] [path] [--access_token] [token]`
 
 * **`必选参数`**
 
@@ -2444,19 +2451,19 @@ Mulan V2
 
   * 导入故障树
 
-    `aops faultree --action add --conf tree1.json --access_token token`
+    `adoctor faultree --action add --conf tree1.json --access_token token`
 
   * 获取故障树tree1，并导出到/path下
 
-    `aops faultree --action get --tree_list tree1 --export /path --access_token token`
+    `adoctor faultree --action get --tree_list tree1 --export /path --access_token token`
     
   * 删除故障树tree1
   
-    `aops faultree --action delete --tree_list tree1 --access_token token`
+    `adoctor faultree --action delete --tree_list tree1 --access_token token`
 
 #### 3.8.4.8、故障诊断
 
-`aops diag [--tree_list] [tree1] [--host_list] [list] [--start] [time1] [--end] [time2] [--access_token] [token]`
+`adoctor diag [--tree_list] [tree1] [--host_list] [list] [--start] [time1] [--end] [time2] [--access_token] [token]`
 
 * **`必选参数`**
 	* **`--access_token`**
@@ -2476,18 +2483,19 @@ Mulan V2
     指定故障诊断的起始时间
   
   * **`--end`**
+
     指定异常检测的截止时间
   
 * **`举例`**
   
   * 根据tree1执行主机host1的故障诊断
   
-    `aops diag --tree_list tree1 --host_list host1 --start 20201111-11:11:11 --end 20201111-11:11:13 --access_token token`
+    `adoctor diag --tree_list tree1 --host_list host1 --start 20201111-11:11:11 --end 20201111-11:11:13 --access_token token`
   
 
 #### 3.8.4.9、故障诊断报告操作
 
-`aops report [--action] [action] [--tree_list] [tree1] [--host_list] [list] [--start] [time1] [--end] [time2] [--report_list] [id1,id2]`
+`adoctor report [--action] [action] [--tree_list] [tree1] [--host_list] [list] [--start] [time1] [--end] [time2] [--report_list] [id1,id2]`
 
 * **`必选参数`**
 
@@ -2511,35 +2519,37 @@ Mulan V2
 
   * **`--start`**
 
-    指定故障诊断的起始时间
+    指定故障诊断报告的起始时间
 
   * **`--end`**
-    指定异常检测的截止时间
+
+    指定故障诊断报告的截止时间，两时间均不指定时表示所有时间段
 
   * **`--task_id`**
 
-    可根据任务id来查询报告，如果指定该项，只根据该项查询
+    可根据任务id来查询报告，如果指定该项，只根据该项查询，次优先级
     
   * **`--report_list`**
     
-    报告id列表，查询和删除详细报告时使用
+    报告id列表，查询和删除详细报告时使用，为最高优先级
 
 * **`举例`**
 
   * 删除指定的报告
 
-    `aops report --action delete --report_list r1,r2 --access_token token` 
+    `adoctor report --action delete --report_list r1,r2 --access_token token` 
     
   * 获取指定树指定主机的诊断报告列表
-    `aops report --action get --tree_list tree1,tree2 --host_list id1,id2 --start xxx --end xx --access_token token` 
+
+    `adoctor report --action get --tree_list tree1,tree2 --host_list id1,id2 --start xxx --end xx --access_token token` 
     
   * 根据任务id查询报告列表
   
-    `aops report --action get --task_id id1 --access_token token`
+    `adoctor report --action get --task_id id1 --access_token token`
   
   * 根据报告id查询报告详细内容
   
-    `aops report --action get --report_list id1,id2 --access_token token`
+    `adoctor report --action get --report_list id1,id2 --access_token token`
 
 #### 3.8.4.10、用户管理
 
@@ -2593,11 +2603,12 @@ Mulan V2
 - **`举例`**
 
   - 用户鉴权
+
     `aops certificate --key xxxxx --access_token xxxxxx`
 
 #### 3.8.4.12、统计数据操作
 
-`aops stat [--action] [action] [--field] [field] [--access_token] [access_token] `
+`aops/adoctor stat [--action] [action] [--field] [field] [--access_token] [access_token] `
 
 - **`必选参数`**
 
@@ -2620,7 +2631,7 @@ Mulan V2
     `aops stat --action count --field host --access_token xxxxxxxxxx ` 
   - 查询异常检测统计信息
   	
-    `aops stat --action count --field check_rule --access_token token `
+    `adoctor stat --action count --field check_rule --access_token token `
 
 ### 3.8.5、返回码
 | 返回码 | 场景                   | 提示信息                                                  |
