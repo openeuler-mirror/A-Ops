@@ -1,7 +1,7 @@
 <template>
   <page-header-wrapper :breadcrumb="breadcrumb">
     <div>
-      <a-card :bordered="false">
+      <a-card :bordered="false" class="aops-theme">
         <a-form @submit="handleAddHost" :form="form" :label-col="{ span: 5 }" :wrapper-col="{ span: 10 }">
           <a-form-item label="主机名称">
             <a-input

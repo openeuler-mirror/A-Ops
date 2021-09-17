@@ -101,7 +101,6 @@
         :row-selection="rowSelection"
         @change="handleTableChange"
         :loading="tableIsLoading"
-        :expandIconAsCell="false"
         :expandIconColumnIndex="1">
         <span slot="index" slot-scope="text, record, index">
           {{ index + firstIndex }}

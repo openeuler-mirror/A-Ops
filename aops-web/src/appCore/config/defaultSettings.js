@@ -13,21 +13,22 @@
  */
 
 export default {
-  navTheme: 'dark', // theme for nav menu
-  primaryColor: '#002FA7', // primary color of ant design
-  layout: 'sidemenu', // nav menu position: `sidemenu` or `topmenu`
-  contentWidth: 'Fluid', // layout of content: `Fluid` or `Fixed`, only works when layout is topmenu
-  fixedHeader: false, // sticky header
-  fixSiderbar: false, // sticky siderbar
-  colorWeak: false,
-  menu: {
-    locale: true
-  },
-  title: 'A-OPS',
-  pwa: false,
-  iconfontUrl: '',
-  production: process.env.NODE_ENV === 'production' && process.env.VUE_APP_PREVIEW !== 'true',
+    navTheme: 'light', // theme for nav menu
+    primaryColor: '#002FA7', // primary color of ant design
+    layout: 'sidemenu', // nav menu position: `sidemenu` or `topmenu`
+    contentWidth: 'Fluid', // layout of content: `Fluid` or `Fixed`, only works when layout is topmenu
+    fixedHeader: false, // sticky header
+    fixSiderbar: false, // sticky siderbar
+    colorWeak: false,
+    menu: {
+        locale: true
+    },
+    title: 'A-OPS',
+    pwa: false,
+    iconfontUrl: '',
+    production: process.env.NODE_ENV === 'production' && process.env.VUE_APP_PREVIEW !== 'true',
 
-  // 主机域-主机列表更新频率1min
-  domainStatusRefreshInterval: 60000
+    // 主机域-主机列表更新频率1min
+    domainStatusRefreshInterval: 60000,
+    topoGraphUpdateInterval: 10000
 }

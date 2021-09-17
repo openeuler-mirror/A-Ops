@@ -301,16 +301,17 @@ export const asyncRouterMap = [
                 { breadcrumbName: routeMap.configuration.title, path: routeMap.configuration.path },
                 { breadcrumbName: routeMap.configuration.children.TranscationDomainManagement.title, path: routeMap.configuration.children.TranscationDomainConfigurations.path },
                 { breadcrumbName: routeMap.configuration.children.queryHostList.title, path: routeMap.configuration.children.queryHostList.path }
-              ] }
+              ]
+            }
           }
         ]
       },
-      {
-        path: routeMap.networkTopo.path,
-        name: 'networkTopo',
-        component: () => import('@/views/networkTopo/NetworkTopo'),
-        meta: { title: routeMap.networkTopo.title, icon: 'deployment-unit', permission: ['networkTopo'] }
-      }
+        {
+          path: routeMap.networkTopo.path,
+          name: 'networkTopo',
+          component: () => import('@/views/networkTopo/NetworkTopoSimple'),
+          meta: { title: routeMap.networkTopo.title, icon: 'deployment-unit', permission: ['networkTopo'] }
+        }
     ]
   },
   {

@@ -1,7 +1,7 @@
 
 <template>
   <my-page-header-wrapper>
-    <a-card :bordered="false">
+    <a-card :bordered="false" class="aops-theme">
       <div>
         <a-row class="aops-table-control-row" type="flex" justify="space-between">
           <a-col>
@@ -38,7 +38,7 @@
         </a-table>
       </div>
     </a-card>
-    <a-card :bordered="false" style="margin-top: 12px">
+    <a-card :bordered="false" class="aops-theme" style="margin-top: 20px">
       <div class="ant-pro-pages-list-applications-filterCardList">
         <a-list :loading="loading" :data-source="treeData.slice(0,showIndex)" :grid="{ gutter: 24, xl: 3, lg: 3, md: 3, sm: 2, xs: 1 }" >
           <a-list-item slot="renderItem" slot-scope="item">

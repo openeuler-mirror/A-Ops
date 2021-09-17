@@ -1,7 +1,7 @@
 
 <template>
   <page-header-wrapper>
-    <a-card :bordered="false">
+    <a-card :bordered="false" class="aops-theme">
       <div>
         <div>
           <h2 class="card-title">{{ domainName }}<span>配置表</span></h2>

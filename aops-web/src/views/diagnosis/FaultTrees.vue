@@ -1,6 +1,6 @@
 <template>
   <my-page-header-wrapper>
-    <a-card>
+    <a-card :bordered="false" class="aops-theme">
       <div style="height: 110px;position: relative;">
         <img class="avatar-img" src="~@/assets/vertical-left.png">
         <div class="content-div">
