@@ -58,7 +58,7 @@ int RunExtendProbe(ExtendProbe *probe)
             continue;
         }
 
-        printf("[EXTEND PROBE] Get data str: %s\n", buffer);
+        //printf("[EXTEND PROBE] Get data str: %s\n", buffer);
         for (int i = 0; i < bufferSize; i++) {
 
             if (dataStr == NULL) {
