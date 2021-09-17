@@ -126,14 +126,12 @@ class CheckRuleCommand(BaseCommand):
         check_items = res.pop('check_items', [])
         print(res)
         print_row_from_result(check_items)
-        res['check_items'] = check_items
         path = params.export
         if path is None:
             return res
         with open(path, 'w', encoding='utf-8') as file:
-            out_file = {'check_items': res['check_items']}
+            out_file = {'check_items': check_items}
             file.write(json.dumps(out_file))
-        return res
 
     @staticmethod
     def manage_requests_delete_check_rule(params):
