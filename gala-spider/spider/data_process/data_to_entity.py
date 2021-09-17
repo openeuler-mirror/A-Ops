@@ -118,7 +118,7 @@ def node_entity_process():
             edges_table.setdefault(key, {}).setdefault('src', src_node_id)
             edges_table.setdefault(key, {}).setdefault('dst', dst_node_id)
             edges_table.setdefault(key, {}).setdefault('edge', edge_id)
-            print("tcp---", key, edges_table[key])
+            #print("tcp---", key, edges_table[key])
             nodes_table.setdefault(src_node_id, {}).setdefault('host', edges_table[key]['1']['h'])
             nodes_table.setdefault(src_node_id, {}).setdefault('r_edge', [])
             nodes_table[src_node_id].get('r_edge').append((edge_id, "TCP_LINK"))
@@ -134,7 +134,7 @@ def node_entity_process():
 
     if lb_tables is not None:
         for key in lb_tables.keys():
-            print("lb----", key, lb_tables[key])
+            #print("lb----", key, lb_tables[key])
             lb_node_id = node_entity_name(lb_tables[key]['hname'], lb_tables[key]['tname'].split("_")[0], None)
             lb_tables.setdefault(key, {}).setdefault('on', lb_node_id)
             if key[1] == "dnsmasq_link":
@@ -148,13 +148,13 @@ def node_entity_process():
                     nodes_table[lb_node_id].get('lb_edge').append((lb_tables[key]['lb_id'], lb_tables[key]['tname'].upper()))
 
     for key in nodes_table.keys():
-        print("node----", key, nodes_table[key])
+        #print("node----", key, nodes_table[key])
         host = nodes_table[key]['host']
         vm_table.setdefault(host, {}).setdefault('proc', [])
         vm_table[host].get('proc').append(key)
 
-    for key in vm_table.keys():
-        print("vm-----", key, vm_table[key])
+    #for key in vm_table.keys():
+    #    print("vm-----", key, vm_table[key])
 
     return edges_table, edges_infos, nodes_table, lb_tables, vm_table
 
