@@ -371,8 +371,6 @@ class HostDatabase(MysqlProxy):
                 name = user.username
                 temp_res[name] = []
                 for host in user.hosts:
-                    if host.management:
-                        continue
                     host_info = {
                         "host_id": host.host_id,
                         "host_group_name": host.host_group_name,
