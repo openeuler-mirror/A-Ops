@@ -40,8 +40,8 @@ class TestStatCli(unittest.TestCase):
         self.r = Redirect()
         self.stdout = self.r
 
-    def test_count(self):
-        print("Execute the stat test case")
+    def test_count_rule(self):
+        print("Execute the stat test case with rule")
         cmd = StatCommand()
         args = cmd.parser.parse_args(['stat',
                                       '--action=count',
@@ -58,3 +58,29 @@ class TestStatCli(unittest.TestCase):
             args_dict = {}
             self.assertEqual(args_dict, mock_get_response.call_args_list[0][0][2])
 
+    def test_count_check(self):
+        print("Execute the stat test case with check result")
+        cmd = StatCommand()
+        args = cmd.parser.parse_args(['stat',
+                                      '--action=count',
+                                      '--field=check_result',
+                                      "--access_token=123321"])
+        with mock.patch.object(MyResponse, "get_response") as mock_get_response:
+            expected_res = {
+                "code": 200,
+                "msg": 'operation succeed',
+                "results": [
+                    {
+                        "host_id": "id1",
+                        "count": 2
+                    },
+                    {
+                        "host_id": "id2",
+                        "count": 5
+                    }
+                ]
+            }
+            mock_get_response.return_value = expected_res
+            cmd.do_command(args)
+            args_dict = {'host_list': []}
+            self.assertEqual(args_dict, mock_get_response.call_args_list[0][0][2])

@@ -1,11 +1,11 @@
-#needsrootforbuild
 Name:		A-Ops
-Version:	1.0.1
-Release:	2
+Version:	v1.0.3
+Release:	1
 Summary:	The intelligent ops toolkit for openEuler
 License:	MulanPSL2
 URL:		https://gitee.com/openeuler/A-Ops
-Source0:	v%{version}.tar.gz
+Source0:	%{name}-%{version}.tar.gz
+Source1:	A-Ops-web-node-modules.tar.gz
 
 
 # build for gopher
@@ -20,7 +20,7 @@ BuildRequires:	git python3-devel systemd
 BuildRequires:  python3-setuptools python3-kafka-python python3-connexion
 
 # build for web
-BuildRequires: nodejs node-gyp npm
+BuildRequires: nodejs node-gyp nodejs-yarn
 
 %description
 The intelligent ops toolkit for openEuler
@@ -29,7 +29,7 @@ The intelligent ops toolkit for openEuler
 %package -n aops-utils
 Summary:    utils for A-Ops
 Requires:   python3-concurrent-log-handler python3-xmltodict python3-pyyaml python3-marshmallow >= 3.13.0
-Requires:   python3-requests python3-xlrd
+Requires:   python3-requests python3-xlrd python3-prettytable python3-pygments
 
 %description -n aops-utils
 utils for A-Ops
@@ -110,6 +110,7 @@ Executor of diagnose module. Get messages from kafka and do the diagnose tasks.
 Summary:    command line tool of A-doctor
 Requires:   aops-utils = %{version}-%{release}
 
+
 %description -n adoctor-cli
 commandline tool of adoctor, offer commands for executing diagnose, importing/exporting diagnose tree,
 getting diagnose report, importing/exporting check rule, querying check result and so on.
@@ -138,7 +139,6 @@ Requires: python3-werkzeug python3-connexion python3-swagger-ui-bundle
 %description -n python3-gala-ragdoll
 python3 pakcage of gala-ragdoll
 
-
 %package -n gala-spider
 Summary:	Configuration traceability
 
@@ -165,15 +165,9 @@ website for A-Ops, deployed by Nginx
 %define debug_package %{nil}
 
 %prep
-%autosetup -n %{name}-%{version}
-# prepare for web
-pushd aops-web
-npm config set registry https://mirrors.huaweicloud.com/repository/npm/
-npm cache clean -f
-npm install --global yarn
-yarn config set registry https://repo.huaweicloud.com/repository/npm
-popd
-
+%setup
+%setup -T -D -a 1
+cp -r A-Ops-web-node-modules/node_modules aops-web/
 
 %build
 # build for aops-utils
@@ -362,7 +356,6 @@ fi
 %postun -n python3-gala-ragdoll
 %systemd_postun gala-ragdoll.service
 
-
 %pre -n python3-gala-spider
 if [ -f "%{systemd_dir}/gala-spider.service" ] ; then
         systemctl enable gala-spider.service || :
@@ -376,8 +369,6 @@ fi
 
 %postun -n python3-gala-spider
 %systemd_postun gala-spider.service
-
-
 
 %files -n aops-utils
 %doc README.*
@@ -497,15 +488,23 @@ fi
 
 
 %changelog
-* Mon Sep 13 2021 zhaoyuxing<zhaoyuxing2@huawei.com> - 1.0.1-3
-- modify gala-spider add tmp files
+* Thu Sep 16 2021 chemingdao<chemingdao@huawei.com> - v1.0.3-1
+- NEW release 1.0.3.
 
-* Tue Sep 7 2021 zhaoyuxing<zhaoyuxing2@huawei.com> - 1.0.1-2
+* Mon Sep 13 2021 chemingdao<chemingdao@huawei.com> - v1.0.2-3
+- modify spec for aops-web build and fix some issues.
+
+* Sat Sep 11 2021 yangyunyi<yangyunyi2@huawei.com> - v1.0.2-2
+- modify ansible playbook
+
+* Tue Sep 7 2021 zhaoyuxing<zhaoyuxing2@huawei.com> - v1.0.2-1
 - add gala-spider in spec
 
-* Mon Sep 6 2021 Lostwayzxc<luoshengwei@huawei.com> - 1.0.1-1
-- update src, add intelligent check and diagnosis module, and 
-- add web of the aops
+* Mon Sep 6 2021 Yiru Wang<wangyiru1@huawei.com> - v1.0.1-2
+- add web build modle of the aops
+
+* Mon Sep 6 2021 Lostwayzxc<luoshengwei@huawei.com> - v1.0.1-1
+- update src, add intelligent check and diagnosis module
 
 * Thu Sep 2 2021 zhaoyuxing<zhaoyuxsing2@huawei.com> - 1.0.0-4
 - add service file in gala-spider
@@ -518,4 +517,3 @@ fi
 
 * Sat Jul 31 2021 orange-snn<songnannan2@huawei.com> - 1.0.0-1
 - Package init
-

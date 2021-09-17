@@ -15,6 +15,10 @@ Time:
 Author:
 Description:
 """
+import json
+
+from prettytable import PrettyTable
+from pygments import highlight, lexers, formatters
 
 from aops_utils.restful.response import MyResponse
 
@@ -148,3 +152,44 @@ def add_start_and_end(sub_parse):
         type=str,
         default="",
         help='end date of raw data, default is now')
+
+
+def create_table(fields):
+    """
+    create pretty table for print
+    Args:
+        fields(list): list of fields
+    Returns:
+        PrettyTalbe: pretty table for print
+    """
+    table = PrettyTable()
+    if not isinstance(fields, list):
+        print("Invalid field of the table, ckeck the data structure of the fields.")
+    else:
+        table.field_names = fields
+    return table
+
+
+def print_row_from_result(results):
+    """
+    add row of the table
+    Args:
+        results(list): results of the report
+    """
+    table = create_table(list(results[0].keys()))
+    for result in results:
+        table.add_row(list(result.values()))
+    print(table)
+
+
+def pretty_json(input_dict):
+    """
+    Generate pretty json from dict
+    Args:
+        input_dict(dict): dict will be transformed.
+    Returns:
+        json: json with highlight
+    """
+    format_json = json.dumps(input_dict, indent=2, ensure_ascii=False, sort_keys=True)
+    highlight_json = highlight(format_json, lexers.JsonLexer(), formatters.TerminalFormatter())
+    return highlight_json

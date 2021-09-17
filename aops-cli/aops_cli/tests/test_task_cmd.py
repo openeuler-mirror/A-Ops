@@ -62,7 +62,8 @@ class TestTaskCli(unittest.TestCase):
             mock_get_response.return_value = expected_res
             cmd.do_command(args)
             args_dict = vars(args)
-            ignore_list = ['action', 'task_list', 'sub_parse_name', 'sort', 'direction', "access_token", 'page', 'per_page']
+            ignore_list = ['action', 'task_list', 'sub_parse_name', 'sort', 'direction', "access_token", 'page',
+                           'per_page']
             for item in ignore_list:
                 args_dict.pop(item)
             args_dict['template_name'] = str_split(vars(args)['template_name'])
@@ -134,9 +135,26 @@ class TestTaskCli(unittest.TestCase):
                 {
                     "code": 200,
                     "msg": 'operation succeed',
-                    'task_infos': [{
-                            "task_id": "id1",
-                            "host_list": [{"host_name": "host1"}]
+                    'task_infos': [
+                        {
+                            "task_id": "95c3e692ff3811ebbcd3a89d3a259eef",
+                            "task_name": "Default deployment",
+                            "username": "admin",
+                            "description": " The default task for installing: zookeeper, kafka, prometheus, node_exporter, mysql, elasticsearch, fluentd, gala-spider, gala-gopher, gala-ragdoll.\n",
+                            "host_list": [
+                                {
+                                    "host_name": "90.90.64.64",
+                                    "host_id": "11111"
+                                },
+                                {
+                                    "host_name": "90.90.64.66",
+                                    "host_id": "11111"
+                                },
+                                {
+                                    "host_name": "90.90.64.65",
+                                    "host_id": "33333"
+                                }
+                            ]
                         }
                     ]
                 },

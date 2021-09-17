@@ -21,7 +21,7 @@ from adoctor_cli.base_cmd import BaseCommand
 from aops_utils.restful.helper import make_diag_url
 from aops_utils.conf.constant import DIAG_IMPORT_TREE, DIAG_GET_TREE, DIAG_DELETE_TREE
 from aops_utils.validate import name_check, str_split
-from aops_utils.cli_utils import cli_request, add_access_token
+from aops_utils.cli_utils import cli_request, add_access_token, request_without_print, pretty_json
 from aops_utils.excel2dict.diag_tree_dict import generate_tree_dict, PaintingRuleError
 
 
@@ -158,8 +158,10 @@ class FaultreeCommand(BaseCommand):
             return cli_request('DELETE', diag_url, pyload, header, params.access_token)
 
         diag_url, header = make_diag_url(DIAG_GET_TREE)
-        res = cli_request('POST', diag_url, pyload, header, params.access_token)
-
+        res = request_without_print('POST', diag_url, pyload, header, params.access_token)
+        tree_info = res.pop('trees', [])
+        print(res)
+        print(pretty_json(tree_info))
         path = params.export
         if path is None:
             return res

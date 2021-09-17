@@ -53,7 +53,17 @@ class TestReportCli(unittest.TestCase):
             expected_res = {
                 "code": 200,
                 "msg": 'operation succeed',
-                "report_id": "5c6bf64c-f468-11eb-80a0-3e22fbb33802"
+                "result": [
+                    {
+                        "host_id": "host1",
+                        "tree_name": "tree1",
+                        "task_id": "id1",
+                        "report_id": "rid1",
+                        "start": "11",
+                        "end": "12",
+                        "report": {"diag": {"diag": 123}}
+                    }
+                ]
             }
             mock_get_response.return_value = expected_res
             cmd.do_command(args)
@@ -78,6 +88,24 @@ class TestReportCli(unittest.TestCase):
             expected_res = {
                 "code": 200,
                 "msg": 'operation succeed',
+                "result": [
+                    {
+                        "host_id": "host1",
+                        "tree_name": "tree1",
+                        "task_id": "id1",
+                        "report_id": "rid1",
+                        "start": "11",
+                        "end": "12"
+                    },
+                    {
+                        "host_id": "host2",
+                        "tree_name": "tree2",
+                        "task_id": "id2",
+                        "report_id": "rid2",
+                        "start": "11",
+                        "end": "12"
+                    },
+                ]
             }
             mock_get_response.return_value = expected_res
             cmd.do_command(args)

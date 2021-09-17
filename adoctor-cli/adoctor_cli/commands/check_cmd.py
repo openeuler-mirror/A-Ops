@@ -19,8 +19,8 @@ from aops_utils.restful.helper import make_check_url
 from aops_utils.conf.constant import CHECK_GET_RESULT
 from aops_utils.time_utils import time_check_generate
 from aops_utils.validate import name_check, str_split
-from aops_utils.cli_utils import add_page, add_access_token, add_query_args, cli_request
-from aops_utils.cli_utils import add_start_and_end
+from aops_utils.cli_utils import add_page, add_access_token, add_query_args
+from aops_utils.cli_utils import add_start_and_end, request_without_print, print_row_from_result
 
 
 class CheckCommand(BaseCommand):
@@ -94,4 +94,7 @@ class CheckCommand(BaseCommand):
             pyload['sort'] = params.sort
             pyload['direction'] = params.direction
         check_url, header = make_check_url(CHECK_GET_RESULT)
-        return cli_request('POST', check_url, pyload, header, params.access_token)
+        result = request_without_print('POST', check_url, pyload, header, params.access_token)
+        check_results = result.pop('check_results', [])
+        print(result)
+        print_row_from_result(check_results)

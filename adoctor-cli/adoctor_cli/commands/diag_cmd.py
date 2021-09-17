@@ -19,6 +19,7 @@ import time
 
 from adoctor_cli.base_cmd import BaseCommand
 from aops_utils.cli_utils import add_start_and_end, add_access_token, cli_request, request_without_print
+from aops_utils.cli_utils import print_row_from_result
 from aops_utils.conf.constant import DIAG_EXECUTE_DIAG, DIAG_GET_PROGRESS, DIAG_GET_REPORT_LIST
 from aops_utils.conf.constant import DIAG_GET_TASK
 from aops_utils.restful.helper import make_diag_url
@@ -140,7 +141,10 @@ class DiagCommand(BaseCommand):
                 pyload = {
                     "task_id": task_id
                 }
-                return cli_request('POST', diag_url, pyload, header, params.access_token)
+                result = request_without_print('POST', diag_url, pyload, header, params.access_token)
+                result_info = result.pop('result', [])
+                print(result)
+                return print_row_from_result(result_info)
             times -= 1
         print("There is no task can be found in diagnosis scheduler, please try again.")
 

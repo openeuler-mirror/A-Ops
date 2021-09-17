@@ -19,7 +19,8 @@ from aops_cli.base_cmd import BaseCommand
 from aops_utils.restful.helper import make_manager_url
 from aops_utils.conf.constant import ADD_GROUP, DELETE_GROUP, GET_GROUP
 from aops_utils.validate import name_check, str_split
-from aops_utils.cli_utils import add_page, cli_request, add_access_token
+from aops_utils.cli_utils import add_page, cli_request, add_access_token, request_without_print
+from aops_utils.cli_utils import print_row_from_result
 
 
 class GroupCommand(BaseCommand):
@@ -148,4 +149,7 @@ class GroupCommand(BaseCommand):
             "page": params.page,
             "per_page": params.per_page
         }
-        return cli_request('POST', manager_url, pyload, header, params.access_token)
+        result = request_without_print('POST', manager_url, pyload, header, params.access_token)
+        host_group_infos = result.pop('host_group_infos', [])
+        print(result)
+        print_row_from_result(host_group_infos)
