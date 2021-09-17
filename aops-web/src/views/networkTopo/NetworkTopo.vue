@@ -16,7 +16,6 @@ import G6 from '@antv/g6'
 import { PageHeaderWrapper } from '@ant-design-vue/pro-layout'
 
 import { getTopoData } from '@/api/topo'
-import { topoData2 } from '@/mock/topoTestJson'
 
 const normalLinkColor = '#eee'
 const nginxLinkColor = '#00f'
@@ -316,7 +315,7 @@ export default {
     }
   },
   mounted: function () {
-    // this.getGraphDataFromRemote()
+    this.getGraphDataFromRemote()
   }
 }
 </script>

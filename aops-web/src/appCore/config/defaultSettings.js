@@ -13,7 +13,7 @@
  */
 
 export default {
-  navTheme: 'dark', // theme for nav menu
+  navTheme: 'light', // theme for nav menu
   primaryColor: '#002FA7', // primary color of ant design
   layout: 'sidemenu', // nav menu position: `sidemenu` or `topmenu`
   contentWidth: 'Fluid', // layout of content: `Fluid` or `Fixed`, only works when layout is topmenu
@@ -29,5 +29,6 @@ export default {
   production: process.env.NODE_ENV === 'production' && process.env.VUE_APP_PREVIEW !== 'true',
 
   // 主机域-主机列表更新频率1min
-  domainStatusRefreshInterval: 60000
+  domainStatusRefreshInterval: 60000,
+  topoGraphUpdateInterval: 10000
 }

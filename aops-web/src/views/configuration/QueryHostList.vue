@@ -1,7 +1,7 @@
 
 <template>
   <my-page-header-wrapper>
-    <a-card :bordered="false">
+    <a-card :bordered="false" class="aops-theme">
       <div>
         <h3 class="card-title">{{ domainName }}主机列表</h3>
       </div>
@@ -199,7 +199,7 @@
           {
             dataIndex: 'ip',
             key: 'ip',
-            title: '公网IP地址'
+            title: 'IP地址'
           },
           {
             dataIndex: 'ipv6',

@@ -1,7 +1,7 @@
 
 <template>
   <page-header-wrapper>
-    <a-card :bordered="false">
+    <a-card :bordered="false" class="aops-theme">
       <div>
         <h3 class="card-title">业务域列表</h3>
         <span>共有业务域{{ domainData.length }}个</span>

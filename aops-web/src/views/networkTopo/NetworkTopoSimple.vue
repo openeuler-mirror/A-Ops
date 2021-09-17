@@ -1,24 +1,95 @@
 <template>
   <page-header-wrapper>
-    <a-card border="false">
+    <a-card :bordered="false" class="aops-theme">
       <div class="header">
         <h4 v-show="graphIsDoingLayout">图形布局中，请稍等 <a-spin size="small" /></h4>
+        <div v-if="initialFinshed">
+          <a-button
+            v-if="!isUpdatePaused"
+            @click="pauseUpdate"
+            type="primary"
+            :loading="updateLoading"
+          >
+            {{ updateLoading ? '更新中' : '暂停更新' }}
+          </a-button>
+          <a-button v-else @click="startUpdate" type="primary">开始更新</a-button>
+          <span style="margin-left: 10px;">{{ `数据更新频率：${updateInterval / 1000}s` }}</span>
+        </div>
       </div>
       <a-spin :spinning="dataLoading" size="large">
         <div id="graph-container" class="container"></div>
       </a-spin>
     </a-card>
+    <a-drawer
+      title="节点详情"
+      closable
+      @close="handleNodeInfoCancel"
+      :visible="nodeInfoDrawerVisible"
+      width="600"
+      destroyOnClose
+    >
+      <div>
+        <h3>{{ `Node: ${nodeSelectInfo.label}` }}</h3>
+        <div>{{ `${nodeSelectInfo.children ? nodeSelectInfo.children.length : []} processes runs on: ` }}</div>
+        <a-collapse accordion>
+          <a-collapse-panel
+            v-for="process in nodeSelectInfo.children"
+            :key="process.entityid"
+            :header="process.name"
+          >
+            <h4>{{ `Process: ${process.name}` }}</h4>
+            <div>{{ `with ${process.dependingitems.calls ? process.dependingitems.calls.length : 0} links:` }}</div>
+            <a-collapse accordion>
+              <a-collapse-panel
+                v-for="link in (process.dependingitems.calls || [])"
+                :key="link.id"
+                :header="`${linkAttrsMap[link.id].linkType}: ${linkAttrsMap[link.id].name}`"
+              >
+                <h5>{{ `Attributes of ${linkAttrsMap[link.id].name}` }}</h5>
+                <a-list item-layout="horizontal" :data-source="linkAttrsMap[link.id].attrs">
+                  <a-list-item slot="renderItem" slot-scope="item, index">
+                    <span>
+                      <span style="display:inlne-block;margin-right:10;">{{ `${index} | ` }}</span>
+                      <span>{{ `${item.key}:` }}</span>
+                    </span>
+                    <span>{{ item.value }}</span>
+                  </a-list-item>
+                </a-list>
+              </a-collapse-panel>
+            </a-collapse>
+          </a-collapse-panel>
+        </a-collapse>
+      </div>
+    </a-drawer>
   </page-header-wrapper>
 </template>
 
 <script>
+import Vue from 'vue'
 import G6 from '@antv/g6'
+import { Collapse } from 'ant-design-vue'
 import { PageHeaderWrapper } from '@ant-design-vue/pro-layout'
 
 import { getTopoData } from '@/api/topo'
+import defaultConfig from '@/appCore/config/defaultSettings'
 
-const normalLinkColor = '#090'
+Vue.use(Collapse)
+
+const normalLinkColor = ''
 const nginxLinkColor = '#00f'
+
+const colorBook = {
+  purple: {
+    nodeColor: '#873bf4',
+    nodeEdgeColoe: '#721af2',
+    lineColor: 'rgba(169,117,243,0.6)'
+  },
+  default: {
+    nodeColor: '#4d6dad',
+    nodeEdgeColoe: '#2855af',
+    lineColor: 'rgba(0,153,0,0.6)'
+  }
+}
 
 export default {
   name: 'NetworkTopoDiagram',
@@ -33,10 +104,21 @@ export default {
       graph: {},
       nodePosition: [],
       dataLoading: false,
-      graphIsDoingLayout: false
+      graphIsDoingLayout: false,
+      colorSet: colorBook.default,
+      linkAttrsMap: {},
+      nodeSelectInfo: {},
+      nodeInfoDrawerVisible: false,
+      updateLoading: false,
+      updateInterval: defaultConfig.topoGraphUpdateInterval,
+      isUpdatePaused: false,
+      initialFinshed: false
     }
   },
   methods: {
+    handleNodeInfoCancel () {
+      this.nodeInfoDrawerVisible = false
+    },
     setGraphData (dataList) {
       this.nodes = []
       this.edges = []
@@ -79,19 +161,25 @@ export default {
       })
 
       links.forEach(function (entity) {
+        // 存储link信息, hash表
+        _this.linkAttrsMap[entity.entityid] = {
+          name: entity.name,
+          attrs: entity.attrs,
+          linkType: entity.type
+        }
         // set edges
         const { type, attrs, ...tempEdge } = entity
         tempEdge.link_type = type
 
         tempEdge.source = processToNodeMap[entity.dependeditems.calls.id]
         tempEdge.target = processToNodeMap[entity.dependingitems.calls.id]
-        tempEdge.id = `${tempEdge.source}_${tempEdge.target}`
+        tempEdge.id = `${tempEdge.source}_${tempEdge.target}_nodeLvel`
         const matchedEdge = _this.edges.filter(edge => edge.id === tempEdge.id)[0]
         if (matchedEdge) {
           // 后续需要处理enitiy中的type
           matchedEdge.children.push(entity)
         } else {
-          tempEdge.style = { stroke: normalLinkColor }
+          tempEdge.style = { stroke: _this.colorSet.lineColor }
           if (tempEdge.source === tempEdge.target) {
             tempEdge.type = 'loop'
           } else {
@@ -101,6 +189,7 @@ export default {
           _this.edges.push(tempEdge)
         }
       })
+
       G6.Util.processParallelEdges(this.edges)
     },
     getGraphDataFromRemote () {
@@ -120,16 +209,18 @@ export default {
     },
     updateGraphDatafromRemote () {
       const _this = this
+      this.updateLoading = true
       getTopoData().then(res => {
         _this.setGraphData(res.entities || [])
         const data = {
           nodes: _this.nodes,
-          edges: _this.edges,
-          combos: _this.combos
+          edges: _this.edges
         }
         _this.graph.changeData(data)
       }).catch(err => {
         _this.$message.error(err.response.data.msg)
+      }).finally(() => {
+        _this.updateLoading = false
       })
     },
     saveNodePosition () {
@@ -159,6 +250,25 @@ export default {
     onLayoutEnd () {
       this.graphIsDoingLayout = false
       this.graph.fitView()
+
+      if (!this.isUpdatePaused && !this.updateKey) {
+        this.startUpdate(true)
+      }
+      if (!this.initialFinshed) this.initialFinshed = true
+    },
+    startUpdate () {
+      const _this = this
+      this.isUpdatePaused = false
+      if (this.initialFinshed) {
+        _this.updateGraphDatafromRemote()
+      }
+      this.updateKey = setInterval(function () {
+        _this.updateGraphDatafromRemote()
+      }, _this.updateInterval)
+    },
+    pauseUpdate () {
+      clearInterval(this.updateKey)
+      this.isUpdatePaused = true
     },
     initialGraph () {
       const _this = this
@@ -242,9 +352,9 @@ export default {
         defaultNode: {
           size: 60,
           style: {
-            fill: 'steelblue',
-            stroke: 'steelblue',
-            lineWidth: 1
+            fill: this.colorSet.nodeColor,
+            stroke: this.colorSet.nodeEdgeColoe,
+            lineWidth: 2
           },
           labelCfg: {
             style: {
@@ -326,6 +436,13 @@ export default {
           })
         })
       })
+      this.graph.on('node:click', function (evt) {
+        const node = evt.item
+        const model = node.getModel()
+        _this.nodeSelectInfo = Object.assign([], model)
+        if (!_this.nodeSelectInfo.children) _this.nodeSelectInfo.chidlren = []
+        _this.nodeInfoDrawerVisible = true
+      })
 
       this.edges.forEach(edge => {
         if (!edge.style) {
@@ -336,8 +453,7 @@ export default {
 
       this.graph.data({
         nodes: this.nodes,
-        edges: this.edges,
-        combos: this.combos
+        edges: this.edges
       })
 
       this.graphIsDoingLayout = true

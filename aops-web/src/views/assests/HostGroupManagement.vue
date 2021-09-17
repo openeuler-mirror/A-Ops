@@ -1,6 +1,6 @@
 <template>
   <page-header-wrapper>
-    <a-card :bordered="false">
+    <a-card :bordered="false" class="aops-theme">
       <div>
         <div>共获取到{{ tableData.length }}条主机组信息</div>
         <a-row class="aops-app-table-control-row" type="flex" justify="space-between">
@@ -110,7 +110,7 @@ const hostListColumns = [
     {
         dataIndex: 'public_ip',
         key: 'public_ip',
-        title: '公网IP地址'
+        title: 'IP地址'
     },
     {
         dataIndex: 'ssh_port',
