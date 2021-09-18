@@ -23,7 +23,7 @@ from aops_utils.restful.helper import make_manager_url
 from aops_utils.restful.response import MyResponse
 from aops_utils.restful.status import SUCCEED
 from aops_utils.cli_utils import add_page, cli_request, add_access_token, add_query_args
-from aops_utils.cli_utils import request_without_print, print_row_from_result
+from aops_utils.cli_utils import request_without_print, pretty_json
 
 
 class TaskCommand(BaseCommand):
@@ -151,7 +151,7 @@ class TaskCommand(BaseCommand):
         result = request_without_print('POST', manager_url, pyload, header, params.access_token)
         task_infos = result.pop('task_infos', [])
         print(result)
-        print_row_from_result(task_infos)
+        print(pretty_json(task_infos))
 
     @staticmethod
     def manage_requests_delete(**kwargs):
