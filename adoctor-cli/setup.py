@@ -19,7 +19,7 @@ setup(
     name='adoctor-cli',
     version='1.0.0',
     packages=find_packages(),
-    install_requires=[],
+    install_requires=['tqdm'],
     author='cmd-lsw-yyy-zyc',
     scripts=['adoctor'],
     zip_safe=False

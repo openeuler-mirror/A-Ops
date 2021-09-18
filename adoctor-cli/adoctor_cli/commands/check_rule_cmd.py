@@ -23,7 +23,7 @@ from aops_utils.readconfig import read_json_config_file
 from aops_utils.conf.constant import CHECK_IMPORT_RULE, CHECK_GET_RULE, CHECK_DELETE_RULE
 from aops_utils.validate import name_check, str_split
 from aops_utils.cli_utils import add_page, cli_request, add_access_token, request_without_print
-from aops_utils.cli_utils import print_row_from_result
+from aops_utils.cli_utils import pretty_json
 
 
 class CheckRuleCommand(BaseCommand):
@@ -123,9 +123,8 @@ class CheckRuleCommand(BaseCommand):
 
         check_url, header = make_check_url(CHECK_GET_RULE)
         res = request_without_print('POST', check_url, pyload, header, params.access_token)
-        check_items = res.pop('check_items', [])
-        print(res)
-        print_row_from_result(check_items)
+        check_items = res.get('check_items', [])
+        print(pretty_json(res))
         path = params.export
         if path is None:
             return res

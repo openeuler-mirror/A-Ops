@@ -106,9 +106,28 @@ class TestTaskCli(unittest.TestCase):
                 "total_page": 1,
                 "task_infos": [
                     {
-                        "task_id": "id1",
-                        "task_name": "task1",
-                        "description": "xxxxxx",
+                        "task_id": "95c3e692ff3811ebbcd3a89d3a259eef",
+                        "task_name": "Default deployment",
+                        "username": "admin",
+                        "description": " The default task for installing: zookeeper, kafka, prometheus, node_exporter, mysql, elasticsearch, fluentd, gala-spider, gala-gopher, gala-ragdoll.\n",
+                        "host_list": [
+                            {
+                                "host_name": "172.16.0.0",
+                                "host_id": "11111"
+                            },
+                            {
+                                "host_name": "172.16.0.1",
+                                "host_id": "11111"
+                            },
+                            {
+                                "host_name": "172.16.0.2",
+                                "host_id": "33333"
+                            }
+                        ]
+                    },
+                    {
+                        "task_id": "11",
+                        "description": "desc1"
                     }
                 ]
             }
@@ -143,15 +162,15 @@ class TestTaskCli(unittest.TestCase):
                             "description": " The default task for installing: zookeeper, kafka, prometheus, node_exporter, mysql, elasticsearch, fluentd, gala-spider, gala-gopher, gala-ragdoll.\n",
                             "host_list": [
                                 {
-                                    "host_name": "90.90.64.64",
+                                    "host_name": "172.16.0.0",
                                     "host_id": "11111"
                                 },
                                 {
-                                    "host_name": "90.90.64.66",
+                                    "host_name": "172.16.0.1",
                                     "host_id": "11111"
                                 },
                                 {
-                                    "host_name": "90.90.64.65",
+                                    "host_name": "172.16.0.2",
                                     "host_id": "33333"
                                 }
                             ]

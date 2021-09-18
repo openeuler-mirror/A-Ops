@@ -109,3 +109,22 @@ class TestGroupCli(unittest.TestCase):
             cmd.do_command(args)
             args_dict = {'page': 1, 'per_page': 20}
             self.assertEqual(args_dict, mock_get_response.call_args_list[0][0][2])
+
+    def test_get_null_host_group(self):
+        print("Execute the get null host group test case")
+        cmd = GroupCommand()
+        args = cmd.parser.parse_args(['group',
+                                      '--action=query',
+                                      '--access_token=111221'
+                                      ])
+        with mock.patch.object(MyResponse, "get_response") as mock_get_response:
+            expected_res = {
+                "code": 200,
+                "msg": 'operation succeed',
+                "total_count": 0,
+                "total_page": 0,
+            }
+            mock_get_response.return_value = expected_res
+            cmd.do_command(args)
+            args_dict = {'page': 1, 'per_page': 20}
+            self.assertEqual(args_dict, mock_get_response.call_args_list[0][0][2])
