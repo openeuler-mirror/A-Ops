@@ -235,9 +235,9 @@ export default {
         cb()
       },
       passwordCheck (rule, value, cb) {
-        if (/[^0-9a-zA-Z_~`!?,.:;\-'"(){}[\]/<>@#$%^&*+|\\=\s]/.test(value)) {
+        if (/[^0-9a-zA-Z_~`!?.:;\-'"(){}[\]/<>@#$%^&*+|\\=]/.test(value)) {
           /* eslint-disable */
-          cb('只允许大小写字母、数字、空格和特殊字符')
+          cb('只允许大小写字母、数字和特殊字符，不能有空格和逗号')
           /* eslint-enable */
           return
         }
@@ -247,9 +247,9 @@ export default {
           /* eslint-enable */
           return
         }
-        if (!(/[_~`!?,.:;\-'"(){}[\]/<>@#$%^&*+|\\=\s]/.test(value))) {
+        if (!(/[_~`!?.:;\-'"(){}[\]/<>@#$%^&*+|\\=]/.test(value))) {
           /* eslint-disable */
-          cb('至少应包含一个空格和特殊字符')
+          cb('请至少应包含一个特殊字符')
           /* eslint-enable */
           return
         }
