@@ -114,7 +114,7 @@ class DeployDatabase(ElasticsearchProxy):
             LOGGER.error("query count of task fail")
             return DATABASE_QUERY_ERROR, result
         if count_res[1] == 0:
-            LOGGER.info("there is no matched task")
+            LOGGER.warning("there is no matched task")
             return SUCCEED, result
 
         total_count = count_res[1]
@@ -122,7 +122,7 @@ class DeployDatabase(ElasticsearchProxy):
         res = self.query(TASK_INDEX, query_body, [
             "task_id", "task_name", "description", "host_list", "template_name"])
         if res[0]:
-            LOGGER.info("query task %s succeed", task_list)
+            LOGGER.debug("query task %s succeed", task_list)
             result["total_page"] = total_page
             result["total_count"] = total_count
             for item in res[1]['hits']['hits']:
@@ -202,7 +202,7 @@ class DeployDatabase(ElasticsearchProxy):
             LOGGER.error("query count of template fail")
             return DATABASE_QUERY_ERROR, result
         if count_res[1] == 0:
-            LOGGER.info("there is no matched template")
+            LOGGER.warning("there is no matched template")
             return SUCCEED, result
 
         total_count = count_res[1]
@@ -210,7 +210,7 @@ class DeployDatabase(ElasticsearchProxy):
         res = self.query(TEMPLATE_INDEX, query_body, [
                          "template_name", "template_content", "description"])
         if res[0]:
-            LOGGER.info("query template %s succeed", template_list)
+            LOGGER.debug("query template %s succeed", template_list)
             result["total_page"] = total_page
             result["total_count"] = total_count
             for item in res[1]['hits']['hits']:

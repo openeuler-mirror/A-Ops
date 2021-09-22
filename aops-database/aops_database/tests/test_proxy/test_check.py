@@ -309,7 +309,8 @@ class TestCheckDatabase(unittest.TestCase):
             "username": "test",
             "time_range": [],
             "check_items": [],
-            "host_list": []
+            "host_list": [],
+            "value": "Abnormal"
         }
         res = self.proxy.get_check_result(data)
         self.assertEqual(5, len(res[1]['check_result']))

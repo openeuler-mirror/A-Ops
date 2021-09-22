@@ -1327,6 +1327,7 @@ Mulan V2
   | direction       | False | str  | 升序(asc)，降序(desc)，默认:asc                    |
   | page            | False | int  | 当前的页码                                         |
   | per_page        | False | int  | 每页的数量，最大为50                               |
+  | value  | False | str | 根据异常检测的结果进行筛选 |
   
 - 请求参数示例：
 
@@ -1375,7 +1376,8 @@ Mulan V2
               "end": 25,
               "check_item": "xxx",
               "condition": "",
-              "value": ""
+              "value": "",
+              "description": ""
   		}
   	]
   }

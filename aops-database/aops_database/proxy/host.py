@@ -91,7 +91,7 @@ class HostDatabase(MysqlProxy):
             status_code = judge_return_code(result, DATABASE_INSERT_ERROR)
             return status_code, result
         except sqlalchemy.exc.SQLAlchemyError as error:
-            LOGGER.debug(error)
+            LOGGER.error(error)
             LOGGER.error("add host fail")
             self.session.rollback()
             result['fail_list'] = result['succeed_list'] + result['fail_list']
@@ -134,7 +134,7 @@ class HostDatabase(MysqlProxy):
             result['host_info'] = host_info
             return status_code, result
         except sqlalchemy.exc.SQLAlchemyError as error:
-            LOGGER.debug(error)
+            LOGGER.error(error)
             LOGGER.error("delete host %s fail", host_list)
             self.session.rollback()
             result['fail_list'] = host_list
@@ -160,10 +160,10 @@ class HostDatabase(MysqlProxy):
         try:
             result = self._sort_host_by_column(data)
             self.session.commit()
-            LOGGER.info("query host succeed")
+            LOGGER.debug("query host succeed")
             return SUCCEED, result
         except sqlalchemy.exc.SQLAlchemyError as error:
-            LOGGER.debug(error)
+            LOGGER.error(error)
             LOGGER.error("query host fail")
             return DATABASE_QUERY_ERROR, result
 
@@ -190,7 +190,7 @@ class HostDatabase(MysqlProxy):
             self.session.commit()
             return SUCCEED, result
         except sqlalchemy.exc.SQLAlchemyError as error:
-            LOGGER.debug(error)
+            LOGGER.error(error)
             LOGGER.error("query host count fail")
             return DATABASE_QUERY_ERROR, result
 
@@ -335,10 +335,10 @@ class HostDatabase(MysqlProxy):
                 }
                 temp_res.append(host_info)
             self.session.commit()
-            LOGGER.info("query host %s basic info succeed", host_list)
+            LOGGER.debug("query host %s basic info succeed", host_list)
             return SUCCEED, result
         except sqlalchemy.exc.SQLAlchemyError as error:
-            LOGGER.debug(error)
+            LOGGER.error(error)
             LOGGER.error("query host %s basic info fail", host_list)
             return DATABASE_QUERY_ERROR, result
 
@@ -380,10 +380,10 @@ class HostDatabase(MysqlProxy):
                     }
                     temp_res[name].append(host_info)
             self.session.commit()
-            LOGGER.info("query host basic info succeed")
+            LOGGER.debug("query host basic info succeed")
             return SUCCEED, result
         except sqlalchemy.exc.SQLAlchemyError as error:
-            LOGGER.debug(error)
+            LOGGER.error(error)
             LOGGER.error("query host basic info fail")
             return DATABASE_QUERY_ERROR, result
 
@@ -416,7 +416,7 @@ class HostDatabase(MysqlProxy):
             LOGGER.info("add host group [%s] succeed", host_group_name)
             return SUCCEED
         except sqlalchemy.exc.SQLAlchemyError as error:
-            LOGGER.debug(error)
+            LOGGER.error(error)
             self.session.rollback()
             LOGGER.error("add host group [%s] fail", host_group_name)
             return DATABASE_INSERT_ERROR
@@ -462,7 +462,7 @@ class HostDatabase(MysqlProxy):
             LOGGER.info("host group %s delete succeed", deleted)
             return SUCCEED, result
         except sqlalchemy.exc.SQLAlchemyError as error:
-            LOGGER.debug(error)
+            LOGGER.error(error)
             self.session.rollback()
             LOGGER.error("delete host group %s fail", host_group_list)
             return DATABASE_DELETE_ERROR, result
@@ -489,10 +489,10 @@ class HostDatabase(MysqlProxy):
         try:
             result = self._sort_group_by_column(data)
             self.session.commit()
-            LOGGER.info("query host group succeed")
+            LOGGER.debug("query host group succeed")
             return SUCCEED, result
         except sqlalchemy.exc.SQLAlchemyError as error:
-            LOGGER.debug(error)
+            LOGGER.error(error)
             LOGGER.error("query host group fail")
             return DATABASE_QUERY_ERROR, result
 
@@ -636,7 +636,7 @@ class HostInfoDatabase(ElasticsearchProxy):
         result['host_infos'] = []
         res = self.scan(HOST_INFO_INDEX, body)
         if res[0]:
-            LOGGER.info("query host %s info succeed", host_list)
+            LOGGER.debug("query host %s info succeed", host_list)
             result['host_infos'] = res[1]
             return SUCCEED, result
         LOGGER.error("query host %s info fail", host_list)
