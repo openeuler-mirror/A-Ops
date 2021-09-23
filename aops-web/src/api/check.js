@@ -19,7 +19,7 @@ const api = {
 export default api
 
 // 获取异常检测结果
-export function getResult ({ timeRange, checkItems, hostList, sort, direction, page, perPage }) {
+export function getResult ({ timeRange, checkItems, hostList, value, sort, direction, page, perPage }) {
   return request({
     url: api.getResult,
     method: 'post',
@@ -29,6 +29,7 @@ export function getResult ({ timeRange, checkItems, hostList, sort, direction, p
       time_range: timeRange || [], // 检测的时间范围，为空表示所有
       check_items: checkItems || [], // 异常检测项列表，为空表示所有
       host_list: hostList || [], // 主机列表，为空表示所有主机
+      value: value || 'Abnormal', // 此API默认获取异常结果。
       direction: direction || 'asc', // 升序(asc)，降序(desc)，默认:asc
       page: page || 1, // 当前的⻚码
       per_page: perPage || 10 // 每⻚的数量，最⼤为50
