@@ -169,4 +169,4 @@ class DoCheckConsumer(CheckConsumer):
 
         check_task = CheckTask()
         check_task.import_check_items(user, check_items)
-        check_task.do_check(time_range, user, host_list, task_id)
+        check_task.do_check(time_range, user, host_list, task_id, check_items)

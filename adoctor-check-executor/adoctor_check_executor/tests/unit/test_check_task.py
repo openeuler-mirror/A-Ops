@@ -22,6 +22,7 @@ import unittest
 from unittest import mock
 from adoctor_check_executor.check_executor.check_task import CheckTask
 from adoctor_check_executor.check_executor.check_item import CheckItem, CheckItemDetail
+from adoctor_check_executor.check_executor.check_item_manager import check_item_manager
 
 
 class TestCheckTask(unittest.TestCase):

@@ -73,7 +73,7 @@ class CheckTaskManager:
 
         # Tasks that do not need to be retried
         if task_id in self._dead_retry_task:
-            LOGGER.info("This task %d is dead.", task_id)
+            LOGGER.debug("This task %d is dead.", task_id)
             return None
 
         # Obtains the 13-bit timestamp as the task ID.

@@ -20,6 +20,7 @@ import json
 from aops_utils.log.log import LOGGER
 from aops_utils.restful.status import SUCCEED
 from aops_utils.preprocessing.alignment import align
+from aops_utils.preprocessing.deduplicate import deduplicate
 from adoctor_check_executor.common.constant import CheckResultType
 from adoctor_check_executor.common.config import executor_check_config
 from adoctor_check_executor.common.check_msg import CheckMsgToolKit
@@ -96,11 +97,11 @@ class DataManager:
 
         """
         if not all([host_ip, data_macro_name]):
-            LOGGER.error("host info is invalid, public ip is none")
+            LOGGER.debug("host info is invalid, public ip is none")
             return -1
         if host_ip not in self.host_cache.keys() or \
                 data_macro_name not in self.host_cache.get(host_ip).keys():
-            LOGGER.error("host_ip %s or data_macro_name %s is not in host_cache",
+            LOGGER.debug("host_ip %s or data_macro_name %s is not in host_cache",
                          host_ip, data_macro_name)
             return -1
 
@@ -157,7 +158,7 @@ class DataManager:
             if not data_infos:
                 # No data exception is recorded here.
                 # If no data is found during the check, perform the data exception.
-                LOGGER.error("Get no data from data base. time_range %s, host:%s",
+                LOGGER.debug("Get no data from data base. time_range %s, host:%s",
                              time_range, host.get("host_id"))
                 continue
 
@@ -170,9 +171,13 @@ class DataManager:
                 self.host_cache[host_ip][self.data_name_map.get(data_name_str)] \
                     = data_info.get("values")
 
-            if self.data_type != "log":
+            if self.data_type == "kpi":
                 LOGGER.debug("Align kpi data for host %s", host)
                 self.host_cache[host_ip] = \
                     align(executor_check_config.executor.get("SAMPLE_PERIOD"),
                           time_range,
                           self.host_cache.get(host_ip))
+            elif self.data_type == "log":
+                LOGGER.debug("Deduplicate log data for host %s", host)
+                self.host_cache[host_ip] = \
+                    deduplicate(self.host_cache.get(host_ip))

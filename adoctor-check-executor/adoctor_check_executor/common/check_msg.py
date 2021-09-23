@@ -20,7 +20,7 @@ description: check executor msg related
 
 from aops_utils.restful.helper import make_datacenter_url
 from aops_utils.conf.constant import DATA_SAVE_CHECK_RESULT, DATA_GET_DATA, \
-    DATA_GET_CHECK_RULE, DATA_GET_HOST_INFO_BY_USER
+    DATA_GET_CHECK_RULE, DATA_GET_HOST_INFO_BY_USER, DATA_DELETE_CHECK_RESULT
 from aops_utils.restful.response import MyResponse
 from aops_utils.restful.status import SUCCEED
 from aops_utils.log.log import LOGGER
@@ -64,6 +64,32 @@ class CheckMsgToolKit:
             SUCCEED, 'post', database_url, msg)
 
         return response
+
+    @staticmethod
+    def delete_check_result_from_database(host_list, time_range, user_name, check_items):
+        """
+        Delete Check result from data base
+        Args:
+            host_list (list): the host list to be delete
+            time_range (list): time range [start_ts, end_ts]
+            user_name (str): the user of check result to be delete
+            check_items(list): check item list
+        """
+        msg = {
+            "host_list": host_list,
+            "time_range": time_range,
+            "username": user_name,
+            "check_items": check_items
+        }
+        database_url = make_datacenter_url(DATA_DELETE_CHECK_RESULT)
+        response = MyResponse.get_result(
+            SUCCEED, 'delete', database_url, msg)
+        if response.get("code") != SUCCEED:
+            LOGGER.error("Delete check result host_list %s, "
+                         "time_range %s, user_name %s failed",
+                         host_list, time_range, user_name)
+        return response
+
 
     @staticmethod
     def get_data_from_database(time_range, host_ip, data_list):
