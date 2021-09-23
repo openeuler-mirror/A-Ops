@@ -82,7 +82,7 @@ class Consumer(BaseConsumer):
             for consumer_record in value:
                 if consumer_record is not None:
                     message_value = consumer_record.value
-                    LOGGER.info("Get job from kafka. %s" % message_value)
+                    LOGGER.debug("Get job from kafka. %s" % message_value)
                     report = diagnose(message_value)
                     reports.append(report)
                     self.commit()
