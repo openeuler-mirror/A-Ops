@@ -53,7 +53,7 @@
               placeholder="请输入"/>
           </a-form-item>
           <a-form-item label="SSH登录端口">
-            <a-input-number :min="0" :max="65535" v-decorator="['ssh_port', { initialValue: 22, rules: [{ required: true, message: '请输入 0~65533 内正整数' }] }]" placeholder="请输入"/>
+            <a-input-number :min="0" :max="65535" v-decorator="['ssh_port', { initialValue: 22, rules: [{ required: true, message: '请输入 0~65535 内正整数' }] }]" placeholder="请输入"/>
           </a-form-item>
           <a-form-item label="管理/监控节点">
             <a-radio-group name="managementGroup" v-decorator="['management', { initialValue: true }]">
