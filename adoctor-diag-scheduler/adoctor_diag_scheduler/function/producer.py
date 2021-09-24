@@ -58,7 +58,7 @@ class Producer(BaseProducer):
                     "interval": 60
                 }
         Returns:
-            str, int: task id and total jobs number.
+            str, str, int: failed msg, task id and total jobs number.
 
         Raises: KeyError
 
@@ -68,17 +68,21 @@ class Producer(BaseProducer):
         time_range = [int(job_info['time_range'][0]), int(job_info['time_range'][1])]
         # split time range based on interval
         time_slices = get_time_slices(time_range, int(job_info['interval']))
+        if not len(time_slices):
+            return "Time range is not valid.", "", 0
 
         # get validate host from database
         hosts = get_validate_hosts(job_info['host_list'], job_info["username"])
+        if not len(hosts):
+            return "No valid host.", "", 0
+
         # get validate trees' content from database
         tree_dict = get_trees_content(job_info['tree_list'], job_info["username"])
-
         val_trees = tree_dict.keys()
-        jobs_num = len(hosts) * len(val_trees) * len(time_slices)
+        if not len(val_trees):
+            return "No valid fault tree.", "", 0
 
-        if jobs_num == 0:
-            return None, 0
+        jobs_num = len(hosts) * len(val_trees) * len(time_slices)
 
         job_info['host_list'] = hosts
         job_info['tree_list'] = list(val_trees)
@@ -97,4 +101,4 @@ class Producer(BaseProducer):
 
         save_task(job_info, task_id, jobs_num)
 
-        return task_id, jobs_num
+        return "", task_id, jobs_num
