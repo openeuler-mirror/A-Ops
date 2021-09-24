@@ -67,8 +67,13 @@ export default {
               if (_this.toJSON) {
                 if (TYPE_ENUM[_this.fileType] === 'application/x-yaml') {
                   content = yaml.load(content)
+                  if (typeof content !== 'object' || Array.isArray(content))
+                  throw new Error('content is not a json object')
                 } else {
                   content = JSON.parse(content)
+                  if (Array.isArray(content)) {
+                    throw new Error('content is not a json object')
+                  }
                 }
               }
               _this.$emit('load', content)

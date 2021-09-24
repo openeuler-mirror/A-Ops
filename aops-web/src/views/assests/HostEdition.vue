@@ -53,7 +53,7 @@
               placeholder="请输入"/>
           </a-form-item>
           <a-form-item label="SSH登录端口">
-            <a-input-number :min="0" :max="65533" v-decorator="['ssh_port', { initialValue: 22, rules: [{ required: true, message: '请输入 0~65533 内正整数' }] }]" placeholder="请输入"/>
+            <a-input-number :min="0" :max="65535" v-decorator="['ssh_port', { initialValue: 22, rules: [{ required: true, message: '请输入 0~65535 内正整数' }] }]" placeholder="请输入"/>
           </a-form-item>
           <a-form-item label="管理/监控节点">
             <a-radio-group name="managementGroup" v-decorator="['management', { initialValue: true }]">
@@ -235,9 +235,9 @@ export default {
         cb()
       },
       passwordCheck (rule, value, cb) {
-        if (/[^0-9a-zA-Z_~`!?,.:;\-'"(){}[\]/<>@#$%^&*+|\\=\s]/.test(value)) {
+        if (/[^0-9a-zA-Z_~`!?.:;\-'"(){}[\]/<>@#$%^&*+|\\=]/.test(value)) {
           /* eslint-disable */
-          cb('只允许大小写字母、数字、空格和特殊字符')
+          cb('只允许大小写字母、数字和特殊字符，不能有空格和逗号')
           /* eslint-enable */
           return
         }
@@ -247,9 +247,9 @@ export default {
           /* eslint-enable */
           return
         }
-        if (!(/[_~`!?,.:;\-'"(){}[\]/<>@#$%^&*+|\\=\s]/.test(value))) {
+        if (!(/[_~`!?.:;\-'"(){}[\]/<>@#$%^&*+|\\=]/.test(value))) {
           /* eslint-disable */
-          cb('至少应包含一个空格和特殊字符')
+          cb('请至少应包含一个特殊字符')
           /* eslint-enable */
           return
         }

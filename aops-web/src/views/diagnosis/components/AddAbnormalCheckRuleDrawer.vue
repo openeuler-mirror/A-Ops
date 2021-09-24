@@ -2,13 +2,14 @@
   <a-form :form="form" layout="vertical" hide-required-mark>
     <a-form-item label="导入异常检测规则文件：">
       <div style="border: 1px solid #ccc;border-radius: 3px;display: inline-block;cursor: pointer">
-        <uploader hidefocus toJSON uid="luleUploader" fileType="json" v-decorator="['ruleList',{rules: [{ required: true, message: '请上传文件' }]}]" />
+        <uploader hidefocus toJSON uid="luleUploader" fileType="json" v-decorator="['ruleList',{rules: [{ required: true, message: '请上传符合json格式的文件' }]}]" />
       </div>
       <div style="padding-left: 15px;color: #999;display: inline-block">支持文件扩展名：<span style="border-bottom: 1px solid;padding: 0 2px">.json</span> ...</div>
     </a-form-item>
     <div style="line-height: 28px;color: #000">规则样例：</div>
     <pre style="margin: 0;padding-top: 15px;border: 1px solid #ccc;background: #f5f5f5">
-      "check_items": [{
+      {
+        "check_items": [{
           "check_item": "check_item1",
           "data_list": [{
               "name": "node_cpu_seconds_total",
@@ -21,7 +22,8 @@
           "condition": "$0>1",
           "plugin": "",
           "description": "aaa"
-      },...]
+        },...]
+      }
     </pre>
   </a-form>
 </template>
@@ -59,30 +61,26 @@
         this.form.validateFields((err, values) => {
           if (!err) { // 如果验证通过，err为null，否则有验证失败信息
             const checkItems = values.ruleList ? values.ruleList.check_items : null
-            if (typeof checkItems === 'object' && typeof checkItems.length === 'number' && checkItems.length > 0) {
-              that.showSpin()
-              importRule(checkItems).then(function (data) {
-                let msg = ''
-                if (data.succeed_list && data.succeed_list.length > 0) {
-                  msg += '成功添加' + data.succeed_list.length + '条规则！'
-                }
-                if (data.update_list && data.update_list.length > 0) {
-                  msg += '成功更新' + data.update_list.length + '条规则！'
-                }
-                if (data.fail_list && data.fail_list.length > 0) {
-                  msg += '另有' + data.fail_list.length + '条规则添加失败！'
-                }
-                that.$message.success(msg)
-                that.addSuccess()
-              }).catch(function (err) {
-                that.$message.error(err.response.data.message)
-              }).finally(function () {
-                that.closeSpin()
-                that.close()
-              })
-            } else {
-              that.$message.error('请上传json格式文件并确保数据格式与规则样例一致！')
-            }
+            that.showSpin()
+            importRule(checkItems).then(function (data) {
+              let msg = ''
+              if (data.succeed_list && data.succeed_list.length > 0) {
+                msg += '成功添加' + data.succeed_list.length + '条规则！'
+              }
+              if (data.update_list && data.update_list.length > 0) {
+                msg += '成功更新' + data.update_list.length + '条规则！'
+              }
+              if (data.fail_list && data.fail_list.length > 0) {
+                msg += '另有' + data.fail_list.length + '条规则添加失败！'
+              }
+              that.$message.success(msg)
+              that.addSuccess()
+            }).catch(function (err) {
+              that.$message.error(err.response.data.msg)
+            }).finally(function () {
+              that.closeSpin()
+              that.close()
+            })
           }
         })
       }

@@ -30,6 +30,32 @@
         </a-form-item>
       </a-col>
     </a-row>
+    <a-row :gutter="16">
+      <a-col :span="24">
+        <a-form-item label="故障树样例">
+          <pre style="margin: 0;padding-top: 15px;border: 1px solid #ccc;background: #f5f5f5">
+            {
+              "node name":"重启类故障树",
+              "value":null,
+              "condition":"硬件问题 || 软件问题 || 内核问题",
+              "description":"",
+              "advice":"",
+              "children": [
+                {
+                  "node name":"硬件问题",
+                  "value":null,
+                  "condition":"硬件问题1 &amp;&amp; 硬件问题2",
+                  "description":"出现硬件问题",
+                  "advice":"ccc ddd",
+                  "children": [...]
+                },
+                ...
+              ]
+            }
+          </pre>
+        </a-form-item>
+      </a-col>
+    </a-row>
   </a-form>
 </template>
 
