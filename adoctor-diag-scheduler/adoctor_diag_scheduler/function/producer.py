@@ -19,7 +19,7 @@ from itertools import product
 
 from aops_utils.log.log import LOGGER
 from aops_utils.kafka.producer import BaseProducer
-from adoctor_diag_scheduler.function.helper import get_validate_hosts, \
+from adoctor_diag_scheduler.function.helper import get_valid_hosts, \
     get_trees_content, get_time_slices, save_task
 
 
@@ -71,12 +71,12 @@ class Producer(BaseProducer):
         if not len(time_slices):
             return "Time range is not valid.", "", 0
 
-        # get validate host from database
-        hosts = get_validate_hosts(job_info['host_list'], job_info["username"])
+        # get valid host from database
+        hosts = get_valid_hosts(job_info['host_list'], job_info["username"])
         if not len(hosts):
             return "No valid host.", "", 0
 
-        # get validate trees' content from database
+        # get valid trees' content from database
         tree_dict = get_trees_content(job_info['tree_list'], job_info["username"])
         val_trees = tree_dict.keys()
         if not len(val_trees):

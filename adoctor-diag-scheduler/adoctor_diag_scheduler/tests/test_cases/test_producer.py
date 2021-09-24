@@ -21,10 +21,12 @@ class TestProducer(unittest.TestCase):
 
     @mock.patch.object(Producer, "send_msg")
     @mock.patch("adoctor_diag_scheduler.function.helper.get_tree_from_database")
-    def test_producer(self, mock_get_tree_from_database, mock_send_msg):
+    @mock.patch("adoctor_diag_scheduler.function.producer.get_valid_hosts")
+    def test_producer(self, mock_valid_hosts, mock_get_tree_from_database, mock_send_msg):
+        mock_valid_hosts.return_value = ["host2"]
         mock_get_tree_from_database.side_effect = [{"tree1": {"name": "tree1"}},
-                                                    {"tree2": {"name": "tree2"}}]
-        mock_send_msg.side_effect = [None] * 84
+                                                   {"tree2": {"name": "tree2"}}]
+        mock_send_msg.side_effect = [None] * 42
 
         job_dict = {
                     "username": "admin",
@@ -34,6 +36,43 @@ class TestProducer(unittest.TestCase):
                     "interval": 60
                 }
         producer = Producer(diag_configuration)
-        task_id, jobs_num = producer.create_msgs(job_dict)
-        self.assertEqual(jobs_num, 84)
+        failed_msg, task_id, jobs_num = producer.create_msgs(job_dict)
+        self.assertEqual(jobs_num, 42)
+        self.assertEqual(failed_msg, "")
         self.assertNotIn("-", task_id)
+
+    @mock.patch("adoctor_diag_scheduler.function.producer.get_valid_hosts")
+    def test_producer_fail1(self, mock_valid_hosts):
+        mock_valid_hosts.return_value = []
+
+        job_dict = {
+                    "username": "admin",
+                    "host_list": ["host1", "host2"],
+                    "time_range": [11246, 12456],
+                    "tree_list": ["tree1", "tree2"],
+                    "interval": 60
+                }
+        producer = Producer(diag_configuration)
+        failed_msg, task_id, jobs_num = producer.create_msgs(job_dict)
+        self.assertEqual(jobs_num, 0)
+        self.assertEqual(failed_msg, "No valid host.")
+        self.assertEqual(task_id, "")
+
+    @mock.patch("adoctor_diag_scheduler.function.helper.get_tree_from_database")
+    @mock.patch("adoctor_diag_scheduler.function.producer.get_valid_hosts")
+    def test_producer_fail2(self, mock_valid_hosts, mock_get_tree_from_database):
+        mock_valid_hosts.return_value = ["host2"]
+        mock_get_tree_from_database.side_effect = [{}, {}]
+
+        job_dict = {
+                    "username": "admin",
+                    "host_list": ["host1", "host2"],
+                    "time_range": [11246, 12456],
+                    "tree_list": ["tree1", "tree2"],
+                    "interval": 60
+                }
+        producer = Producer(diag_configuration)
+        failed_msg, task_id, jobs_num = producer.create_msgs(job_dict)
+        self.assertEqual(jobs_num, 0)
+        self.assertEqual(failed_msg, "No valid fault tree.")
+        self.assertEqual(task_id, "")
