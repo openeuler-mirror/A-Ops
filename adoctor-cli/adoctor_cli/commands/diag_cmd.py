@@ -16,10 +16,11 @@ Class:DiagCommand
 """
 import sys
 import time
+from tqdm import tqdm
 
 from adoctor_cli.base_cmd import BaseCommand
-from aops_utils.cli_utils import add_start_and_end, add_access_token, cli_request, request_without_print
-from aops_utils.cli_utils import print_row_from_result
+from aops_utils.cli_utils import add_start_and_end, add_access_token, request_without_print
+from aops_utils.cli_utils import pretty_json
 from aops_utils.conf.constant import DIAG_EXECUTE_DIAG, DIAG_GET_PROGRESS, DIAG_GET_REPORT_LIST
 from aops_utils.conf.constant import DIAG_GET_TASK
 from aops_utils.restful.helper import make_diag_url
@@ -89,7 +90,6 @@ class DiagCommand(BaseCommand):
         Returns:
             dict: response body
         """
-
         hosts = str_split(params.host_list)
         trees = str_split(params.tree_list)
         name_check(hosts)
@@ -106,6 +106,7 @@ class DiagCommand(BaseCommand):
         result = request_without_print('POST', diag_url, pyload, header, params.access_token)
 
         if result.get('code') != SUCCEED:
+            print(result)
             print("diag execute error: please try again")
             sys.exit(0)
         total = result['expected_report_num']
@@ -126,7 +127,6 @@ class DiagCommand(BaseCommand):
                 print("Task info query failed, please check your diag_scheduler or database.")
                 sys.exit(0)
             if len(result.get('task_infos')) != 0:
-
                 print("The diagnosis execution will run with:\n"
                       "hosts: {}\n"
                       "trees: {}\n"
@@ -142,18 +142,37 @@ class DiagCommand(BaseCommand):
                     "task_id": task_id
                 }
                 result = request_without_print('POST', diag_url, pyload, header, params.access_token)
-                result_info = result.pop('result', [])
-                print(result)
-                return print_row_from_result(result_info)
+                print(pretty_json(result))
             times -= 1
         print("There is no task can be found in diagnosis scheduler, please try again.")
 
     @staticmethod
     def query_diag_process(pyload, params, total):
+        """
+        Display diag process
+        Args:
+            pyload(dict): query body of the request.
+            params(namespace): namespace of the command.
+            total(int): Total num of report to be finished.
+        """
+        with tqdm(total=total) as pbar:
+            pbar.set_description("Reports 0")
+            pbar.set_postfix(speed="0.00 /s")
+            DiagCommand.get_process_num(total, pbar, pyload, params)
+
+    @staticmethod
+    def get_process_num(total, pbar, pyload, params):
+        """
+        Get process num of the diag.
+        Args:
+            total(int): Total num of report to be finished.
+            pbar(tqdm bar): bar of process
+            pyload(dict): query body of the request.
+            params(namespace): namespace of the command.
+        """
+        diag_url, header = make_diag_url(DIAG_GET_PROGRESS)
         finished = 0
         wait_time = 0
-        diag_url, header = make_diag_url(DIAG_GET_PROGRESS)
-
         while finished != total:
             try:
                 time.sleep(SECONDS)
@@ -163,18 +182,22 @@ class DiagCommand(BaseCommand):
                     print('Execution failed, please check your connection or params.')
                     sys.exit(0)
                 process = result.get('result')[0].get("progress")
-
                 if finished != process:
+                    increase = process - finished
+                    pbar.update(increase)
+                    speed = "%.2f /s" % (increase / SECONDS)
                     finished = process
                     wait_time = 0
                 else:
                     wait_time = wait_time + 1
+                    pbar.update(0)
+                    speed = "0.00 /s"
+                pbar.set_postfix(speed=speed)
+                pbar.set_description("Reports %i" % process)
 
                 if wait_time == 10:
                     print("Diagnosis Execution timeout, please check connection or fault trees.")
                     sys.exit(0)
-
-                print('Finished: {0}, Total: {1}'.format(finished, total))
 
             except ConnectionError:
                 print("Connection failed, please try again.")

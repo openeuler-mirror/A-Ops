@@ -176,6 +176,8 @@ def print_row_from_result(results):
     Args:
         results(list): results of the report
     """
+    if len(results) == 0:
+        return
     table = create_table(list(results[0].keys()))
     for result in results:
         table.add_row(list(result.values()))

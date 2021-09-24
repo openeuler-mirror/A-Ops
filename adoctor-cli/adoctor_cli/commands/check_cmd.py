@@ -17,10 +17,10 @@ Class:CheckCommand
 from adoctor_cli.base_cmd import BaseCommand
 from aops_utils.restful.helper import make_check_url
 from aops_utils.conf.constant import CHECK_GET_RESULT
-from aops_utils.time_utils import time_check_generate
+from aops_utils.time_utils import time_check_generate, time_transfer
 from aops_utils.validate import name_check, str_split
 from aops_utils.cli_utils import add_page, add_access_token, add_query_args
-from aops_utils.cli_utils import add_start_and_end, request_without_print, print_row_from_result
+from aops_utils.cli_utils import add_start_and_end, request_without_print, pretty_json
 
 
 class CheckCommand(BaseCommand):
@@ -61,20 +61,14 @@ class CheckCommand(BaseCommand):
         Args:
             params: Command line parameters
         """
-
-        start_time = params.start
-        end_time = params.end
-        time_list = time_check_generate(start_time, end_time)
-
-        self.manage_requests_check(params, time_list)
+        self.manage_requests_check(params)
 
     @staticmethod
-    def manage_requests_check(params, time_list):
+    def manage_requests_check(params):
         """
         Description: Executing check command
         Args:
             params: Command line parameters
-            time_list(list): time_list with start time and end time.
         Returns:
             dict: body of response
         """
@@ -83,8 +77,10 @@ class CheckCommand(BaseCommand):
         checks = str_split(params.check_items)
         name_check(hosts)
         name_check(checks)
+        time_list = time_transfer(params.start, params.end)
+
         pyload = {
-            "time_range": time_list,
+            "time_range": [time_list[0], time_list[1]],
             "check_items": checks,
             "host_list": hosts,
             "page": params.page,
@@ -95,6 +91,4 @@ class CheckCommand(BaseCommand):
             pyload['direction'] = params.direction
         check_url, header = make_check_url(CHECK_GET_RESULT)
         result = request_without_print('POST', check_url, pyload, header, params.access_token)
-        check_results = result.pop('check_results', [])
-        print(result)
-        print_row_from_result(check_results)
+        print(pretty_json(result))

@@ -21,7 +21,7 @@ from aops_utils.conf.constant import DIAG_GET_REPORT_LIST, DIAG_DELETE_REPORT, D
 from aops_utils.time_utils import time_check_generate, time_transfer
 from aops_utils.validate import name_check, str_split
 from aops_utils.cli_utils import add_page, cli_request, add_access_token, add_start_and_end
-from aops_utils.cli_utils import print_row_from_result, request_without_print
+from aops_utils.cli_utils import request_without_print, pretty_json
 
 
 class ReportCommand(BaseCommand):
@@ -122,9 +122,7 @@ class ReportCommand(BaseCommand):
             }
             diag_url, header = make_diag_url(DIAG_GET_REPORT)
             result = request_without_print('POST', diag_url, pyload, header, params.access_token)
-            result_info = result.pop('result', [])
-            print(result)
-            return print_row_from_result(result_info)
+            return print(pretty_json(result))
         if params.host_list is not None:
             hosts = str_split(params.host_list)
             name_check(hosts)
@@ -139,9 +137,8 @@ class ReportCommand(BaseCommand):
 
         diag_url, header = make_diag_url(DIAG_GET_REPORT_LIST)
         result = request_without_print('POST', diag_url, pyload, header, params.access_token)
-        result_info = result.pop('result', [])
-        print(result)
-        return print_row_from_result(result_info)
+        print(pretty_json(result))
+
 
     @staticmethod
     def manage_requests_delete_report(**kwargs):

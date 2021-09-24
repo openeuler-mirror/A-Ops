@@ -133,6 +133,26 @@ class TestDiagCli(unittest.TestCase):
                     "result": [
                         {
                             'task_id': "task1",
+                            'progress': 1
+                        }
+                    ]
+                },
+                {
+                    "code": 200,
+                    "msg": '',
+                    "result": [
+                        {
+                            'task_id': "task1",
+                            'progress': 2
+                        }
+                    ]
+                },
+                {
+                    "code": 200,
+                    "msg": '',
+                    "result": [
+                        {
+                            'task_id': "task1",
                             'progress': 5
                         }
                     ]

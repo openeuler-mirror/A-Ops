@@ -223,28 +223,48 @@ class HostCommand(BaseCommand):
             sys.exit(0)
         verbose = True if params.verbose == "True" else False
         if verbose:
-            manager_url, header = make_manager_url(QUERY_HOST_DETAIL)
-            hosts = []
-            for info in result_basic['host_infos']:
-                hosts.append(info['host_id'])
-            pyload = {
-                "host_list": hosts,
-            }
-            header['access_token'] = params.access_token
-            result_details = MyResponse.get_response('POST', manager_url, pyload, header)
-            if result_details.get('code') != SUCCEED:
-                print("Query request with bad response.")
-                print(result_details)
-                sys.exit(0)
-            for info in result_details['host_infos']:
-                for basic_info in result_basic['host_infos']:
-                    if info['host_id'] == basic_info['host_id']:
-                        basic_info['infos'] = info['infos']
-                        break
+            HostCommand.manage_query_details(result_basic, params)
         host_infos = result_basic.pop('host_infos', [])
         print(result_basic)
         print_row_from_result(host_infos)
         return result_basic
+
+    @staticmethod
+    def manage_query_details(result_basic, params):
+        """
+        Query details of hosts
+        Args:
+            result_basic(dict): basic infos of hosts.
+            params(namespace): params of the command.
+        """
+        manager_url, header = make_manager_url(QUERY_HOST_DETAIL)
+        hosts = []
+        for info in result_basic['host_infos']:
+            hosts.append(info['host_id'])
+        pyload = {
+            "host_list": hosts,
+        }
+        header['access_token'] = params.access_token
+        result_details = MyResponse.get_response('POST', manager_url, pyload, header)
+        if result_details.get('code') != SUCCEED:
+            print("Query request with bad response.")
+            print(result_details)
+            sys.exit(0)
+        HostCommand.resolve(result_details, result_basic)
+
+    @staticmethod
+    def resolve(result_details, result_basic):
+        """
+        resolve result and match host id
+        Args:
+            result_details(dict): details of hosts
+            result_basic(dict): basic infos of hosts
+        """
+        for info in result_details['host_infos']:
+            for basic_info in result_basic['host_infos']:
+                if info['host_id'] == basic_info['host_id']:
+                    basic_info['infos'] = info['infos']
+                    break
 
     @staticmethod
     def manage_requests_delete(params):

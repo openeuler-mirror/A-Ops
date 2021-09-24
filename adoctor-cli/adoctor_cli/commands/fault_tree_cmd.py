@@ -159,9 +159,7 @@ class FaultreeCommand(BaseCommand):
 
         diag_url, header = make_diag_url(DIAG_GET_TREE)
         res = request_without_print('POST', diag_url, pyload, header, params.access_token)
-        tree_info = res.pop('trees', [])
-        print(res)
-        print(pretty_json(tree_info))
+        print(pretty_json(res))
         path = params.export
         if path is None:
             return res

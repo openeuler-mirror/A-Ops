@@ -175,7 +175,7 @@ class ExecuteTask(Resource):
             if not task_info.get('host_list'):
                 return StatusCode.make_response(PARAM_ERROR)
             for host in task_info['host_list']:
-                LOGGER.info(configuration.manager.get('HOST_VARS'), host['host_name'])
+                LOGGER.info("Move inventory files from :%s, host name is: %s", configuration.manager.get('HOST_VARS'), host['host_name'])
                 inventory.move_host_vars_to_inventory(configuration.manager.get('HOST_VARS'),
                                                       host['host_name'])
             task_thread = threading.Thread(target=ExecuteTask.task_with_remove,
@@ -198,6 +198,7 @@ class ExecuteTask(Resource):
         """
         res = TaskRunner.run_task(task_id, HostKey.key)
         inventory.remove_host_vars_in_inventory()
+        LOGGER.info("Task %s execution succeed.", task_id)
         return res
 
 
