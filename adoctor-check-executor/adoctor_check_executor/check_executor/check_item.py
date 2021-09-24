@@ -128,14 +128,14 @@ class CheckItem:
                 LOGGER.info("CheckItem %s do_check exception find",
                             self.check_item_detail.check_item_name)
                 cur_timestamp = host_data_vector[MAIN_DATA_MACRO][index][0]
-                abnormal_time_range = [cur_timestamp - sample_period, cur_timestamp]
+                abnormal_time_range = [cur_timestamp, cur_timestamp]
                 self.add_abnormal_data(self.check_item_detail, abnormal_time_range,
                                        host_id, CheckResultType.abnormal,
                                        abnormal_data_list)
             except CheckExceptionList as exp:
                 LOGGER.error("judge_condition exp %s" % exp)
                 cur_timestamp = host_data_vector[MAIN_DATA_MACRO][index][0]
-                abnormal_time_range = [cur_timestamp - sample_period, cur_timestamp]
+                abnormal_time_range = [cur_timestamp, cur_timestamp]
                 self.add_abnormal_data(self.check_item_detail, abnormal_time_range,
                                        host_id, CheckResultType.internal_error,
                                        abnormal_data_list)
@@ -160,7 +160,7 @@ class CheckItem:
             if not host_data_vector or \
                     sorted(self.data_manager.data_name_map.values()) != \
                     sorted(host_data_vector.keys()):
-                LOGGER.warning("No data of host %s:%s", host_ip, host_id)
+                LOGGER.debug("No data of host %s:%s", host_ip, host_id)
                 self.add_abnormal_data(self.check_item_detail, time_range, host_id,
                                        CheckResultType.nodata, abnormal_data_list)
                 continue

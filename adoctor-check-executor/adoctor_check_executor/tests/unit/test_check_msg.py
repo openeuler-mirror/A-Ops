@@ -109,6 +109,23 @@ class TestCheckMsgToolKil(unittest.TestCase):
 
     @mock.patch("adoctor_check_executor.common.check_msg.MyResponse")
     @mock.patch("adoctor_check_executor.common.check_msg.make_datacenter_url")
+    def test_delete_check_result_from_database(self, mock_make_url, mock_myresponse):
+        host_list = ["11111", "222222"]
+        time_range = [12222, 122223]
+        check_items = ["check_item1",  "check_item2"]
+
+        response = {"code": 200, "msg": "operation succeed"}
+        mock_myresponse.get_result.return_value = response
+        mock_make_url.return_value = "http://101.1.1.1:1111"
+        self.assertDictEqual(CheckMsgToolKit.delete_check_result_from_database(host_list,
+                                                                               time_range,
+                                                                               "admin",
+                                                                               check_items),
+                             response)
+
+
+    @mock.patch("adoctor_check_executor.common.check_msg.MyResponse")
+    @mock.patch("adoctor_check_executor.common.check_msg.make_datacenter_url")
     def test_get_data_from_database(self, mock_make_url, mock_myresponse):
         data_list = [{
             "name": "node_cpu_seconds_total",

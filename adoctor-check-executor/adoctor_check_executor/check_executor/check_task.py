@@ -17,7 +17,8 @@ docs: check_task.py
 description: Check task
 """
 from adoctor_check_executor.check_executor.check_item_manager import check_item_manager
-from adoctor_check_executor.common.constant import CheckTopic, CheckResultType, BACKWARD_TASK_ID
+from adoctor_check_executor.common.constant import CheckTopic, CheckResultType, \
+    BACKWARD_TASK_ID, FORWARD_TASK_ID
 from adoctor_check_executor.common.config import executor_check_config
 from adoctor_check_executor.common.check_msg import CheckMsgToolKit
 from aops_utils.kafka.producer import BaseProducer
@@ -59,7 +60,7 @@ class CheckTask:
             if check_item:
                 self.check_item_list.append(check_item)
 
-    def do_check(self, time_range, user, host_list, task_id):
+    def do_check(self, time_range, user, host_list, task_id, check_items):
         """
         Import check items from check item manager
         Args:
@@ -67,6 +68,7 @@ class CheckTask:
             user (str): the user of check task
             host_list (list): host list
             task_id (int): task id
+            check_items (list): check item name list
 
         Returns:
             None
@@ -74,6 +76,13 @@ class CheckTask:
         LOGGER.debug("========start check task: time_range %s, "
                      "task_id %s===========",
                      time_range, task_id)
+        # Retry task to delete the old detection result first.
+        if task_id not in (BACKWARD_TASK_ID, FORWARD_TASK_ID):
+            CheckMsgToolKit.delete_check_result_from_database(host_list,
+                                                              time_range,
+                                                              user,
+                                                              check_items)
+
         abnormal_data_result = []
         # If no rule has been imported, the retry task for the time segment is returned.
         if not self.check_item_list:
