@@ -61,11 +61,6 @@ class CheckCommand(BaseCommand):
         Args:
             params: Command line parameters
         """
-
-        start_time = params.start
-        end_time = params.end
-        time_list = time_check_generate(start_time, end_time)
-
         self.manage_requests_check(params)
 
     @staticmethod
@@ -74,7 +69,6 @@ class CheckCommand(BaseCommand):
         Description: Executing check command
         Args:
             params: Command line parameters
-            time_list(list): time_list with start time and end time.
         Returns:
             dict: body of response
         """
