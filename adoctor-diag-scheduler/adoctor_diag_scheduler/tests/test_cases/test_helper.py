@@ -15,12 +15,12 @@ from unittest import mock
 
 from aops_utils.restful.response import MyResponse
 from adoctor_diag_scheduler.function.helper import get_time_slices, get_trees_content, \
-    get_tree_from_database
+    get_tree_from_database, get_valid_hosts
 
 
-class TestHelperOne(unittest.TestCase):
+class TestTimeSlice(unittest.TestCase):
     """
-    Test basic functions in helper.py
+    Test split time range
     """
     def test_get_time_slices(self):
         res1 = get_time_slices([10, 100], 10)
@@ -32,6 +32,11 @@ class TestHelperOne(unittest.TestCase):
         res2 = get_time_slices([10, 100], 50)
         self.assertEqual(res2, [[10, 60], [60, 100]])
 
+
+class TestGetTrees(unittest.TestCase):
+    """
+    Test get valid trees from database
+    """
     @mock.patch("adoctor_diag_scheduler.function.helper.get_tree_from_database")
     def test_get_diag_tree_content(self, mock_res_from_database):
         mock_res_from_database.side_effect = [
@@ -92,4 +97,60 @@ class TestHelperOne(unittest.TestCase):
         }
         res = get_tree_from_database("admin", "tree1")
         expected_res = {}
+        self.assertEqual(res, expected_res)
+
+
+class TestGetHosts(unittest.TestCase):
+    """
+    Test get valid hosts from database
+    """
+    @mock.patch.object(MyResponse, "get_response")
+    def test_get_valid_host_1(self, mock_get_host_responnse):
+        mock_get_host_responnse.return_value = {
+            "code": 200,
+            "msg": "",
+            "host_infos": [{"host_id": "abcd",
+                            "host_group_name": "group1",
+                            "host_name": "host1",
+                            "public_ip": "1.1.1.1",
+                            "ssh_port": 22}]
+        }
+        res = get_valid_hosts(["abcd"], "admin")
+        expected_res = ["abcd"]
+        self.assertEqual(res, expected_res)
+
+    @mock.patch.object(MyResponse, "get_response")
+    def test_get_valid_host_2(self, mock_get_host_responnse):
+        mock_get_host_responnse.return_value = {
+            "code": 200,
+            "msg": "",
+            "host_infos": [{"host_id": "abcd",
+                            "host_group_name": "group1",
+                            "host_name": "host1",
+                            "public_ip": "1.1.1.1",
+                            "ssh_port": 22}]
+        }
+        res = get_valid_hosts(["abcd", "qwer"], "admin")
+        expected_res = ["abcd"]
+        self.assertEqual(res, expected_res)
+
+    @mock.patch.object(MyResponse, "get_response")
+    def test_get_valid_host_3(self, mock_get_host_responnse):
+        mock_get_host_responnse.return_value = {
+            "code": 200,
+            "msg": "",
+            "host_infos": []
+        }
+        res = get_valid_hosts(["abcd", "qwer"], "admin")
+        expected_res = []
+        self.assertEqual(res, expected_res)
+
+    @mock.patch.object(MyResponse, "get_response")
+    def test_get_valid_host_4(self, mock_get_host_responnse):
+        mock_get_host_responnse.return_value = {
+            "code": 500,
+            "msg": "internal error",
+        }
+        res = get_valid_hosts(["abcd", "qwer"], "admin")
+        expected_res = []
         self.assertEqual(res, expected_res)

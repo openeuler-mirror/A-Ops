@@ -38,9 +38,9 @@ def get_time_slices(time_range, interval):
     return time_slices
 
 
-def get_validate_hosts(host_list, user_name):
+def get_valid_hosts(host_list, user_name):
     """
-    get validate hosts
+    get valid hosts
     Args:
         host_list (list): list of host ip
         user_name (str): user name
@@ -53,10 +53,10 @@ def get_validate_hosts(host_list, user_name):
 
     response = MyResponse.get_response("POST", host_info_url, pyload)
     if response["code"] != SUCCEED:
-        LOGGER.error("Request to get validate hosts from database failed. %s" % response["msg"])
+        LOGGER.error("Request to get valid hosts from database failed. %s" % response["msg"])
         return []
 
-    LOGGER.info("Request validate hosts %s from database succeed." % host_list)
+    LOGGER.info("Request valid hosts %s from database succeed." % host_list)
 
     validate_hosts = []
     host_infos = response["host_infos"]

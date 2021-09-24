@@ -156,10 +156,11 @@ class ExecuteDiag(Resource):
 
         try:
             producer = Producer(diag_configuration)
-            task_id, jobs_num = producer.create_msgs(args)
+            failed_msg, task_id, jobs_num = producer.create_msgs(args)
 
             if not task_id:
                 response = StatusCode.make_response(TASK_EXECUTION_FAIL)
+                response["msg"] = failed_msg
             else:
                 response = StatusCode.make_response(SUCCEED)
                 response["task_id"] = task_id
