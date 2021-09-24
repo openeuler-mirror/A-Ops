@@ -70,13 +70,24 @@ struct proxy {
     char temp1[2];
     enum pr_mode mode;
     char temp2[1];
-    char temp[6460];
+    //char temp[6460];
 };
+
+struct receiver {
+    char    temp[56];
+    struct ssockaddr_s  addr;
+};
+
+struct ha_listener {
+    char    temp[144];
+    struct receiver rx;
+};
+
 struct session {
-    struct proxy *fe;
-    char temp1[8];
-    enum obj_type *origin;
-    char temp2[152];
+    struct proxy        *fe;
+    struct ha_listener  *listener;
+    enum obj_type       *origin;
+    //char temp2[152];
 };
 
 struct connection_s {
