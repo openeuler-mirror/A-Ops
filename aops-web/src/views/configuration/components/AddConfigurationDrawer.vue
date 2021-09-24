@@ -201,8 +201,8 @@ export default {
             .filter(conf => conf)
           }
           this.submitIsLoading = true
-          addManagementConf(params).then(function () {
-            _this.$message.success('添加成功')
+          addManagementConf(params).then(function (res) {
+            _this.$message.success(res.msg)
             _this.visible = false
             _this.$emit('ok')
           }).catch(function (err) {

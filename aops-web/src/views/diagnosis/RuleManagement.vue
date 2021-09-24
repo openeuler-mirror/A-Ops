@@ -214,7 +214,7 @@ export default {
         .then((res) => {
           that.selectedRowKeys = []
           that.refresh()
-          that.$message.success('记录删除成功')
+          that.$message.success(res.msg)
           resolve()
         }).catch((err) => {
           _this.$message.error(err.response.data.msg)

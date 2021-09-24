@@ -94,7 +94,7 @@ import { getTemplateList, generateTask } from '@/api/task'
             generateTask({
               ...values
             }).then(function (res) {
-              _this.$message.success('新增成功')
+              _this.$message.success(res.msg)
               _this.close()
               _this.saveSuccess()
             }).catch(function (err) {

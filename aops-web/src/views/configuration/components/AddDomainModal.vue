@@ -57,8 +57,8 @@ export default {
             const _this = this
             this.isLoading = true
             addDomain(values)
-            .then(function () {
-                _this.$message.success('添加成功')
+            .then(function (res) {
+                _this.$message.success(res.msg)
                 _this.onSuccess && _this.onSuccess()
                 _this.visible = false
                 _this.form.resetFields()

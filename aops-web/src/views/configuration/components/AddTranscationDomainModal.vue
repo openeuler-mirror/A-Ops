@@ -17,7 +17,7 @@
           <a-input
             :maxLength="150"
             placeholder="请输入"
-            v-decorator="['domainName', { rules: [{ required: true, message: '请输入业务域名称' }] }]"
+            v-decorator="['domainName', { rules: [{ required: true, message: '请输入业务域名称' }, { validator: checkDomainName }] }]"
           >
           </a-input>
         </a-form-item>
@@ -70,20 +70,36 @@
             const domainInfo = []
             domainInfo.push(values)
             createDomain(domainInfo)
-              .then(function () {
-                _this.$message.success('添加成功')
+              .then(function (res) {
+                _this.$message.success(res.msg)
                 _this.onSuccess && _this.onSuccess()
                 _this.visible = false
                 _this.form.resetFields()
               })
               .catch(function (err) {
-                _this.$message.error(err.response.data.message)
+                _this.$message.error(err.response.data.msg || err.response.data.detail)
               })
               .finally(function () {
                 _this.isLoading = false
               })
           }
         })
+      },
+      checkDomainName (rule, value, cb) {
+        if (value && (value.length > 26)) {
+          /* eslint-disable */
+          cb('名称长度不应超过26个字符')
+          /* eslint-enable */
+          return
+        }
+        if (/[^0-9a-zA-Z_\-.]/.test(value)) {
+          /* eslint-disable */
+          cb('名称只能输入大小写字母、下划线、中划线和小数点')
+          /* eslint-enable */
+          return
+        }
+        // 26个大小写字母。数字。下划线。底划线。小数点.
+        cb()
       }
     }
   }

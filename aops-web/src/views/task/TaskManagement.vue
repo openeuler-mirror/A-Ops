@@ -286,7 +286,7 @@
           deleteTask({
             taskList
           }).then((res) => {
-            _this.$message.success('删除成功')
+            _this.$message.success(res.msg)
             _this.handleRefresh()
             if (isBash) _this.selectedRowKeys = []
             resolve()
@@ -322,7 +322,7 @@
           executeTask({
             taskList
           }).then((res) => {
-            _this.$message.success('执行成功')
+            _this.$message.success('excute successed')
             _this.handleRefresh()
             if (isBash) _this.selectedRowKeys = []
             resolve()
@@ -362,7 +362,7 @@
         deleteTemplate({
           templateList
         }).then(function (res) {
-          _this.$message.success('删除成功')
+          _this.$message.success(res.msg)
           _this.refreshTemplateList()
         }).catch(function (err) {
           _this.$message.error(err.response.data.msg)

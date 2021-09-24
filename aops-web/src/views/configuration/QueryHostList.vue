@@ -192,11 +192,6 @@
       columns () {
         return [
           {
-            dataIndex: 'hostId',
-            key: 'hostId',
-            title: '主机名称'
-          },
-          {
             dataIndex: 'ip',
             key: 'ip',
             title: 'IP地址'
@@ -266,9 +261,11 @@
         domainStatus({
           domainName: _this.domainName
         }).then(function (res) {
-            _this.statusData = res.hostStatus || []
-          }).catch(function (err) {
-          _this.$message.error(err.response.data.msg || err.response.data.detail)
+          _this.statusData = res.hostStatus || []
+        }).catch(function (err) {
+          if (err.response.data.code !== 404) {
+            _this.$message.error(err.response.data.msg || err.response.data.detail)
+          }
         }).finally(function () { _this.domainStatusIsLoading = false })
       },
       handleRefresh () {
@@ -300,7 +297,7 @@
             domainName: _this.domainName,
             hostInfos: hostInfos
           }).then((res) => {
-              _this.$message.success('删除成功')
+              _this.$message.success(res.msg)
               _this.getDomainStatus()
               _this.getHostList(_this.domainName)
               if (isBash) {
@@ -346,7 +343,7 @@
             domainName: _this.domainName,
             hostIds: hostIds
           }).then((res) => {
-            _this.$message.success('同步成功')
+            _this.$message.success(res.msg)
             _this.getDomainStatus()
             _this.getHostList(_this.domainName)
             if (isBash) {

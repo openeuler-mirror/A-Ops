@@ -1,5 +1,6 @@
 <template>
   <a-modal
+    :maskClosable="false"
     :visible="showDomainSelection"
     @ok="handleOk"
     @cancel="handleCancel"
@@ -9,11 +10,11 @@
       :label-col="{ span: 5 }"
       :wrapper-col="{ span: 16 }"
     >
-      <a-form-item label="业务域">
+      <a-form-item label="业务域" extra="若未选择业务域，则将返回管理页面">
         <a-select
           placeholder="请选择需要进行配置管理的业务域..."
           style="width: 200px"
-          v-decorator="['domainName', { rules: [{ required: true, message: '请输入名称' }] }]"
+          v-decorator="['domainName', { rules: [{ required: true, message: '请选择业务域' }] }]"
         >
           <a-select-option
             v-for="(item, index) in domainNameList"
@@ -52,15 +53,14 @@ export default {
       const _this = this
       this.$emit('ok')
       this.form.validateFields((err, values) => {
-        console.log(values)
         if (!err) {
-          router.replace(`transcation-domain-configurations/${values.domainName}`)
+          router.replace(`${values.domainName}`)
           _this.form.resetFields()
         }
       })
     },
     handleCancel () {
-      router.push('transcation-domain-management')
+      this.$emit('cancel')
       this.form.resetFields()
     }
   },
