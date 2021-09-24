@@ -22,7 +22,7 @@ from sqlalchemy.orm.scoping import scoped_session
 from aops_database.factory.table import User
 from aops_database.proxy.account import UserDatabase
 from aops_database.function.helper import create_tables, drop_tables, create_database_engine
-from aops_utils.restful.status import CHANGE_PASSWORD, LOGIN_ERROR, REPEAT_PASSWORD, SUCCEED
+from aops_utils.restful.status import LOGIN_ERROR, REPEAT_PASSWORD, SUCCEED
 
 
 class TestAccountDatabase(unittest.TestCase):
@@ -66,13 +66,6 @@ class TestAccountDatabase(unittest.TestCase):
         self.assertEqual(len(res[1]), 2)
 
         # ==============user login=====================
-        # need modify default admin password
-        data = {
-            "username": "admin",
-            "password": "changeme"
-        }
-        res = self.proxy.login(data)
-        self.assertEqual(res, CHANGE_PASSWORD)
         # unknown username
         data = {
             "username": "test1",

@@ -216,7 +216,7 @@ class TestHostDatabase(unittest.TestCase):
                     "host_name": "host3",
                     "host_group_name": "group2",
                     "host_id": "id3",
-                    "public_ip": "127.0.0.1",
+                    "public_ip": "127.0.0.3",
                     "management": False,
                     "ssh_port": 22
                 },
@@ -224,7 +224,7 @@ class TestHostDatabase(unittest.TestCase):
                     "host_name": "host4",
                     "host_group_name": "group2",
                     "host_id": "id4",
-                    "public_ip": "127.0.0.1",
+                    "public_ip": "127.0.0.4",
                     "management": True,
                     "ssh_port": 22
                 },
@@ -232,7 +232,7 @@ class TestHostDatabase(unittest.TestCase):
                     "host_name": "host5",
                     "host_group_name": "group2",
                     "host_id": "id5",
-                    "public_ip": "127.0.0.1",
+                    "public_ip": "127.0.0.5",
                     "management": False,
                     "ssh_port": 22
                 }
@@ -306,7 +306,7 @@ class TestHostDatabase(unittest.TestCase):
                 "host_id": "id5",
                 "host_name": "host5",
                 "host_group_name": "group2",
-                "public_ip": "127.0.0.1",
+                "public_ip": "127.0.0.5",
                 "ssh_port": 22,
                 "management": False,
                 "status": None
@@ -315,7 +315,7 @@ class TestHostDatabase(unittest.TestCase):
                 "host_id": "id4",
                 "host_name": "host4",
                 "host_group_name": "group2",
-                "public_ip": "127.0.0.1",
+                "public_ip": "127.0.0.4",
                 "ssh_port": 22,
                 "management": True,
                 "status": None
@@ -339,7 +339,7 @@ class TestHostDatabase(unittest.TestCase):
                 "host_id": "id3",
                 "host_name": "host3",
                 "host_group_name": "group2",
-                "public_ip": "127.0.0.1",
+                "public_ip": "127.0.0.3",
                 "ssh_port": 22,
                 "management": False,
                 "status": None
@@ -348,7 +348,7 @@ class TestHostDatabase(unittest.TestCase):
                 "host_id": "id4",
                 "host_name": "host4",
                 "host_group_name": "group2",
-                "public_ip": "127.0.0.1",
+                "public_ip": "127.0.0.4",
                 "ssh_port": 22,
                 "management": True,
                 "status": None
@@ -406,17 +406,31 @@ class TestHostDatabase(unittest.TestCase):
                     "ssh_port": 22
                 },
                 {
+                    "host_name": "host2",
+                    "host_group_name": "group1",
+                    "host_id": "id2",
+                    "public_ip": "127.0.0.2",
+                    "ssh_port": 22
+                },
+                {
                     "host_name": "host3",
                     "host_group_name": "group2",
                     "host_id": "id3",
-                    "public_ip": "127.0.0.1",
+                    "public_ip": "127.0.0.3",
+                    "ssh_port": 22
+                },
+                {
+                    "host_name": "host4",
+                    "host_group_name": "group2",
+                    "host_id": "id4",
+                    "public_ip": "127.0.0.4",
                     "ssh_port": 22
                 },
                 {
                     "host_name": "host5",
                     "host_group_name": "group2",
                     "host_id": "id5",
-                    "public_ip": "127.0.0.1",
+                    "public_ip": "127.0.0.5",
                     "ssh_port": 22
                 }
             ]

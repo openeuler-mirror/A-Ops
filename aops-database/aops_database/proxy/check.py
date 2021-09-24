@@ -183,7 +183,7 @@ class CheckDatabase(ElasticsearchProxy):
             ['check_item', 'data_list', 'condition', 'description', 'plugin'])
 
         if res[0]:
-            LOGGER.info("query check rule succeed")
+            LOGGER.debug("query check rule succeed")
             result["total_count"] = total_count
             result["total_page"] = total_page
             # query by es scan
@@ -286,7 +286,7 @@ class CheckDatabase(ElasticsearchProxy):
         just_insert, need_update = self._split_results(data)
         if all([self.insert_bulk(CHECK_RESULT_INDEX, just_insert),
                 self.update_bulk(CHECK_RESULT_INDEX, need_update)]):
-            LOGGER.info("save or update check result succeed")
+            LOGGER.debug("save or update check result succeed")
             return SUCCEED
 
         LOGGER.error("save or update check result fail")
@@ -323,7 +323,7 @@ class CheckDatabase(ElasticsearchProxy):
             }
             res = self.query(CHECK_RESULT_INDEX, query_body)
             if res[0] and len(res[1]['hits']['hits']) != 0:
-                LOGGER.info("query check result succeed")
+                LOGGER.debug("query check result succeed")
                 doc = {
                     "value": check_result["value"]
                 }
@@ -351,7 +351,7 @@ class CheckDatabase(ElasticsearchProxy):
         body = self._generate_delete_result_body(data)
         res = self.delete(CHECK_RESULT_INDEX, body)
         if res:
-            LOGGER.info("delete check result succeed")
+            LOGGER.debug("delete check result succeed")
             return SUCCEED
 
         LOGGER.error("delete check result fail")
@@ -369,8 +369,11 @@ class CheckDatabase(ElasticsearchProxy):
         """
         host_list = data.get('host_list')
         time_range = data.get('time_range')
+        check_items = data.get('check_items')
         query_body = self._general_body(data)
-
+        if check_items:
+            query_body["query"]["bool"]["must"].append(
+                {"terms": {"check_item": check_items}})
         if host_list:
             query_body["query"]["bool"]["must"].append(
                 {"terms": {"host_id": host_list}})
@@ -420,17 +423,17 @@ class CheckDatabase(ElasticsearchProxy):
             LOGGER.error("query count of check result fail")
             return DATABASE_QUERY_ERROR, result
         if count_res[1] == 0:
-            LOGGER.info("there is no matched check result")
+            LOGGER.warning("there is no matched check result")
             return SUCCEED, result
 
         total_count = count_res[1]
         flag, total_page, res = self._query_or_scan(
             CHECK_RESULT_INDEX, query_body, total_count, data,
             ['check_item', 'data_list', 'condition',
-             'description', 'host_id', 'start', 'end'])
+             'value', 'description', 'host_id', 'start', 'end'])
 
         if res[0]:
-            LOGGER.info("query check result succeed")
+            LOGGER.debug("query check result succeed")
             result["total_count"] = total_count
             result["total_page"] = total_page
             # query by es scan
@@ -458,11 +461,12 @@ class CheckDatabase(ElasticsearchProxy):
         host_list = data.get('host_list')
         time_range = data.get('time_range')
         check_items = data.get('check_items')
+        value = data.get('value')
         query_body = self._general_body(data)
         # only show abnormal
-        query_body["query"]["bool"]["must"].append(
-            {"match": {"value": "Abnormal"}}
-        )
+        if value:
+            query_body["query"]["bool"]["must"].append(
+                {"match": {"value": value}})
         if host_list:
             query_body["query"]["bool"]["must"].append(
                 {"terms": {"host_id": host_list}})
@@ -521,7 +525,7 @@ class CheckDatabase(ElasticsearchProxy):
         query_body = self._generate_count_body(data)
         res = self.query(CHECK_RESULT_INDEX, query_body)
         if res[0]:
-            LOGGER.info("query check result succeed")
+            LOGGER.debug("query check result succeed")
             total_count = len(res[1]['aggregations']['count']['buckets'])
             page = data.get('page')
             per_page = data.get("per_page")

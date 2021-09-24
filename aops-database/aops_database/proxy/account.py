@@ -55,7 +55,7 @@ class UserDatabase(MysqlProxy):
             LOGGER.info("add user succeed")
             return SUCCEED
         except sqlalchemy.exc.SQLAlchemyError as error:
-            LOGGER.debug(error)
+            LOGGER.error(error)
             self.session.rollback()
             return DATABASE_INSERT_ERROR
 
@@ -92,7 +92,7 @@ class UserDatabase(MysqlProxy):
             LOGGER.error("login with wrong password")
             return LOGIN_ERROR
         except sqlalchemy.exc.SQLAlchemyError as error:
-            LOGGER.debug(error)
+            LOGGER.error(error)
             return DATABASE_QUERY_ERROR
 
     def change_password(self, data):
@@ -130,6 +130,6 @@ class UserDatabase(MysqlProxy):
             return SUCCEED
 
         except sqlalchemy.exc.SQLAlchemyError as error:
-            LOGGER.debug(error)
+            LOGGER.error(error)
             LOGGER.error("change password fail")
             return DATABASE_QUERY_ERROR

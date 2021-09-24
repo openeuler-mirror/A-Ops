@@ -175,7 +175,7 @@ class DiagDatabase(ElasticsearchProxy):
         res = self.scan(DIAG_TREE_INDEX, query_body, source=[
                         'tree_name', 'tree_content', 'description', 'tag'])
         if res[0]:
-            LOGGER.info("query diag tree %s succeed", tree_list)
+            LOGGER.debug("query diag tree %s succeed", tree_list)
             # deserialize
             for tree in res[1]:
                 tree['tree_content'] = json.loads(tree['tree_content'])
@@ -212,7 +212,7 @@ class DiagDatabase(ElasticsearchProxy):
         reports = data.get('reports')
         res = self.insert_bulk(DIAG_REPORT_INDEX, reports)
         if res:
-            LOGGER.info("save diag report succeed")
+            LOGGER.debug("save diag report succeed")
             return SUCCEED
 
         LOGGER.error("save diag report fail")
@@ -279,7 +279,7 @@ class DiagDatabase(ElasticsearchProxy):
             LOGGER.error("query count of diag report fail")
             return DATABASE_QUERY_ERROR, result
         if count_res[1] == 0:
-            LOGGER.info("there is no matched diag report")
+            LOGGER.warning("there is no matched diag report")
             return SUCCEED, result
 
         total_count = count_res[1]
@@ -287,7 +287,7 @@ class DiagDatabase(ElasticsearchProxy):
         res = self.query(DIAG_REPORT_INDEX, query_body, [
             "host_id", "tree_name", "task_id", "report_id", "start", "end"])
         if res[0]:
-            LOGGER.info("query diag report succeed")
+            LOGGER.debug("query diag report succeed")
             result["total_page"] = total_page
             result["total_count"] = total_count
             for item in res[1]['hits']['hits']:
@@ -374,7 +374,7 @@ class DiagDatabase(ElasticsearchProxy):
         res = self.query(DIAG_REPORT_INDEX, query_body, [
             "host_id", "tree_name", "task_id", "report_id", "start", "end", "report"])
         if res[0]:
-            LOGGER.info("query report %s succeed", report_list)
+            LOGGER.debug("query report %s succeed", report_list)
             for item in res[1]['hits']['hits']:
                 item['_source']['report'] = json.loads(
                     item['_source']['report'])
@@ -481,7 +481,7 @@ class DiagDatabase(ElasticsearchProxy):
             LOGGER.error("query count of diag task fail")
             return DATABASE_QUERY_ERROR, result
         if count_res[1] == 0:
-            LOGGER.info("there is no matched diag task")
+            LOGGER.warning("there is no matched diag task")
             return SUCCEED, result
 
         total_count = count_res[1]
@@ -490,7 +490,7 @@ class DiagDatabase(ElasticsearchProxy):
             "task_id", "host_list", "time_range", "time",
             "tree_list", "expected_report_num"])
         if res[0]:
-            LOGGER.info("query diag task succeed")
+            LOGGER.debug("query diag task succeed")
             result["total_page"] = total_page
             result["total_count"] = total_count
             for item in res[1]['hits']['hits']:

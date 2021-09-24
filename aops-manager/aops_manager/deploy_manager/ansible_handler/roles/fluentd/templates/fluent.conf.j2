@@ -6,8 +6,8 @@
   pos_file /opt/aops/fluentd/history.pos
   <parse>
     @type multiline
-    format_firstline /\S\d+/
-    format1 /\S(?<rawtime>\d+)\n(?<message>.*)/
+    format_firstline /\S\d+\n/
+    format1 /\S(?<rawtime>\d+)(?<message>.*)/
     types rawtime:integer
   </parse>
 </source>

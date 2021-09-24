@@ -82,6 +82,7 @@ class GetCheckResultSchema(Schema):
                                                                   "check_item",
                                                                   ""]))
     direction = fields.String(required=False, validate=validate.OneOf(["desc", "asc"]))
+    value = fields.String(required=False)
 
 
 class GetCheckResultCountSchema(Schema):
