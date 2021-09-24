@@ -107,11 +107,7 @@ static void pull_probe_data(int fd, int collect_fd)
             ip_str(value.family, (unsigned char *)&(next_key.c_addr), cli_ip_str, INET6_ADDRSTRLEN);
             ip_str(value.family, (unsigned char *)&(next_key.p_addr), lb_ip_str, INET6_ADDRSTRLEN);
             ip_str(value.family, (unsigned char *)&(next_key.s_addr), src_ip_str, INET6_ADDRSTRLEN);
-            /* 根据type确定是否调用，因为http情况需要用户态获取LB的ip值 */
-            if (value.type != PR_MODE_TCP) {
-                get_host_ip(lb_ip_str, value.family);
-            }
-            printf("---- new connect protocol[%s] type[%s] c[%s:%d]--lb[%s:%d]--s[%s:%d] state[%d]. \n",
+	    printf("---- new connect protocol[%s] type[%s] c[%s:%d]--lb[%s:%d]--s[%s:%d] state[%d]. \n",
                 (value.type == PR_MODE_TCP) ? "TCP" : "HTTP",
                 (value.family == AF_INET) ? "IPv4" : "IPv6",
                 cli_ip_str,
@@ -148,10 +144,7 @@ static void print_haproxy_collect(int map_fd)
             ip_str(value.family, (unsigned char *)&(next_key.c_addr), cli_ip_str, INET6_ADDRSTRLEN);
             ip_str(value.family, (unsigned char *)&(next_key.p_addr), lb_ip_str, INET6_ADDRSTRLEN);
             ip_str(value.family, (unsigned char *)&(next_key.s_addr), src_ip_str, INET6_ADDRSTRLEN);
-            if (value.protocol != PR_MODE_TCP) {
-                get_host_ip(lb_ip_str, value.family);
-            }
-            fprintf(stdout,
+	    fprintf(stdout,
                 "|%s|%s|%s|%s|%u|%u|%u|%llu|\n",
                 METRIC_NAME_HAPROXY_LINK,
                 cli_ip_str,
