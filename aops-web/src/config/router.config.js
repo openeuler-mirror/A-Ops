@@ -289,7 +289,15 @@ export const asyncRouterMap = [
                 name: 'transcationDomainConfigurationsDetail',
                 hidden: true,
                 component: () => import('@/views/configuration/TranscationDomainConfigurations'),
-                meta: { title: routeMap.configuration.children.TranscationDomainConfigurationsDetail.title, permission: ['configuration'] }
+                meta: {
+                  title: routeMap.configuration.children.TranscationDomainConfigurationsDetail.title,
+                  permission: ['configuration'],
+                  diyBreadcrumb: [
+                    { breadcrumbName: routeMap.index.title, path: routeMap.index.path },
+                    { breadcrumbName: routeMap.configuration.title, path: routeMap.configuration.path },
+                    { breadcrumbName: routeMap.configuration.children.TranscationDomainConfigurationsDetail.title, path: routeMap.configuration.children.TranscationDomainConfigurationsDetail.path }
+                  ]
+                }
               }
             ]
           },

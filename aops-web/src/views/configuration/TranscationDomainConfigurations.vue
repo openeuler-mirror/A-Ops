@@ -1,6 +1,6 @@
 
 <template>
-  <page-header-wrapper>
+  <page-header-wrapper :breadcrumb="breadcrumb">
     <a-card :bordered="false" class="aops-theme">
       <div>
         <div>
@@ -147,6 +147,7 @@
 
 <script>
   import router from '@/appCore/router'
+  import { i18nRender } from '@/appCore/locales'
   import { PageHeaderWrapper } from '@ant-design-vue/pro-layout'
   import DomainSelectionModal from './components/DomainSelectionModal'
   import AddConfigurationDrawer from './components/AddConfigurationDrawer'
@@ -201,6 +202,26 @@
       }
     },
     computed: {
+      breadcrumb () {
+        const routes = this.$route.meta.diyBreadcrumb.map((route) => {
+          return {
+            path: route.path,
+            breadcrumbName: i18nRender(route.breadcrumbName)
+          }
+        })
+        return {
+          props: {
+            routes,
+            itemRender: ({ route, params, routes, paths, h }) => {
+              if (routes.indexOf(route) === routes.length - 1) {
+                return <span>{route.breadcrumbName}</span>
+              } else {
+                return <router-link to={route.path}>{route.breadcrumbName}</router-link>
+              }
+            }
+          }
+        }
+      },
       domainName () {
         return this.$route.params.domainName
       },
