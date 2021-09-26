@@ -152,6 +152,7 @@ export default {
     visibleControl: function () {
       const _this = this
       if (this.isEdit && this.visibleControl === true) {
+        this.getHostList()
         this.resetData()
         setTimeout(function () {
           _this.form.setFieldsValue({ confFiles: [{ filePath: _this.editFilePath }] })

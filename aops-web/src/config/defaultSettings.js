@@ -1,5 +1,5 @@
 export default {
-  // 主机域-主机列表更新频率1min
-  domainStatusRefreshInterval: 60000,
+  // 主机域-主机列表更新频率30s
+  domainStatusRefreshInterval: 30000,
   faultDiagnosisPropressInterval: 5000
 }

@@ -206,9 +206,9 @@ export default {
       that.form.setFieldsValue({
         'domainName': that.domainName
       })
-      that.getHostInDomainList(that.domainName)
-      that.getHostListAll()
     })
+    that.getHostInDomainList(that.domainName)
+    that.getHostListAll()
     this.setButtons({ callBack: this.handleSubmit, text: '添加' })
   }
 }

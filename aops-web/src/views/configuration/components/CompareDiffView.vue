@@ -1,21 +1,19 @@
 <template>
-  <page-header-wrapper>
-    <a-card>
-      <div
-        v-for="(part, index) in diffPartList"
-        :key="index"
-      >
-        <a-row type="flex" justify="space-between">
-          <a-col :span="11" class="diff-line" :class="[setDiffClass(part.added, part.removed, true)]">
-            {{ part.value }}
-          </a-col>
-          <a-col :span="11" class="diff-line" :class="[setDiffClass(part.added, part.removed)]">
-            {{ part.value }}
-          </a-col>
-        </a-row>
-      </div>
-    </a-card>
-  </page-header-wrapper>
+  <a-card>
+    <div
+      v-for="(part, index) in diffPartList"
+      :key="index"
+    >
+      <a-row type="flex" justify="space-between">
+        <a-col :span="11" class="diff-line" :class="[setDiffClass(part.added, part.removed, true)]">
+          {{ !part.added ? part.value : '' }}
+        </a-col>
+        <a-col :span="11" class="diff-line" :class="[setDiffClass(part.added, part.removed)]">
+          {{ !part.removed ? part.value: '' }}
+        </a-col>
+      </a-row>
+    </div>
+  </a-card>
 </template>
 
 <script>
