@@ -83,7 +83,7 @@ def get_the_sync_status_of_domain(body=None):  # noqa: E501
     if resCode != 200:
         codeNum = resCode
         base_rsp = BaseResponse(codeNum, "Failed to get host info in the current domain. " + 
-                                         "The failure reason is:" + resText)
+                                         "The failure reason is:" + resText.get('msg'))
         return base_rsp, codeNum
 
     if len(resText) == 0:

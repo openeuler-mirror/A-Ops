@@ -233,7 +233,7 @@ def get_host_by_domain_name(body=None):  # noqa: E501
     if not os.path.isfile(hostPath) or (os.path.isfile(hostPath) and os.stat(hostPath).st_size == 0):
         codeNum = 400
         base_rsp = BaseResponse(codeNum, "The host information is not set in the current domain." +  
-                                          "Please add the host information first")
+                                          "Please add the host information first.")
         return base_rsp, codeNum
 
     # The domain exists, and the host information exists and is not empty
