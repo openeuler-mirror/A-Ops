@@ -8,9 +8,31 @@
 
 #include "tcpprobe.skel.h"
 #include "tcpprobe.h"
+#include "tcp.h"
 #include "util.h"
 
 #define METRIC_NAME_TCP_LINK "tcp_link"
+
+#define FILTER_LISTEN_PORT 22
+#define FILTER_COMM "sshd"
+#define FILTER_COMM2 "broker"
+
+static int __is_filter_listen_port(int port) {
+    if (port == FILTER_LISTEN_PORT) {
+        return 1;
+    }
+    return 0;
+}
+
+static int __is_filter_comm(char *comm) {
+    if (strstr(comm, FILTER_COMM)) {
+        return 1;
+    }
+    if (strstr(comm, FILTER_COMM2)) {
+        return 1;
+    }
+    return 0;
+}
 
 static int libbpf_print_fn(enum libbpf_print_level level, const char *format, va_list args)
 {
@@ -34,6 +56,13 @@ void update_link_metric_data(struct metric_data *dd, struct link_data *d)
     dd->link_num++;
     dd->rx += d->rx;
     dd->tx += d->tx;
+
+    /*
+        metrics_rtt * (metrics_segs_in + metrics_segs_out) + link_rtt * (link_segs_in + link_segs_out)
+       _________________________________________________________________________________________________
+       
+       (metrics_segs_in + metrics_segs_out + link_segs_in + link_segs_out)
+    */ 
     if ((d->segs_in + d->segs_out + dd->segs_in + dd->segs_out)) {
         dd->srtt = (dd->srtt * (dd->segs_in + dd->segs_out) + d->srtt * (d->segs_in + d->segs_out)) /
                    (d->segs_in + d->segs_out + dd->segs_in + dd->segs_out);
@@ -46,27 +75,13 @@ void update_link_metric_data(struct metric_data *dd, struct link_data *d)
     dd->lost += d->lost;
 }
 
-int filter_redundant_data(struct link_key *k, struct link_data *d)
-{
-    /*
-        redundant data
-        1 port == 0
-        2 rx/tx == 0
-    */
-    if (strstr(d->comm, "sshd") || strstr(d->comm, "broker")) {
-        return 1;
-    }
-    return 0;
-}
-
 void update_link_metric_map(struct link_key *k, struct link_data *d, int map_fd)
 {
     struct metric_key key = {0};
     struct metric_data data = {0};
 
     /* Filtering redundant data */
-    int ret = filter_redundant_data(k, d);
-    if (ret) {
+    if (__is_filter_comm(d->comm)) {
         return;
     }
 
@@ -199,38 +214,6 @@ void print_link_metric(int map_fd)
     return;
 }
 
-#if 1
-
-int bpf_parse_link_buf(char *buf, __u32 *proc_id, int *fd)
-{
-    char *p = NULL;
-    char *pp = buf;
-    char *ptr = NULL;
-
-    p = strchr(buf, ',');
-    if (!p) {
-        return -1;
-    }
-    if (p) {
-        *p = '\0';
-        *proc_id = strtol(buf, &ptr, 10);
-        buf = p + 1;
-    }
-
-    p = strchr(buf, '=');
-    if (!p) {
-        return -1;
-    }
-
-    buf = p + 1;
-    p = strchr(buf, ')');
-    if (p) {
-        *p = '\0';
-        *fd = (int)strtol(buf, &ptr, 10);
-    }
-    return 0;
-}
-
 void bpf_add_long_link_info_to_map(int map_fd, __u32 proc_id, int fd, __u8 role)
 {
     struct long_link_info ll = {0};
@@ -242,91 +225,61 @@ void bpf_add_long_link_info_to_map(int map_fd, __u32 proc_id, int fd, __u8 role)
     bpf_map_update_elem(map_fd, &proc_id, &ll, BPF_ANY);
 }
 
-void bpf_add_listen_port_map(int map_fd, char *listen_ports_str)
-{
-    /* :22|:8088|:8091|:39607 */
-    char *s = listen_ports_str;
-    char *e = NULL;
-    unsigned short port;
+void bpf_update_long_link_info_to_map(int long_link_map_fd, int listen_port_map_fd) {
+    int i, j;
+    __u8 role;
+    unsigned short listen_port;
+    struct tcp_listen_ports* tlps = NULL;
+    struct tcp_estabs* tes = NULL;
 
-    while (*s != '\0') {
-        if (*s == ':') {
-            e = s + 1;
-            port = 0;
-            while (*e != '\0' && *e != '|') {
-                port = (port * 10) + (*e - '0');
-                e++;
-            }
-
-            if (port < MAX_PORT_VAL) {
-                /* add port */
-                bpf_map_update_elem(map_fd, &port, &port, BPF_ANY);
-            }
-            s = e;
-        } else {
-            s++;
+    tlps = get_listen_ports();
+    if (tlps == NULL) {
+        goto err;
+    }  
+    
+    /* insert listen ports into map */
+    for (i = 0; i < tlps->tlp_num; i++) {
+        listen_port = (unsigned short)tlps->tlp[i]->port;
+        if (!__is_filter_listen_port((int)listen_port)) {
+            printf("Update listen port:%u\n", listen_port);
+            bpf_map_update_elem(listen_port_map_fd, &listen_port, &listen_port, BPF_ANY);
         }
+    }
+
+    tes = get_estab_tcps(tlps);
+    if (tes == NULL) {
+        goto err;
+    }
+
+    /* insert tcp establish into map */
+    for (i = 0; i < tes->te_num; i++) {
+        role = tes->te[i]->is_client == 1 ? LINK_ROLE_CLIENT : LINK_ROLE_SERVER;
+        for (j = 0; j < tes->te[i]->te_comm_num; j++) {
+            if (!__is_filter_comm(tes->te[i]->te_comm[j]->comm)) {
+                bpf_add_long_link_info_to_map(long_link_map_fd, 
+                    (__u32)tes->te[i]->te_comm[j]->pid, (int)tes->te[i]->te_comm[j]->fd, role);
+                
+                printf("Update establish(pid = %u, fd = %d, role = %u)\n", 
+                    (__u32)tes->te[i]->te_comm[j]->pid, (int)tes->te[i]->te_comm[j]->fd, role);
+            }
+        }
+    }
+
+err:
+    if (tlps) {
+        free_listen_ports(&tlps);
+    }
+    if (tes) {
+        free_estab_tcps(&tes);
     }
     return;
 }
+
 
 /* 输出间隔 xx s */
 #define BPF_MAX_OUTPUT_INTERVAL     (3600)
 #define BPF_MIN_OUTPUT_INTERVAL     (1)
 unsigned int g_output_interval_sec = 5;
-#define SS_LISTEN_PORT_FMT                                                                                            \
-    "ss -anptl | awk '{print $4}' | awk -F ':' '{print $NF}' | sed 's/[^0-9]//g' | sort -n | uniq | xargs | sed 's/ " \
-    "/|:/g' | sed 's/^/:/'"
-#define SS_ESTAB_WITH_LPORT_FMT \
-    "ss -anpt | grep ESTAB | grep -E '%s' | sed '/sshd/d' | sed 's/),(/)\\n(/' | sed 's/.*,pid=//' | sed 's/))/)/'"
-#define SS_ESTAB_WITHOUT_LPORT_FMT \
-    "ss -anpt | grep ESTAB | grep -Ev '%s' | sed '/sshd/d' | sed 's/),(/)\\n(/' | sed 's/.*,pid=//' | sed 's/))/)/'"
-/* 获取环境上的长链接信息：(procId, fd) */
-void bpf_update_long_link_info_to_map(int long_link_map_fd, int listen_port_map_fd)
-{
-#define BUF_STR_LEN 200
-    FILE *fp = NULL;
-    char cmd[BUF_STR_LEN] = {0};
-    char buf[BUF_STR_LEN] = {0};
-    char buf1[BUF_STR_LEN] = {0};
-    __u32 proc_id;
-    int fd = -1;
-    int ret;
-
-    fp = popen(SS_LISTEN_PORT_FMT, "r");
-    while (fgets(buf, BUF_STR_LEN, fp) != NULL) {
-        buf[strlen(buf) - 1] = '\0';
-        printf("listen port list:%s\n", buf);
-        break;
-    }
-    pclose(fp);
-
-    /* insert listen ports into map */
-    bpf_add_listen_port_map(listen_port_map_fd, buf);
-
-    snprintf(cmd, BUF_STR_LEN, SS_ESTAB_WITHOUT_LPORT_FMT, buf);
-    fp = popen(cmd, "r");
-    while (fgets(buf1, BUF_STR_LEN, fp) != NULL) {
-        ret = bpf_parse_link_buf(buf1, &proc_id, &fd);
-        if (ret == 0) {
-            bpf_add_long_link_info_to_map(long_link_map_fd, proc_id, fd, LINK_ROLE_CLIENT);
-        }
-    }
-    pclose(fp);
-
-    snprintf(cmd, BUF_STR_LEN, SS_ESTAB_WITH_LPORT_FMT, buf);
-    fp = popen(cmd, "r");
-    while (fgets(buf1, BUF_STR_LEN, fp) != NULL) {
-        ret = bpf_parse_link_buf(buf1, &proc_id, &fd);
-        if (ret == 0) {
-            bpf_add_long_link_info_to_map(long_link_map_fd, proc_id, fd, LINK_ROLE_SERVER);
-        }
-    }
-    pclose(fp);
-
-    return;
-}
-#endif
 
 void tcpprobe_arg_parse(char opt, char *arg, int idx)
 {
@@ -357,12 +310,12 @@ int main(int argc, char **argv)
     /* Set up libbpf errors and debug info callback */
     libbpf_set_print(libbpf_print_fn);
 
-	#if UNIT_TESTING
+    #if UNIT_TESTING
     /* Bump RLIMIT_MEMLOCK  allow BPF sub-system to do anything */
     if (set_memlock_rlimit() == 0) {
-		return NULL;
-	}
-	#endif
+        return NULL;
+    }
+    #endif
 
     /* Open load and verify BPF application */
     skel = tcpprobe_bpf__open_and_load();
