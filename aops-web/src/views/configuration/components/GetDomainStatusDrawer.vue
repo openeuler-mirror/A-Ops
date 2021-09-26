@@ -95,7 +95,7 @@
     },
     methods: {
       confirm (e) {
-        this.$message.success('Click on Yes')
+        this.$message.success('该功能暂未实现')
       },
       cancel (e) {
       }

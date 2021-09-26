@@ -152,6 +152,7 @@ export default {
     visibleControl: function () {
       const _this = this
       if (this.isEdit && this.visibleControl === true) {
+        this.getHostList()
         this.resetData()
         setTimeout(function () {
           _this.form.setFieldsValue({ confFiles: [{ filePath: _this.editFilePath }] })
@@ -201,8 +202,8 @@ export default {
             .filter(conf => conf)
           }
           this.submitIsLoading = true
-          addManagementConf(params).then(function () {
-            _this.$message.success('添加成功')
+          addManagementConf(params).then(function (res) {
+            _this.$message.success(res.msg)
             _this.visible = false
             _this.$emit('ok')
           }).catch(function (err) {

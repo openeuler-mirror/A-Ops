@@ -192,11 +192,6 @@
       columns () {
         return [
           {
-            dataIndex: 'hostId',
-            key: 'hostId',
-            title: '主机名称'
-          },
-          {
             dataIndex: 'ip',
             key: 'ip',
             title: 'IP地址'
@@ -247,17 +242,21 @@
       // 获取业务域列表数据
       getHostList (domainName) {
         const _this = this
-        this.tableIsLoading = true
-        domainHostList(domainName)
-        .then(function (res) {
-          _this.hostList = res
-          }).catch(function (err) {
-            if (err.response.data.code !== 400) {
-            _this.$message.error(err.response.data.msg || err.response.data.detail)
-          } else {
-            _this.hostList = []
-          }
-        }).finally(function () { _this.tableIsLoading = false })
+        return new Promise(function (resolve, reject) {
+          _this.tableIsLoading = true
+          domainHostList(domainName)
+            .then(function (res) {
+              _this.hostList = res
+              resolve(res)
+            }).catch(function (err) {
+              if (err.response.data.code !== 400) {
+                _this.$message.error(err.response.data.msg || err.response.data.detail)
+              } else {
+                _this.hostList = []
+              }
+              reject(err)
+            }).finally(function () { _this.tableIsLoading = false })
+        })
       },
       // 获取业务域主机同步状态
       getDomainStatus () {
@@ -266,25 +265,25 @@
         domainStatus({
           domainName: _this.domainName
         }).then(function (res) {
-            _this.statusData = res.hostStatus || []
-          }).catch(function (err) {
-          _this.$message.error(err.response.data.msg || err.response.data.detail)
+          _this.statusData = res.hostStatus || []
+        }).catch(function (err) {
+          if (err.response.data.code !== 404) {
+            _this.$message.error(err.response.data.msg || err.response.data.detail)
+          }
         }).finally(function () { _this.domainStatusIsLoading = false })
       },
       handleRefresh () {
         this.selectedRowKeys = []
-        this.getHostList(this.domainName)
-        this.refreshDomainStatus()
+        this.getHostAndStatus()
       },
       deleteDomainHost (record) {
-        console.log('00', record)
         this.handleDelete([record])
       },
       deleteHostBash (selectedRowKeys, selectedRows) {
         const _this = this
         this.$confirm({
           title: (<div><p>删除后无法恢复</p><p>请确认删除以下主机:</p></div>),
-        content: () => selectedRows.map(row => (<p><span>{ row.hostId }</span></p>)),
+        content: () => selectedRows.map(row => (<p><span>{ row.ip }</span></p>)),
         icon: () => <a-icon type="exclamation-circle" />,
           okType: 'danger',
           okText: '删除',
@@ -293,16 +292,14 @@
         })
       },
       handleDelete (hostInfos, isBash) {
-        console.log(hostInfos)
         const _this = this
         return new Promise((resolve, reject) => {
           deleteHost({
             domainName: _this.domainName,
             hostInfos: hostInfos
           }).then((res) => {
-              _this.$message.success('删除成功')
-              _this.getDomainStatus()
-              _this.getHostList(_this.domainName)
+              _this.$message.success(res.msg)
+              _this.getHostAndStatus()
               if (isBash) {
                 _this.selectedRowKeys = []
                 _this.selectedRows = []
@@ -314,9 +311,6 @@
               reject(err)
             })
         })
-      },
-      refreshDomainStatus () {
-        this.getDomainStatus()
       },
       syncConf (selectedRowKeys, selectedRows) {
         const _this = this
@@ -346,9 +340,8 @@
             domainName: _this.domainName,
             hostIds: hostIds
           }).then((res) => {
-            _this.$message.success('同步成功')
-            _this.getDomainStatus()
-            _this.getHostList(_this.domainName)
+            _this.$message.success(res.msg)
+            _this.getHostAndStatus()
             if (isBash) {
               _this.selectedRowKeys = []
               _this.selectedRows = []
@@ -391,16 +384,26 @@
       },
       addHostSuccess () {
         this.handleRefresh()
+      },
+      getHostAndStatus () {
+        const _this = this
+        this.getHostList(this.domainName).then(function () {
+          _this.getDomainStatus()
+          // 启动循环更新Status
+          clearInterval(_this.setTimeoutKey_statusInterval)
+          _this.setTimeoutKey_statusInterval = setInterval(function () {
+            _this.getDomainStatus()
+          }, defaultSettings.domainStatusRefreshInterval)
+        }).catch(function (err) {
+          console.warn(err)
+          // 获取host出错（为空或报错，则清除轮训）
+          clearInterval(_this.setTimeoutKey_statusInterval)
+        })
       }
     },
     mounted: function () {
-      this.getDomainStatus()
-      this.getHostList(this.domainName)
+      this.getHostAndStatus()
       this.getConfsOfDomain(this.domainName)
-      const _this = this
-      this.setTimeoutKey_statusInterval = setInterval(function () {
-        _this.refreshDomainStatus()
-      }, defaultSettings.domainStatusRefreshInterval)
     },
     destroyed: function () {
       clearInterval(this.setTimeoutKey_statusInterval)

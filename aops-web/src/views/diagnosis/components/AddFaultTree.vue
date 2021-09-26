@@ -92,7 +92,7 @@ import Uploader from '@/components/Uploader'
           if (!err) { // 如果验证通过，err为null，否则有验证失败信息
             that.showSpin()
             importDiagTree({ ...values }).then(function (res) {
-              that.$message.success('新增成功')
+              that.$message.success(res.msg)
               that.close()
               that.saveSuccess()
             }).catch(function (err) {

@@ -161,8 +161,8 @@ export default {
               })
             })
             addHost(values.domainName, hostInfos)
-              .then(function () {
-                _this.$message.success('添加成功')
+              .then(function (res) {
+                _this.$message.success(res.msg)
                 _this.form.resetFields()
                 _this.close()
                 _this.$emit('addHostSuccess')
@@ -206,9 +206,9 @@ export default {
       that.form.setFieldsValue({
         'domainName': that.domainName
       })
-      that.getHostInDomainList(that.domainName)
-      that.getHostListAll()
     })
+    that.getHostInDomainList(that.domainName)
+    that.getHostListAll()
     this.setButtons({ callBack: this.handleSubmit, text: '添加' })
   }
 }

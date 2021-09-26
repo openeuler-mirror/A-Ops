@@ -117,7 +117,7 @@ export default {
       delDiagTree({
         treeList
       }).then(function (res) {
-        _this.$message.success('删除成功')
+        _this.$message.success(res.msg)
         // 跳转回故障诊断页面
         _this.$router.push('/diagnosis/fault-diagnosis')
       }).catch(function (err) {

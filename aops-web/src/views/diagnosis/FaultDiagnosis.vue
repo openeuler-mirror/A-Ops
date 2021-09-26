@@ -110,7 +110,7 @@
     </a-card>
     <a-drawer
       title="诊断报告列表"
-      :width="720"
+      :width="800"
       :visible="reportListVisible"
       @close="handleReportListClose"
     >
@@ -179,7 +179,7 @@
   const reportListColumns = [
     {
       key: 'check',
-      title: '查看',
+      title: '操作',
       scopedSlots: { customRender: 'check' }
     },
     {
@@ -373,7 +373,7 @@
         const _this = this
         return new Promise((resolve, reject) => {
           delDiagReport(reportList).then((res) => {
-              _this.$message.success('删除成功')
+              _this.$message.success(res.msg)
               _this.refreshFaultDiagnosisList()
               _this.refreshReportList()
               if (isBash) _this.selectedRowKeys = []
@@ -426,7 +426,7 @@
         delDiagTree({
           treeList
         }).then(function (res) {
-            _this.$message.success('删除成功')
+            _this.$message.success(res.msg)
             _this.refreshgDiagTree()
           }).catch(function (err) {
           _this.$message.error(err.response.data.msg)

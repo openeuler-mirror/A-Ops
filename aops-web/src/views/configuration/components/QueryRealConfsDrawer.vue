@@ -126,12 +126,6 @@
         comparedConf: {}
       }
     },
-    computed: {
-      confsOfHostComapred () {
-        console.log(22)
-        return []
-      }
-    },
     watch: {
       confsOfDomainLoading: function () {
         this.compareDiff()
@@ -150,7 +144,9 @@
         }).then((res) => {
           _this.confsOfHost = (res && res[0] && res[0].confBaseInfos) || []
         }).catch((err) => {
-          _this.$message.error(err.response.data.$msg)
+          if (err.response.data.code !== 400) {
+            _this.$message.error(err.response.data.msg)
+          }
         }).finally(() => { _this.collapseIsLoading = false })
       },
       compareDiff () {
@@ -181,7 +177,6 @@
         })
         this.confs = confs
         this.confsNotInHost = confsNotInHost
-        console.log(11111, this.confs, this.confsNotInHost)
       },
       showCompareDrawer (conf) {
         this.comparedConf = conf
@@ -196,8 +191,8 @@
       this.onload(function (params) {
         _this.domainName = params.domainName
         _this.host = params.host
-        _this.getRealConfsList(params.host.hostId)
       })
+      this.getRealConfsList(this.host.hostId)
     }
   }
 </script>

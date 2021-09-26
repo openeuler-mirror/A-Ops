@@ -362,9 +362,6 @@ const defaultPagination = { current: 1, pageSize: 10, showSizeChanger: true, sho
           this.tableIsLoading = false
         })
       },
-      deleteResult (result) {
-        this.$message.success('记录删除成功')
-      },
       handleAddRuleSuccess () {
         this.getRuleCount()
       },

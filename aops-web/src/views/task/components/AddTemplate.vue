@@ -68,7 +68,7 @@ import Uploader from '@/components/Uploader'
             imporTemplate({
               ...values
             }).then(function (res) {
-              that.$message.success('新增成功')
+              that.$message.success(res.msg)
               that.close()
               that.saveSuccess()
             }).catch(function (err) {

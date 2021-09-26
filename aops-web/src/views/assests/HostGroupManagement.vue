@@ -335,7 +335,7 @@ export default {
                     hostGroupList
                 })
                 .then((res) => {
-                    _this.$message.success('删除成功')
+                    _this.$message.success(res.msg)
                     _this.getHostGroupList({})
                     if (isBash) _this.selectedRowKeys = []
                     resolve()

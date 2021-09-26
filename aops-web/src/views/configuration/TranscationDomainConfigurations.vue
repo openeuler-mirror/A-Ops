@@ -1,10 +1,10 @@
 
 <template>
-  <page-header-wrapper>
+  <page-header-wrapper :breadcrumb="breadcrumb">
     <a-card :bordered="false" class="aops-theme">
       <div>
         <div>
-          <h2 class="card-title">{{ domainName }}<span>配置表</span></h2>
+          <h2 class="card-title">{{ oldDomainName }}<span>配置表</span></h2>
           <span>共获取到{{ tableData.length }}条配置信息</span>
         </div>
         <a-row class="aops-table-control-row" type="flex" justify="space-between">
@@ -50,7 +50,7 @@
             <a-divider type="vertical" />
             <a @click="showConfigChange(record)">配置变更日志</a>
             <a-divider type="vertical" />
-            <a @click="showEditDrawer(record)">编辑配置</a>
+            <a @click="showEditDrawer(record)">编辑配置&emsp;&emsp;</a>
             <a-divider type="vertical" />
             <a-popconfirm
               title="你确定删除这行配置吗?"
@@ -130,7 +130,10 @@
         </a-drawer>
       </div>
     </a-card>
-    <domain-selection-modal :showDomainSelection="choiceDomainNameModalVisible" />
+    <domain-selection-modal
+      :showDomainSelection="choiceDomainNameModalVisible"
+      @cancel="handleDomainSelectCancel"
+    />
     <add-configuration-drawer
       :isEdit="true"
       :visibleControl="editConfVisible"
@@ -143,6 +146,8 @@
 </template>
 
 <script>
+  import router from '@/appCore/router'
+  import { i18nRender } from '@/appCore/locales'
   import { PageHeaderWrapper } from '@ant-design-vue/pro-layout'
   import DomainSelectionModal from './components/DomainSelectionModal'
   import AddConfigurationDrawer from './components/AddConfigurationDrawer'
@@ -192,10 +197,31 @@
         domainNameList: [],
         selectDomainName: this.$route.params.domainName || null,
         editConfVisible: false,
-        editFilePath: ''
+        editFilePath: '',
+        oldDomainName: null
       }
     },
     computed: {
+      breadcrumb () {
+        const routes = this.$route.meta.diyBreadcrumb.map((route) => {
+          return {
+            path: route.path,
+            breadcrumbName: i18nRender(route.breadcrumbName)
+          }
+        })
+        return {
+          props: {
+            routes,
+            itemRender: ({ route, params, routes, paths, h }) => {
+              if (routes.indexOf(route) === routes.length - 1) {
+                return <span>{route.breadcrumbName}</span>
+              } else {
+                return <router-link to={route.path}>{route.breadcrumbName}</router-link>
+              }
+            }
+          }
+        }
+      },
       domainName () {
         return this.$route.params.domainName
       },
@@ -251,7 +277,6 @@
         this.getTranscationDomainConfig()
       },
       onSelectChange (selectedRowKeys, selectedRows) {
-        // console.log(`selectedRowKeys: ${selectedRowKeys}`, 'selectedRows: ', selectedRows)
         this.selectedRowKeys = selectedRowKeys
         this.selectedRows = selectedRows
       },
@@ -306,7 +331,7 @@
             })
           })
             .then((res) => {
-              _this.$message.success('删除成功')
+              _this.$message.success(res.msg)
               _this.getTranscationDomainConfig()
               if (isBash) _this.selectedRowKeys = []
               resolve()
@@ -365,12 +390,21 @@
           _this.$message.error(err.response.data.message)
         }).finally(function () { _this.logIsLoading = false })
       },
+      handleDomainSelectCancel () {
+        this.choiceDomainNameModalVisible = false
+        if (this.oldDomainName) {
+          router.replace(`${this.oldDomainName}`)
+        } else {
+          this.$message.warning('未选择业务域，返回管理列表页。')
+          router.push('/configuration/transcation-domain-management')
+        }
+      },
       routerChangeInital () {
-        this.tableData = []
         // 每次路由变化都会触发，代替mounted
-        if (!this.domainName) {
+        if (this.domainName === '$noDomain') {
           this.choiceDomainNameModalVisible = true
         } else {
+          this.oldDomainName = this.domainName
           this.choiceDomainNameModalVisible = false
           this.getTranscationDomainConfig()
         }

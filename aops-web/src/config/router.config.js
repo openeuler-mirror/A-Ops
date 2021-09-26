@@ -278,15 +278,28 @@ export const asyncRouterMap = [
           {
             path: routeMap.configuration.children.TranscationDomainConfigurations.path,
             name: 'transcationDomainConfigurations',
-            component: () => import('@/views/configuration/TranscationDomainConfigurations'),
-            meta: { title: routeMap.configuration.children.TranscationDomainConfigurations.title, permission: ['configuration'] }
-          },
-          {
-            path: routeMap.configuration.children.TranscationDomainConfigurationsDetail.path,
-            name: 'transcationDomainConfigurationsDetail',
-            hidden: true,
-            component: () => import('@/views/configuration/TranscationDomainConfigurations'),
-            meta: { title: routeMap.configuration.children.TranscationDomainConfigurationsDetail.title, permission: ['configuration'] }
+            component: RouteView,
+            hideChildrenInMenu: true,
+            // $noDomain is used for the case where domain are not selected.
+            redirect: routeMap.configuration.children.TranscationDomainConfigurations.path + '/$noDomain',
+            meta: { title: routeMap.configuration.children.TranscationDomainConfigurations.title, permission: ['configuration'] },
+            children: [
+              {
+                path: routeMap.configuration.children.TranscationDomainConfigurationsDetail.path,
+                name: 'transcationDomainConfigurationsDetail',
+                hidden: true,
+                component: () => import('@/views/configuration/TranscationDomainConfigurations'),
+                meta: {
+                  title: routeMap.configuration.children.TranscationDomainConfigurationsDetail.title,
+                  permission: ['configuration'],
+                  diyBreadcrumb: [
+                    { breadcrumbName: routeMap.index.title, path: routeMap.index.path },
+                    { breadcrumbName: routeMap.configuration.title, path: routeMap.configuration.path },
+                    { breadcrumbName: routeMap.configuration.children.TranscationDomainConfigurationsDetail.title, path: routeMap.configuration.children.TranscationDomainConfigurationsDetail.path }
+                  ]
+                }
+              }
+            ]
           },
           {
             path: routeMap.configuration.children.queryHostList.path,
