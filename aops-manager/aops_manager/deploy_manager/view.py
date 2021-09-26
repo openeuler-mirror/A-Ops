@@ -185,6 +185,7 @@ class ExecuteTask(Resource):
                 response = StatusCode.make_response(SUCCEED)
                 return jsonify(response)
             response = StatusCode.make_response(TASK_EXECUTION_FAIL)
+            LOGGER.error("Task %s execution failed.", task_id)
             return jsonify(response)
 
     @staticmethod
@@ -192,6 +193,7 @@ class ExecuteTask(Resource):
         """
         Execute task and remove relative files after execution.
         Args:
+            inventory(instance): instance of InventoryBuilder
             task_id(str): id of a task.
         Returns:
             bool: The execution flag of the task
@@ -243,7 +245,6 @@ class GetTemplate(Resource):
 
         Args:
             template_list(list): template name list
-
         Returns:
             dict: response body
         """

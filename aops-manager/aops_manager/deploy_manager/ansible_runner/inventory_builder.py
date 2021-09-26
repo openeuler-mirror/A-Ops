@@ -115,8 +115,10 @@ class InventoryBuilder:
         """
         if not all([src_path, host_name]):
             raise ValueError("Invalid parameters of src_path, host_name")
-
         src_inventory_path = os.path.join(src_path, host_name)
+        if not os.path.exists(src_inventory_path):
+            LOGGER.debug("HOST_VARS_PATH %s is not existed", src_inventory_path)
+            return
         ansible_inventory_path = os.path.join(HOST_VARS_PATH, host_name)
         LOGGER.debug("move_host_vars_to_inventory from %s to %s",
                      src_path, ansible_inventory_path)
@@ -150,6 +152,7 @@ class InventoryBuilder:
                 LOGGER.debug("HOST_VARS_PATH %s is not existed", host_vars_dir)
                 continue
             shutil.rmtree(host_vars_dir)
+
 
     @staticmethod
     def move_host_to_inventory(inventory_file_path, file_name):

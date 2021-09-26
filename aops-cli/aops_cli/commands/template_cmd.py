@@ -22,7 +22,7 @@ from aops_utils.conf.constant import IMPORT_TEMPLATE, DELETE_TEMPLATE, GET_TEMPL
 from aops_utils.readconfig import read_yaml_config_file
 from aops_utils.restful.helper import make_manager_url
 from aops_utils.cli_utils import add_page, cli_request, add_access_token, add_query_args
-from aops_utils.cli_utils import request_without_print, print_row_from_result
+from aops_utils.cli_utils import request_without_print, pretty_json
 
 
 class TemplateCommand(BaseCommand):
@@ -177,6 +177,4 @@ class TemplateCommand(BaseCommand):
             pyload["direction"] = params.direction
 
         result = request_without_print('POST', manager_url, pyload, header, params.access_token)
-        template_infos = result.pop('template_infos', [])
-        print(result)
-        print_row_from_result(template_infos)
+        print(pretty_json(result))
