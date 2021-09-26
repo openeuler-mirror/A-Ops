@@ -185,7 +185,7 @@ class ExecuteTask(Resource):
                 response = StatusCode.make_response(SUCCEED)
                 return jsonify(response)
             response = StatusCode.make_response(TASK_EXECUTION_FAIL)
-            LOGGER.info("Task %s execution failed.", task_id)
+            LOGGER.error("Task %s execution failed.", task_id)
             return jsonify(response)
 
     @staticmethod
