@@ -139,6 +139,10 @@ export default {
 }
 </script>
 
-<style lang="less">
+<style lang="less" scoped>
 @import "./BasicLayout.less";
+.logo {
+  height: auto;
+  width: 32px;
+}
 </style>
