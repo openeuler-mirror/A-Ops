@@ -1,3 +1,17 @@
+/******************************************************************************
+ * Copyright (c) Huawei Technologies Co., Ltd. 2021. All rights reserved.
+ * gala-gopher licensed under the Mulan PSL v2.
+ * You can use this software according to the terms and conditions of the Mulan PSL v2.
+ * You may obtain a copy of Mulan PSL v2 at:
+ *     http://license.coscl.org.cn/MulanPSL2
+ * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR
+ * IMPLIED, INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY OR FIT FOR A PARTICULAR
+ * PURPOSE.
+ * See the Mulan PSL v2 for more details.
+ * Author: algorithmofdish
+ * Create: 2021-09-28
+ * Description: provide gala-gopher epbf endpoint functions
+ ******************************************************************************/
 #include <stdio.h>
 #include <stdlib.h>
 #include <ctype.h>
@@ -97,7 +111,8 @@ static int __get_sub_str(const char *s, const char* start, const char *end,
     return 0;
 }
 
-static int __erase_square_brackets(const char* s, char *buf, unsigned int buf_len) {
+static int __erase_square_brackets(const char* s, char *buf, unsigned int buf_len) {
+
     char *p1, *p2;
     int len;
     char tmp[LEN_BUF];
@@ -326,7 +341,7 @@ static int __get_estab(const char *s, struct tcp_estab* te) {
         te_comm = __get_estab_comm((const char*)start, offset);
         if (te_comm != NULL) {
             if (__add_estab_comm(te, te_comm) < 0) {
-               (void)free(te_comm);
+               (void)free(te_comm);
             }
         }
         start += offset + 1;
@@ -393,9 +408,17 @@ static int __get_listen_port(const char *s, unsigned int *port) {
     char port_str[PORT_LEN];
     unsigned int port_num;
 
-    ret = __get_sub_str(s, ":", "users:", port_str, PORT_LEN);
-    if (ret < 0) {
-        return -1;
+    if (strstr(s, "]:")) {
+        ret = __get_sub_str(s, "]:", "users:", port_str, PORT_LEN);
+        if (ret < 0) {
+            return -1;
+        }
+    }
+    else {
+        ret = __get_sub_str(s, ":", "users:", port_str, PORT_LEN);
+        if (ret < 0) {
+            return -1;
+        }
     }
     
     if (!__is_digit_str((const char *)port_str)) {
@@ -481,7 +504,8 @@ static struct tcp_listen_ports* __new_tlps() {
     return tlps;
 }
 
-static void __free_tlps(struct tcp_listen_ports** ptlps) {
+static void __free_tlps(struct tcp_listen_ports** ptlps) {
+
     struct tcp_listen_ports* tlps = *ptlps;
 
     for (int i = 0; i < tlps->tlp_num; i++) {
@@ -638,7 +662,7 @@ static void __free_tcp_endpoints(struct tcp_endpoints** pteps) {
 
 
 static struct tcp_endpoint* __new_tcp_endpoint(enum endpoint_type ep_type, unsigned int port, 
-                                                     int ipv4, char *ip) {
+                                                     int ipv4, char *ip, unsigned int pid) {
     struct tcp_endpoint* tep;
 
     tep = (struct tcp_endpoint*)malloc(sizeof(struct tcp_endpoint));
@@ -646,6 +670,8 @@ static struct tcp_endpoint* __new_tcp_endpoint(enum endpoint_type ep_type, unsig
         return NULL;
     }
     (void)memset(tep, 0, sizeof(struct tcp_endpoint));
+
+    tep->pid = pid;
     
     if (ep_type == EP_TYPE_LISTEN) {
         tep->ep_type = EP_TYPE_LISTEN;
@@ -656,8 +682,10 @@ static struct tcp_endpoint* __new_tcp_endpoint(enum endpoint_type ep_type, unsig
     if (ep_type == EP_TYPE_IP) {
         tep->ep_type = EP_TYPE_IP;
         if (ipv4) {
+            tep->ep_addr_type = EP_ADDR_IPV4;
             (void)inet_pton(AF_INET, ip, (void *)&tep->addr.in_addr);
         } else {
+            tep->ep_addr_type = EP_ADDR_IPV6;
             (void)inet_pton(AF_INET6, ip, (void *)&tep->addr.in6_addr);
         }
         goto out;
@@ -666,8 +694,10 @@ static struct tcp_endpoint* __new_tcp_endpoint(enum endpoint_type ep_type, unsig
     if (ep_type == EP_TYPE_IP_PORT) {
         tep->ep_type = EP_TYPE_IP_PORT;
         if (ipv4) {
+            tep->ep_addr_type = EP_ADDR_IPV4;
             (void)inet_pton(AF_INET, ip, (void *)&tep->addr.in_addr);
         } else {
+            tep->ep_addr_type = EP_ADDR_IPV6;
             (void)inet_pton(AF_INET6, ip, (void *)&tep->addr.in6_addr);
         }
         tep->port = port;
@@ -676,10 +706,11 @@ static struct tcp_endpoint* __new_tcp_endpoint(enum endpoint_type ep_type, unsig
 
 out:
     return tep;
-}
+}
+
 
 struct tcp_endpoints *get_tcp_endpoints(struct tcp_listen_ports* tlps, struct tcp_estabs* tes) {
-    int i;
+    int i, j;
     struct tcp_endpoint* tep;
     struct tcp_endpoints* teps;
 
@@ -690,7 +721,7 @@ struct tcp_endpoints *get_tcp_endpoints(struct tcp_listen_ports* tlps, struct tc
     }
 
     for (i = 0; i < tlps->tlp_num; i++) {
-        tep = __new_tcp_endpoint(EP_TYPE_LISTEN, tlps->tlp[i]->port, 0, NULL);
+        tep = __new_tcp_endpoint(EP_TYPE_LISTEN, tlps->tlp[i]->port, 0, NULL, tlps->tlp[i]->pid);
         if (tep) {
             if (__add_tcp_endpoint(teps, tep) < 0) {
                 (void)free(tep);
@@ -699,18 +730,22 @@ struct tcp_endpoints *get_tcp_endpoints(struct tcp_listen_ports* tlps, struct tc
     }
 
     for (i = 0; i < tes->te_num; i++) {
-        if (tes->te[i]->is_client) {
-            tep = __new_tcp_endpoint(EP_TYPE_IP, 0, 
-                                     tes->te[i]->local.ipv4, tes->te[i]->local.ip);
-        } else {
-            tep = __new_tcp_endpoint(EP_TYPE_IP_PORT, 
-                              tes->te[i]->local.port, tes->te[i]->local.ipv4, tes->te[i]->local.ip);
-        }
-        if (tep) {
-            if (__add_tcp_endpoint(teps, tep) < 0) {
-                (void)free(tep);
+        for (j = 0; j < tes->te[i]->te_comm_num; j++) {
+            if (tes->te[i]->is_client) {
+                tep = __new_tcp_endpoint(EP_TYPE_IP, 0, 
+                                         tes->te[i]->local.ipv4, 
+                                         tes->te[i]->local.ip, tes->te[i]->te_comm[j]->pid);
+            } else {
+                tep = __new_tcp_endpoint(EP_TYPE_IP_PORT, 
+                                  tes->te[i]->local.port, tes->te[i]->local.ipv4, 
+                                  tes->te[i]->local.ip, tes->te[i]->te_comm[j]->pid);
             }
-        }            
+            if (tep) {
+                if (__add_tcp_endpoint(teps, tep) < 0) {
+                    (void)free(tep);
+                }
+            }            
+        }
     }
     return teps;
 }
@@ -718,4 +753,5 @@ struct tcp_endpoints *get_tcp_endpoints(struct tcp_listen_ports* tlps, struct tc
 void free_tcp_endpoints(struct tcp_endpoints **pteps) {
     __free_tcp_endpoints(pteps);
 }
+
 
