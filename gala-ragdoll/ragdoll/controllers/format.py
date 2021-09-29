@@ -91,6 +91,7 @@ class Format(object):
     @staticmethod
     def addHostToFile(d_file, host):
         info_json = json.dumps(str(host), sort_keys=False, indent=4, separators=(',', ': '))
+        os.umask(0o077)
         with open(d_file, 'a+') as host_file:
             host_file.write(info_json)
             host_file.write("\n")

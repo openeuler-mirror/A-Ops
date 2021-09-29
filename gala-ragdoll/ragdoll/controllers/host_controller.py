@@ -143,12 +143,16 @@ def delete_host_in_domain(body=None):  # noqa: E501
                 codeNum = 500
                 base_rsp = BaseResponse(codeNum, "The host delete failed.")
                 return base_rsp, codeNum
+            codeNum = 200
+            base_rsp = BaseResponse(codeNum, "All hosts are deleted in the current domain.")
+            return base_rsp, codeNum
 
     # If the domain exists, check whether the current input parameter host belongs to the corresponding
     # domain. If the host is in the domain, the host is deleted. If the host is no longer in the domain, 
     # the host is added to the failure range
     containedInHost = []
     notContainedInHost = []
+    os.umask(0o077)
     for hostInfo in hostInfos:
         hostId = hostInfo.host_id
         isContained = False
