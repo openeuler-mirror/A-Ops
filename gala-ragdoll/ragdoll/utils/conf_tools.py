@@ -406,6 +406,7 @@ class ConfTools(object):
         """
         res = False
         cwd = os.getcwd()
+        os.umask(0o077)
         if not os.path.exists(self._target_dir):
             os.mkdir(self._target_dir)
 
@@ -583,6 +584,7 @@ class ConfTools(object):
         """
         res = False
         path_delete_last = ""
+        os.umask(0o077)
         if not os.path.exists(path):
             paths = path.split('/')
             for d_index in range(0, len(paths) - 1):

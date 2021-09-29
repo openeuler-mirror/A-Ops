@@ -46,6 +46,7 @@ def create_domain(body=None):  # noqa: E501
         else:
             successDomain.append(tempDomainName)
             domainPath = os.path.join(TARGETDIR, tempDomainName)
+            os.umask(0o077)
             os.mkdir(domainPath)
 
     if len(failedDomain) == 0:

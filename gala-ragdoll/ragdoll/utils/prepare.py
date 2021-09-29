@@ -20,6 +20,7 @@ class Prepare(object):
         if os.path.exists(self._target_dir):
             rest = self.git_init(username, useremail)
             return rest
+        os.umask(0o077)
         cmd1 = "mkdir -p {}".format(self._target_dir)
         git_tools = GitTools(self._target_dir)
         mkdir_code = git_tools.run_shell_return_code(cmd1)
