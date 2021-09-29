@@ -126,7 +126,6 @@ export default {
           .logo {
             height: 80px;
             vertical-align: top;
-            margin-right: 16px;
             border-style: none;
           }
 

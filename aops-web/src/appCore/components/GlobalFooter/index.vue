@@ -11,7 +11,7 @@
       </div>
     </template>
     <template v-slot:copyright>
-      logo
+      <img src="~@/assets/horizontal-left.png" style="height: 20px" class="logo" alt="logo">
     </template>
   </global-footer>
 </template>
