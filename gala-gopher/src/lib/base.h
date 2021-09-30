@@ -75,8 +75,10 @@ typedef enum {
     PROBE_CHK_MAX
 } ProbeStartCheckType;
 
-#define GALA_CONF_PATH "/opt/gala-gopher/gala-gopher.conf"
 #define GALA_META_DIR_PATH "/opt/gala-gopher/meta"
+#define GALA_CONF_PATH_DEFAULT "/opt/gala-gopher/gala-gopher.conf"
+
+char *g_galaConfPath;
 
 #endif
 

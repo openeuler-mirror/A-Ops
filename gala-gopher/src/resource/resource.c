@@ -2,6 +2,7 @@
 #include <string.h>
 #include <stdlib.h>
 #include "resource.h"
+#include "base.h"
 
 #if GALA_GOPHER_INFO("inner func")
 static int ConfigMgrInit(ResourceMgr *resourceMgr);
@@ -31,6 +32,8 @@ typedef struct tagSubModuleInitor{
     void (*subModuleDeinitFunc)(ResourceMgr *);
 } SubModuleInitor;
 
+extern char* g_galaConfPath;
+
 SubModuleInitor gSubModuleInitorTbl[] = {
     { ConfigMgrInit,        ConfigMgrDeinit },      // config must be the first
     { ProbeMgrInit,         ProbeMgrDeinit },
@@ -57,10 +60,12 @@ ResourceMgr *ResourceMgrCreate()
 
 void ResourceMgrDestroy(ResourceMgr *resourceMgr)
 {
-    if (resourceMgr == NULL) {
-        return;
+    if (resourceMgr != NULL) {
+        free(resourceMgr);
     }
-    free(resourceMgr);
+    if (g_galaConfPath != NULL) {
+        free(g_galaConfPath);
+    }
     return;
 }
 
@@ -107,7 +112,7 @@ static int ConfigMgrInit(ResourceMgr *resourceMgr)
         return -1;
     }
 
-    ret = ConfigMgrLoad(configMgr, GALA_CONF_PATH);
+    ret = ConfigMgrLoad(configMgr, g_galaConfPath);
     if (ret != 0) {
         ConfigMgrDestroy(configMgr);
         printf("[RESOURCE] load gala configuration failed.\n");
