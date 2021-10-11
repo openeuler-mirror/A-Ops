@@ -7,6 +7,7 @@ MESSAGE("ENV PROBES_META_LIST:\n"  ${PROBES_META_LIST})
 
 SET(EXECUTABLE_OUTPUT_PATH ../../../)
 SET(EXECUTABLE_TARGET gala-gopher)
+SET(EXECUTABLE_TARGET_CMD gopher-ctl)
 
 SET(SRC_DIR         ../../src)
 SET(BASE_DIR        ${SRC_DIR}/lib)
@@ -20,6 +21,7 @@ SET(META_DIR        ${SRC_DIR}/lib/meta)
 SET(KAFKA_DIR       ${SRC_DIR}/lib/kafka)
 SET(PROBE_DIR       ${SRC_DIR}/lib/probe)
 SET(IMDB_DIR        ${SRC_DIR}/lib/imdb)
+SET(CMD_DIR         ${SRC_DIR}/cmd)
 
 SET(LIBRDKAFKA_DIR /usr/include/librdkafka)
 
@@ -42,7 +44,11 @@ SET(SOURCES main.c daemon.c
     ${PROBE_DIR}/probe.c
     ${PROBE_DIR}/extend_probe.c
     ${IMDB_DIR}/imdb.c
+    
+    ${CMD_DIR}/server.c
 )
+
+SET(SOURCE_CMD ${CMD_DIR}/client.c)
 
 FOREACH(FILE ${PROBES_C_LIST})
     SET(SOURCES ${SOURCES} ${FILE})
@@ -50,6 +56,8 @@ ENDFOREACH()
 MESSAGE("SOURCES:\n" ${SOURCES})
 
 ADD_EXECUTABLE(${EXECUTABLE_TARGET} ${SOURCES})
+ADD_EXECUTABLE(${EXECUTABLE_TARGET_CMD} ${SOURCE_CMD})
+
 TARGET_INCLUDE_DIRECTORIES(${EXECUTABLE_TARGET} PRIVATE
     ${BASE_DIR}
     ${RESOURCE_DIR}
@@ -65,6 +73,8 @@ TARGET_INCLUDE_DIRECTORIES(${EXECUTABLE_TARGET} PRIVATE
     ${PROBE_DIR}
     ${IMDB_DIR}
     ${LIBRDKAFKA_DIR}
+
+    ${CMD_DIR}
 )
 
 TARGET_LINK_LIBRARIES(${EXECUTABLE_TARGET} PRIVATE config pthread dl rdkafka microhttpd)

@@ -43,6 +43,9 @@ typedef struct {
 
     // web server
     WebServer *webServer;
+
+    // ctl server
+    pthread_t ctl_tid;
 } ResourceMgr;
 
 ResourceMgr *ResourceMgrCreate();
