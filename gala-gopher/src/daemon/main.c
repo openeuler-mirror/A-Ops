@@ -15,6 +15,7 @@
 #include <stdio.h>
 #include <pthread.h>
 #include <string.h>
+#include <getopt.h>
 #include <errno.h>
 #include "daemon.h"
 #include "base.h"

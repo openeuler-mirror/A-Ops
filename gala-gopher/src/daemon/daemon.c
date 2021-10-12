@@ -17,8 +17,12 @@
 #include <string.h>
 #include <sys/prctl.h>
 #include <unistd.h>
+#include <sys/un.h>
+#include <sys/socket.h>
+
 
 #include "daemon.h"
+#include "server.h"
 
 #if GALA_GOPHER_INFO("inner func declaration")
 static void *DaemonRunIngress(void *arg);
@@ -162,6 +166,14 @@ int DaemonRun(ResourceMgr *mgr)
         printf("[DAEMON] create extend probe %s thread success.\n", mgr->extendProbeMgr->probes[i]->name);
     }
 
+    //6. start CmdServer thread
+    ret = pthread_create(&mgr->ctl_tid, NULL, CmdServer, NULL);
+    if (ret != 0) {
+        printf("[DAEMON] create cmd_server thread failed. errno: %d\n", errno);
+        return -1;
+    }
+    printf("[DAEMON] create cmd_server thread success.\n");
+
     return 0;
 }
 
@@ -182,6 +194,9 @@ int DaemonWaitDone(ResourceMgr *mgr)
     for (int i = 0; i < mgr->extendProbeMgr->probesNum; i++) {
         pthread_join(mgr->extendProbeMgr->probes[i]->tid, NULL);
     }
+
+    // 5.wait ctl thread done
+    pthread_join(mgr->ctl_tid, NULL);
 
     return 0;
 }
