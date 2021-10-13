@@ -3,17 +3,21 @@
 #include <stdio.h>
 #include <unistd.h>
 #include <sys/resource.h>
-#include <bpf/libbpf.h>
+
+#ifdef BPF_PROG_KERN
+#undef BPF_PROG_KERN
+#endif
+
+#ifdef BPF_PROG_USER
+#undef BPF_PROG_USER
+#endif
+
+#include "bpf.h"
 #include "trace_lvs.skel.h"
 #include "trace_lvs.h"
-#include "util.h"
 
 #define METRIC_NAME_LVS_LINK "lvs_link"
 
-static int libbpf_print_fn(enum libbpf_print_level level, const char *format, va_list args)
-{
-    return vfprintf(stderr, format, args);
-}
 
 static volatile sig_atomic_t stop;
 
@@ -165,37 +169,13 @@ void print_ipvs_collect(int map_fd)
 
 int main(int argc, char **argv)
 {
-    struct trace_lvs_bpf *skel;
-    int err = -1;
     int collect_map_fd = -1;
-    
-    /* Set up libbpf errors and debug info callback */
-    libbpf_set_print(libbpf_print_fn);
 
-	#if UNIT_TESTING
-    /* Bump RLIMIT_MEMLOCK  allow BPF sub-system to do anything */
-    if (set_memlock_rlimit() == 0) {
-		return NULL;
-	}
-	#endif
-
-    /* Open load and verify BPF application */
-    skel = trace_lvs_bpf__open_and_load();
-    if (!skel) {
-        fprintf(stderr, "Failed to open BPF skeleton\n");
-        return 1;
-    }
-
-    /* Attach tracepoint handler */
-    err = trace_lvs_bpf__attach(skel);
-    if (err) {
-        fprintf(stderr, "Failed to attach BPF skeleton\n");
-        goto cleanup;
-    }
+	LOAD(trace_lvs);
 
     if (signal(SIGINT, sig_int) == SIG_ERR) {
         fprintf(stderr, "can't set signal handler: %s\n", strerror(errno));
-        goto cleanup;
+        goto err;
     }
 
     /* create collect hash map */
@@ -203,18 +183,18 @@ int main(int argc, char **argv)
         bpf_create_map(BPF_MAP_TYPE_HASH, sizeof(struct collect_key), sizeof(struct collect_value), 8192, 0);
     if (collect_map_fd < 0) {
         fprintf(stderr, "bpf_create_map collect map fd failed.\n");
-        goto cleanup;
+        goto err;
     }
 
     printf("Successfully started! \n");
     
     while (!stop) {
-        pull_probe_data(bpf_map__fd(skel->maps.lvs_link_map), collect_map_fd);
+        pull_probe_data(GET_MAP_FD(lvs_link_map), collect_map_fd);
         print_ipvs_collect(collect_map_fd);
         sleep(5);
     }
 
-cleanup:
-    trace_lvs_bpf__destroy(skel);
-    return -err;
+err:
+    UNLOAD(trace_lvs);
+    return 0;
 }

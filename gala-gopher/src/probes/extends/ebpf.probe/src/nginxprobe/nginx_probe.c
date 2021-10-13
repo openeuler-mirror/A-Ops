@@ -6,29 +6,21 @@
 #include <unistd.h>
 #include <string.h>
 #include <sys/resource.h>
-#include <bpf/libbpf.h>
+#ifdef BPF_PROG_KERN
+#undef BPF_PROG_KERN
+#endif
+
+#ifdef BPF_PROG_USER
+#undef BPF_PROG_USER
+#endif
+
+#include "bpf.h"
 #include "nginx_probe.skel.h"
 #include "nginx_probe.h"
-#include "util.h"
+#include "args.h"
 
-static int libbpf_print_fn(enum libbpf_print_level level, const char *format, va_list args)
-{
-    return vfprintf(stderr, format, args);
-}
 
-static void bump_memlock_rlimit(void)
-{
-    struct rlimit rlim_new = {
-        .rlim_cur = RLIM_INFINITY,
-        .rlim_max = RLIM_INFINITY,
-    };
-
-    if (setrlimit(RLIMIT_MEMLOCK, &rlim_new)) {
-        fprintf(stderr, "Failed to increase RLIMIT_MEMLOCK limit!\n");
-        exit(1);
-    }
-}
-
+static struct probe_params params = {.period = 5};
 static volatile bool exiting = false;
 static void sig_handler(int sig)
 {
@@ -92,21 +84,6 @@ void pull_probe_data(int map_fd, int statistic_map_fd)
     return;
 }
 
-unsigned int g_print_interval_sec = 5;
-
-void ngxprobe_arg_parse(char opt, char *arg, int idx)
-{
-    if (opt != 't' || !arg) {
-        return;
-    }
-
-    unsigned int interval = (unsigned int)atoi(arg);
-    if (interval < MIN_PRINT_INTERVAL || interval > MAX_PRINT_INTERVAL) {
-        return;
-    }
-    g_print_interval_sec = interval;
-    return;
-}
 
 #define METRIC_STATISTIC_NAME "nginx_link"
 void print_statistic_map(int fd)
@@ -155,6 +132,7 @@ void print_statistic_map(int fd)
     return;
 }
 
+#if 0
 int attach_l4_probe(struct nginx_probe_bpf *skel)
 {
     int err;
@@ -230,34 +208,30 @@ int attach_close_probe(struct nginx_probe_bpf *skel)
     }
     return 1;
 }
-
+#endif
 int main(int argc, char **argv)
 {
-    int ret;
+	int err;
     int map_fd = -1;
-    struct nginx_probe_bpf *skel;
 
-    ret = args_parse(argc, argv, "t:", ngxprobe_arg_parse);
-    if (ret != 0) {
+    err = args_parse(argc, argv, "t:", &params);
+    if (err != 0) {
         return -1;
     }
+    printf("arg parse interval time:%us\n", params.period);
 
-    /* Set up libbpf errors and debug info callback */
-    libbpf_set_print(libbpf_print_fn);
-
-    /* Bump RLIMIT_MEMLOCK to allow BPF sub-system to do anything */
-    bump_memlock_rlimit();
+	LOAD(nginx_probe);
 
     /* Clean handling of Ctrl-C */
     signal(SIGINT, sig_handler);
     signal(SIGTERM, sig_handler);
 
-    /* Load and verify BPF application */
-    skel = nginx_probe_bpf__open_and_load();
-    if (!skel) {
-        fprintf(stderr, "Failed to open and load BPF skeleton\n");
-        return 1;
-    }
+	UBPF_ATTACH(nginx_probe, nginx, ngx_stream_proxy_init_upstream);
+	UBPF_RET_ATTACH(nginx_probe, nginx, ngx_stream_proxy_init_upstream);
+	UBPF_ATTACH(nginx_probe, nginx, ngx_http_upstream_handler);
+	UBPF_ATTACH(nginx_probe, nginx, ngx_close_connection);
+
+#if 0
 
     ret |= attach_l4_probe(skel);
     ret |= attach_l7_probe(skel);
@@ -269,28 +243,28 @@ int main(int argc, char **argv)
     if (ret == 0) {
         goto cleanup;
     }
-
+#endif
     /* create ngx statistic map_fd */
     map_fd = bpf_create_map(
         BPF_MAP_TYPE_HASH, sizeof(struct ngx_statistic_key), sizeof(struct ngx_statistic), STATISTIC_MAX_ENTRIES, 0);
     if (map_fd < 0) {
         printf("Failed to create statistic map fd.\n");
-        goto cleanup;
+        goto err;
     }
 
     printf("Successfully started!\n");
 
     /* try to hit probe info */
     while (!exiting) {
-        pull_probe_data(bpf_map__fd(skel->maps.hs), map_fd);
+        pull_probe_data(GET_MAP_FD(hs), map_fd);
         print_statistic_map(map_fd);
-        sleep(g_print_interval_sec);
+        sleep(params.period);
     }
 
-cleanup:
+err:
     if (map_fd > 0) {
         close(map_fd);
     }
-    nginx_probe_bpf__destroy(skel);
-    return ret <= 0 ? -1 : 0;
+    UNLOAD(nginx_probe);
+    return 0;
 }

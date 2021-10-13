@@ -3,31 +3,25 @@
 #include <stdio.h>
 #include <unistd.h>
 #include <sys/resource.h>
-#include <bpf/libbpf.h>
+
+#ifdef BPF_PROG_KERN
+#undef BPF_PROG_KERN
+#endif
+
+#ifdef BPF_PROG_USER
+#undef BPF_PROG_USER
+#endif
+
+#include "bpf.h"
+
 #include "trace_haproxy.skel.h"
 #include "trace_haproxy.h"
-#include "util.h"
+#include "args.h"
 
 #define METRIC_NAME_HAPROXY_LINK "haproxy_link"
 
-static int libbpf_print_fn(enum libbpf_print_level level, const char *format, va_list args)
-{
-    return vfprintf(stderr, format, args);
-}
 
-static void bump_memlock_rlimit(void)
-{
-    struct rlimit rlim_new = {
-        .rlim_cur   = RLIM_INFINITY,
-        .rlim_max   = RLIM_INFINITY,
-    };
-
-    if (setrlimit(RLIMIT_MEMLOCK, &rlim_new)) {
-        fprintf(stderr, "Haproxy Failed to increase RLIMIT_MEMLOCK limit!\n");
-        exit(1);
-    }
-}
-
+static struct probe_params params = {.period = 5};
 static volatile bool exiting = false;
 static void sig_handler(int sig)
 {
@@ -161,107 +155,44 @@ static void print_haproxy_collect(int map_fd)
     return;
 }
 
-/* 输出间隔 xx s */
-#define BPF_MAX_OUTPUT_INTERVAL     (3600)
-#define BPF_MIN_OUTPUT_INTERVAL     (1)
-unsigned int g_output_interval_sec = 5;
-static void haproxyprobe_arg_parse(char opt, char *arg, int idx)
-{
-    if (opt != 't' || !arg) {
-        return;
-    }
 
-    unsigned int interval = (unsigned int)atoi(arg);
-    if (interval < BPF_MIN_OUTPUT_INTERVAL || interval > BPF_MAX_OUTPUT_INTERVAL) {
-        return;
-    }
-    g_output_interval_sec = interval;
-    return;
-}
 
 int main(int argc, char **argv)
 {
-    struct trace_haproxy_bpf *skel;
-    long uprobe_offset1 = -1;
-    long uprobe_offset2 = -1;
     int err = -1;
     int collect_map_fd = -1;
-    char bin_file_path[CMD_LEN] = {0};
 
-    err = args_parse(argc, argv, "t:", haproxyprobe_arg_parse);
+    err = args_parse(argc, argv, "t:", &params);
     if (err != 0) {
         return -1;
     }
-    printf("arg parse interval time:%us\n", g_output_interval_sec);
+    printf("arg parse interval time:%us\n", params.period);
 
-    /* Set up libbpf errors and debug info callback */
-    libbpf_set_print(libbpf_print_fn);
-
-    /* Bump RLIMIT_MEMLOCK to allow BPF sub-system to do anything */
-    bump_memlock_rlimit();
+	LOAD(trace_haproxy);
 
     /* Cleaner handling of Ctrl-C */
     signal(SIGINT, sig_handler);
     signal(SIGTERM, sig_handler);
 
-    /* Load and verify BPF application */
-    skel = trace_haproxy_bpf__open_and_load();
-    if (!skel) {
-        fprintf(stderr, "Haproxy Failed to open and load BPF skeleton\n");
-        return 1;
-    }
-
-    uprobe_offset1 = get_func_offset("haproxy", "back_establish", bin_file_path);
-	if (uprobe_offset1 <= 0) {
-        printf("Failed to get func(back_establish) offset.\n");
-        return 0;
-    }
-    uprobe_offset2 = get_func_offset("haproxy", "stream_free", bin_file_path);
-    if (uprobe_offset2 <= 0) {
-        printf("Failed to get func(stream_free) offset.\n");
-        return 0;
-    }
-	//fprintf(stderr, "HAPROXY DEBUG GET OFFSET1 = %ld OFFSET2 = %ld\n", uprobe_offset1, uprobe_offset2);
-
-    /* Attach tracepoint handler */
-    skel->links.haproxy_probe_estabilsh = bpf_program__attach_uprobe(skel->progs.haproxy_probe_estabilsh,
-                            false /* not uretprobe */,
-                            -1 /* self pid */,
-                            bin_file_path,
-                            uprobe_offset1);
-    err = libbpf_get_error(skel->links.haproxy_probe_estabilsh);
-    if (err) {
-        fprintf(stderr, "Haproxy Failed to attach 1st uprobe: %d\n", err);
-        goto cleanup;
-    }
-    
-    skel->links.haproxy_probe_close = bpf_program__attach_uprobe(skel->progs.haproxy_probe_close,
-                            false /* not uretprobe */,
-                            -1 /* self pid */,
-                            bin_file_path,
-                            uprobe_offset2);
-    err = libbpf_get_error(skel->links.haproxy_probe_close);
-    if (err) {
-        fprintf(stderr, "Haproxy Failed to attach 2nd uprobe: %d\n", err);
-        goto cleanup;
-    }
+	UBPF_ATTACH(trace_haproxy, haproxy, back_establish);
+	UBPF_ATTACH(trace_haproxy, haproxy, stream_free);
 
     /* create collect hash map */
     collect_map_fd = 
         bpf_create_map(BPF_MAP_TYPE_HASH, sizeof(struct collect_key), sizeof(struct collect_value), 8192, 0);
     if (collect_map_fd < 0) {
         fprintf(stderr, "Haproxy Failed to create map.\n");
-        goto cleanup;
+        goto err;
     }
     
     while (!exiting) {
-        pull_probe_data(bpf_map__fd(skel->maps.haproxy_link_map), collect_map_fd);
+        pull_probe_data(GET_MAP_FD(haproxy_link_map), collect_map_fd);
         print_haproxy_collect(collect_map_fd);
-        sleep(g_output_interval_sec);
+        sleep(params.period);
     }
 
-cleanup:
+err:
 /* Clean up */
-    trace_haproxy_bpf__destroy(skel);
-    return -err;
+    UNLOAD(trace_haproxy);
+    return 0;
 }

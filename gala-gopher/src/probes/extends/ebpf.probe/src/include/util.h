@@ -17,13 +17,6 @@
 
 #include <bpf/libbpf.h>
 /* if eBPF probe need to be integrated by gala-gopher, should redefinition the macro*/
-#define UNIT_TESTING 1
-
-#if UNIT_TESTING
-#define EBPF_RLIM_INFINITY  RLIM_INFINITY
-#else
-#define EBPF_RLIM_INFINITY  100*1024*1024 // 100M
-#endif
 
 #define BPF_UTIL_DESC(desc) 1
 
@@ -40,8 +33,6 @@
         (ntohs(addr[6]) >> 8), (ntohs(addr[6]) & 0xff), (ntohs(addr[7]) >> 8), (ntohs(addr[7]) & 0xff)
 #define NIP6_FMT "%04x:%04x:%04x:%04x:%04x:%04x:%u.%u.%u.%u"
 
-typedef void (*arg_opt_proc_func)(char opt, char *arg, int idx);
-int args_parse(int argc, char **argv, char *opt_str, arg_opt_proc_func opt_proc);
 
 /* get uprobe func offset */
 int get_func_offset(char *proc_name, char *func_name, char *bin_file_path);
@@ -49,8 +40,5 @@ int get_func_offset(char *proc_name, char *func_name, char *bin_file_path);
 char *get_cur_time();
 
 void ip_str(unsigned int family, unsigned char *ip, unsigned char *ip_str, unsigned int ip_str_size);
-int set_memlock_rlimit(void);
 
-struct perf_buffer* create_pref_buffer(int map_fd, perf_buffer_sample_fn cb);
-void poll_pb(struct perf_buffer *pb, int timeout_ms);
 #endif

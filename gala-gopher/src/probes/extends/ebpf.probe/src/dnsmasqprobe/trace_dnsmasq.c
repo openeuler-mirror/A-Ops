@@ -3,31 +3,23 @@
 #include <stdio.h>
 #include <unistd.h>
 #include <sys/resource.h>
-#include <bpf/libbpf.h>
+#ifdef BPF_PROG_KERN
+#undef BPF_PROG_KERN
+#endif
+
+#ifdef BPF_PROG_USER
+#undef BPF_PROG_USER
+#endif
+
+#include "bpf.h"
 #include "trace_dnsmasq.skel.h"
 #include "trace_dnsmasq.h"
-#include "util.h"
+#include "args.h"
 
 #define METRIC_NAME_DNSMASQ_LINK    "dnsmasq_link"
 
-static int libbpf_print_fn(enum libbpf_print_level level, const char *format, va_list args)
-{
-    return vfprintf(stderr, format, args);
-}
 
-static void bump_memlock_rlimit(void)
-{
-    struct rlimit rlim_new = {
-        .rlim_cur	= RLIM_INFINITY,
-        .rlim_max	= RLIM_INFINITY,
-    };
-
-    if (setrlimit(RLIMIT_MEMLOCK, &rlim_new)) {
-        fprintf(stderr, "Failed to increase RLIMIT_MEMLOCK limit!\n");
-        exit(1);
-    }
-}
-
+static struct probe_params params = {.period = 5};
 static volatile bool exiting = false;
 static void sig_handler(int sig)
 {
@@ -116,85 +108,38 @@ static void print_dnsmasq_collect(int map_fd)
     return;
 }
 
-/* 输出间隔 xx s */
-#define BPF_MAX_OUTPUT_INTERVAL     (3600)
-#define BPF_MIN_OUTPUT_INTERVAL     (1)
-unsigned int g_output_interval_sec = 5;
-void dnsmasqprobe_arg_parse(char opt, char *arg, int idx)
-{
-    if (opt != 't' || !arg) {
-        return;
-    }
-
-    unsigned int interval = (unsigned int)atoi(arg);
-    if (interval < BPF_MIN_OUTPUT_INTERVAL || interval > BPF_MAX_OUTPUT_INTERVAL) {
-        return;
-    }
-    g_output_interval_sec = interval;
-    return;
-}
 
 int main(int argc, char **argv)
 {
-    struct trace_dnsmasq_bpf *skel;
-    long uprobe_offset = -1;
     int err = -1;
     int collect_map_fd = -1;
-    char bin_file_path[256] = {0};
 
-    err = args_parse(argc, argv, "t:", dnsmasqprobe_arg_parse);
+    err = args_parse(argc, argv, "t:", &params);
     if (err != 0) {
         return -1;
     }
-    printf("arg parse interval time:%us\n", g_output_interval_sec);
+    printf("arg parse interval time:%us\n", params.period);
 
-    /* Set up libbpf errors and debug info callback */
-    libbpf_set_print(libbpf_print_fn);
-
-    /* Bump RLIMIT_MEMLOCK to allow BPF sub-system to do anything */
-    bump_memlock_rlimit();
+	LOAD(trace_dnsmasq);
 
     /* Cleaner handling of Ctrl-C */
     signal(SIGINT, sig_handler);
     signal(SIGTERM, sig_handler);
 
-    /* Load and verify BPF application */
-    skel = trace_dnsmasq_bpf__open_and_load();
-    if (!skel) {
-        fprintf(stderr, "Failed to open and load BPF skeleton\n");
-        return 1;
-    }
-
-    uprobe_offset = get_func_offset("dnsmasq", "send_from", bin_file_path);
-	if (uprobe_offset <= 0) {
-        printf("Failed to get func(send_from) offset.\n");
-        return 0;
-    }
-    
-    /* Attach tracepoint handler */
-    skel->links.dnsmasq_probe_send_from = bpf_program__attach_uprobe(skel->progs.dnsmasq_probe_send_from,
-                            false /* not uretprobe */,
-                            -1 /* self pid */,
-                            bin_file_path,
-                            uprobe_offset);
-    err = libbpf_get_error(skel->links.dnsmasq_probe_send_from);
-    if (err) {
-        fprintf(stderr, "Failed to attach uprobe: %d\n", err);
-        goto cleanup;
-    }
+	UBPF_ATTACH(trace_dnsmasq, dnsmasq, send_from);
 
     /* create collect hash map */
     collect_map_fd = 
         bpf_create_map(BPF_MAP_TYPE_HASH, sizeof(struct collect_key), sizeof(struct collect_value), 8192, 0);
     
     while (!exiting) {
-        pull_probe_data(bpf_map__fd(skel->maps.dns_query_link_map), collect_map_fd);
+        pull_probe_data(GET_MAP_FD(dns_query_link_map), collect_map_fd);
         print_dnsmasq_collect(collect_map_fd);
-        sleep(g_output_interval_sec);
+        sleep(params.period);
     }
 
-cleanup:
+err:
 /* Clean up */
-    trace_dnsmasq_bpf__destroy(skel);
+    UNLOAD(trace_dnsmasq);
     return -err;
 }

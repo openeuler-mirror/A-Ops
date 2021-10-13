@@ -1,18 +1,14 @@
-#include "vmlinux.h"
-#include <bpf/bpf_helpers.h>
-#include <bpf/bpf_tracing.h>
-#include <bpf/bpf_core_read.h>
+#ifdef BPF_PROG_USER
+#undef BPF_PROG_USER
+#endif
+#define BPF_PROG_KERN
+#include "bpf.h"
 #include "tcpprobe.h"
 
 char g_linsence[] SEC("license") = "GPL";
 
-#define _(P)                                   		  \
-    ({                                         		  \
-        typeof(P) val;                         		  \
-        bpf_probe_read_kernel(&val, sizeof(val), &P); \
-        val;                                   		  \
-    })
-
+// Used to identifies the link TCP pid and fd.
+// Temporary MAP. Data exists only in the startup phase.
 struct bpf_map_def SEC("maps") long_link_map = {
     .type = BPF_MAP_TYPE_HASH,
     .key_size = sizeof(u32),
@@ -20,6 +16,8 @@ struct bpf_map_def SEC("maps") long_link_map = {
     .max_entries = MAX_LONG_LINK_PROCS,
 };
 
+// Used to identifies the TCP 5-tuple.
+// Should be used for global MAP.
 struct bpf_map_def SEC("maps") link_map = {
     .type = BPF_MAP_TYPE_HASH,
     .key_size = sizeof(struct link_key),
@@ -27,6 +25,8 @@ struct bpf_map_def SEC("maps") link_map = {
     .max_entries = LINK_MAX_ENTRIES,
 };
 
+// Used to identifies the TCP sock object, include PID, COMM, and role of the SOCK object.
+// Equivalent to TCP 5-tuple objects.
 struct bpf_map_def SEC("maps") sock_map = {
     .type = BPF_MAP_TYPE_HASH,
     .key_size = sizeof(struct sock *),
@@ -34,7 +34,7 @@ struct bpf_map_def SEC("maps") sock_map = {
     .max_entries = LINK_MAX_ENTRIES,
 };
 
-/* 监听端口列表 */
+// Used to identifies the TCP listen port.
 struct bpf_map_def SEC("maps") listen_port_map = {
     .type = BPF_MAP_TYPE_HASH,
     .key_size = sizeof(unsigned short),
@@ -182,25 +182,12 @@ static void bpf_add_long_link(u32 pid)
     bpf_add_each_long_link(l->fds[7], l->fd_role[7]);
     bpf_add_each_long_link(l->fds[8], l->fd_role[8]);
     bpf_add_each_long_link(l->fds[9], l->fd_role[9]);
-#if 0
-    int i;
-    for (i = 0; i < MAX_LONG_LINK_FDS_PER_PROC; i++) {
-        if (l->cnt <= i)  {
-            break;
-        }
 
-        struct sock *sk = bpf_get_sock_from_fd(l->fds[i]);
-        if (sk) {
-            bpf_add_link(sk, l->fd_role[i]);
-        }
-    }
-#endif
     bpf_map_delete_elem(&long_link_map, &pid);
     return;
 }
 
-SEC("kretprobe/inet_csk_accept")
-void inet_csk_accept_retprobe(struct pt_regs *ctx)
+KRETPROBE(inet_csk_accept, pt_regs)
 {
     struct sock *sk = (struct sock *)PT_REGS_RC(ctx);
     u32 pid = bpf_get_current_pid_tgid() >> 32;
@@ -216,8 +203,7 @@ void inet_csk_accept_retprobe(struct pt_regs *ctx)
     return;
 }
 
-SEC("kprobe/tcp_set_state")
-void tcp_set_state_probe(struct pt_regs *ctx)
+KPROBE(tcp_set_state, pt_regs)
 {
     u16 new_state = (u16)PT_REGS_PARM2(ctx);
     struct sock *sk = (struct sock *)PT_REGS_PARM1(ctx);
@@ -281,14 +267,13 @@ static void bpf_update_link_metric(struct pt_regs *ctx)
     return;
 }
 
-SEC("kprobe/tcp_sendmsg")
-void tcp_sendmsg_probe(struct pt_regs *ctx)
+KPROBE(tcp_sendmsg, pt_regs)
 {
     bpf_update_link_metric(ctx);
 }
 
-SEC("kprobe/tcp_recvmsg")
-void tcp_recvmsg_probe(struct pt_regs *ctx)
+
+KPROBE(tcp_recvmsg, pt_regs)
 {
     bpf_update_link_metric(ctx);
 }

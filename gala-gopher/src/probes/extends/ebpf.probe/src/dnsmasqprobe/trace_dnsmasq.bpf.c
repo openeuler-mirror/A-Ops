@@ -1,17 +1,13 @@
 // SPDX-License-Identifier: GPL-2.0 OR BSD-3-Clause
 /* Copyright (c) 2021 Huawei */
-#include <linux/bpf.h>
-#include <linux/ptrace.h>
-#include <bpf/bpf_helpers.h>
-#include <bpf/bpf_tracing.h>
+
+#ifdef BPF_PROG_KERN
+#undef BPF_PROG_KERN
+#endif
+#define BPF_PROG_USER
+#include "bpf.h"
 #include "trace_dnsmasq.h"
 
-#if defined(__TARGET_ARCH_x86)
-#define PT_REGS_PARM6(x) ((x)->r9)
-#elif defined(__TARGET_ARCH_arm64)
-#define PT_REGS_ARM64 const volatile struct user_pt_regs
-#define PT_REGS_PARM6(x) (((PT_REGS_ARM64 *)(x))->regs[5])
-#endif
 
 char g_license[] SEC("license") = "GPL";
 
@@ -22,8 +18,7 @@ struct bpf_map_def SEC("maps") dns_query_link_map = {
     .max_entries = LINK_MAX_ENTRIES,
 };
 
-SEC("uprobe/send_from")
-void dnsmasq_probe_send_from(struct pt_regs *ctx)
+UPROBE(send_from, pt_regs)
 {
     union mysockaddr    *to_p;
     union all_addr      *source_p;
