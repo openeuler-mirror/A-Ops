@@ -1,15 +1,10 @@
-#include <linux/bpf.h>
-#include <linux/ptrace.h>
-#include <bpf/bpf_helpers.h>
-#include <bpf/bpf_tracing.h>
+#ifdef BPF_PROG_KERN
+#undef BPF_PROG_KERN
+#endif
+#define BPF_PROG_USER
+#include "bpf.h"
 #include "nginx_probe.h"
 
-#define _(P)                                   		\
-    ({                                         		\
-        typeof(P) val;                         		\
-        bpf_probe_read_user(&val, sizeof(val), &P); \
-        val;                                   		\
-    })
 char LICENSE[] SEC("license") = "GPL";
 /* 4 LB
     ngx_stream_proxy_connect
@@ -50,8 +45,7 @@ static void bpf_copy_ip_addr(struct sockaddr *addr, struct ip_addr *ip)
     return;
 }
 
-SEC("uprobe/ngx_http_upstream_handler")
-void ngx_http_upstream_handler_probe(struct pt_regs *ctx)
+UPROBE(ngx_http_upstream_handler, pt_regs)
 {
     __u64 tid = bpf_get_current_pid_tgid();
     struct ngx_event_s *evt = (struct ngx_event_s *)PT_REGS_PARM1(ctx);
@@ -102,8 +96,7 @@ void ngx_http_upstream_handler_probe(struct pt_regs *ctx)
     return;
 }
 
-SEC("uprobe/ngx_stream_proxy_init_upstream")
-void ngx_stream_proxy_init_upstream_probe(struct pt_regs *ctx)
+UPROBE(ngx_stream_proxy_init_upstream, pt_regs)
 {
     struct ngx_stream_upstream_s *stream;
     __u64 tid = bpf_get_current_pid_tgid();
@@ -112,9 +105,7 @@ void ngx_stream_proxy_init_upstream_probe(struct pt_regs *ctx)
     bpf_map_update_elem(&para_hs, &tid, &s, BPF_ANY);
 }
 
-SEC("uretprobe/ngx_stream_proxy_init_upstream")
-void ngx_stream_proxy_init_upstream_retprobe(struct pt_regs *ctx)
-
+URETPROBE(ngx_stream_proxy_init_upstream, pt_regs)
 {
     struct ngx_connection_s *conn;
     struct ngx_connection_s *peer_conn;
@@ -168,8 +159,7 @@ void ngx_stream_proxy_init_upstream_retprobe(struct pt_regs *ctx)
     return;
 }
 
-SEC("uprobe/ngx_close_connection")
-void ngx_close_connection_probe(struct pt_regs *ctx)
+UPROBE(ngx_close_connection, pt_regs)
 {
     struct ngx_connection_s *conn = (struct ngx_connection_s *)PT_REGS_PARM1(ctx);
     struct ngx_metric *metric;

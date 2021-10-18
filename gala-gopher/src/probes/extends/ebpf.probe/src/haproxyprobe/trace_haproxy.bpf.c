@@ -1,19 +1,13 @@
 // SPDX-License-Identifier: GPL-2.0 OR BSD-3-Clause
 /* Copyright (c) 2021 Huawei */
-#include <linux/bpf.h>
-#include <linux/ptrace.h>
-#include <bpf/bpf_helpers.h>
-#include <bpf/bpf_tracing.h>
+#ifdef BPF_PROG_KERN
+#undef BPF_PROG_KERN
+#endif
+#define BPF_PROG_USER
+#include "bpf.h"
 #include "trace_haproxy.h"
 
 char g_license[] SEC("license") = "Dual BSD/GPL";
-
-#define _(P)                                            \
-    ({                                                  \
-        typeof(P) val;                                  \
-        bpf_probe_read_user(&val, sizeof(val), &P);   \
-        val;                                            \
-    })
 
 struct bpf_map_def SEC("maps") haproxy_link_map = {
     .type = BPF_MAP_TYPE_HASH,
@@ -95,8 +89,7 @@ static int haproxy_obtain_key_value(struct stream_s *s, struct link_key *key)
     return family;
 }
 
-SEC("uprobe/back_establish")
-void haproxy_probe_estabilsh(struct pt_regs *ctx)
+UPROBE(back_establish, pt_regs)
 {
     struct stream_s     *p = (struct stream_s *)PT_REGS_PARM1(ctx);
     struct session      *sess_p;
@@ -125,8 +118,7 @@ void haproxy_probe_estabilsh(struct pt_regs *ctx)
     return;
 }
 
-SEC("uprobe/stream_free")
-void haproxy_probe_close(struct pt_regs *ctx)
+UPROBE(stream_free, pt_regs)
 {
     struct stream_s *p = (struct stream_s *)PT_REGS_PARM1(ctx);
     struct link_key key = {0};

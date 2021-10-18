@@ -23,22 +23,6 @@
 #include "util.h"
 
 #define BUF_TMP_LEN 256
-#if BPF_UTIL_DESC("args parse")
-int args_parse(int argc, char **argv, char *opt_str, arg_opt_proc_func opt_proc)
-{
-    int ch;
-    if (!opt_str || !opt_proc) {
-        return -1;
-    }
-    while ((ch = getopt(argc, argv, opt_str)) != -1) {
-        if (!optarg) {
-            return -1;
-        }
-        opt_proc(ch, optarg, optind);
-    }
-    return 0;
-}
-#endif
 #if BPF_UTIL_DESC("get user space proc func offset")
 /*
  * 1. 使用 ps -e | grep /usr/sbin/nginx | awk '{print $1}'获得nginx进程ID
@@ -232,16 +216,3 @@ void ip_str(unsigned int family, unsigned char *ip, unsigned char *ip_str, unsig
 }
 #endif
 
-int set_memlock_rlimit(void)
-{
-    struct rlimit rlim_new = {
-        .rlim_cur	= EBPF_RLIM_INFINITY,
-        .rlim_max	= EBPF_RLIM_INFINITY,
-    };
-
-    if (setrlimit(RLIMIT_MEMLOCK, &rlim_new)) {
-        fprintf(stderr, "Failed to increase RLIMIT_MEMLOCK limit!\n");
-        return 0;
-    }
-	return 1;
-}

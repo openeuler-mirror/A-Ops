@@ -1,8 +1,8 @@
-#include "vmlinux.h"
-#include <bpf/bpf_helpers.h>
-#include <bpf/bpf_tracing.h>
-#include <bpf/bpf_core_read.h>
-
+#ifdef BPF_PROG_USER
+#undef BPF_PROG_USER
+#endif
+#define BPF_PROG_KERN
+#include "bpf.h"
 #include "killprobe.h"
 
 char g_linsence[] SEC("license") = "GPL";
@@ -30,8 +30,7 @@ struct bpf_map_def SEC("maps") monitor_killed_map = {
     .max_entries = MONITOR_PIDS_MAX_NUM,
 };
 
-SEC("kprobe/__x64_sys_kill")
-void sys_kill_probe(struct pt_regs *ctx)
+KPROBE(__x64_sys_kill, pt_regs)
 {
     pid_t killed_pid = (pid_t)PT_REGS_PARM1(ctx);
     int signal = (int)PT_REGS_PARM2(ctx);

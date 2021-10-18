@@ -4,18 +4,29 @@
 #include <unistd.h>
 #include <string.h>
 #include <sys/resource.h>
-#include <bpf/libbpf.h>
 
+#ifdef BPF_PROG_KERN
+#undef BPF_PROG_KERN
+#endif
+
+#ifdef BPF_PROG_USER
+#undef BPF_PROG_USER
+#endif
+
+#include "bpf.h"
 #include "tcpprobe.skel.h"
 #include "tcpprobe.h"
 #include "tcp.h"
-#include "util.h"
+#include "args.h"
 
-#define METRIC_NAME_TCP_LINK "tcp_link"
+#define OO_NAME "tcp_link" 	// Observation Object name
 
 #define FILTER_LISTEN_PORT 22
 #define FILTER_COMM "sshd"
 #define FILTER_COMM2 "broker"
+
+static volatile sig_atomic_t stop;
+static struct probe_params params = {.period = 5};
 
 static int __is_filter_listen_port(int port) {
     if (port == FILTER_LISTEN_PORT) {
@@ -34,13 +45,6 @@ static int __is_filter_comm(char *comm) {
     return 0;
 }
 
-static int libbpf_print_fn(enum libbpf_print_level level, const char *format, va_list args)
-{
-    return vfprintf(stderr, format, args);
-}
-
-
-static volatile sig_atomic_t stop;
 
 static void sig_int(int signo)
 {
@@ -172,7 +176,7 @@ void print_link_metric(int map_fd)
             ip_str(next_key.proto, (unsigned char *)&(next_key.s_ip), dst_ip_str, INET6_ADDRSTRLEN);
             fprintf(stdout,
                 "|%s|%u|%s|%d|%s|%s|%u|%u|%u|%llu|%llu|%u|%u|%u|%u|%u|\n",
-                METRIC_NAME_TCP_LINK,
+                OO_NAME,
                 next_key.pid,
                 data.comm,
                 data.role,
@@ -235,7 +239,7 @@ void bpf_update_long_link_info_to_map(int long_link_map_fd, int listen_port_map_
     tlps = get_listen_ports();
     if (tlps == NULL) {
         goto err;
-    }  
+    }
     
     /* insert listen ports into map */
     for (i = 0; i < tlps->tlp_num; i++) {
@@ -276,64 +280,23 @@ err:
 }
 
 
-/* 输出间隔 xx s */
-#define BPF_MAX_OUTPUT_INTERVAL     (3600)
-#define BPF_MIN_OUTPUT_INTERVAL     (1)
-unsigned int g_output_interval_sec = 5;
-
-void tcpprobe_arg_parse(char opt, char *arg, int idx)
-{
-    if (opt != 't' || !arg) {
-        return;
-    }
-
-    unsigned int interval = (unsigned int)atoi(arg);
-    if (interval < BPF_MIN_OUTPUT_INTERVAL || interval > BPF_MAX_OUTPUT_INTERVAL) {
-        return;
-    }
-    g_output_interval_sec = interval;
-    return;
-}
 int main(int argc, char **argv)
 {
-    struct tcpprobe_bpf *skel;
     int err = -1;
     int metric_map_fd = -1;
 
-    err = args_parse(argc, argv, "t:", tcpprobe_arg_parse);
+    err = args_parse(argc, argv, "t:", &params);
     if (err != 0) {
         return -1;
     }
+	
+    printf("arg parse interval time:%us\n", params.period);
 
-    printf("arg parse interval time:%us\n", g_output_interval_sec);
-
-    /* Set up libbpf errors and debug info callback */
-    libbpf_set_print(libbpf_print_fn);
-
-    #if UNIT_TESTING
-    /* Bump RLIMIT_MEMLOCK  allow BPF sub-system to do anything */
-    if (set_memlock_rlimit() == 0) {
-        return NULL;
-    }
-    #endif
-
-    /* Open load and verify BPF application */
-    skel = tcpprobe_bpf__open_and_load();
-    if (!skel) {
-        fprintf(stderr, "Failed to open BPF skeleton\n");
-        return 1;
-    }
-
-    /* Attach tracepoint handler */
-    err = tcpprobe_bpf__attach(skel);
-    if (err) {
-        fprintf(stderr, "Failed to attach BPF skeleton\n");
-        goto cleanup;
-    }
-
+	LOAD(tcpprobe);
+	
     if (signal(SIGINT, sig_int) == SIG_ERR) {
         fprintf(stderr, "can't set signal handler: %s\n", strerror(errno));
-        goto cleanup;
+        goto err;
     }
 
     /* create metric hs map */
@@ -341,24 +304,24 @@ int main(int argc, char **argv)
         bpf_create_map(BPF_MAP_TYPE_HASH, sizeof(struct metric_key), sizeof(struct metric_data), LINK_MAX_ENTRIES, 0);
     if (metric_map_fd < 0) {
         fprintf(stderr, "bpf_create_map metric map fd failed.\n");
-        goto cleanup;
+        goto err;
     }
 
     /* update long link info */
-    bpf_update_long_link_info_to_map(bpf_map__fd(skel->maps.long_link_map), bpf_map__fd(skel->maps.listen_port_map));
+    bpf_update_long_link_info_to_map(GET_MAP_FD(long_link_map), GET_MAP_FD(listen_port_map));
 
     printf("Successfully started!\n");
 
     while (!stop) {
-        pull_probe_data(bpf_map__fd(skel->maps.link_map), metric_map_fd);
+        pull_probe_data(GET_MAP_FD(link_map), metric_map_fd);
         print_link_metric(metric_map_fd);
-        sleep(g_output_interval_sec);
+        sleep(params.period);
     }
 
-cleanup:
+err:
     if (metric_map_fd >= 0) {
         close(metric_map_fd);
     }
-    tcpprobe_bpf__destroy(skel);
+    UNLOAD(tcpprobe);
     return -err;
 }

@@ -1,26 +1,14 @@
 // SPDX-License-Identifier: GPL-2.0 OR BSD-3-Clause
 /* Copyright (c) 2021 Huawei */
-#include "vmlinux.h"
-#include <bpf/bpf_helpers.h>
-#include <bpf/bpf_tracing.h>
-#include <bpf/bpf_core_read.h>
-#include "trace_lvs.h"
-
-#if defined(__TARGET_ARCH_x86)
-#define PT_REGS_PARM6(x) ((x)->r9)
-#elif defined(__TARGET_ARCH_arm64)
-#define PT_REGS_ARM64 const volatile struct user_pt_regs
-#define PT_REGS_PARM6(x) (((PT_REGS_ARM64 *)(x))->regs[5])
+#ifdef BPF_PROG_USER
+#undef BPF_PROG_USER
 #endif
+#define BPF_PROG_KERN
+#include "bpf.h"
+#include "trace_lvs.h"
 
 char g_linsence[] SEC("license") = "GPL";
 
-#define _(P)                                            \
-    ({                                                  \
-        typeof(P) val;                                  \
-        bpf_probe_read_kernel(&val, sizeof(val), &P);   \
-        val;                                            \
-    })
 
 struct bpf_map_def SEC("maps") lvs_link_map = {
     .type = BPF_MAP_TYPE_HASH,
@@ -104,8 +92,7 @@ static void ipvs_fnat_state_get_key(struct ip_vs_conn_fnat *p, struct link_key *
     return;
 }
 
-SEC("kprobe/ip_vs_conn_new")
-void ipvs_conn_probe(struct pt_regs *ctx)
+KPROBE(ip_vs_conn_new, pt_regs)
 {
     u16 f_key = IPVS_FLAGS_KEY_VAL;
 
@@ -122,8 +109,7 @@ void ipvs_conn_probe(struct pt_regs *ctx)
     return;
 }
 
-SEC("kretprobe/ip_vs_conn_new")
-void ipvs_conn_new_probe(struct pt_regs *ctx)
+KRETPROBE(ip_vs_conn_new, pt_regs)
 {
     u16 f_key = IPVS_FLAGS_KEY_VAL;
     char flags = IP_VS_CONN_F_LOCALNODE;
@@ -152,8 +138,7 @@ void ipvs_conn_new_probe(struct pt_regs *ctx)
     return;
 }
 
-SEC("kprobe/ip_vs_conn_expire")
-void ipvs_conn_expire_probe(struct pt_regs *ctx)
+KPROBE(ip_vs_conn_expire, pt_regs)
 {
     struct ip_vs_conn_fnat  *ip_vs_fnat_conn_p;
     struct ip_vs_conn       *ip_vs_conn_p;
