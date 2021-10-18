@@ -28,7 +28,7 @@ def tcp_entity_process():
         s_port = line_json.get("server_port")
         c_ip = line_json.get("client_ip")
         s_ip = line_json.get("server_ip")
-        if line_json.get("table_name") == "lvs_link":
+        if line_json.get("table_name") == "ipvs_link":
             v_ip = line_json.get("virtual_ip")
             l_ip = line_json.get("local_ip")
             s_nodes_table.setdefault((v_ip, s_port), {}).setdefault('h', hostname)
@@ -92,11 +92,15 @@ def lb_entity_process():
         else:
             c_ip = line_json.get("client_ip")
             v_ip = line_json.get("virtual_ip")
+            if table_name == "ipvs_link":
+                l_ip = line_json.get("local_ip")
+            else:
+                l_ip = v_ip
             s_ip = line_json.get("server_ip")
             s_port = line_json.get("server_port")
             v_port = line_json.get("virtual_port")
-            lb_tables.setdefault((c_ip, v_ip, s_ip, v_port, s_port), {}).setdefault("hname", hostname)
-            lb_tables.setdefault((c_ip, v_ip, s_ip, v_port, s_port), {}).setdefault("tname", table_name)
+            lb_tables.setdefault((c_ip, v_ip, l_ip, s_ip, v_port, s_port), {}).setdefault("hname", hostname)
+            lb_tables.setdefault((c_ip, v_ip, l_ip, s_ip, v_port, s_port), {}).setdefault("tname", table_name)
         lines = f.readline()
     return lb_tables
 
@@ -127,9 +131,10 @@ def node_entity_process():
             nodes_table[dst_node_id].get('l_edge').append((edge_id, "TCP_LINK"))
             if lb_tables is not None:
                 for lb_key in lb_tables.keys():
-                    if lb_key[0] == key[0] and lb_key[1] == key[1] and lb_key[3] == key[2]:
+                    if lb_key[0] == key[0] and lb_key[1] == key[1] and lb_key[4] == key[2]:
                         lb_tables.setdefault(lb_key, {}).setdefault('src', src_node_id)
-                    if lb_key[1] == key[0] and lb_key[2] == key[1] and lb_key[4] == key[2]:
+                        lb_tables.setdefault(lb_key, {}).setdefault('lb', dst_node_id)
+                    if lb_key[2] == key[0] and lb_key[3] == key[1] and lb_key[5] == key[2]:
                         lb_tables.setdefault(lb_key, {}).setdefault('dst', dst_node_id)
 
     if lb_tables is not None:
@@ -137,11 +142,11 @@ def node_entity_process():
             #print("lb----", key, lb_tables[key])
             lb_node_id = node_entity_name(lb_tables[key]['hname'], lb_tables[key]['tname'].split("_")[0], None)
             lb_tables.setdefault(key, {}).setdefault('on', lb_node_id)
-            if key[1] == "dnsmasq_link":
+            if lb_tables[key]['tname'] == "dnsmasq_link":
                 type = key[1].upper()
                 # Add process code here....
             else:
-                if lb_tables[key]['dst'] is not None and lb_tables[key]['src'] is not None:
+                if lb_tables[key].get('dst') is not None and lb_tables[key].get('src') is not None:
                     lb_id = edge_entity_name(lb_tables[key]['hname'], None, lb_tables[key]['dst'], None, lb_tables[key]['src'])
                     lb_tables.setdefault(key, {}).setdefault("lb_id", lb_id)
                     nodes_table.setdefault(lb_node_id, {}).setdefault('lb_edge', [])
