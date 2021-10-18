@@ -19,6 +19,7 @@ kafka_broker = cf.get("kafka", "broker")
 neo4j_addr = cf.get("neo4j", "address")
 neo4j_uname = cf.get("neo4j", "username")
 neo4j_pwd = cf.get("neo4j", "password")
+neo4j_timer = cf.get("neo4j", "timer")
 
 base_table = cf.get("table_info", "base_table_name")
 other_table = cf.get("table_info", "other_table_name")

@@ -16,7 +16,7 @@
 #include "trace_lvs.skel.h"
 #include "trace_lvs.h"
 
-#define METRIC_NAME_LVS_LINK "lvs_link"
+#define METRIC_NAME_LVS_LINK "ipvs_link"
 
 
 static volatile sig_atomic_t stop;

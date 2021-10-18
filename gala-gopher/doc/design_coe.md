@@ -315,7 +315,7 @@ gala-gopher					    -- dr-xr-x---.
     ├── fileprobe.meta
     ├── haproxy_link.meta
     ├── killprobe.meta
-    ├── lvs_link.meta
+    ├── ipvs_link.meta
     ├── nginx_link.meta
     ├── rabbitmq_probe.meta
     ├── redis_probe.meta
@@ -498,7 +498,7 @@ gala-gopher					    -- dr-xr-x---.
 
       对于nginx上报的数据，将{client_ip, virtual_ip}、{virtual_ip, server_ip, server_port}这两条tcp链路标记为一组，并将该组链路的上下游链路标记成同一颜色；
 
-  - lvs_link
+  - ipvs_link
 
     lvs观测指标，指标项：
 
@@ -618,8 +618,8 @@ gala-gopher					    -- dr-xr-x---.
   broker =
   
   [table_info]					   // 配置关注的指标数据
-  base_table_name = ["tcp_link", "lvs_link"]
-  other_table_name = ["nginx_link" , "lvs_link" , "haproxy_link" , "dnsmasq_link"]
+  base_table_name = ["tcp_link", "ipvs_link"]
+  other_table_name = ["nginx_link" , "ipvs_link" , "haproxy_link" , "dnsmasq_link"]
   
   [option]						
   exclude_addr = "192.168.150"		// 指定排除哪些地址
