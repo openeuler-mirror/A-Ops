@@ -29,3 +29,5 @@ temp_tcp_file = cf.get("temp_path", "temp_tcp_file")
 temp_other_file = cf.get("temp_path", "temp_other_file")
 
 spider_port = cf.get("spider", "port")
+
+conf_path = cf.get("anomaly_detection", "config_path")

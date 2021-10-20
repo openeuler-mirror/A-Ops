@@ -218,6 +218,12 @@ definitions:
         type: "array"
         items:
           $ref: "#/definitions/Attr"
+      anomaly_infos:
+        type: "array"
+        items:
+          $ref: "#/definitions/ANOMALY_INFO"
+      status:
+        type: "integer" 
     example:
       dependingitems:
       - calls:
@@ -271,6 +277,26 @@ definitions:
       - vtype: "int"
         value: "value"
         key: "key"
+      anomaly_infos:
+      - anomaly_attr: "lost_packets"
+        anomaly_type: "1"
+      - anomaly_attr: "retran_packets"
+        anomaly_type: "1"
+      status: 1
+       
+
+  ANOMALY_INFO:
+    type: "object"
+    properties:
+      anomaly_attr:
+        type: "string"
+      anomaly_type:
+        type: "string"
+    example:
+      anomaly_attr: "lost_packets"
+      anomaly_type: "1"
+
+
   Dependenceitem:
     type: "object"
     properties:

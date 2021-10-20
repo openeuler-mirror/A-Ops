@@ -6,6 +6,7 @@ from spider.util.entityid import node_entity_name
 from spider.util.entityid import edge_entity_name
 from spider.util.conf import temp_tcp_file
 from spider.util.conf import temp_other_file
+from spider.util.conf import exclude_ip
 
 def tcp_entity_process():
     s_nodes_table = {}
@@ -28,6 +29,10 @@ def tcp_entity_process():
         s_port = line_json.get("server_port")
         c_ip = line_json.get("client_ip")
         s_ip = line_json.get("server_ip")
+        if line_json.get("client_ip") in ast.literal_eval(exclude_ip):
+            continue
+        if line_json.get("server_ip") in ast.literal_eval(exclude_ip):
+            continue
         if line_json.get("table_name") == "ipvs_link":
             v_ip = line_json.get("virtual_ip")
             l_ip = line_json.get("local_ip")
@@ -43,21 +48,29 @@ def tcp_entity_process():
                 c_edges_table.setdefault((c_ip, s_ip, s_port), {}).setdefault('0', {}).setdefault('h', hostname)
                 c_edges_table.setdefault((c_ip, s_ip, s_port), {}).setdefault('0', {}).setdefault('p', process_name)
                 c_edges_infos.setdefault((c_ip, s_ip, s_port),
-                                         [line_json.get("tx_bytes"), line_json.get("rx_bytes"),
-                                          line_json.get("packets_in"),
-                                          line_json.get("packets_out"), line_json.get("retran_packets"),
-                                          line_json.get("lost_packets"), line_json.get("rtt"),
-                                          line_json.get("link_count")])
+                                         {"rx_bytes": line_json.get("rx_bytes", ""),
+                                          "tx_bytes": line_json.get("tx_bytes", ""),
+                                          "packets_out": line_json.get("packets_out", ""),
+                                          "packets_in": line_json.get("packets_in", ""),
+                                          "retran_packets": line_json.get("retran_packets", ""),
+                                          "lost_packets": line_json.get("lost_packets", ""),
+                                          "rtt": line_json.get("rtt", ""),
+                                          "link_count": line_json.get("link_count", "")})
             elif role == '1':
                 temp = hostname + '.' + process_name
                 edges_table.setdefault((c_ip, s_ip, s_port, temp), {}).setdefault('1', {}).setdefault('h', hostname)
                 edges_table.setdefault((c_ip, s_ip, s_port, temp), {}).setdefault('1', {}).setdefault('p', process_name)
                 edges_infos.setdefault((c_ip, s_ip, s_port, temp),
-                                       [line_json.get("rx_bytes"), line_json.get("tx_bytes"),
-                                        line_json.get("packets_out"),
-                                        line_json.get("packets_in"), line_json.get("retran_packets"),
-                                        line_json.get("lost_packets"), line_json.get("rtt"),
-                                        line_json.get("link_count")])
+                                       {"rx_bytes":line_json.get("rx_bytes", ""),
+                                        "tx_bytes":line_json.get("tx_bytes", ""),
+                                        "packets_out":line_json.get("packets_out", ""),
+                                        "packets_in":line_json.get("packets_in", ""),
+                                        "retran_packets":line_json.get("retran_packets", ""),
+                                        "lost_packets":line_json.get("lost_packets", ""),
+                                        "rtt":line_json.get("rtt", ""),
+                                        "link_count":line_json.get("link_count", "")})
+
+
         lines = f.readline()
 
     for key in c_edges_table.keys():

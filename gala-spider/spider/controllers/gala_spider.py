@@ -8,9 +8,12 @@ from spider.models.dependenceitem import Dependenceitem
 from spider.models.call import Call
 from spider.models.runon import Runon
 from spider.models.attr import Attr
+from spider.models.anomalyinfo import AnomalyInfo
 from spider import util
 from spider.data_process.data_to_entity import node_entity_process
 from spider.data_process.data_to_entity import clear_tmp
+from anomaly_detection.anomaly_detection import detection
+from anomaly_detection.common import g_edges_list
 
 def get_observed_entity_list(timestamp=None):  # noqa: E501
     """get observed entity list
@@ -24,31 +27,46 @@ def get_observed_entity_list(timestamp=None):  # noqa: E501
     """
     entities = []
     # obtain tcp_link entities
-    edges_table, edges_infos, nodes_table, lb_tables, vm_tables = node_entity_process()
-    if edges_table is None:
+    _edges_table, _edges_infos, _nodes_table, _lb_tables, _vm_tables = node_entity_process()
+    if _edges_table is None:
         return 500
+    edges_table, edges_infos, nodes_table, lb_tables, vm_tables = detection(_edges_table, _edges_infos, _nodes_table, _lb_tables, _vm_tables)
+
+    # type = "TCP-LINK",
     for key in edges_table.keys():
-        if len(edges_table[key]) == 5:
-            edge_attrs = []
-            left_call = Call(type = "PROCESS",
-                             id = edges_table[key]['src'])
-            right_call = Call(type = "PROCESS",
-                              id = edges_table[key]['dst'])
-            edge_attrs.append(Attr(key = "link_count", value = edges_infos[key][7], vtype = "string"))
-            edge_attrs.append(Attr(key = "rx_bytes", value = edges_infos[key][0], vtype = "string"))
-            edge_attrs.append(Attr(key = "tx_bytes", value = edges_infos[key][1], vtype = "string"))
-            edge_attrs.append(Attr(key = "packets_out", value = edges_infos[key][2], vtype = "string"))
-            edge_attrs.append(Attr(key = "packets_in", value = edges_infos[key][3], vtype = "string"))
-            edge_attrs.append(Attr(key = "retran_packets", value = edges_infos[key][4], vtype = "string"))
-            edge_attrs.append(Attr(key = "lost_packets", value = edges_infos[key][5], vtype = "string"))
-            edge_attrs.append(Attr(key = "rtt", value = edges_infos[key][6], vtype = "string"))
-            entity = Entity(entityid = edges_table[key]['edge'],
-                            type = "TCP-LINK",
-                            name = edges_table[key]['edge'],
-                            dependeditems = Dependenceitem(calls = left_call),
-                            dependingitems = Dependenceitem(calls = right_call),
-                            attrs = edge_attrs)
-            entities.append(entity)
+        if len(edges_table[key]) < 5:
+            continue
+
+        edge_attrs = []
+        edge_attrs.append(Attr(key="link_count", value=edges_infos.get(key, {}).get("link_count"), vtype="string"))
+        edge_attrs.append(Attr(key="rx_bytes", value=edges_infos.get(key, {}).get("rx_bytes"), vtype="string"))
+        edge_attrs.append(Attr(key="tx_bytes", value=edges_infos.get(key, {}).get("tx_bytes"), vtype="string"))
+        edge_attrs.append(Attr(key="packets_out", value=edges_infos.get(key, {}).get("packets_out"), vtype="string"))
+        edge_attrs.append(Attr(key="packets_in", value=edges_infos.get(key, {}).get("packets_in"), vtype="string"))
+        edge_attrs.append(Attr(key="retran_packets", value=edges_infos.get(key, {}).get("retran_packets"), vtype="string"))
+        edge_attrs.append(Attr(key="lost_packets", value=edges_infos.get(key, {}).get("lost_packets"), vtype="string"))
+        edge_attrs.append(Attr(key="rtt", value=edges_infos.get(key, {}).get("rtt"), vtype="string"))
+
+        left_call = Call(type="PROCESS", id=edges_table[key].get('src'))
+        right_call = Call(type="PROCESS", id=edges_table[key].get('dst'))
+
+        _anomaly_infos = []
+        this_anomaly_infos = edges_infos.get("key", {}).get("anomaly_infos")
+        if this_anomaly_infos:
+            for i in this_anomaly_infos:
+                _anomaly_infos.append(AnomalyInfo(anomaly_attr = i.get("anomaly_attr"), anomaly_type = i.get("anomaly_type")))
+
+
+        entity = Entity(entityid = edges_table[key].get("edge"),
+                        type = "TCP-LINK",
+                        name = edges_table[key].get("edge"),
+                        dependeditems = Dependenceitem(calls = left_call),
+                        dependingitems = Dependenceitem(calls = right_call),
+                        attrs = edge_attrs,
+                        anomaly_infos = _anomaly_infos,
+                        status = edges_table.get(key, {}).get("status"))
+        entities.append(entity)
+        
     for key in nodes_table.keys():
         left_calls = []
         right_calls = []
@@ -83,7 +101,7 @@ def get_observed_entity_list(timestamp=None):  # noqa: E501
         entities.append(entity)
     if lb_tables is not None:
         for key in lb_tables.keys():
-            if len(lb_tables[key]) < 4:
+            if len(lb_tables[key]) < 5:
                 continue
             lb_attrs = []
             left_call = Call(type = "PROCESS",
@@ -99,6 +117,8 @@ def get_observed_entity_list(timestamp=None):  # noqa: E501
                             dependeditems = Dependenceitem(calls = left_call),
                             dependingitems = Dependenceitem(calls = right_call, run_ons = run_on))
             entities.append(entity)
+
+    # type = "VM" 
     for key in vm_tables.keys():
         procs = []
         for i in range(len(vm_tables[key]['proc'])):
@@ -123,7 +143,7 @@ def get_observed_entity_list(timestamp=None):  # noqa: E501
                                     msg = msg,
                                     timestamp = 12345678,
                                     entities = entities)
-    clear_tmp()
+    #clear_tmp()
     return entities_res, 200
 
 

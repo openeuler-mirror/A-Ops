@@ -1,0 +1,10 @@
+# yaml
+tcp_link:
+  model_info:
+    type: 1
+  retran_packets:
+    threshold: 10
+    model: 1
+  lost_packets:
+    threshold: 10
+    model: 1
