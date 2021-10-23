@@ -1,0 +1,25 @@
+version = "1.0.0"
+measurements:
+(
+    {
+        name: "task",
+        fields:
+        (
+            {
+                description: "task group id of thd task",
+                type: "Unknown",
+                name: "tgid",
+            },
+            {
+                description: "pid of the task",
+                type: "Unknown",
+                name: "pid",
+            },
+	        {
+                description: "fork count of the task",
+                type: "Unknown",
+                name: "fork_count",
+            }
+        )
+    }
+)
