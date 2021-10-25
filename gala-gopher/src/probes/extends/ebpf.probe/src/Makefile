@@ -30,7 +30,8 @@ APPS := tcpprobe/tcpprobe \
 	haproxyprobe/trace_haproxy \
 	dnsmasqprobe/trace_dnsmasq \
 	nginxprobe/nginx_probe \
-	taskprobe/taskprobe
+	taskprobe/taskprobe \
+	endpointprobe/endpoint
 
 $(info === org apps: $(APPS) EBPF_TAILOR: ${EBPF_PROBES})
 ifneq ($(EBPF_PROBES),)
