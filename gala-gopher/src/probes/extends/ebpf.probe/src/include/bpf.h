@@ -309,6 +309,7 @@ int __do_pop_match_map_entry(const struct __probe_key *key,
 #if !defined( BPF_PROG_KERN ) && !defined( BPF_PROG_USER )
 
 #include <bpf/libbpf.h>
+#include <sys/resource.h>
 #include "util.h"
 
 static __always_inline int libbpf_print_fn(enum libbpf_print_level level, const char *format, va_list args)
