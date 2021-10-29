@@ -100,7 +100,7 @@ def lb_entity_process():
         hostname = line_json.get("hostname")
         table_name = line_json.get("table_name")
         if table_name == "dnsmasq_link":
-            s_port = "8888"                             # dnsmasq探针没有回传dns的port
+            s_port = "8888"
             #lb_tables.setdefault((hostname, process_name), {}).setdefault("c-v", (c_ip, v_ip, s_port))
         else:
             c_ip = line_json.get("client_ip")
@@ -124,7 +124,7 @@ def node_entity_process():
     edges_table, edges_infos = tcp_entity_process()
     if edges_table is None:
         print("Please wait kafka consumer datas...")
-        return None, None, None, None
+        return None, None, None, None, None
     lb_tables = lb_entity_process()
     for key in edges_table.keys():
         if len(edges_table[key]) == 2:
@@ -155,8 +155,8 @@ def node_entity_process():
             #print("lb----", key, lb_tables[key])
             lb_node_id = node_entity_name(lb_tables[key]['hname'], lb_tables[key]['tname'].split("_")[0], None)
             lb_tables.setdefault(key, {}).setdefault('on', lb_node_id)
-            if lb_tables[key]['tname'] == "dnsmasq_link":
-                type = key[1].upper()
+            if lb_tables.get(key, {}).get('tname') == "dnsmasq_link":
+                continue
                 # Add process code here....
             else:
                 if lb_tables[key].get('dst') is not None and lb_tables[key].get('src') is not None:

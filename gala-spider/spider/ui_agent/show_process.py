@@ -22,6 +22,8 @@ def ui_neo4j_agent(n):
         # Obtain nodes and edges
         res, code = get_observed_entity_list()
         if res.code != 200:
+            clear_tmp()
+            time.sleep(n)
             continue
 
         entities_list = res.entities
@@ -45,14 +47,14 @@ def ui_neo4j_agent(n):
                     dst_node = Node('Process', name=entity.dependingitems.calls.id, color='lightgreen', type='Process')
                     graph.create(dst_node)
 
-                # tcp_link颜色：缺失->blue, 存在且无异常->black, 存在且有异常->red,
+                # tcp_link color: link missing->blue, attribute normal->black, attribue abnormal->red.
                 _color = 'black'
                 if entity.status == 0:
                     _color = "blue"
                 elif len(entity.anomaly_infos) > 0:
                     _color = "red"
 
-                # link标签
+                # link lable
                 _description = "- - -" if len(entity.attrs) == 0 else "link_count:{} retran_packets:{} lost_packets:{}".\
                     format(entity.attrs[0].value, entity.attrs[5].value, entity.attrs[6].value)
 
@@ -71,10 +73,10 @@ def ui_neo4j_agent(n):
             elif entity.type == 'VM':
                 matcher = NodeMatcher(graph)
                 host = Node("Host", name=entity.name, color='deepskyblue', runon='DateCenter', type='Host')
-                for i in range(len(entity.dependeditems.run_ons)):
-                    nodelist = list(matcher.match('Process', name=entity.dependeditems.run_ons[i].id))
+                for j in range(len(entity.dependeditems.run_ons)):
+                    nodelist = list(matcher.match('Process', name=entity.dependeditems.run_ons[j].id))
                     if len(nodelist) > 0:
-                        proc = matcher.match("Process", name=entity.dependeditems.run_ons[i].id).first()
+                        proc = matcher.match("Process", name=entity.dependeditems.run_ons[j].id).first()
                         runon_relation = Relationship(
                             host,
                             'RUNON',
