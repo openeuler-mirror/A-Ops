@@ -15,7 +15,7 @@ from spider.data_process.data_to_entity import clear_tmp
 from anomaly_detection.anomaly_detection import detection
 from anomaly_detection.common import g_edges_list
 
-def get_observed_entity_list(timestamp=None):  # noqa: E501
+def get_observed_entity_list():  # noqa: E501
     """get observed entity list
 
     get observed entity list # noqa: E501
@@ -51,7 +51,7 @@ def get_observed_entity_list(timestamp=None):  # noqa: E501
         right_call = Call(type="PROCESS", id=edges_table[key].get('dst'))
 
         _anomaly_infos = []
-        this_anomaly_infos = edges_infos.get("key", {}).get("anomaly_infos")
+        this_anomaly_infos = edges_infos.get(key, {}).get("anomaly_infos")
         if this_anomaly_infos:
             for i in this_anomaly_infos:
                 _anomaly_infos.append(AnomalyInfo(anomaly_attr = i.get("anomaly_attr"), anomaly_type = i.get("anomaly_type")))
