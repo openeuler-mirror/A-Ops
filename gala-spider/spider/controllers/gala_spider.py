@@ -29,14 +29,14 @@ def get_observed_entity_list():  # noqa: E501
     # obtain tcp_link entities
     _edges_table, _edges_infos, _nodes_table, _lb_tables, _vm_tables = node_entity_process()
     if _edges_table is None:
+        clear_tmp()
         return 500
     edges_table, edges_infos, nodes_table, lb_tables, vm_tables = detection(_edges_table, _edges_infos, _nodes_table, _lb_tables, _vm_tables)
 
-    # type = "TCP-LINK",
+    # type = "TCP_LINK",
     for key in edges_table.keys():
         if len(edges_table[key]) < 5:
             continue
-
         edge_attrs = []
         edge_attrs.append(Attr(key="link_count", value=edges_infos.get(key, {}).get("link_count"), vtype="string"))
         edge_attrs.append(Attr(key="rx_bytes", value=edges_infos.get(key, {}).get("rx_bytes"), vtype="string"))
@@ -46,7 +46,6 @@ def get_observed_entity_list():  # noqa: E501
         edge_attrs.append(Attr(key="retran_packets", value=edges_infos.get(key, {}).get("retran_packets"), vtype="string"))
         edge_attrs.append(Attr(key="lost_packets", value=edges_infos.get(key, {}).get("lost_packets"), vtype="string"))
         edge_attrs.append(Attr(key="rtt", value=edges_infos.get(key, {}).get("rtt"), vtype="string"))
-
         left_call = Call(type="PROCESS", id=edges_table[key].get('src'))
         right_call = Call(type="PROCESS", id=edges_table[key].get('dst'))
 
@@ -56,9 +55,8 @@ def get_observed_entity_list():  # noqa: E501
             for i in this_anomaly_infos:
                 _anomaly_infos.append(AnomalyInfo(anomaly_attr = i.get("anomaly_attr"), anomaly_type = i.get("anomaly_type")))
 
-
         entity = Entity(entityid = edges_table[key].get("edge"),
-                        type = "TCP-LINK",
+                        type = "TCP_LINK",
                         name = edges_table[key].get("edge"),
                         dependeditems = Dependenceitem(calls = left_call),
                         dependingitems = Dependenceitem(calls = right_call),
@@ -90,7 +88,7 @@ def get_observed_entity_list():  # noqa: E501
                 lb_runon = Runon(type = val[1],
                                 id = val[0])
                 lb_runons.append(lb_runon)
-        on_runon = Runon(type = "VM", id = nodes_table[key]['host'])
+        on_runon = Runon(type = "VM", id = nodes_table[key].get('host'))
         node_attrs.append(Attr(key = 'example', value = "0xabcd", vtype = "int"))
         entity = Entity(entityid = key,
                         type = "PROCESS",
@@ -101,7 +99,7 @@ def get_observed_entity_list():  # noqa: E501
         entities.append(entity)
     if lb_tables is not None:
         for key in lb_tables.keys():
-            if len(lb_tables[key]) < 5:
+            if lb_tables[key].get("lb_id") is None:
                 continue
             lb_attrs = []
             left_call = Call(type = "PROCESS",
@@ -109,11 +107,11 @@ def get_observed_entity_list():  # noqa: E501
             right_call = Call(type = "PROCESS",
                             id = lb_tables[key]['dst'])
             run_on = Runon(type = "PROCESS",
-                            id = lb_tables[key]['on'])
+                            id = lb_tables[key]['lb'])
             lb_attrs.append(Attr(key='example', value = "0.1", vtype = "float"))
-            entity = Entity(entityid = lb_tables[key]['lb_id'],
+            entity = Entity(entityid = lb_tables[key].get('lb_id'),
                             type = lb_tables[key]['tname'].upper(),
-                            name = lb_tables[key]['lb_id'],
+                            name = lb_tables[key].get('lb_id'),
                             dependeditems = Dependenceitem(calls = left_call),
                             dependingitems = Dependenceitem(calls = right_call, run_ons = run_on))
             entities.append(entity)
@@ -139,11 +137,12 @@ def get_observed_entity_list():  # noqa: E501
     else:
         code = 200
         msg = "Successful"
+
     entities_res = EntitiesResponse(code = code,
                                     msg = msg,
                                     timestamp = 12345678,
                                     entities = entities)
-    #clear_tmp()
+    clear_tmp()
     return entities_res, 200
 
 

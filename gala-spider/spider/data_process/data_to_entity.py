@@ -14,8 +14,8 @@ def tcp_entity_process():
     c_edges_infos = {}
     edges_table = {}
     edges_infos = {}
-    if os.path.exists(ast.literal_eval(temp_tcp_file)):
-        f = open(ast.literal_eval(temp_tcp_file))
+    if os.path.exists(temp_tcp_file):
+        f = open(temp_tcp_file)
     else:
         print("/var/tmp/spider/tcpline.txt not here.")
         return None, None
@@ -69,8 +69,6 @@ def tcp_entity_process():
                                         "lost_packets":line_json.get("lost_packets", ""),
                                         "rtt":line_json.get("rtt", ""),
                                         "link_count":line_json.get("link_count", "")})
-
-
         lines = f.readline()
 
     for key in c_edges_table.keys():
@@ -89,8 +87,8 @@ def tcp_entity_process():
 
 def lb_entity_process():
     lb_tables = {}
-    if os.path.exists(ast.literal_eval(temp_other_file)):
-        f = open(ast.literal_eval(temp_other_file))
+    if os.path.exists(temp_other_file):
+        f = open(temp_other_file)
     else:
         print("/var/tmp/spider/otherline.txt not here.")
         return None
@@ -127,58 +125,64 @@ def node_entity_process():
         return None, None, None, None, None
     lb_tables = lb_entity_process()
     for key in edges_table.keys():
-        if len(edges_table[key]) == 2:
-            dst_node_id = node_entity_name(edges_table[key]['0']['h'], edges_table[key]['0']['p'], None)
-            src_node_id = node_entity_name(edges_table[key]['1']['h'], edges_table[key]['1']['p'], None)
-            edge_id = edge_entity_name("tcp_link", edges_table[key]['0']['h'], edges_table[key]['0']['p'],
-                                       edges_table[key]['1']['h'], edges_table[key]['1']['p'])
-            edges_table.setdefault(key, {}).setdefault('src', src_node_id)
-            edges_table.setdefault(key, {}).setdefault('dst', dst_node_id)
-            edges_table.setdefault(key, {}).setdefault('edge', edge_id)
-            #print("tcp---", key, edges_table[key])
-            nodes_table.setdefault(src_node_id, {}).setdefault('host', edges_table[key]['1']['h'])
-            nodes_table.setdefault(src_node_id, {}).setdefault('r_edge', [])
-            nodes_table[src_node_id].get('r_edge').append((edge_id, "TCP_LINK"))
-            nodes_table.setdefault(dst_node_id, {}).setdefault('host', edges_table[key]['0']['h'])
-            nodes_table.setdefault(dst_node_id, {}).setdefault('l_edge', [])
-            nodes_table[dst_node_id].get('l_edge').append((edge_id, "TCP_LINK"))
-            if lb_tables is not None:
-                for lb_key in lb_tables.keys():
-                    if lb_key[0] == key[0] and lb_key[1] == key[1] and lb_key[4] == key[2]:
-                        lb_tables.setdefault(lb_key, {}).setdefault('src', src_node_id)
-                        lb_tables.setdefault(lb_key, {}).setdefault('lb', dst_node_id)
-                    if lb_key[2] == key[0] and lb_key[3] == key[1] and lb_key[5] == key[2]:
-                        lb_tables.setdefault(lb_key, {}).setdefault('dst', dst_node_id)
+        if len(edges_table[key]) < 2:
+            continue
+        dst_node_id = node_entity_name(edges_table[key]['0']['h'], edges_table[key]['0']['p'])
+        src_node_id = node_entity_name(edges_table[key]['1']['h'], edges_table[key]['1']['p'])
+        edge_id = edge_entity_name("tcp_link", edges_table[key]['0']['h'], edges_table[key]['0']['p'],
+                                   edges_table[key]['1']['h'], edges_table[key]['1']['p'])
+        edges_table.setdefault(key, {}).setdefault('src', src_node_id)
+        edges_table.setdefault(key, {}).setdefault('dst', dst_node_id)
+        edges_table.setdefault(key, {}).setdefault('edge', edge_id)
+        #print("tcp---", key, edges_table[key])
+        nodes_table.setdefault(src_node_id, {}).setdefault('host', edges_table[key]['1']['h'])
+        nodes_table.setdefault(src_node_id, {}).setdefault('r_edge', [])
+        nodes_table[src_node_id].get('r_edge').append((edge_id, "TCP_LINK"))
+        nodes_table.setdefault(dst_node_id, {}).setdefault('host', edges_table[key]['0']['h'])
+        nodes_table.setdefault(dst_node_id, {}).setdefault('l_edge', [])
+        nodes_table[dst_node_id].get('l_edge').append((edge_id, "TCP_LINK"))
+        if lb_tables is not None:
+            for lb_key in lb_tables.keys():
+                if lb_key[0] == key[0] and lb_key[1] == key[1] and lb_key[4] == key[2]:
+                    lb_tables.setdefault(lb_key, {}).setdefault('src', src_node_id)
+                    lb_tables.setdefault(lb_key, {}).setdefault('lb', dst_node_id)
+                if lb_key[2] == key[0] and lb_key[3] == key[1] and lb_key[5] == key[2]:
+                    lb_tables.setdefault(lb_key, {}).setdefault('dst', dst_node_id)
 
     if lb_tables is not None:
         for key in lb_tables.keys():
-            #print("lb----", key, lb_tables[key])
-            lb_node_id = node_entity_name(lb_tables[key]['hname'], lb_tables[key]['tname'].split("_")[0], None)
-            lb_tables.setdefault(key, {}).setdefault('on', lb_node_id)
+            lb_node_id = node_entity_name(lb_tables[key]['hname'], lb_tables[key]['tname'].split("_")[0])
+            #lb_tables.setdefault(key, {}).setdefault('on', lb_node_id)
             if lb_tables.get(key, {}).get('tname') == "dnsmasq_link":
                 continue
                 # Add process code here....
             else:
-                if lb_tables[key].get('dst') is not None and lb_tables[key].get('src') is not None:
-                    lb_id = edge_entity_name(lb_tables[key]['hname'], None, lb_tables[key]['dst'], None, lb_tables[key]['src'])
-                    lb_tables.setdefault(key, {}).setdefault("lb_id", lb_id)
-                    nodes_table.setdefault(lb_node_id, {}).setdefault('lb_edge', [])
-                    nodes_table[lb_node_id].get('lb_edge').append((lb_tables[key]['lb_id'], lb_tables[key]['tname'].upper()))
+                lb_id = edge_entity_name(lb_tables[key]['tname'], None, 
+				                         lb_tables[key].get('dst'), None, lb_tables[key].get('src'))
+                lb_tables.setdefault(key, {}).setdefault("lb_id", lb_id)
+                nodes_table.setdefault(lb_node_id, {}).setdefault('lb_edge', [])
+                nodes_table[lb_node_id].get('lb_edge').append((lb_tables[key]['lb_id'], lb_tables[key]['tname'].upper()))
 
     for key in nodes_table.keys():
         #print("node----", key, nodes_table[key])
-        host = nodes_table[key]['host']
+        host = nodes_table[key].get('host')
+        if host is None:
+            print(key, "only lb link and no tcplink, please check..")
+            continue
         vm_table.setdefault(host, {}).setdefault('proc', [])
         vm_table[host].get('proc').append(key)
 
+    #for key in lb_tables.keys():
+        #print("lb-----", key, lb_tables[key])
+
     #for key in vm_table.keys():
-    #    print("vm-----", key, vm_table[key])
+        #print("vm-----", key, vm_table[key])
 
     return edges_table, edges_infos, nodes_table, lb_tables, vm_table
 
 
 def clear_tmp():
-    with open(ast.literal_eval(temp_tcp_file), 'wb') as file_t:
+    with open(temp_tcp_file, 'wb') as file_t:
         file_t.truncate(0)
-    with open(ast.literal_eval(temp_other_file), 'wb') as file_o:
+    with open(temp_other_file, 'wb') as file_o:
         file_o.truncate(0)

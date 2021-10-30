@@ -1,7 +1,5 @@
 from py2neo import Graph, Node, Relationship, NodeMatcher, RelationshipMatcher
 import time
-from spider.data_process.data_to_entity import node_entity_process
-from spider.data_process.data_to_entity import clear_tmp
 from spider.util.conf import neo4j_addr
 from spider.util.conf import neo4j_uname
 from spider.util.conf import neo4j_pwd
@@ -22,15 +20,14 @@ def ui_neo4j_agent(n):
         # Obtain nodes and edges
         res, code = get_observed_entity_list()
         if res.code != 200:
-            clear_tmp()
+            print("get_observed_entity_list get None")
             time.sleep(n)
             continue
-
         entities_list = res.entities
         for i in range(len(entities_list)):
             entity = entities_list[i]
             # Create node and tcp_link
-            if entity.type == 'TCP-LINK':
+            if entity.type == 'TCP_LINK':
                 matcher = NodeMatcher(graph)
                 # src_node
                 nodelist = list(matcher.match('Process', name=entity.dependeditems.calls.id))
@@ -46,18 +43,15 @@ def ui_neo4j_agent(n):
                 else:
                     dst_node = Node('Process', name=entity.dependingitems.calls.id, color='lightgreen', type='Process')
                     graph.create(dst_node)
-
                 # tcp_link color: link missing->blue, attribute normal->black, attribue abnormal->red.
                 _color = 'black'
                 if entity.status == 0:
                     _color = "blue"
                 elif len(entity.anomaly_infos) > 0:
                     _color = "red"
-
                 # link lable
                 _description = "- - -" if len(entity.attrs) == 0 else "link_count:{} retran_packets:{} lost_packets:{}".\
                     format(entity.attrs[0].value, entity.attrs[5].value, entity.attrs[6].value)
-
                 # tcp_link
                 tcp_link_relation = Relationship(
                     src_node,
@@ -65,6 +59,7 @@ def ui_neo4j_agent(n):
                     dst_node,
                     type = 'TCP_LINK',
                     color = _color)
+                print("neo4j:", tcp_link_relation)
                 tcp_link_relation['count'] = 1
                 graph.create(tcp_link_relation)
             elif entity.type == 'PROCESS':
@@ -83,6 +78,7 @@ def ui_neo4j_agent(n):
                             proc,
                             type='RUNON',
                             color='dodgerblue')
+                        print("neo4j:", tcp_link_relation)
                         graph.create(runon_relation)
             else:
                 # Create lb_link
@@ -90,12 +86,15 @@ def ui_neo4j_agent(n):
                 c_node = matcher.match("Process", name=entity.dependeditems.calls.id).first()
                 lb_node = matcher.match("Process", name=entity.dependingitems.run_ons.id).first()
                 s_node = matcher.match("Process", name=entity.dependingitems.calls.id).first()
-                lb_c_h_relation = Relationship(c_node, 'lb', lb_node, type=entity.type, dst=entity.dependingitems.calls.id, color='yellow')
+                dst_id = entity.dependingitems.calls.id
+                lb_c_h_relation = Relationship(c_node, 'lb', lb_node, type=entity.type, dst=dst_id, color='yellow')
+                print("neo4j:", lb_c_h_relation)
                 graph.create(lb_c_h_relation)
-                lb_h_s_relation = Relationship(lb_node, 'lb', s_node, type=entity.type, src=entity.dependeditems.calls.id, color='yellow')
+                src_id = entity.dependeditems.calls.id
+                lb_h_s_relation = Relationship(lb_node, 'lb', s_node, type=entity.type, src=src_id, color='yellow')
+                print("neo4j:", lb_h_s_relation)
                 graph.create(lb_h_s_relation)
 
-        clear_tmp()
         time.sleep(n)
 
 #ui_neo4j_agent(50)
