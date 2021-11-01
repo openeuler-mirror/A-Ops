@@ -348,14 +348,14 @@ static int IMDB_MetricType2String(IMDB_Metric *metric, char *buffer, int maxLen,
     return snprintf(buffer, maxLen, "# TYPE gala_gopher_%s_%s %s\n", tableName, metric->name, metric->type);
 }
 
-static int IMDB_MetricValue2String(IMDB_Metric *metric, char *buffer, int maxLen, char *tableName)
+static int IMDB_MetricValue2String(IMDB_Metric *metric, char *buffer, int maxLen, char *tableName, char *labels)
 {
     time_t now;
     time(&now);
-    return snprintf(buffer, maxLen, "gala_gopher_%s_%s %s %lld\n", tableName, metric->name, metric->val, now * 1000);
+    return snprintf(buffer, maxLen, "gala_gopher_%s_%s%s %s %lld\n", tableName, metric->name, labels, metric->val, now * 1000);
 }
 
-static int IMDB_Metric2String(IMDB_Metric *metric, char *buffer, int maxLen, char *tableName)
+static int IMDB_Metric2String(IMDB_Metric *metric, char *buffer, int maxLen, char *tableName, char *labels)
 {
     int ret = 0;
     int total = 0;
@@ -375,7 +375,7 @@ static int IMDB_Metric2String(IMDB_Metric *metric, char *buffer, int maxLen, cha
     maxLen -= ret;
     total += ret;
 
-    ret = IMDB_MetricValue2String(metric, buffer, maxLen, tableName);
+    ret = IMDB_MetricValue2String(metric, buffer, maxLen, tableName, labels);
     if (ret < 0) {
         return -1;
     }
@@ -404,17 +404,84 @@ static int MetricTypeSatisfyPrometheus(IMDB_Metric *metric)
     return -1;
 }
 
+static int MetricTypeIsLabel(IMDB_Metric *metric)
+{
+    const char label[] = {"label"};
+
+        if (strcmp(metric->type, label) == 0) {
+            return 1;
+        }
+
+    return 0;
+}
+
+//name{label1="label1",label2="label2",label2="label2"} value time
+static int IMDB_Prometheus_BuildLabel(IMDB_Record *record, char *buffer, int maxLen)
+{
+    char labels[MAX_LABELS_BUFFER_SIZE] = {0};
+    int labell = MAX_LABELS_BUFFER_SIZE;
+    int ret = 0;
+    int total = 0;
+    char write_comma = 0;
+
+    for (int i = 0; i < record->metricsNum; i++) {
+        ret = MetricTypeIsLabel(record->metrics[i]);
+        if (ret == 0) {
+            continue;
+        }
+
+        if (write_comma)
+        {
+            ret = snprintf(labels + total, labell, "%s", ",");
+            if (ret < 0) {
+                goto ERR;
+            }
+            total += ret; 
+            labell -= ret;          
+        }
+
+        ret = snprintf(labels + total, labell, "%s=\"%s\"", record->metrics[i]->name, record->metrics[i]->val);
+        if (ret <= 0)
+        {
+            goto ERR;
+        }
+        total += ret;
+        labell -= ret; 
+        write_comma = 1;
+    }
+
+    if (total > 0)
+    {
+        ret = snprintf(buffer, maxLen, "{%s}", labels);
+        if (ret < 0) {
+            goto ERR;
+        }
+        maxLen -= ret;
+    }
+
+ERR:
+    return ret;
+}
+
 static int IMDB_Record2String(IMDB_Record *record, char *buffer, int maxLen, char *tableName)
 {
     int ret = 0;
     int total = 0;
+    
+    char labels[MAX_LABELS_BUFFER_SIZE] = {0};
+    ret = IMDB_Prometheus_BuildLabel(record, labels, MAX_LABELS_BUFFER_SIZE);
+    if (ret < 0)
+    {
+        goto ERR;
+    }
+
     for (int i = 0; i < record->metricsNum; i++) {
         ret = MetricTypeSatisfyPrometheus(record->metrics[i]);
         if (ret != 0) {
             continue;
         }
 
-        ret = IMDB_Metric2String(record->metrics[i], buffer, maxLen, tableName);
+        ret = IMDB_Metric2String(record->metrics[i], buffer, maxLen, tableName, labels);
         if (ret < 0) {
             return -1;
         }
@@ -423,6 +490,7 @@ static int IMDB_Record2String(IMDB_Record *record, char *buffer, int maxLen, cha
         total += ret;
     }
 
+ERR:
     return total;
 }
 

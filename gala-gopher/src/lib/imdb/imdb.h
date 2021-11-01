@@ -18,6 +18,9 @@
 // database specification
 #define MAX_IMDB_DATABASE_NAME_LEN      32
 
+// MAX LENGTH FOR PROMETHEUS LABELS
+#define MAX_LABELS_BUFFER_SIZE 512
+
 #define MAX_IMDB_HOSTNAME_LEN           64
 
 typedef struct {
