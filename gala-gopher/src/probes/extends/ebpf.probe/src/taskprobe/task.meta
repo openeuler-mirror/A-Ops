@@ -7,17 +7,17 @@ measurements:
         (
             {
                 description: "task group id of thd task",
-                type: "Unknown",
+                type: "label",
                 name: "tgid",
             },
             {
                 description: "pid of the task",
-                type: "Unknown",
+                type: "label",
                 name: "pid",
             },
 	        {
                 description: "fork count of the task",
-                type: "Unknown",
+                type: "counter",
                 name: "fork_count",
             }
         )

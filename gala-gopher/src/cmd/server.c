@@ -5,7 +5,7 @@
 #include <string.h>
 #include <stdlib.h>
 #include <unistd.h>
-#include <securec.h>
+#include <sys/stat.h>
 #include <errno.h>
 #include "base_info.h"
 
@@ -137,8 +137,8 @@ static int SendResult(int fd, char *buf, int len)
 }
 
 
-void *CmdServer(void *arg){
-    int ret;
+void CmdServer(void *arg){
+    int ret = 0;
     int server_fd;
     int client_fd;
     
@@ -150,20 +150,20 @@ void *CmdServer(void *arg){
     
     ret = SetRunDir();
     if (ret != GOPHER_OK) {
-        printf("dir not exist and create fail. ret=%d\n", ret);
+        printf("dir not exist and create fail. ret=%d.\n", ret);
         goto ERROR2;
     }
 
     ret = CmdServerCreate(GALA_GOPHER_CMD_SOCK_PATH_NAME, &server_fd);
     if (ret != GOPHER_OK) {
-        printf("Error: CmdServerCreate failed. ret=%d\n", ret);
+        printf("Error: CmdServerCreate failed. ret=%d.\n", ret);
         goto ERROR2;
     }
 
     char *result;  
     result = (char *)malloc(RESULT_INFO_LEN_MAX);
     if (result == NULL) {
-        printf("Error: result malloc failed!\n");
+        printf("Error: result malloc failed.\n");
         goto ERROR1;
     }
 
@@ -182,14 +182,14 @@ void *CmdServer(void *arg){
         } else {
             ret = RequestProcess(&rcvRequest, result);
             if (ret < 0) {
-                printf("Error: RequestProcess failed\n");
+                printf("Error: RequestProcess failed.\n");
                 memcpy(result, GOPHER_CMD_REQUEST_STATUS_FAILED2, strlen(GOPHER_CMD_REQUEST_STATUS_FAILED2));
             }
         }
 
         ret = SendResult(client_fd, result, strlen(result)+1);
         if (ret < 0) {
-            printf("Error: SendResult failed\n");
+            printf("Error: SendResult failed.\n");
             goto ERROR1;
         } else {
             free(result);

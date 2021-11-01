@@ -3,6 +3,7 @@
 #include <string.h>
 #include <stdlib.h>
 #include <unistd.h>
+#include <errno.h>
 #include <sys/epoll.h>
 
 #include "egress.h"
@@ -93,13 +94,19 @@ static int EgressDataProcesssInput(Fifo *fifo, EgressMgr *mgr)
 static int EgressDataProcess(EgressMgr *mgr)
 {
     struct epoll_event events[MAX_EPOLL_EVENTS_NUM];
-    uint32_t events_num = 0;
+    int32_t events_num = 0;
     Fifo *fifo = NULL;
     uint32_t ret = 0;
 
     events_num = epoll_wait(mgr->epoll_fd, events, MAX_EPOLL_EVENTS_NUM, -1);
     if (events_num < 0) {
-        return -1;
+        printf("Egress Msg wait failed: %s.\n", strerror(errno));
+        if (errno == EINTR)
+        {
+            // 调试时会收到调试信号，返回-1，忽略即可
+            events_num = 0;
+        }
+        return events_num;
     }
 
     // printf("[EGRESS] Get epoll event.\n");

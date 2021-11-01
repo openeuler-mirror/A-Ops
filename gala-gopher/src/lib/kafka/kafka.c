@@ -83,8 +83,10 @@ int KafkaMsgProduce(KafkaMgr *mgr, const char *msg, const uint32_t msgLen)
 {
     int ret = 0;
     ret = rd_kafka_produce(mgr->rkt, RD_KAFKA_PARTITION_UA, RD_KAFKA_MSG_F_COPY, (void *)msg, msgLen, NULL, 0, NULL);
-    if (ret == -1) {
-        printf("failed to produce msg to kafka topic\n");
+    if (ret == -1)
+    {
+        printf("Failed to produce msg to topic %s: %s.\n", rd_kafka_topic_name(mgr->rkt), 
+                                                           rd_kafka_err2str(rd_kafka_last_error()));
         return -1;
     }
     return 0;
