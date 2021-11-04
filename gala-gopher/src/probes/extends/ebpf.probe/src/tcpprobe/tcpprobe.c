@@ -19,7 +19,7 @@
 #include "tcp.h"
 #include "args.h"
 
-#define OO_NAME "tcp_link" 	// Observation Object name
+#define OO_NAME "tcp_link"  // Observation Object name
 
 #define FILTER_LISTEN_PORT 22
 #define FILTER_COMM "sshd"
@@ -53,6 +53,8 @@ static void sig_int(int signo)
 
 void update_link_metric_data(struct metric_data *dd, struct link_data *d)
 {
+    __u32 tmp_srtt_max = dd->srtt_max;
+
     if (dd->link_num == 0) {
         memcpy(dd->comm, d->comm, TASK_COMM_LEN);
     }
@@ -73,10 +75,40 @@ void update_link_metric_data(struct metric_data *dd, struct link_data *d)
     } else {
         dd->srtt = 0;
     }
+
+    dd->srtt_max = tmp_srtt_max > d->srtt ? tmp_srtt_max : d->srtt;
+
+    if (0 == dd->rcv_wnd_min) {
+        dd->rcv_wnd_min = d->rcv_wnd;
+    } else {
+        if (d->rcv_wnd < dd->rcv_wnd_min) {
+            dd->rcv_wnd_min = d->rcv_wnd;
+        }
+    }
+
+    if (0 == dd->rcv_wnd_max) {
+        dd->rcv_wnd_max = d->rcv_wnd;
+    } else {
+        if (d->rcv_wnd > dd->rcv_wnd_max) {
+            dd->rcv_wnd_max = d->rcv_wnd;
+        }
+    }
+
+    if (0 == dd->rcv_wnd_avg || dd->link_num == 1) {
+        dd->rcv_wnd_avg = d->rcv_wnd;
+    } else {
+        dd->rcv_wnd_avg = (dd->rcv_wnd_avg * (dd->link_num - 1) + d->rcv_wnd) / dd->link_num;
+    }
+    
     dd->segs_in += d->segs_in;
     dd->segs_out += d->segs_out;
     dd->total_retrans += d->total_retrans;
-    dd->lost += d->lost;
+    dd->lost += d->lost_out;
+    dd->backlog_drops += d->backlog_drops;
+    dd->sk_drops += d->sk_drops;
+    dd->md5_hash_drops += d->md5_hash_drops;
+    dd->filter_drops += d->filter_drops;
+    dd->ofo_count += d->ofo_count;
 }
 
 void update_link_metric_map(struct link_key *k, struct link_data *d, int map_fd)
@@ -125,6 +157,7 @@ void pull_probe_data(int map_fd, int metric_map_fd)
 
             ip_str(next_key.family, (unsigned char *)&(next_key.src_addr), src_ip_str, INET6_ADDRSTRLEN);
             ip_str(next_key.family, (unsigned char *)&(next_key.dst_addr), dst_ip_str, INET6_ADDRSTRLEN);
+            /*
             printf("===[%s:%u]: src_addr:%s:%u, dst_addr:%s:%u, family:%u, role:%s, states:%x, rx:%llu, tx:%llu, "
                    "seg_in:%u, segs_out:%u, total_retrans:%u, lost:%u, srtt:%uus, sk_err:%d, sk_err_soft:%d\n",
                 data.comm,
@@ -145,6 +178,7 @@ void pull_probe_data(int map_fd, int metric_map_fd)
                 data.srtt,
                 data.sk_err,
                 data.sk_err_soft);
+            */
             /* 更新link metric */
             update_link_metric_map(&next_key, &data, metric_map_fd);
         }
@@ -155,7 +189,7 @@ void pull_probe_data(int map_fd, int metric_map_fd)
             key = next_key;
         }
     }
-    printf("=========\n\n\n\n");
+    //printf("=========\n\n\n\n");
     return;
 }
 
@@ -175,7 +209,7 @@ void print_link_metric(int map_fd)
             ip_str(next_key.proto, (unsigned char *)&(next_key.c_ip), src_ip_str, INET6_ADDRSTRLEN);
             ip_str(next_key.proto, (unsigned char *)&(next_key.s_ip), dst_ip_str, INET6_ADDRSTRLEN);
             fprintf(stdout,
-                "|%s|%u|%s|%d|%s|%s|%u|%u|%u|%llu|%llu|%u|%u|%u|%u|%u|\n",
+                "|%s|%u|%s|%d|%s|%s|%u|%u|%u|%llu|%llu|%u|%u|%u|%u|%u|%u|%u|%u|%u|%u|%u|%u|%u|%u|\n",
                 OO_NAME,
                 next_key.pid,
                 data.comm,
@@ -191,10 +225,21 @@ void print_link_metric(int map_fd)
                 data.segs_out,
                 data.total_retrans,
                 data.lost,
-                data.srtt);
+                data.srtt,
+                data.srtt_max,
+                data.rcv_wnd_min,
+                data.rcv_wnd_avg,
+                data.rcv_wnd_max,
+                data.backlog_drops,
+                data.sk_drops,
+                data.md5_hash_drops,
+                data.filter_drops,
+                data.ofo_count);
 
             printf("%s [%u-%s]: c_ip:%s, s_ip:%s:%u, proto:%u, link_num:%u, rx:%llu, tx:%llu, "
-                   "segs_in:%u, segs_out:%u, total_retrans:%u, lost:%u, srtt:%uus\n",
+                   "segs_in:%u, segs_out:%u, total_retrans:%u, lost:%u, srtt:%uus, srtt_max:%uus, "
+                   "rcv_wnd_min:%u, rcv_wnd_avg:%u, rcv_wnd_max:%u, backlog:%u, sk_drop:%u, "
+                   "md5:%u, filter:%u, ofo:%u\n",
                 tm,
                 next_key.pid,
                 data.comm,
@@ -209,7 +254,16 @@ void print_link_metric(int map_fd)
                 data.segs_out,
                 data.total_retrans,
                 data.lost,
-                data.srtt);
+                data.srtt,
+                data.srtt_max,
+                data.rcv_wnd_min,
+                data.rcv_wnd_avg,
+                data.rcv_wnd_max,
+                data.backlog_drops,
+                data.sk_drops,
+                data.md5_hash_drops,
+                data.filter_drops,
+                data.ofo_count);
         }
 
         bpf_map_delete_elem(map_fd, &next_key);
@@ -289,11 +343,11 @@ int main(int argc, char **argv)
     if (err != 0) {
         return -1;
     }
-	
+    
     printf("arg parse interval time:%us\n", params.period);
 
-	LOAD(tcpprobe);
-	
+    LOAD(tcpprobe);
+    
     if (signal(SIGINT, sig_int) == SIG_ERR) {
         fprintf(stderr, "can't set signal handler: %s\n", strerror(errno));
         goto err;

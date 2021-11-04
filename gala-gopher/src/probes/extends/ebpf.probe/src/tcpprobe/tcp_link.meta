@@ -79,6 +79,51 @@ measurements:
                 description: "rtt(us)",
                 type: "Unknown",
                 name: "rtt",
+            },
+            {
+                description: "rtt_max(us)",
+                type: "Unknown",
+                name: "rtt_max",
+            },
+            {
+                description: "rcv_wnd_min",
+                type: "Unknown",
+                name: "rcv_wnd_min",
+            },
+            {
+                description: "rcv_wnd_avg",
+                type: "Unknown",
+                name: "rcv_wnd_avg",
+            },
+            {
+                description: "rcv_wnd_max",
+                type: "Unknown",
+                name: "rcv_wnd_max",
+            },
+            {
+                description: "backlog_drops",
+                type: "Unknown",
+                name: "backlog_drops",
+            },
+            {
+                description: "sk_drops",
+                type: "Unknown",
+                name: "sk_drops",
+            },
+            {
+                description: "md5_hash_drops",
+                type: "Unknown",
+                name: "md5_hash_drops",
+            },
+            {
+                description: "filter_drops",
+                type: "Unknown",
+                name: "filter_drops",
+            },
+            {
+                description: "ofo_count",
+                type: "Unknown",
+                name: "ofo_count",
             }
         )
     }

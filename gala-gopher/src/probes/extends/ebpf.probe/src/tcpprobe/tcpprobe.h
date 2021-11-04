@@ -70,6 +70,15 @@ struct metric_data {
     __u32 total_retrans;
     __u32 lost;
     __u32 srtt;
+    __u32 srtt_max;
+    __u32 rcv_wnd_min;
+    __u32 rcv_wnd_avg;
+    __u32 rcv_wnd_max;
+    __u32 backlog_drops;
+    __u32 sk_drops;         
+    __u32 md5_hash_drops;   
+    __u32 filter_drops; 
+    __u32 ofo_count;
     char role;
 };
 
@@ -99,15 +108,77 @@ struct link_data {
     char comm[TASK_COMM_LEN];
     __u16 states; /* established之后的状态合集 */
     __u16 role;   /* 0: server 1: client */
-    __u64 rx;
-    __u64 tx;
-    __u32 segs_in;
-    __u32 segs_out;
-    __u32 total_retrans;
-    __u32 lost;
-    __u32 srtt;
-    int sk_err;
-    int sk_err_soft;
+    __u64 rx;               // FROM tcp_sock.sk_err
+    __u64 tx;               // FROM tcp_sock.sk_err
+    __u32 segs_in;          // FROM tcp_sock.segs_in
+    __u32 segs_out;         // FROM tcp_sock.segs_out
+    __u32 total_retrans;    // FROM tcp_sock.total_retrans
+    __u32 lost_out;         // FROM tcp_sock.lost_out
+    __u32 srtt;             // FROM tcp_sock.srtt_us
+    int sk_err;             // FROM sock.sk_err
+    int sk_err_soft;        // FROM sock.sk_err_soft
+    __u32 rcv_wnd;          // FROM tcp_sock.rcv_wnd
+    __u32 backlog_drops;    // FROM tcp_add_backlog event
+    __u32 sk_drops;         // FROM sock.sk_drops
+    __u32 md5_hash_drops;   // FROM tcp_v4_inbound_md5_hash event
+    __u32 filter_drops;     // FROM tcp_filter event
+    __u32 ofo_count;        // FROM tcp_data_queue_ofo event
 };
+
+#define TCPPROBE_UPDATE_STATS(data, sk, new_state) \
+    do {\
+        struct tcp_sock *__tcp_sock = (struct tcp_sock *)sk;\
+        \
+        (data).rx = _(__tcp_sock->bytes_received);\
+        (data).tx = _(__tcp_sock->bytes_acked);\
+        (data).segs_in = _(__tcp_sock->segs_in);\
+        (data).segs_out = _(__tcp_sock->segs_out);\
+        (data).sk_err = _(sk->sk_err);\
+        (data).sk_err_soft = _(sk->sk_err_soft);\
+        (data).states |= (1 << new_state);\
+        (data).srtt = _(__tcp_sock->srtt_us) >> 3;\
+        (data).total_retrans = _(__tcp_sock->total_retrans);\
+        (data).lost_out = _(__tcp_sock->lost_out);\
+        (data).rcv_wnd = _(__tcp_sock->rcv_wnd);\
+    } while(0)
+
+#define __TCPPROBE_INC_EVT_BACKLOG_DROPS(data, old) ((data).backlog_drops = (old).backlog_drops + 1)
+#define __TCPPROBE_INC_EVT_MD5_DROPS(data, old) ((data).md5_hash_drops = (old).md5_hash_drops + 1)
+#define __TCPPROBE_INC_EVT_FILTER_DROPS(data, old) ((data).filter_drops = (old).filter_drops + 1)
+#define __TCPPROBE_INC_EVT_OFO(data, old) ((data).ofo_count = (old).ofo_count + 1)
+
+
+enum TCPPROBE_EVT_E{
+    TCPPROBE_EVT_BACKLOG,
+    TCPPROBE_EVT_MD5,
+    TCPPROBE_EVT_FILTER,
+    TCPPROBE_EVT_OFO
+};
+
+#define TCPPROBE_INC_EVT(type, data) \
+    do {\
+        switch (type)\
+        {\
+            case TCPPROBE_EVT_BACKLOG:\
+                __TCPPROBE_INC_EVT_BACKLOG_DROPS(data, data);\
+                break;\
+            case TCPPROBE_EVT_MD5:\
+                __TCPPROBE_INC_EVT_MD5_DROPS(data, data);\
+                break;\
+            case TCPPROBE_EVT_FILTER:\
+                __TCPPROBE_INC_EVT_FILTER_DROPS(data, data);\
+                break;\
+            case TCPPROBE_EVT_OFO:\
+                __TCPPROBE_INC_EVT_OFO(data, data);\
+                break;\
+        }\
+    }while(0)
+
+#define TCPPROBE_UPDATE_PRCINFO(data, proc_info) \
+    do {\
+        (data).pid = proc_info->pid;\
+        (data).role = proc_info->role;\
+        __builtin_memcpy(&(data).comm, &proc_info->comm, TASK_COMM_LEN);\
+    } while(0)
 
 #endif
