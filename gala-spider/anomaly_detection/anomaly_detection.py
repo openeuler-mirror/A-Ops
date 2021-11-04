@@ -1,11 +1,15 @@
 import time
+from typing import Dict
+from dataclasses import asdict
+
 from spider.data_process.data_to_entity import node_entity_process
 from anomaly_detection.anomaly_detection_base_on_threshold import threshold_based_anomaly_detection
 from anomaly_detection.common import CONF_INFO, g_edges_list, EDGES_LIST_UPDATE_INTERVAL, ANOMALY_DETECTION_MODEL_TYPE
+from spider.data_process.models import TcpLinkKey, TcpLinkInfo
 
 DETECTION_FUNC = {ANOMALY_DETECTION_MODEL_TYPE.THRESHOLD_MODEL: threshold_based_anomaly_detection}
 
-def edges_infos_detection(conf_info, edges_infos):
+def edges_infos_detection(conf_info, edges_table: Dict[TcpLinkKey, TcpLinkInfo]):
     """
     对edges_infos进行遍历检测
     :param edges_infos:
@@ -18,15 +22,19 @@ def edges_infos_detection(conf_info, edges_infos):
     """
     result = {}
     # 入参校验
-    if not edges_infos or not conf_info:
+    if not edges_table or not conf_info:
         return result
 
-    for edges in edges_infos:
-        result[edges] = edges_infos.get(edges)
+    for edge, edge_info in edges_table.items():
+        if edge_info.link_metric is None:
+            continue
+        detection_data = asdict(edge_info.link_metric)
+        result[edge] = detection_data
 
         # 解析机器、对象信息
-        machine_name = edges[3].split(".")[0]
-        item_name = edges[3].split(".")[1]
+        c_process = edge_info.key.c_process
+        machine_name = c_process.host.host_name
+        item_name = c_process.process_name
         if not machine_name or not item_name:
             continue
 
@@ -43,15 +51,15 @@ def edges_infos_detection(conf_info, edges_infos):
 
         # 构建检测函数入参
         machine_info = {"machine_name":machine_name, "item_name":item_name}
-        detection_data = edges_infos.get(edges)
 
         # 检测及结果
         detection_result = detection_func(machine_info, detection_data)
-        result[edges].setdefault("anomaly_infos", detection_result)
+        result[edge].setdefault("anomaly_infos", detection_result)
 
     return result
 
-def update_edges_info(edges_table, timestamp):
+
+def update_edges_info(edges_table: Dict[TcpLinkKey, TcpLinkInfo], timestamp):
     """
     更新tcp_link基线
     :param edges_table: 当前link信息
@@ -60,7 +68,7 @@ def update_edges_info(edges_table, timestamp):
     """
     edges_list = {}
     for edge, edge_info in edges_table.items():
-        if edge_info.get("0") and edge_info.get("1"):
+        if edge_info.s_process and edge_info.key.c_process:
             edges_list[edge] = edge_info
 
     g_edges_list["edges_list"] = edges_list
@@ -68,7 +76,7 @@ def update_edges_info(edges_table, timestamp):
     return
 
 
-def edges_table_detection(edges_table, timestamp):
+def edges_table_detection(edges_table: Dict[TcpLinkKey, TcpLinkInfo], timestamp) -> Dict[TcpLinkKey, TcpLinkInfo]:
     """
     检测tcp-link是否缺失
     :param edges_table: dict, 当前所有的link集合，例如：
@@ -87,8 +95,8 @@ def edges_table_detection(edges_table, timestamp):
 
     # 拼装返回值
     for edge in edges_table:
+        edges_table.get(edge).status = 1
         result[edge] = edges_table.get(edge)
-        result[edge].setdefault("status", 1)
 
     # 检查基线
     g_edges_list_timestamp = g_edges_list.get("timestamp")
@@ -102,18 +110,18 @@ def edges_table_detection(edges_table, timestamp):
     for edge in g_edges_list.get("edges_list", {}).keys():
         if edge not in _edges_list:
             result[edge] = g_edges_list.get("edges_list", {}).get(edge)
-            result[edge]["status"] = 0
+            result[edge].status = 0
 
     return result
 
 
-def detection(edges_table, edges_infos, nodes_table, lb_tables, vm_table):
+def detection(edges_table, nodes_table, lb_tables, vm_table):
     timestamp = int(time.time())
 
     _edges_table = edges_table_detection(edges_table, timestamp)
-    _edges_infos = edges_infos_detection(CONF_INFO, edges_infos)
+    _anomaly_infos = edges_infos_detection(CONF_INFO, _edges_table)
 
-    return _edges_table, _edges_infos, nodes_table, lb_tables, vm_table
+    return _edges_table, _anomaly_infos, nodes_table, lb_tables, vm_table
 
 
 

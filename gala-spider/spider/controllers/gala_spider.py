@@ -1,5 +1,5 @@
-import connexion
-import six
+from dataclasses import asdict
+from typing import Dict, List
 
 from spider.models.base_response import BaseResponse  # noqa: E501
 from spider.models.entities_response import EntitiesResponse  # noqa: E501
@@ -9,11 +9,106 @@ from spider.models.call import Call
 from spider.models.runon import Runon
 from spider.models.attr import Attr
 from spider.models.anomalyinfo import AnomalyInfo
-from spider import util
 from spider.data_process.data_to_entity import node_entity_process
 from spider.data_process.data_to_entity import clear_tmp
 from anomaly_detection.anomaly_detection import detection
-from anomaly_detection.common import g_edges_list
+from spider.data_process.models import HostNode, ProcessNode
+from spider.data_process.models import LbLinkInfo, LbLinkKey
+from spider.data_process.models import TcpLinkKey, TcpLinkInfo
+
+
+def get_tcp_link_entities(link_infos: Dict[TcpLinkKey, TcpLinkInfo], anomaly_infos) -> List[Entity]:
+    entities = []
+    for link_key, link_info in link_infos.items():
+        edge_attrs = []
+        if link_info.link_metric:
+            for m_key, m_val in asdict(link_info.link_metric).items():
+                edge_attrs.append(Attr(key=m_key, value=m_val, vtype="string"))
+
+        _anomaly_infos = []
+        this_anomaly_infos = anomaly_infos.get(link_key, {}).get("anomaly_infos")
+        if this_anomaly_infos:
+            for i in this_anomaly_infos:
+                _anomaly_infos.append(AnomalyInfo(anomaly_attr=i.get("anomaly_attr"),
+                                                  anomaly_type=i.get("anomaly_type")))
+
+        left_call = Call(type="PROCESS", id=link_info.c_node_id())
+        right_call = Call(type="PROCESS", id=link_info.s_node_id())
+
+        entity = Entity(entityid=link_info.link_id(),
+                        type=link_info.link_type.upper(),
+                        name=link_info.link_id(),
+                        dependeditems=[Dependenceitem(calls=[left_call])],
+                        dependingitems=[Dependenceitem(calls=[right_call])],
+                        attrs=edge_attrs,
+                        anomaly_infos=_anomaly_infos,
+                        status=link_info.status)
+        entities.append(entity)
+
+    return entities
+
+
+def get_lb_link_entities(lb_infos: Dict[LbLinkKey, LbLinkInfo]) -> List[Entity]:
+    entities = []
+    for lb_key, lb_info in lb_infos.items():
+        if not lb_info.link_id():
+            continue
+        lb_attrs = []
+        left_call = Call(type="PROCESS", id=lb_info.c_node_id())
+        right_call = Call(type="PROCESS", id=lb_info.s_node_id())
+        run_on = Runon(type="PROCESS", id=lb_info.lb_node_id())
+        lb_attrs.append(Attr(key='example', value='0.1', vtype='float'))
+        entity = Entity(entityid=lb_info.link_id(),
+                        type=lb_info.link_type.upper(),
+                        name=lb_info.link_id(),
+                        dependeditems=[Dependenceitem(calls=[left_call])],
+                        dependingitems=[Dependenceitem(calls=[right_call], run_ons=[run_on])])
+        entities.append(entity)
+
+    return entities
+
+
+def get_process_node_entities(process_infos: Dict[str, ProcessNode]) -> List[Entity]:
+    entities = []
+    for proc_key, proc_info in process_infos.items():
+        left_calls = []
+        right_calls = []
+        lb_runons = []
+        node_attrs = []
+        for l_edge in proc_info.l_edges:
+            left_calls.append(Call(type=l_edge[1], id=l_edge[0]))
+        for r_edge in proc_info.r_edges:
+            right_calls.append(Call(type=r_edge[1], id=r_edge[0]))
+        for lb_edge in proc_info.lb_edges:
+            lb_runons.append(Runon(type=lb_edge[1], id=lb_edge[0]))
+        on_runon = Runon(type="VM", id=proc_info.host.node_id())
+        node_attrs.append(Attr(key='example', value="0xabcd", vtype="int"))
+        entity = Entity(entityid=proc_key,
+                        type="PROCESS",
+                        name=proc_key,
+                        dependeditems=[Dependenceitem(calls=left_calls, run_ons=lb_runons)],
+                        dependingitems=[Dependenceitem(calls=right_calls, run_ons=[on_runon])],
+                        attrs=node_attrs)
+        entities.append(entity)
+
+    return entities
+
+
+def get_vm_node_entities(vm_infos: Dict[str, HostNode]) -> List[Entity]:
+    entities = []
+    for vm_key, vm_info in vm_infos.items():
+        procs = []
+        for proc in vm_info.processes:
+            procs.append(Runon(type="PROCESS", id=proc))
+        entity = Entity(entityid=vm_key,
+                        type="VM",
+                        name=vm_key,
+                        dependeditems=[Dependenceitem(run_ons=procs)],
+                        dependingitems=[Dependenceitem()])
+        entities.append(entity)
+
+    return entities
+
 
 def get_observed_entity_list():  # noqa: E501
     """get observed entity list
@@ -27,109 +122,25 @@ def get_observed_entity_list():  # noqa: E501
     """
     entities = []
     # obtain tcp_link entities
-    _edges_table, _edges_infos, _nodes_table, _lb_tables, _vm_tables = node_entity_process()
-    if _edges_table is None:
+    _edges_table, _proc_nodes_table, _lb_table, _vm_table = node_entity_process()
+    if not _edges_table:
         clear_tmp()
         return 500
-    edges_table, edges_infos, nodes_table, lb_tables, vm_tables = detection(_edges_table, _edges_infos, _nodes_table, _lb_tables, _vm_tables)
 
-    # type = "TCP_LINK",
-    for key in edges_table.keys():
-        if len(edges_table[key]) < 5:
-            continue
-        edge_attrs = []
-        edge_attrs.append(Attr(key="link_count", value=edges_infos.get(key, {}).get("link_count"), vtype="string"))
-        edge_attrs.append(Attr(key="rx_bytes", value=edges_infos.get(key, {}).get("rx_bytes"), vtype="string"))
-        edge_attrs.append(Attr(key="tx_bytes", value=edges_infos.get(key, {}).get("tx_bytes"), vtype="string"))
-        edge_attrs.append(Attr(key="packets_out", value=edges_infos.get(key, {}).get("packets_out"), vtype="string"))
-        edge_attrs.append(Attr(key="packets_in", value=edges_infos.get(key, {}).get("packets_in"), vtype="string"))
-        edge_attrs.append(Attr(key="retran_packets", value=edges_infos.get(key, {}).get("retran_packets"), vtype="string"))
-        edge_attrs.append(Attr(key="lost_packets", value=edges_infos.get(key, {}).get("lost_packets"), vtype="string"))
-        edge_attrs.append(Attr(key="rtt", value=edges_infos.get(key, {}).get("rtt"), vtype="string"))
-        left_call = Call(type="PROCESS", id=edges_table[key].get('src'))
-        right_call = Call(type="PROCESS", id=edges_table[key].get('dst'))
+    detect_res = detection(_edges_table, _proc_nodes_table, _lb_table, _vm_table)
+    edges_table, anomaly_table, proc_nodes_table, lb_table, vm_table = detect_res
 
-        _anomaly_infos = []
-        this_anomaly_infos = edges_infos.get(key, {}).get("anomaly_infos")
-        if this_anomaly_infos:
-            for i in this_anomaly_infos:
-                _anomaly_infos.append(AnomalyInfo(anomaly_attr = i.get("anomaly_attr"), anomaly_type = i.get("anomaly_type")))
+    tcp_link_entities = get_tcp_link_entities(edges_table, anomaly_table)
+    entities.extend(tcp_link_entities)
 
-        entity = Entity(entityid = edges_table[key].get("edge"),
-                        type = "TCP_LINK",
-                        name = edges_table[key].get("edge"),
-                        dependeditems = Dependenceitem(calls = left_call),
-                        dependingitems = Dependenceitem(calls = right_call),
-                        attrs = edge_attrs,
-                        anomaly_infos = _anomaly_infos,
-                        status = edges_table.get(key, {}).get("status"))
-        entities.append(entity)
-        
-    for key in nodes_table.keys():
-        left_calls = []
-        right_calls = []
-        lb_runons = []
-        node_attrs = []
-        if nodes_table[key].get('l_edge') is not None:
-            for i in range(len(nodes_table[key]['l_edge'])):
-                val = nodes_table[key]['l_edge'].pop()
-                left_call = Call(type = val[1],
-                                id = val[0])
-                left_calls.append(left_call)
-        if nodes_table[key].get('r_edge') is not None:
-            for i in range(len(nodes_table[key]['r_edge'])):
-                val = nodes_table[key]['r_edge'].pop()
-                right_call = Call(type = val[1],
-                                id = val[0])
-                right_calls.append(right_call)
-        if nodes_table[key].get('lb_edge') is not None:
-            for i in range(len(nodes_table[key]['lb_edge'])):
-                val = nodes_table[key]['lb_edge'].pop()
-                lb_runon = Runon(type = val[1],
-                                id = val[0])
-                lb_runons.append(lb_runon)
-        on_runon = Runon(type = "VM", id = nodes_table[key].get('host'))
-        node_attrs.append(Attr(key = 'example', value = "0xabcd", vtype = "int"))
-        entity = Entity(entityid = key,
-                        type = "PROCESS",
-                        name = key,
-                        dependeditems = Dependenceitem(calls = left_calls, run_ons = lb_runons),
-                        dependingitems = Dependenceitem(calls = right_calls, run_ons = on_runon),
-                        attrs = node_attrs)
-        entities.append(entity)
-    if lb_tables is not None:
-        for key in lb_tables.keys():
-            if lb_tables[key].get("lb_id") is None:
-                continue
-            lb_attrs = []
-            left_call = Call(type = "PROCESS",
-                            id = lb_tables[key]['src'])
-            right_call = Call(type = "PROCESS",
-                            id = lb_tables[key]['dst'])
-            run_on = Runon(type = "PROCESS",
-                            id = lb_tables[key]['lb'])
-            lb_attrs.append(Attr(key='example', value = "0.1", vtype = "float"))
-            entity = Entity(entityid = lb_tables[key].get('lb_id'),
-                            type = lb_tables[key]['tname'].upper(),
-                            name = lb_tables[key].get('lb_id'),
-                            dependeditems = Dependenceitem(calls = left_call),
-                            dependingitems = Dependenceitem(calls = right_call, run_ons = run_on))
-            entities.append(entity)
+    lb_link_entities = get_lb_link_entities(lb_table)
+    entities.extend(lb_link_entities)
 
-    # type = "VM" 
-    for key in vm_tables.keys():
-        procs = []
-        for i in range(len(vm_tables[key]['proc'])):
-            val = vm_tables[key]['proc'].pop()
-            proc = Runon(type = "PROCESS",
-                         id = val)
-            procs.append(proc)
-            entity = Entity(entityid = key,
-                            type = "VM",
-                            name = key,
-                            dependeditems = Dependenceitem(run_ons = procs),
-                            dependingitems = Dependenceitem())
-        entities.append(entity)
+    process_node_entities = get_process_node_entities(proc_nodes_table)
+    entities.extend(process_node_entities)
+
+    vm_node_entities = get_vm_node_entities(vm_table)
+    entities.extend(vm_node_entities)
 
     if len(entities) == 0:
         code = 500
@@ -138,10 +149,10 @@ def get_observed_entity_list():  # noqa: E501
         code = 200
         msg = "Successful"
 
-    entities_res = EntitiesResponse(code = code,
-                                    msg = msg,
-                                    timestamp = 12345678,
-                                    entities = entities)
+    entities_res = EntitiesResponse(code=code,
+                                    msg=msg,
+                                    timestamp=12345678,
+                                    entities=entities)
     clear_tmp()
     return entities_res, 200
 
@@ -157,3 +168,11 @@ def get_topo_graph_status():  # noqa: E501
 
     clear_tmp()
     return 'clear tmp files!'
+
+
+if __name__ == '__main__':
+    #_edges_table, _proc_nodes_table, _lb_table, _vm_table = node_entity_process()
+    # res = detection(_edges_table, _proc_nodes_table, _lb_table, _vm_table)
+    # print(res[1])
+    res = get_observed_entity_list()
+    print(res)
