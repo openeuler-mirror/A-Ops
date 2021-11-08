@@ -31,3 +31,11 @@ temp_other_file = cf.get("temp_path", "temp_other_file")
 spider_port = cf.get("spider", "port")
 
 conf_path = cf.get("anomaly_detection", "config_path")
+
+# prometheus config
+prometheus_conf = {
+    "base_url": cf.get("prometheus", "base_url"),
+    "instant_api": cf.get("prometheus", "instant_api"),
+    "range_api": cf.get("prometheus", "range_api"),
+    "step": cf.get("prometheus", "step")
+}
