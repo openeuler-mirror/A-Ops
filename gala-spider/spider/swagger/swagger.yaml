@@ -218,12 +218,10 @@ definitions:
         type: "array"
         items:
           $ref: "#/definitions/Attr"
-      anomaly_infos:
-        type: "array"
+      anomaly:
+        type: "object"
         items:
-          $ref: "#/definitions/ANOMALY_INFO"
-      status:
-        type: "integer" 
+          $ref: "#/definitions/Anomaly"
     example:
       dependingitems:
       - calls:
@@ -277,24 +275,37 @@ definitions:
       - vtype: "int"
         value: "value"
         key: "key"
-      anomaly_infos:
-      - anomaly_attr: "lost_packets"
-        anomaly_type: "1"
-      - anomaly_attr: "retran_packets"
-        anomaly_type: "1"
-      status: 1
-       
+      anomaly:
+        status: "ANOMALY_YES"
+        anomalyitem:
+        - anomaly_attr: xxx
+          anomaly_type: ABOVE THRESHOLD
+        - anomaly_attr: yyy
+          anomaly_type: ABOVE THRESHOLD
 
-  ANOMALY_INFO:
+  Anomaly:
+    type: "object"
+    properties:
+      status:
+        type: "string"
+        enum:
+          - "ANOMALY_NO"
+          - "ANOMALY_YES"
+          - "ANOMALY_LACKING"
+      anomalyitem:
+        type: "array"
+        items:
+          $ref: "#/definitions/AnomalyItem"
+  AnomalyItem:
     type: "object"
     properties:
       anomaly_attr:
         type: "string"
       anomaly_type:
         type: "string"
-    example:
-      anomaly_attr: "lost_packets"
-      anomaly_type: "1"
+        enum:
+          - "BELOW THRESHOLD"
+          - "ABOVE THRESHOLD"
 
 
   Dependenceitem:

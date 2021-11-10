@@ -25,8 +25,8 @@ class EntitiesResponse(Model):
         :type msg: str
         :param timestamp: The timestamp of this EntitiesResponse.  # noqa: E501
         :type timestamp: int
-        :type entit        :param entityids: The entityids of this EntitiesResponse.  # noqa: E501
-yids: List[str]
+        :param entityids: The entityids of this EntitiesResponse.  # noqa: E501
+        :type entityids: List[str]
         :param entities: The entities of this EntitiesResponse.  # noqa: E501
         :type entities: List[Entity]
         """
