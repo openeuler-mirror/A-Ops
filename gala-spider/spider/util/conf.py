@@ -12,6 +12,7 @@ else:
 
 db_agent = cf.get("global", "data_source")
 ui_agent = cf.get("global", "ui_source")
+observe_conf_path = cf.get("global", "observe_conf_path")
 
 kafka_topic = cf.get("kafka", "topic")
 kafka_broker = cf.get("kafka", "broker")

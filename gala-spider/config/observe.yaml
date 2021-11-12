@@ -1,0 +1,24 @@
+data_agent: gala_gopher
+observe_entities:
+  - name: tcp_link
+    metrics:
+      - rx_bytes
+      - tx_bytes
+      - packets_out
+      - packets_in
+      - retran_packets
+      - lost_packets
+      - rtt
+      - link_count
+  - name: ipvs_link
+    metrics:
+      - example
+  - name: nginx_link
+    metrics:
+      - example
+  - name: haproxy_link
+    metrics:
+      - example
+  - name: dnsmasq_link
+    metrics:
+      - example

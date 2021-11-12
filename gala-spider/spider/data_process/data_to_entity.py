@@ -2,70 +2,88 @@ import os
 import json
 import ast
 
-from typing import Dict
+from typing import Dict, List
 
 from spider.util.conf import temp_tcp_file
 from spider.util.conf import temp_other_file
 from spider.util.conf import exclude_ip
+from spider.util.conf import other_table
+from spider.util.conf import db_agent
 from spider.data_process.models import HostNode, ProcessNode
 from spider.data_process.models import TcpLinkKey, TcpLinkInfo, TcpLinkMetric
 from spider.data_process.models import LbLinkKey, LbLinkInfo
+from spider.data_process.prometheus_process import g_prometheus_processor
 
 
-def tcp_entity_process() -> Dict[TcpLinkKey, TcpLinkInfo]:
+def get_entities_from_kafka() -> List[dict]:
+    res = []
+
+    try:
+        with open(temp_tcp_file) as f:
+            for line in f:
+                res.append(dict(json.loads(line)))
+
+        with open(temp_other_file) as f:
+            for line in f:
+                res.append(dict(json.loads(line)))
+    except IOError as ex:
+        print(ex)
+
+    return res
+
+
+def tcp_entity_process(entities: List[dict]) -> Dict[TcpLinkKey, TcpLinkInfo]:
     linkinfos = {}
     process_infos = {}
 
-    if not os.path.exists(temp_tcp_file):
-        print("{} not exist.".format(temp_tcp_file))
-        return {}
+    for entity in entities:
+        if entity.get('client_ip') in ast.literal_eval(exclude_ip):
+            continue
+        if entity.get('server_ip') in ast.literal_eval(exclude_ip):
+            continue
 
-    with open(temp_tcp_file) as f:
-        for line in f:
-            line_json = json.loads(line)
-            if line_json.get('client_ip') in ast.literal_eval(exclude_ip):
+        table_name = entity.get('table_name')
+        hostname = entity.get('hostname')
+        process_name = entity.get('process_name')
+        s_ip = entity.get('server_ip')
+        s_port = entity.get('server_port')
+        c_ip = entity.get('client_ip')
+        if not s_ip or not s_port or not c_ip or not hostname or not process_name:
+            continue
+        process = ProcessNode(HostNode(hostname), process_name)
+
+        if table_name == 'tcp_link':
+            if s_ip == c_ip:
                 continue
-            if line_json.get('server_ip') in ast.literal_eval(exclude_ip):
+            role = entity.get('role')
+            linkmetric = TcpLinkMetric(entity.get('rx_bytes', ''),
+                                       entity.get('tx_bytes', ''),
+                                       entity.get('packets_out', ''),
+                                       entity.get('packets_in', ''),
+                                       entity.get('retran_packets', ''),
+                                       entity.get('lost_packets', ''),
+                                       entity.get('rtt', ''),
+                                       entity.get('link_count', ''))
+            c_process = None
+            if role == '0':
+                process_infos[(s_ip, s_port)] = process
+            elif role == '1':
+                c_process = process
+
+            key = TcpLinkKey(s_ip, s_port, c_ip, c_process)
+            linkinfos.setdefault(key, TcpLinkInfo(key))
+            linkinfos[key].link_metric = linkmetric
+        elif table_name == 'ipvs_link':
+            v_ip = entity.get('virtual_ip')
+            v_port = entity.get('virtual_port')
+            l_ip = entity.get('local_ip')
+            if not v_ip or not v_port or not l_ip:
                 continue
 
-            table_name = line_json.get('table_name')
-            hostname = line_json.get('hostname')
-            process_name = line_json.get('process_name')
-            s_ip = line_json.get('server_ip')
-            s_port = line_json.get('server_port')
-            c_ip = line_json.get('client_ip')
-            process = ProcessNode(HostNode(hostname), process_name)
+            process_infos[(v_ip, v_port)] = process
 
-            if table_name == 'tcp_link':
-                if s_ip == c_ip:
-                    continue
-                role = line_json.get('role')
-                linkmetric = TcpLinkMetric(line_json.get('rx_bytes', ''),
-                                           line_json.get('tx_bytes', ''),
-                                           line_json.get('packets_out', ''),
-                                           line_json.get('packets_in', ''),
-                                           line_json.get('retran_packets', ''),
-                                           line_json.get('lost_packets', ''),
-                                           line_json.get('rtt', ''),
-                                           line_json.get('link_count', ''))
-                c_process = None
-                if role == '0':
-                    process_infos[(s_ip, s_port)] = process
-                elif role == '1':
-                    c_process = process
-
-                key = TcpLinkKey(s_ip, s_port, c_ip, c_process)
-                linkinfos.setdefault(key, TcpLinkInfo(key))
-                linkinfos[key].link_metric = linkmetric
-            elif table_name == 'ipvs_link':
-                v_ip = line_json.get('virtual_ip')
-                v_port = line_json.get('virtual_port')
-                l_ip = line_json.get('local_ip')
-
-                process_infos[(v_ip, v_port)] = process
-
-                key = TcpLinkKey(s_ip, s_port, l_ip, process)
-                linkinfos.setdefault(key, TcpLinkInfo(key))
+            key = TcpLinkKey(s_ip, s_port, l_ip, process)
+            linkinfos.setdefault(key, TcpLinkInfo(key))
 
     for key, linkinfo in linkinfos.items():
         if key.c_process is None:
@@ -89,51 +107,68 @@ def tcp_entity_process() -> Dict[TcpLinkKey, TcpLinkInfo]:
     return res
 
 
-def lb_entity_process() -> Dict[LbLinkKey, LbLinkInfo]:
+def lb_entity_process(entities: List[dict]) -> Dict[LbLinkKey, LbLinkInfo]:
     lb_tables = {}
-    if not os.path.exists(temp_other_file):
-        print("{} not exist".format(temp_other_file))
-        return {}
 
-    with open(temp_other_file) as f:
-        for line in f:
-            line_json = json.loads(line)
-            hostname = line_json.get("hostname")
-            table_name = line_json.get("table_name")
-            process_name = line_json.get("process_name")
-            if not process_name:
-                process_name = table_name.split("_")[0]
-            process = ProcessNode(HostNode(hostname), process_name)
+    for entity in entities:
+        table_name = entity.get("table_name")
+        if table_name not in other_table:
+            continue
+        hostname = entity.get("hostname")
+        process_name = entity.get("process_name")
+        if not process_name:
+            process_name = table_name.split("_")[0]
+        if not hostname or not process_name:
+            continue
+        process = ProcessNode(HostNode(hostname), process_name)
 
-            if table_name == "dnsmasq_link":
-                pass
+        if table_name == "dnsmasq_link":
+            pass
+        else:
+            s_ip = entity.get("server_ip")
+            s_port = entity.get("server_port")
+            v_ip = entity.get("virtual_ip")
+            v_port = entity.get("virtual_port")
+            c_ip = entity.get("client_ip")
+            if table_name == "ipvs_link":
+                l_ip = entity.get("local_ip")
             else:
-                s_ip = line_json.get("server_ip")
-                s_port = line_json.get("server_port")
-                v_ip = line_json.get("virtual_ip")
-                v_port = line_json.get("virtual_port")
-                c_ip = line_json.get("client_ip")
-                if table_name == "ipvs_link":
-                    l_ip = line_json.get("local_ip")
-                else:
-                    l_ip = v_ip
+                l_ip = v_ip
+            if not s_ip or not s_port or not v_ip or not v_port or not l_ip or not c_ip:
+                continue
 
-                key = LbLinkKey(s_ip, s_port, v_ip, v_port, l_ip, c_ip)
-                lb_info = LbLinkInfo(key, lb_process=process, link_type=table_name)
-                lb_tables.setdefault(key, lb_info)
+            key = LbLinkKey(s_ip, s_port, v_ip, v_port, l_ip, c_ip)
+            lb_info = LbLinkInfo(key, lb_process=process, link_type=table_name)
+            lb_tables.setdefault(key, lb_info)
 
     return lb_tables
+
+
+def get_observe_entities() -> List[dict]:
+    entities = []
+    _db_agent = ast.literal_eval(db_agent)
+
+    if _db_agent == "prometheus":
+        entities = g_prometheus_processor.get_observe_entities()
+    elif _db_agent == "kafka":
+        entities = get_entities_from_kafka()
+    else:
+        print("Unknown data source:{}, please check!".format(_db_agent))
+
+    return entities
 
 
 def node_entity_process() -> tuple:
     node_infos = {}
     vm_infos = {}
 
-    link_infos = tcp_entity_process()
+    entities = get_observe_entities()
+
+    link_infos = tcp_entity_process(entities)
     if len(link_infos) == 0:
-        print("Please wait kafka consumer datas...")
+        print("No data arrived, please wait...")
         return None, None, None, None
-    lb_infos = lb_entity_process()
+    lb_infos = lb_entity_process(entities)
 
     for key, linkinfo in link_infos.items():
         if linkinfo.s_process is None or linkinfo.key.c_process is None:
