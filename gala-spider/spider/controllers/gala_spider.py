@@ -22,6 +22,9 @@ from spider.data_process.models import TcpLinkKey, TcpLinkInfo
 def get_tcp_link_entities(link_infos: Dict[TcpLinkKey, TcpLinkInfo], anomaly_infos) -> List[Entity]:
     entities = []
     for link_key, link_info in link_infos.items():
+        if link_key.c_process is None or link_info.s_process is None:
+            continue
+
         edge_attrs = []
         if link_info.link_metric:
             for m_key, m_val in asdict(link_info.link_metric).items():

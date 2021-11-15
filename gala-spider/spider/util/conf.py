@@ -19,6 +19,7 @@ CONF_INFO = get_conf_info(CONFIG_PATH)
 
 db_agent = CONF_INFO.get("global", {}).get("data_source")
 ui_agent = CONF_INFO.get("global", {}).get("ui_source")
+observe_conf_path = CONF_INFO.get("global", {}).get("observe_conf_path")
 
 kafka_topic = CONF_INFO.get("kafka", {}).get("topic")
 kafka_broker = CONF_INFO.get("kafka", {}).get("broker")
