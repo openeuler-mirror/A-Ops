@@ -324,8 +324,10 @@ pushd gala-spider
 %py3_install
 mkdir -p %{buildroot}/%{_sysconfdir}/spider
 install config/*.conf %{buildroot}/%{_sysconfdir}/spider/
+install anomaly_detection/*.yaml %{buildroot}/%{_sysconfdir}/spider/
 mkdir %{buildroot}/%{python3_sitelib}/spider/config
 install config/*.conf %{buildroot}/%{python3_sitelib}/spider/config
+install anomaly_detection/*.yaml %{buildroot}/%{python3_sitelib}/spider/config
 mkdir -p %{buildroot}/%{_prefix}/lib/systemd/system
 install service/gala-spider.service %{buildroot}/%{_prefix}/lib/systemd/system
 mkdir -p %{buildroot}/%{_tmppath}/spider
@@ -488,6 +490,9 @@ fi
 
 
 %changelog
+* Fri Nov 12 2021 zhaoyuxing<zhaoyuxing2@huawei.com> - v1.0.3-2
+- gala-spider add anormaly_detection conf
+
 * Thu Sep 16 2021 chemingdao<chemingdao@huawei.com> - v1.0.3-1
 - NEW release 1.0.3.
 
