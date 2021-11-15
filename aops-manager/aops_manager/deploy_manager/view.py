@@ -195,13 +195,13 @@ class ExecuteTask(Resource):
         Args:
             inventory(instance): instance of InventoryBuilder
             task_id(str): id of a task.
-        Returns:
-            bool: The execution flag of the task
         """
         res = TaskRunner.run_task(task_id, HostKey.key)
         inventory.remove_host_vars_in_inventory()
-        LOGGER.info("Task %s execution succeed.", task_id)
-        return res
+        if res:
+            LOGGER.info("Task %s execution succeeded.", task_id)
+            return
+        LOGGER.error("Task %s execution failed.", task_id)
 
 
 class ImportTemplate(Resource):

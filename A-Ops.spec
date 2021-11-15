@@ -1,11 +1,12 @@
 Name:		A-Ops
-Version:	v1.0.3
+Version:	v1.1.1
 Release:	1
 Summary:	The intelligent ops toolkit for openEuler
 License:	MulanPSL2
 URL:		https://gitee.com/openeuler/A-Ops
 Source0:	%{name}-%{version}.tar.gz
 Source1:	A-Ops-web-node-modules.tar.gz
+patch0001:	0001-fix-diag-return.patch
 
 
 # build for gopher
@@ -109,7 +110,7 @@ Executor of diagnose module. Get messages from kafka and do the diagnose tasks.
 %package -n adoctor-cli
 Summary:    command line tool of A-doctor
 Requires:   aops-utils = %{version}-%{release}
-
+Requires:   python3-tqdm
 
 %description -n adoctor-cli
 commandline tool of adoctor, offer commands for executing diagnose, importing/exporting diagnose tree,
@@ -167,6 +168,7 @@ website for A-Ops, deployed by Nginx
 %prep
 %setup
 %setup -T -D -a 1
+%patch0001 -p1
 cp -r A-Ops-web-node-modules/node_modules aops-web/
 
 %build
@@ -490,8 +492,26 @@ fi
 
 
 %changelog
-* Fri Nov 12 2021 zhaoyuxing<zhaoyuxing2@huawei.com> - v1.0.3-2
+* Fri Nov 12 2021 zhaoyuxing<zhaoyuxing2@huawei.com> - v1.1.1-2
 - gala-spider add anormaly_detection conf
+
+* Sun Sep 26 2021 chemingdao<chemingdao@huawei.com> - v1.1.1-1
+- New release 1.1.1, bug fix and new features.
+- 1. Web issues fix: display fix and domain management modification.
+- 2. Fix cli display issues and add loading bar of diag.
+- 3. Fix return of gala-ragdoll.
+- 4. Fix log level.
+- 5. haproxy probe with vport info.
+
+* Sat Sep 18 2021 zhuyuncheng<zhuyuncheng@huawei.com> - v1.1.0-2
+- add missed file and better cli output
+
+* Fri Sep 17 2021 chemingdao<chemingdao@huawei.com> - v1.1.0-1
+- New release 1.1.0, bug fix and UI beautify.
+- 1. Simplify gala-spider UI display.
+- 2. Beautify cli print with table and highlight json.
+- 3. Bug fix: now support check with management host.
+- 4. Modify elasticsearch and fluentd default config.
 
 * Thu Sep 16 2021 chemingdao<chemingdao@huawei.com> - v1.0.3-1
 - NEW release 1.0.3.
