@@ -143,6 +143,7 @@ class DiagCommand(BaseCommand):
                 }
                 result = request_without_print('POST', diag_url, pyload, header, params.access_token)
                 print(pretty_json(result))
+                return
             times -= 1
         print("There is no task can be found in diagnosis scheduler, please try again.")
 

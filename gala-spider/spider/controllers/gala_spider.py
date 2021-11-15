@@ -8,10 +8,12 @@ from spider.models.dependenceitem import Dependenceitem
 from spider.models.call import Call
 from spider.models.runon import Runon
 from spider.models.attr import Attr
-from spider.models.anomalyinfo import AnomalyInfo
+from spider.models.anomaly_item import AnomalyItem
+from spider.models.anomaly import Anomaly
 from spider.data_process.data_to_entity import node_entity_process
 from spider.data_process.data_to_entity import clear_tmp
 from anomaly_detection.anomaly_detection import detection
+from anomaly_detection.util import ANOMALY_STATUS
 from spider.data_process.models import HostNode, ProcessNode
 from spider.data_process.models import LbLinkInfo, LbLinkKey
 from spider.data_process.models import TcpLinkKey, TcpLinkInfo
@@ -28,12 +30,14 @@ def get_tcp_link_entities(link_infos: Dict[TcpLinkKey, TcpLinkInfo], anomaly_inf
             for m_key, m_val in asdict(link_info.link_metric).items():
                 edge_attrs.append(Attr(key=m_key, value=m_val, vtype="string"))
 
-        _anomaly_infos = []
+        _anomaly_items = []
         this_anomaly_infos = anomaly_infos.get(link_key, {}).get("anomaly_infos")
         if this_anomaly_infos:
             for i in this_anomaly_infos:
-                _anomaly_infos.append(AnomalyInfo(anomaly_attr=i.get("anomaly_attr"),
-                                                  anomaly_type=i.get("anomaly_type")))
+                _anomaly_items.append(AnomalyItem(anomaly_attr = i.get("anomaly_attr"),
+                                                  anomaly_type = i.get("anomaly_type")))
+        _anomaly_status = ANOMALY_STATUS.ANOMALY_YES if len(_anomaly_items) > 0 else ANOMALY_STATUS.ANOMALY_NO
+        _anomaly_status = ANOMALY_STATUS.ANOMALY_LACKING if not link_info.status else _anomaly_status
 
         left_call = Call(type="PROCESS", id=link_info.c_node_id())
         right_call = Call(type="PROCESS", id=link_info.s_node_id())
@@ -44,8 +48,7 @@ def get_tcp_link_entities(link_infos: Dict[TcpLinkKey, TcpLinkInfo], anomaly_inf
                         dependeditems=[Dependenceitem(calls=[left_call])],
                         dependingitems=[Dependenceitem(calls=[right_call])],
                         attrs=edge_attrs,
-                        anomaly_infos=_anomaly_infos,
-                        status=link_info.status)
+                        anomaly=Anomaly(status=_anomaly_status, anomalyitem=_anomaly_items))
         entities.append(entity)
 
     return entities
@@ -125,13 +128,17 @@ def get_observed_entity_list():  # noqa: E501
     """
     entities = []
     # obtain tcp_link entities
-    _edges_table, _proc_nodes_table, _lb_table, _vm_table = node_entity_process()
+    _edges_table, proc_nodes_table, lb_table, vm_table = node_entity_process()
     if not _edges_table:
         clear_tmp()
-        return 500
+        return entities, 500
 
-    detect_res = detection(_edges_table, _proc_nodes_table, _lb_table, _vm_table)
-    edges_table, anomaly_table, proc_nodes_table, lb_table, vm_table = detect_res
+    object_item_data = {"tcp_link": _edges_table, "nodes": proc_nodes_table, "lb": lb_table, "vm": vm_table}
+    object_attr_data = {"tcp_link": _edges_table}
+    _object_item_data, _object_attr_data = detection(object_item_data, object_attr_data)
+
+    edges_table = _object_item_data.get("tcp_link")
+    anomaly_table = _object_attr_data.get("tcp_link")
 
     tcp_link_entities = get_tcp_link_entities(edges_table, anomaly_table)
     entities.extend(tcp_link_entities)
@@ -174,8 +181,5 @@ def get_topo_graph_status():  # noqa: E501
 
 
 if __name__ == '__main__':
-    #_edges_table, _proc_nodes_table, _lb_table, _vm_table = node_entity_process()
-    # res = detection(_edges_table, _proc_nodes_table, _lb_table, _vm_table)
-    # print(res[1])
     res = get_observed_entity_list()
     print(res)

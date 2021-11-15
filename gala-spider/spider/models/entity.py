@@ -5,7 +5,6 @@ from datetime import date, datetime  # noqa: F401
 
 from typing import List, Dict  # noqa: F401
 
-from spider.models.anomalyinfo import AnomalyInfo
 from spider.models.base_model_ import Model
 from spider.models.dependenceitem import Dependenceitem
 from spider.models.attr import Attr
@@ -18,7 +17,7 @@ class Entity(Model):
     Do not edit the class manually.
     """
 
-    def __init__(self, entityid: str=None, type: str=None, name: str=None, dependingitems: List[Dependenceitem]=None, dependeditems: List[Dependenceitem]=None, attrs: List[Attr]=None, anomaly_infos: List[AnomalyInfo]=None, status: int=None):  # noqa: E501
+    def __init__(self, entityid: str=None, type: str=None, name: str=None, dependingitems: List[Dependenceitem]=None, dependeditems: List[Dependenceitem]=None, attrs: List[Attr]=None, anomaly: object=None):  # noqa: E501
         """Entity - a model defined in Swagger
 
         :param entityid: The entityid of this Entity.  # noqa: E501
@@ -33,10 +32,8 @@ class Entity(Model):
         :type dependeditems: List[Dependenceitem]
         :param attrs: The attrs of this Entity.  # noqa: E501
         :type attrs: List[Attr]
-        :param anomaly_infos: The anomaly_infos of this Entity.  # noqa: E501
-        :type anomaly_infos: List[ANOMALYINFO]
-        :param status: The status of this Entity.  # noqa: E501
-        :type status: int
+        :param anomaly: The anomaly of this Entity.  # noqa: E501
+        :type anomaly: object
         """
         self.swagger_types = {
             'entityid': str,
@@ -45,8 +42,7 @@ class Entity(Model):
             'dependingitems': List[Dependenceitem],
             'dependeditems': List[Dependenceitem],
             'attrs': List[Attr],
-            'anomaly_infos': List[AnomalyInfo],
-			'status': int
+            'anomaly': object
         }
 
         self.attribute_map = {
@@ -56,8 +52,7 @@ class Entity(Model):
             'dependingitems': 'dependingitems',
             'dependeditems': 'dependeditems',
             'attrs': 'attrs',
-            'anomaly_infos': 'anomaly_infos',
-            'status': 'status'
+            'anomaly': 'anomaly'
         }
 
         self._entityid = entityid
@@ -66,8 +61,7 @@ class Entity(Model):
         self._dependingitems = dependingitems
         self._dependeditems = dependeditems
         self._attrs = attrs
-        self._anomaly_infos = anomaly_infos
-        self._status = status
+        self._anomaly = anomaly
 
     @classmethod
     def from_dict(cls, dikt) -> 'Entity':
@@ -213,43 +207,22 @@ class Entity(Model):
         self._attrs = attrs
 
     @property
-    def anomaly_infos(self) -> List[AnomalyInfo]:
-        """Gets the anomaly_infos of this Entity.
+    def anomaly(self) -> object:
+        """Gets the anomaly of this Entity.
 
 
-        :return: The anomaly_infos of this Entity.
-        :rtype: List[ANOMALYINFO]
+        :return: The anomaly of this Entity.
+        :rtype: object
         """
-        return self._anomaly_infos
+        return self._anomaly
 
-    @anomaly_infos.setter
-    def anomaly_infos(self, anomaly_infos: List[AnomalyInfo]):
-        """Sets the anomaly_infos of this Entity.
-
-
-        :param anomaly_infos: The anomaly_infos of this Entity.
-        :type anomaly_infos: List[ANOMALYINFO]
-        """
-
-        self._anomaly_infos = anomaly_infos
-
-    @property
-    def status(self) -> int:
-        """Gets the status of this Entity.
+    @anomaly.setter
+    def anomaly(self, anomaly: object):
+        """Sets the anomaly of this Entity.
 
 
-        :return: The status of this Entity.
-        :rtype: int
-        """
-        return self._status
-
-    @status.setter
-    def status(self, status: int):
-        """Sets the status of this Entity.
-
-
-        :param status: The status of this Entity.
-        :type status: int
+        :param anomaly: The anomaly of this Entity.
+        :type anomaly: object
         """
 
-        self._status = status
+        self._anomaly = anomaly

@@ -1,42 +1,61 @@
 import os
-import configparser
+import yaml
 
-CONFIG = "/etc/spider/gala-spider.conf"
+CONFIG_PATH = "/opt/gala-spider/gala-spider.yaml"
 
-# analysis configuration
-cf = configparser.ConfigParser()
-if os.path.exists(CONFIG):
-    cf.read(CONFIG, encoding="utf-8")
-else:
-    cf.read("config/gala-spider.conf", encoding="utf-8")
+def get_conf_info(path):
+    result = {}
 
-db_agent = cf.get("global", "data_source")
-ui_agent = cf.get("global", "ui_source")
-observe_conf_path = cf.get("global", "observe_conf_path")
+    true_path = os.path.realpath(path)
+    try:
+        with open(true_path, "rb") as f:
+            result = yaml.safe_load(f.read())
+    except IOError:
+        print("Invalid file")
 
-kafka_topic = cf.get("kafka", "topic")
-kafka_broker = cf.get("kafka", "broker")
+    return result
 
-neo4j_addr = cf.get("neo4j", "address")
-neo4j_uname = cf.get("neo4j", "username")
-neo4j_pwd = cf.get("neo4j", "password")
-neo4j_timer = cf.get("neo4j", "timer")
+CONF_INFO = get_conf_info(CONFIG_PATH)
 
-base_table = cf.get("table_info", "base_table_name")
-other_table = cf.get("table_info", "other_table_name")
-exclude_ip = cf.get("option", "exclude_addr")
+db_agent = CONF_INFO.get("global", {}).get("data_source")
+ui_agent = CONF_INFO.get("global", {}).get("ui_source")
+observe_conf_path = CONF_INFO.get("global", {}).get("observe_conf_path")
 
-temp_tcp_file = cf.get("temp_path", "temp_tcp_file")
-temp_other_file = cf.get("temp_path", "temp_other_file")
+kafka_topic = CONF_INFO.get("kafka", {}).get("topic")
+kafka_broker = CONF_INFO.get("kafka", {}).get("broker")
+kafka_group_id = CONF_INFO.get("kafka", {}).get("group_id")
 
-spider_port = cf.get("spider", "port")
+prometheus_server = CONF_INFO.get("prometheus", {}).get("SERVER", "")
+prometheus_port = CONF_INFO.get("prometheus", {}).get("PORT", "")
+prometheus_range_query_api = CONF_INFO.get("prometheus", {}).get("RANGE_QUERY_API", "")
+prometheus_instance_query_api = CONF_INFO.get("prometheus", {}).get("INSTANT_QUERY_API", "")
 
-conf_path = cf.get("anomaly_detection", "config_path")
+prometheus_range_query_url = "{server}:{port}{api}".format(server=prometheus_server,
+                                                           port=prometheus_port,
+                                                           api=prometheus_range_query_api)
+prometheus_instance_query_url = "{server}:{port}{api}".format(server=prometheus_server,
+                                                              port=prometheus_port,
+                                                              api=prometheus_instance_query_api)
 
-# prometheus config
+neo4j_addr = CONF_INFO.get("neo4j", {}).get("address")
+neo4j_uname = CONF_INFO.get("neo4j", {}).get("username")
+neo4j_pwd = str(CONF_INFO.get("neo4j", {}).get("password"))
+neo4j_timer = CONF_INFO.get("neo4j", {}).get("timer")
+
+base_table = CONF_INFO.get("table_info", {}).get("base_table_name")
+other_table = CONF_INFO.get("table_info", {}).get("other_table_name")
+exclude_ip = CONF_INFO.get("option", {}).get("exclude_addr")
+
+temp_tcp_file = CONF_INFO.get("temp_path", {}).get("temp_tcp_file")
+temp_other_file = CONF_INFO.get("temp_path", {}).get("temp_other_file")
+
+spider_port = CONF_INFO.get("spider", {}).get("port")
+
+anomaly_detection_conf = CONF_INFO.get("anomaly_detection", {})
+
 prometheus_conf = {
-    "base_url": cf.get("prometheus", "base_url"),
-    "instant_api": cf.get("prometheus", "instant_api"),
-    "range_api": cf.get("prometheus", "range_api"),
-    "step": cf.get("prometheus", "step")
+    "base_url": CONF_INFO.get("prometheus", {}).get("base_url"),
+    "instant_api": CONF_INFO.get("prometheus", {}).get("instant_api"),
+    "range_api": CONF_INFO.get("prometheus", {}).get("range_api"),
+    "step": CONF_INFO.get("prometheus", {}).get("step")
 }
