@@ -15,7 +15,8 @@ def db_kafka_agent():
     consumer = KafkaConsumer(
         kafka_topic,
         group_id="group2",
-        bootstrap_servers=ast.literal_eval(kafka_broker)
+        bootstrap_servers=ast.literal_eval(kafka_broker),
+        auto_offset_reset="latest"
     )
     # can specify a type of IP that isn't recorded
     checkip = ast.literal_eval(exclude_ip)
