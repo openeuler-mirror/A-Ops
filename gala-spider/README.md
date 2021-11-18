@@ -67,6 +67,41 @@ gala-spider用于架构感知探测结果呈现，可以根据各个节点上报
 
 ![topo_logic](doc/pic/topo_logic.png)
 
+### 3D 拓扑图分层架构
+
+![hier_arch](doc/pic/hier_arch.png)
+
+观测对象说明：
+1. Host：主机/虚拟机节点
+    - machine_id：主机ID，用于标识网络中的一台主机/虚拟机。
+  
+2. Container：容器节点
+    - container_id：容器ID，用于标识主机/虚拟机上的容器。
+    - machine_id：主机ID，用于关联容器所属的主机/虚拟机。
+    - netns：容器所在的 net namespace 。
+    - mntns：容器所在的 mount namespace 。
+    - netcgrp：容器关联的 net cgroup 。
+    - memcgrp：容器关联的 memory cgroup 。
+    - cpucgrp：容器关联的 cpu cgroup 。
+  
+3. Task：进程节点
+    - pid：进程ID，用于标识主机/虚拟机或容器上运行的一个进程。
+    - machine_id：主机ID，用于关联进程所属的主机/虚拟机。
+    - container_id：容器ID，用于关联进程所属的容器。
+    - tgid：进程组ID。
+    - pidns：进程所在的 pid namespace 。
+    
+4. Endpoint：进程的通信端点
+    - type：端点类型，如 TCP 、UDP 等。
+    - ip：端点绑定的 ip 地址，可选项。
+    - port：端点绑定的端口号，可选项。
+    - pid：进程ID，用于关联端点所属的进程ID。
+    - netns：端点所在的 net namespace 。
+    
+5. Jvm：Java程序运行时
+6. Python：Python程序运行时
+7. Golang：Go程序运行时
+
 ### 接口文档
 
 [Restful API](doc/swagger.yaml)
