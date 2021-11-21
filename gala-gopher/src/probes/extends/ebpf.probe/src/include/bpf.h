@@ -424,7 +424,7 @@ static __always_inline int set_memlock_rlimit(void)
     }\
 
 #define __BIN_FILE_PATH_LEN 256
-#define UBPF_ATTACH(probe_name,proc_name,func_name) \
+#define UBPF_ATTACH(probe_name,proc_name,func_name,error) \
     do { \
         int err; \
         long offset; \
@@ -433,7 +433,8 @@ static __always_inline int set_memlock_rlimit(void)
         offset = get_func_offset( #proc_name, #func_name, bin_file_path); \
         if (offset <= 0) { \
             printf("Failed to get func(" #func_name ") offset.\n"); \
-            goto err;\
+            error = 0; \
+            break; \
         } \
         \
         /* Attach tracepoint handler */ \
@@ -442,11 +443,13 @@ static __always_inline int set_memlock_rlimit(void)
         err = libbpf_get_error(skel->links.ubpf_##func_name); \
         if (err) { \
             fprintf(stderr, "Failed to attach uprobe: %d\n", err); \
-            goto err;\
+            error = 0; \
+            break; \
         } \
+        error = 1; \
     } while (0)
 
-#define UBPF_RET_ATTACH(probe_name,proc_name,func_name) \
+#define UBPF_RET_ATTACH(probe_name,proc_name,func_name,error) \
     do { \
         int err; \
         long offset; \
@@ -455,7 +458,8 @@ static __always_inline int set_memlock_rlimit(void)
         offset = get_func_offset( #proc_name, #func_name, bin_file_path); \
         if (offset <= 0) { \
             printf("Failed to get func(" #func_name ") offset.\n"); \
-            goto err;\
+            error = 0; \
+            break; \
         } \
         \
         /* Attach tracepoint handler */ \
@@ -464,8 +468,10 @@ static __always_inline int set_memlock_rlimit(void)
         err = libbpf_get_error(skel->links.ubpf_ret_##func_name); \
         if (err) { \
             fprintf(stderr, "Failed to attach uprobe: %d\n", err); \
-            goto err; \
+            error = 0; \
+            break; \
         } \
+        error = 1; \
     } while (0)
 
 static __always_inline struct perf_buffer* create_pref_buffer(int map_fd, perf_buffer_sample_fn cb)
