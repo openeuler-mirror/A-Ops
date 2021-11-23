@@ -1,7 +1,7 @@
 import os
 import yaml
 
-CONFIG_PATH = "/opt/gala-spider/gala-spider.yaml"
+CONFIG_PATH = "/etc/spider/gala-spider.yaml"
 
 def get_conf_info(path):
     result = {}

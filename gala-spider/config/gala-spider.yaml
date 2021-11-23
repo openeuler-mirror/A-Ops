@@ -24,13 +24,13 @@ option:
 
 neo4j:
     address: http://localhost:7474
-    username: neo4j
-    password: neo4j
+    username: 
+    password: 
     timer: 5
 
 temp_path:
-    temp_tcp_file: "/data/tcpline.txt"
-    temp_other_file: "/data/otherline.txt"
+    temp_tcp_file: "/var/tmp/spider/tcpline.txt"
+    temp_other_file: "/var/tmp/spider/otherline.txt"
 
 spider:
     port: 11115

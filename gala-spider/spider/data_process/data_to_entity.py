@@ -1,6 +1,4 @@
-import os
 import json
-import ast
 
 from typing import Dict, List
 
@@ -37,9 +35,9 @@ def tcp_entity_process(entities: List[dict]) -> Dict[TcpLinkKey, TcpLinkInfo]:
     process_infos = {}
 
     for entity in entities:
-        if entity.get('client_ip') in ast.literal_eval(exclude_ip):
+        if entity.get('client_ip') in exclude_ip:
             continue
-        if entity.get('server_ip') in ast.literal_eval(exclude_ip):
+        if entity.get('server_ip') in exclude_ip:
             continue
 
         table_name = entity.get('table_name')
@@ -146,7 +144,7 @@ def lb_entity_process(entities: List[dict]) -> Dict[LbLinkKey, LbLinkInfo]:
 
 def get_observe_entities() -> List[dict]:
     entities = []
-    _db_agent = ast.literal_eval(db_agent)
+    _db_agent = db_agent
 
     if _db_agent == "prometheus":
         entities = g_prometheus_processor.get_observe_entities()
@@ -179,9 +177,9 @@ def node_entity_process() -> tuple:
         link_id = linkinfo.link_id()
 
         node_infos.setdefault(src_node_id, linkinfo.key.c_process)
-        linkinfo.key.c_process.r_edges.append((link_id, linkinfo.link_type.upper()))
+        node_infos.get(src_node_id).r_edges.append((link_id, linkinfo.link_type.upper()))
         node_infos.setdefault(dst_node_id, linkinfo.s_process)
-        linkinfo.s_process.l_edges.append((link_id, linkinfo.link_type.upper()))
+        node_infos.get(dst_node_id).l_edges.append((link_id, linkinfo.link_type.upper()))
 
         for lb_key, lbinfo in lb_infos.items():
             if lb_key.c_ip == key.c_ip and lb_key.v_ip == key.s_ip and \
@@ -200,14 +198,14 @@ def node_entity_process() -> tuple:
             continue
         else:
             node_infos.setdefault(lb_node_id, lbinfo.lb_process)
-            lbinfo.lb_process.lb_edges.append((lbinfo.link_id(), lbinfo.link_type.upper()))
+            node_infos.get(lb_node_id).lb_edges.append((lbinfo.link_id(), lbinfo.link_type.upper()))
 
     for node_id, process_info in node_infos.items():
         if len(process_info.r_edges) == 0 and len(process_info.l_edges) == 0:
             print(node_id, "only lb link and no tcplink, please check...")
             continue
         vm_infos.setdefault(process_info.host.node_id(), process_info.host)
-        process_info.host.processes.append(process_info.node_id())
+        vm_infos.get(process_info.host.node_id()).processes.append(process_info.node_id())
 
     return link_infos, node_infos, lb_infos, vm_infos
 
