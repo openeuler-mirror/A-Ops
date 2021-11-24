@@ -145,6 +145,12 @@ function prepare_dependence()
         return 1
     fi
 
+    yum install -y uthash-devel
+    if [ $? -ne 0 ]; then
+        echo "Error: Failed to install uthash-devel."
+        return 1
+    fi
+
     return 0
 }
 

@@ -3,6 +3,7 @@
 
 #include <stdint.h>
 #include <pthread.h>
+#include <uthash.h>
 #include "base.h"
 
 #define MAX_IMDB_DATABASEMGR_CAPACITY   256
@@ -22,6 +23,9 @@
 #define MAX_LABELS_BUFFER_SIZE 512
 
 #define MAX_IMDB_HOSTNAME_LEN           64
+
+#define METRIC_TYPE_LABEL "label"
+#define METRIC_TYPE_KEY "key"
 
 typedef struct {
     char hostName[MAX_IMDB_HOSTNAME_LEN];
@@ -44,9 +48,13 @@ typedef struct {
 } IMDB_Metric;
 
 typedef struct {
+    uint32_t keySize;
+    char *key;
+    time_t updateTime;     // Unit: second
     uint32_t capacity;
     uint32_t metricsNum;
     IMDB_Metric **metrics;
+    UT_hash_handle hh;
 } IMDB_Record;
 
 typedef struct {
@@ -54,7 +62,7 @@ typedef struct {
     IMDB_Record *meta;
 
     uint32_t recordsCapacity;      // capacity for records in one table
-    uint32_t recordsCursor;
+    uint32_t recordKeySize;
     IMDB_Record **records;
 } IMDB_Table;
 
@@ -72,15 +80,26 @@ int IMDB_MetricSetValue(IMDB_Metric *metric, char *val);
 void IMDB_MetricDestroy(IMDB_Metric *metric);
 
 IMDB_Record *IMDB_RecordCreate(uint32_t capacity);
+IMDB_Record *IMDB_RecordCreateWithKey(uint32_t capacity, uint32_t keySize);
 int IMDB_RecordAddMetric(IMDB_Record *record, IMDB_Metric *metric);
+int IMDB_RecordAppendKey(IMDB_Record *record, uint32_t keyIdx, char *val);
+void IMDB_RecordUpdateTime(IMDB_Record *record, time_t seconds);
 void IMDB_RecordDestroy(IMDB_Record *record);
+
+IMDB_Record *HASH_findRecord(IMDB_Record **records, IMDB_Record *record);
+void HASH_deleteRecord(IMDB_Record **records, IMDB_Record *record);
+void HASH_deleteAndFreeRecords(IMDB_Record **records);
+void HASH_addRecord(IMDB_Record **records, IMDB_Record *record);
+uint32_t HASH_recordCount(IMDB_Record **records);
 
 IMDB_Table *IMDB_TableCreate(char *name, uint32_t capacity);
 int IMDB_TableSetMeta(IMDB_Table *table, IMDB_Record *metaRecord);
+int IMDB_TableSetRecordKeySize(IMDB_Table *table, uint32_t keyNum);
 int IMDB_TableAddRecord(IMDB_Table *table, IMDB_Record *record);
 void IMDB_TableDestroy(IMDB_Table *table);
 
 IMDB_DataBaseMgr *IMDB_DataBaseMgrCreate(uint32_t capacity);
+void IMDB_DataBaseMgrSetRecordTimeout(uint32_t timeout);
 void IMDB_DataBaseMgrDestroy(IMDB_DataBaseMgr *mgr);
 
 int IMDB_DataBaseMgrAddTable(IMDB_DataBaseMgr *mgr, IMDB_Table* table);

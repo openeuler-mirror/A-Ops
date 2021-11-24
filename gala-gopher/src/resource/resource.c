@@ -314,6 +314,7 @@ static int IMDBMgrTableLoad(IMDB_Table *table, Measurement *mm)
     }
 
     IMDB_Metric *metric;
+    uint32_t keyNum = 0;
     for (int i = 0; i < mm->fieldsNum; i++) {
         metric = IMDB_MetricCreate(mm->fields[i].name, mm->fields[i].description, mm->fields[i].type);
         if (metric == NULL) {
@@ -324,9 +325,18 @@ static int IMDBMgrTableLoad(IMDB_Table *table, Measurement *mm)
         if (ret != 0) {
             goto ERR;
         }
+
+        if (strcmp(mm->fields[i].type, METRIC_TYPE_KEY) == 0) {
+            keyNum++;
+        }
     }
 
     ret = IMDB_TableSetMeta(table, meta);
+    if (ret != 0) {
+        goto ERR;
+    }
+
+    ret = IMDB_TableSetRecordKeySize(table, keyNum);
     if (ret != 0) {
         goto ERR;
     }
@@ -372,6 +382,8 @@ static int IMDBMgrInit(ResourceMgr *resourceMgr)
         printf("[RESOURCE] create IMDB database mgr failed.\n");
         return -1;
     }
+
+    IMDB_DataBaseMgrSetRecordTimeout(configMgr->imdbConfig->recordTimeout);
 
     ret = IMDBMgrDatabaseLoad(imdbMgr, resourceMgr->mmMgr);
     if (ret != 0) {
