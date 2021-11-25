@@ -7,72 +7,72 @@ measurements:
         (
             {
                 description: "pid of process",
-                type: "Unknown",
+                type: "key",
                 name: "pid",
             },
             {
                 description: "process name",
-                type: "Unknown",
+                type: "label",
                 name: "process_name",
             },
 	    {
                 description: "role",
-                type: "Unknown",
+                type: "key",
                 name: "role",
             },
             {
                 description: "client ip",
-                type: "Unknown",
+                type: "key",
                 name: "client_ip",
             },
             {
                 description: "server ip",
-                type: "Unknown",
+                type: "key",
                 name: "server_ip",
             },
             {
                 description: "server port",
-                type: "Unknown",
+                type: "key",
                 name: "server_port",
             },
             {
                 description: "protocol",
-                type: "Unknown",
+                type: "label",
                 name: "protocol",
             },
             {
                 description: "link count",
-                type: "Unknown",
+                type: "gauge",
                 name: "link_count",
             },
             {
                 description: "rx bytes",
-                type: "Unknown",
+                type: "counter",
                 name: "rx_bytes",
             },
             {
                 description: "tx bytes",
-                type: "Unknown",
+                type: "counter",
                 name: "tx_bytes",
             },
             {
                 description: "packets in",
-                type: "Unknown",
+                type: "counter",
                 name: "packets_in",
             },
             {
                 description: "packets out",
-                type: "Unknown",
+                type: "counter",
                 name: "packets_out",
             },
             {
                 description: "retran packets",
-                type: "Unknown",
+                type: "counter",
                 name: "retran_packets",
             },
             {
                 description: "lost packets",
-                type: "Unknown",
+                type: "counter",
                 name: "lost_packets",
             },
             {

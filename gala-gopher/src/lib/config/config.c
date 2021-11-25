@@ -365,6 +365,13 @@ static int ConfigMgrLoadIMDBConfig(void *config, config_setting_t *settings)
     }
     imdbConfig->maxMetricsNum = intVal;
 
+    ret = config_setting_lookup_int(settings, "record_timeout", &intVal);
+    if (ret == 0) {
+        printf("[CONFIG] load config for imdbConfig record_timeout failed, use default setting instead.\n");
+    } else {
+        imdbConfig->recordTimeout = intVal;
+    }
+
     return 0;
 
 }

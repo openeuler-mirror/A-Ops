@@ -61,6 +61,7 @@ typedef struct  {
     uint32_t maxTablesNum;
     uint32_t maxRecordsNum;
     uint32_t maxMetricsNum;
+    uint32_t recordTimeout;
 } IMDBConfig;
 
 typedef struct {
