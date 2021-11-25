@@ -1,5 +1,4 @@
 from kafka import KafkaConsumer
-import ast
 import json
 from spider.util.conf import kafka_topic
 from spider.util.conf import kafka_broker
@@ -15,18 +14,18 @@ def db_kafka_agent():
     consumer = KafkaConsumer(
         kafka_topic,
         group_id="group2",
-        bootstrap_servers=ast.literal_eval(kafka_broker),
+        bootstrap_servers=kafka_broker,
         auto_offset_reset="latest"
     )
     # can specify a type of IP that isn't recorded
-    checkip = ast.literal_eval(exclude_ip)
+    checkip = exclude_ip
     # consuming
     for msg in consumer:
         lines = bytes.decode(msg.value)
         line_json = json.loads(lines)
         if line_json.get("process_name") in ["sshd", "rdk:broker0"]:
             continue
-        if line_json.get("table_name") in ast.literal_eval(base_table):
+        if line_json.get("table_name") in base_table:
             if line_json.get("client_ip") in checkip:
                 continue
             if line_json.get("server_ip") in checkip:
@@ -35,7 +34,7 @@ def db_kafka_agent():
                 d_file.write(lines)
                 d_file.write('\n')
                 #print(lines)
-        if line_json.get("table_name") in ast.literal_eval(other_table):
+        if line_json.get("table_name") in other_table:
             with open(temp_other_file, 'a+') as o_file:
                 o_file.write(lines)
                 o_file.write('\n')

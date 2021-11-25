@@ -325,11 +325,9 @@ popd
 pushd gala-spider
 %py3_install
 mkdir -p %{buildroot}/%{_sysconfdir}/spider
-install config/*.conf %{buildroot}/%{_sysconfdir}/spider/
-install anomaly_detection/*.yaml %{buildroot}/%{_sysconfdir}/spider/
+install config/*.yaml %{buildroot}/%{_sysconfdir}/spider/
 mkdir %{buildroot}/%{python3_sitelib}/spider/config
-install config/*.conf %{buildroot}/%{python3_sitelib}/spider/config
-install anomaly_detection/*.yaml %{buildroot}/%{python3_sitelib}/spider/config
+install config/*.yaml %{buildroot}/%{python3_sitelib}/spider/config
 mkdir -p %{buildroot}/%{_prefix}/lib/systemd/system
 install service/gala-spider.service %{buildroot}/%{_prefix}/lib/systemd/system
 mkdir -p %{buildroot}/%{_tmppath}/spider
@@ -474,7 +472,7 @@ fi
 %files -n gala-spider
 %doc gala-spider/doc/*
 %license gala-spider/LICENSE
-/%{_sysconfdir}/spider/gala-spider.conf
+/%{_sysconfdir}/spider/*
 %{_bindir}/spider
 %{_prefix}/lib/systemd/system/gala-spider.service
 %dir %{_tmppath}/spider
