@@ -22,12 +22,14 @@
 // MAX LENGTH FOR PROMETHEUS LABELS
 #define MAX_LABELS_BUFFER_SIZE 512
 
+#define MAX_IMDB_MACHINEID_LEN          40
 #define MAX_IMDB_HOSTNAME_LEN           64
 
 #define METRIC_TYPE_LABEL "label"
 #define METRIC_TYPE_KEY "key"
 
 typedef struct {
+    char machineId[MAX_IMDB_MACHINEID_LEN];
     char hostName[MAX_IMDB_HOSTNAME_LEN];
 } IMDB_NodeInfo;
 
