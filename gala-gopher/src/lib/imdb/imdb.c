@@ -223,6 +223,28 @@ void IMDB_TableDestroy(IMDB_Table *table)
     return;
 }
 
+static int IMDB_GetMachineId(char *buffer, size_t size)
+{
+    FILE *fp = NULL;
+
+    fp = popen("cat /etc/machine-id", "r");
+    if (fp == NULL) {
+        return -1;
+    }
+
+    buffer = fgets(buffer, size, fp);
+    if (buffer == NULL) {
+        pclose(fp);
+        return -1;
+    }
+    if (strlen(buffer) > 0 && buffer[strlen(buffer) - 1] == '\n') {
+        buffer[strlen(buffer) - 1] = '\0';
+    }
+
+    pclose(fp);
+    return 0;
+}
+
 IMDB_DataBaseMgr *IMDB_DataBaseMgrCreate(uint32_t capacity)
 {
     int ret = 0;
@@ -232,6 +254,13 @@ IMDB_DataBaseMgr *IMDB_DataBaseMgrCreate(uint32_t capacity)
         return NULL;
     }
     memset(mgr, 0, sizeof(IMDB_DataBaseMgr));
+
+    ret = IMDB_GetMachineId(mgr->nodeInfo.machineId, sizeof(mgr->nodeInfo.machineId));
+    if (ret != 0) {
+        printf("[IMDB] Can not get machine id.\n");
+        free(mgr);
+        return NULL;
+    }
 
     ret = gethostname(mgr->nodeInfo.hostName, sizeof(mgr->nodeInfo.hostName));
     if (ret != 0) {
@@ -502,7 +531,7 @@ static int MetricTypeIsLabel(IMDB_Metric *metric)
 }
 
 //name{label1="label1",label2="label2",label2="label2"} value time
-static int IMDB_Prometheus_BuildLabel(IMDB_Record *record, char *buffer, int maxLen)
+static int IMDB_Prometheus_BuildLabel(IMDB_DataBaseMgr *mgr, IMDB_Record *record, char *buffer, int maxLen)
 {
     char labels[MAX_LABELS_BUFFER_SIZE] = {0};
     int labell = MAX_LABELS_BUFFER_SIZE;
@@ -538,6 +567,14 @@ static int IMDB_Prometheus_BuildLabel(IMDB_Record *record, char *buffer, int max
 
     if (total > 0)
     {
+        // append machine_id and hostname
+        ret = snprintf(labels + total, labell, ",%s=\"%s\",%s=\"%s\"",
+                       "machine_id", mgr->nodeInfo.machineId,
+                       "hostname", mgr->nodeInfo.hostName);
+        if (ret <= 0) {
+            goto ERR;
+        }
+
         ret = snprintf(buffer, maxLen, "{%s}", labels);
         if (ret < 0) {
             goto ERR;
@@ -549,13 +586,13 @@ ERR:
     return ret;
 }
 
-static int IMDB_Record2String(IMDB_Record *record, char *buffer, int maxLen, char *tableName)
+static int IMDB_Record2String(IMDB_DataBaseMgr *mgr, IMDB_Record *record, char *buffer, int maxLen, char *tableName)
 {
     int ret = 0;
     int total = 0;
     
     char labels[MAX_LABELS_BUFFER_SIZE] = {0};
-    ret = IMDB_Prometheus_BuildLabel(record, labels, MAX_LABELS_BUFFER_SIZE);
+    ret = IMDB_Prometheus_BuildLabel(mgr, record, labels, MAX_LABELS_BUFFER_SIZE);
     if (ret < 0)
     {
         goto ERR;
@@ -580,7 +617,7 @@ ERR:
     return total;
 }
 
-static int IMDB_Table2String(IMDB_Table *table, char *buffer, int maxLen)
+static int IMDB_Table2String(IMDB_DataBaseMgr *mgr, IMDB_Table *table, char *buffer, int maxLen)
 {
     int ret = 0;
     int total = 0;
@@ -599,7 +636,7 @@ static int IMDB_Table2String(IMDB_Table *table, char *buffer, int maxLen)
             continue;
         }
 
-        ret = IMDB_Record2String(record, buffer, maxLen, table->name);
+        ret = IMDB_Record2String(mgr, record, buffer, maxLen, table->name);
         if (ret < 0) {
             return -1;
         }
@@ -628,7 +665,7 @@ int IMDB_DataBaseMgrData2String(IMDB_DataBaseMgr *mgr, char *buffer, int maxLen)
     memset(cursor, 0, maxLen);
 
     for (int i = 0; i < mgr->tablesNum; i++) {
-        ret = IMDB_Table2String(mgr->tables[i], buffer, maxLen);
+        ret = IMDB_Table2String(mgr, mgr->tables[i], buffer, maxLen);
         if (ret < 0) {
             goto ERR;
         }
@@ -656,6 +693,13 @@ static int IMDB_Record2Json(IMDB_DataBaseMgr *mgr, IMDB_Table *table, IMDB_Recor
 
     memset(jsonStr, 0, jsonStrLen);
     ret = snprintf(json_cursor, maxLen, "{\"timestamp\": %lld", now * 1000);
+    if (ret < 0) {
+        return -1;
+    }
+    json_cursor += ret;
+    maxLen -= ret;
+
+    ret = snprintf(json_cursor, maxLen, ", \"machine_id\": \"%s\"", mgr->nodeInfo.machineId);
     if (ret < 0) {
         return -1;
     }
