@@ -8,53 +8,103 @@ measurements:
         (
             {
                 description: "pid of the process",
-                type: "Unknown",
+                type: "key",
                 name: "pid",
             },
 	        {
                 description: "name of the process",
-                type: "Unknown",
+                type: "label",
                 name: "process_name",
             },
 	        {
                 description: "endpoint type",
-                type: "Unknown",
+                type: "key",
                 name: "endpoint_type",
             },
 	        {
                 description: "user id of the endpoint",
-                type: "Unknown",
+                type: "label",
                 name: "user_id",
             },
 	        {
                 description: "family of the endpoint",
-                type: "Unknown",
+                type: "label",
                 name: "family",
             },
 	        {
                 description: "socket type of the endpoint",
-                type: "Unknown",
+                type: "label",
                 name: "socket_type",
             },
 	        {
                 description: "protocol type of the endpoint",
-                type: "Unknown",
+                type: "label",
                 name: "protocol",
             },
 	        {
                 description: "socket address of the endpoint",
-                type: "Unknown",
+                type: "key",
                 name: "s_addr",
             },
 	        {
                 description: "socket port of the endpoint",
-                type: "Unknown",
+                type: "key",
                 name: "s_port",
             },
 	        {
                 description: "listen drops of the endpoint",
-                type: "Unknown",
+                type: "counter",
                 name: "listendrop",
+            },
+	        {
+                description: "listen overflows of the endpoint",
+                type: "counter",
+                name: "listen_overflow",
+            },
+	        {
+                description: "passive opens of the endpoint",
+                type: "counter",
+                name: "passive_open",
+            },
+	        {
+                description: "active opens of the endpoint",
+                type: "counter",
+                name: "active_open",
+            },
+	        {
+                description: "attempt fails of the endpoint",
+                type: "counter",
+                name: "attempt_fail",
+            },
+	        {
+                description: "abort close of the endpoint",
+                type: "counter",
+                name: "abort_close",
+            },
+	        {
+                description: "request fails of the endpoint",
+                type: "counter",
+                name: "request_fail",
+            },
+	        {
+                description: "rmem schedule fulls of the endpoint",
+                type: "counter",
+                name: "rmem_schedule",
+            },
+	        {
+                description: "tcp oom of the endpoint",
+                type: "counter",
+                name: "tcp_oom",
+            },
+	        {
+                description: "tcp send resets of the endpoint",
+                type: "counter",
+                name: "tcp_send_rst",
+            },
+	        {
+                description: "tcp keepalive timeout of the endpoint",
+                type: "counter",
+                name: "tcp_keepalive_timeout",
             }
         )
     }
