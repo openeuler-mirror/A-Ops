@@ -15,7 +15,7 @@ measurements:
                 type: "label",
                 name: "pid",
             },
-	        {
+            {
                 description: "fork count of the task",
                 type: "counter",
                 name: "fork_count",
