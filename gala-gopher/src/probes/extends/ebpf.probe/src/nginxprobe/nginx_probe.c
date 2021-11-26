@@ -132,86 +132,9 @@ void print_statistic_map(int fd)
     return;
 }
 
-#if 0
-int attach_l4_probe(struct nginx_probe_bpf *skel)
-{
-    int err;
-    long offset;
-    char bin_file_path[BIN_FILE_PATH_LEN] = {0};
-
-    offset = get_func_offset("nginx", "ngx_stream_proxy_init_upstream", bin_file_path);
-    if (offset <= 0) {
-        printf("Failed to get func(ngx_stream_proxy_init_upstream) offset.\n");
-        return 0;
-    }
-
-    /* Attach tracepoint handler */
-    skel->links.ngx_stream_proxy_init_upstream_probe = bpf_program__attach_uprobe(
-        skel->progs.ngx_stream_proxy_init_upstream_probe, false /* not uretprobe */, -1, bin_file_path, offset);
-    err = libbpf_get_error(skel->links.ngx_stream_proxy_init_upstream_probe);
-    if (err) {
-        fprintf(stderr, "Failed to attach uprobe: %d\n", err);
-        return 0;
-    }
-
-    /* Attach tracepoint handler */
-    skel->links.ngx_stream_proxy_init_upstream_retprobe = bpf_program__attach_uprobe(
-        skel->progs.ngx_stream_proxy_init_upstream_retprobe, true /* uretprobe */, -1, bin_file_path, offset);
-    err = libbpf_get_error(skel->links.ngx_stream_proxy_init_upstream_retprobe);
-    if (err) {
-        fprintf(stderr, "Failed to attach uprobe: %d\n", err);
-        return 0;
-    }
-    return 1;
-}
-
-int attach_l7_probe(struct nginx_probe_bpf *skel)
-{
-    int err;
-    long offset;
-    char bin_file_path[BIN_FILE_PATH_LEN] = {0};
-
-    offset = get_func_offset("nginx", "ngx_http_upstream_handler", bin_file_path);
-    if (offset <= 0) {
-        printf("Failed to get func(ngx_http_upstream_handler) offset.\n");
-        return 0;
-    }
-
-    skel->links.ngx_http_upstream_handler_probe =
-        bpf_program__attach_uprobe(skel->progs.ngx_http_upstream_handler_probe, false, -1, bin_file_path, offset);
-    err = libbpf_get_error(skel->links.ngx_http_upstream_handler_probe);
-    if (err) {
-        fprintf(stderr, "Failed to attach uprobe: %d\n", err);
-        return 0;
-    }
-    return 1;
-}
-
-int attach_close_probe(struct nginx_probe_bpf *skel)
-{
-    int err;
-    long offset;
-    char bin_file_path[BIN_FILE_PATH_LEN] = {0};
-
-    offset = get_func_offset("nginx", "ngx_close_connection", bin_file_path);
-    if (offset <= 0) {
-        printf("Failed to get ngx_close_connection func offset.\n");
-        return 0;
-    }
-
-    skel->links.ngx_close_connection_probe =
-        bpf_program__attach_uprobe(skel->progs.ngx_close_connection_probe, false, -1, bin_file_path, offset);
-    err = libbpf_get_error(skel->links.ngx_close_connection_probe);
-    if (err) {
-        printf("Failed to attach uprobe: %d\n", err);
-        return 0;
-    }
-    return 1;
-}
-#endif
 int main(int argc, char **argv)
 {
-	int err;
+    int err;
     int map_fd = -1;
 
     err = args_parse(argc, argv, "t:", &params);
@@ -226,24 +149,21 @@ int main(int argc, char **argv)
     signal(SIGINT, sig_handler);
     signal(SIGTERM, sig_handler);
 
-	UBPF_ATTACH(nginx_probe, nginx, ngx_stream_proxy_init_upstream);
-	UBPF_RET_ATTACH(nginx_probe, nginx, ngx_stream_proxy_init_upstream);
-	UBPF_ATTACH(nginx_probe, nginx, ngx_http_upstream_handler);
-	UBPF_ATTACH(nginx_probe, nginx, ngx_close_connection);
 
-#if 0
-
-    ret |= attach_l4_probe(skel);
-    ret |= attach_l7_probe(skel);
+    int ret = 0;
+    int ret2 = 0;
+    UBPF_ATTACH(nginx_probe, nginx, ngx_stream_proxy_init_upstream,ret);
+    UBPF_RET_ATTACH(nginx_probe, nginx, ngx_stream_proxy_init_upstream,ret);
+    UBPF_ATTACH(nginx_probe, nginx, ngx_http_upstream_handler,ret2);
+    ret |= ret2;
     if (ret == 0) {
-        goto cleanup;
+        goto err;
+    }
+    UBPF_ATTACH(nginx_probe, nginx, ngx_close_connection,ret);
+    if (ret == 0) {
+        goto err;
     }
 
-    ret = attach_close_probe(skel);
-    if (ret == 0) {
-        goto cleanup;
-    }
-#endif
     /* create ngx statistic map_fd */
     map_fd = bpf_create_map(
         BPF_MAP_TYPE_HASH, sizeof(struct ngx_statistic_key), sizeof(struct ngx_statistic), STATISTIC_MAX_ENTRIES, 0);

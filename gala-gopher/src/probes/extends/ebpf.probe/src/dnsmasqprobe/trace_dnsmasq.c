@@ -125,9 +125,13 @@ int main(int argc, char **argv)
     /* Cleaner handling of Ctrl-C */
     signal(SIGINT, sig_handler);
     signal(SIGTERM, sig_handler);
-
-	UBPF_ATTACH(trace_dnsmasq, dnsmasq, send_from);
-
+    
+    int ret = 0;
+    UBPF_ATTACH(trace_dnsmasq, dnsmasq, send_from, ret);
+    if (ret == 0) {
+        goto err;
+    }
+ 
     /* create collect hash map */
     collect_map_fd = 
         bpf_create_map(BPF_MAP_TYPE_HASH, sizeof(struct collect_key), sizeof(struct collect_value), 8192, 0);

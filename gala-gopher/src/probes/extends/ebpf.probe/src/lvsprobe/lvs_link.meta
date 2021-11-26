@@ -46,11 +46,6 @@ measurements:
                 name: "protocol",
             },
             {
-                description: "family",
-                type: "Unknown",
-                name: "family",
-            },
-            {
                 description: "link count",
                 type: "Unknown",
                 name: "link_count",
