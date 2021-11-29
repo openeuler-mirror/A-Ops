@@ -13,7 +13,7 @@
                   { validator: checkNameInput }
                 ]}
               ]"
-              placeholder="请输入"
+              placeholder="请输入主机名称,50个字符以内"
             >
               <a-tooltip slot="suffix" title="最大长度50个字符，由数字、小写字母、英文下划线_组成。以小写字母开头，且结尾不能是英文下划线_">
                 <a-icon type="info-circle" style="color: rgba(0,0,0,.45)" />
@@ -50,7 +50,7 @@
           <a-form-item label="IP地址">
             <a-input
               v-decorator="['public_ip',{ rules: [{ required: true,pattern:/^((2[0-4]\d|25[0-5]|[01]?\d\d?)\.){3}(2[0-4]\d|25[0-5]|[01]?\d\d?)$/,message: '请输入IP地址在 0.0.0.0~255.255.255.255 区间内' }] }]"
-              placeholder="请输入"/>
+              placeholder="请输入有效ip地址，e.g. 192.168.0.1"/>
           </a-form-item>
           <a-form-item label="SSH登录端口">
             <a-input-number :min="0" :max="65535" v-decorator="['ssh_port', { initialValue: 22, rules: [{ required: true, message: '请输入 0~65535 内正整数' }] }]" placeholder="请输入"/>
@@ -62,20 +62,20 @@
             </a-radio-group>
           </a-form-item>
           <a-form-item label="主机用户名">
-            <a-input v-decorator="['username', { rules: [{ required: true, message: '请输入主机用户名' }, { validator: checkHostUserName }] }]" placeholder="请输入" :maxLength="16">
+            <a-input v-decorator="['username', { rules: [{ required: true, message: '请输入主机用户名' }, { validator: checkHostUserName }] }]" placeholder="请输入主机用户名，16个字符以内" :maxLength="16">
               <a-tooltip slot="suffix" title="登录主机时使用的用户名">
                 <a-icon type="info-circle" style="color: rgba(0,0,0,.45)" />
               </a-tooltip>
             </a-input>
           </a-form-item>
           <a-form-item label="主机登录密码">
-            <a-input-password v-decorator="['password', { rules: [{ required: true, message: '请输入主机登录密码' }, { validator: passwordCheck }] }]" placeholder="请输入"></a-input-password>
+            <a-input-password v-decorator="['password', { rules: [{ required: true, message: '请输入主机登录密码' }, { validator: passwordCheck }] }]" placeholder="请设置登录密码，长度8-20个字符"></a-input-password>
           </a-form-item>
           <a-form-item label="主机sudo密码">
-            <a-input-password v-decorator="['sudo_password', { rules: [{ required: true, message: '请输入主机sudo密码' }, { validator: passwordCheck }] }]" placeholder="请输入"/>
+            <a-input-password v-decorator="['sudo_password', { rules: [{ required: true, message: '请输入主机sudo密码' }, { validator: passwordCheck }] }]" placeholder="请设置sudo密码，长度8-20个字符"/>
           </a-form-item>
           <a-form-item label="加密密钥">
-            <a-input-password v-decorator="['key', { rules: [{ required: true, message: '请输入加密密钥' }, { validator: passwordCheck }] }]" placeholder="请输入"/>
+            <a-input-password v-decorator="['key', { rules: [{ required: true, message: '请输入加密密钥' }, { validator: passwordCheck }] }]" placeholder="请设置用于给主机私密信息加密的密钥，长度8-20个字符"/>
           </a-form-item>
           <a-form-item :wrapper-col="{ span: 10, offset: 5 }">
             <a-button @click="handleCancel">取消</a-button>

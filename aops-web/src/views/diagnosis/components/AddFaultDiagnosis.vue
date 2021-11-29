@@ -7,7 +7,7 @@
             v-decorator="[
               'startTime',
               {
-                rules: [{ required: true, message: '请选择起始日期' }],
+                rules: [{ required: true, message: '请选择起始日期' },{ validator: checkStartTime }],
               },
             ]"
             style="width: 100%"
@@ -26,7 +26,7 @@
             v-decorator="[
               'endTime',
               {
-                rules: [{ required: true, message: '请选择结束日期' }],
+                rules: [{ required: true, message: '请选择结束日期' }, { validator: checkEndTime }],
               },
             ]"
             style="width: 100%"
@@ -99,7 +99,8 @@
 </template>
 
 <script>
- import Vue from 'vue'
+import Vue from 'vue'
+import moment from 'moment'
 import { Transfer } from 'ant-design-vue'
 import { executeDiag } from '@/api/diagnosis'
 import { hostList } from '@/api/assest'
@@ -107,7 +108,7 @@ Vue.use(Transfer)
 
   export default {
     name: 'AddFaultTree',
-    inject: ['setButtons', 'close', 'showSpin', 'closeSpin'], // 来自祖辈们provide中声明的参数、方法
+    inject: ['setButtons', 'close', 'showSpin', 'closeSpin', 'onload'], // 来自祖辈们provide中声明的参数、方法
     data () {
       return {
         form: this.$form.createForm(this),
@@ -127,11 +128,25 @@ Vue.use(Transfer)
       saveSuccess: {
         type: Function,
         default: function () {}
+      },
+      diagnosisParams: {
+        type: Object,
+        default: () => {}
       }
     },
     mounted: function () {
+      const that = this
       this.setButtons({ callBack: this.save, text: '执行诊断', type: 'primary' })
       this.getHostListAll()
+      this.onload(function () {
+        if (that.diagnosisParams && that.diagnosisParams.startTime) {
+          that.form.setFieldsValue({
+            startTime: moment(that.diagnosisParams.startTime * 1000),
+            endTime: moment(that.diagnosisParams.endTime * 1000)
+          })
+          that.targetKeys = that.diagnosisParams.hostList
+        }
+      })
     },
     computed: {
       filteredOptions () {
@@ -240,6 +255,26 @@ Vue.use(Transfer)
           return
         }
         cb()
+      },
+      checkStartTime (rule, value, cb) {
+          const endTime = this.form.getFieldValue('endTime')
+          if (value && endTime && value.isAfter(endTime)) {
+            /* eslint-disable */
+            cb('开始时间应在结束时间前')
+            /* eslint-disable */
+            return
+          }
+          cb()
+      },
+      checkEndTime (rule, value, cb) {
+          const startTime = this.form.getFieldValue('startTime')
+          if (value && startTime && value.isBefore(startTime)) {
+            /* eslint-disable */
+            cb('结束时间应在开始时间后')
+            /* eslint-disable */
+            return
+          }
+          cb()
       }
     }
   }

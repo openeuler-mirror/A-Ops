@@ -3,7 +3,7 @@
   <my-page-header-wrapper>
     <a-card :bordered="false" class="aops-theme">
       <div>
-        <h3 class="card-title">{{ domainName }}主机列表</h3>
+        <h2 class="card-title">业务域{{ domainName }}</h2>
       </div>
       <div>
         <div>共获取到{{ tableData.length }}条主机信息</div>
@@ -161,7 +161,7 @@
   STATUS_TITLE_ENUM[STATUS_ENUM.notFound] = '未知状态'
 
   export default {
-    name: 'QueryHostList',
+    name: 'TranscationDomainDetail',
     components: {
       MyPageHeaderWrapper,
       DrawerView,
