@@ -100,14 +100,14 @@ gala-ragdoll是一个OS场景下的配置托管服务，能够实现对OS配置�
 该部分也由A-OPS中提供基于基于ansible的node配置操作接口。
 
 ### 整体流程
-![all_options](doc/pic/all_option)
+![all_options](doc/pic/all_option.png)
 
 ### 运行框架
-![runtime_arch](doc/pic/arch)
+![runtime_arch](doc/pic/arch.png)
 
 ### 配置溯源差异样例
 
-![diff_example](doc/pic/git_diff)
+![diff_example](doc/pic/git_diff.png)
 
 ## 详细介绍
 ### 设计文档
