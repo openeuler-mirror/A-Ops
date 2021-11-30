@@ -7,7 +7,9 @@ gala-gopher启动必须的外部参数通过配置文件定义；主要的配置
 
 ## 配置文件详解
 
-配置文件开发路径归档在 `A-Ops/gala-gopher/config/gala-gopher.conf`；配置文件各部分详解；
+配置文件开发路径归档在 `A-Ops/gala-gopher/config/gala-gopher.conf`。
+
+配置文件各部分详解如下：
 
 ### global
 
@@ -16,7 +18,7 @@ global =									  -- gala-gopher引擎配置
 {
     log_directory = "/var/log/gala-gopher";		-- gala-gopher引擎日志路径
     log_level = "debug";					   -- gala-gopher日志级别，可配置 "debug | info | error | warnning | fatal"
-    egress = "kafka";						   -- 选择egress对接的数据库，可配置："kafka | promecheus | OpenTelemetry"；
+    egress = "kafka";						   -- 选择egress对接的数据库，可配置："kafka | prometheus | OpenTelemetry"；
 };
 ```
 
@@ -47,6 +49,7 @@ imdb =							       -- cache缓存规格，定义了支持的指标项规格
     max_tables_num = 1024;				-- cache最大支持的表个数，通常不可以比max_metrics_num小，每个metric对应一个table
     max_records_num = 1024;				-- 每张cache表最大记录数，通常每个metric在一个观测周期内产生1/N条观测记录
     max_metrics_num = 1024;				-- metric最大个数，定义了单节点最大的metric指标个数
+    record_timeout = 60;                -- 记录的超时时间（秒），从cached表中读取记录时，若记录超过该时间未更新，则删除
 };
 ```
 
@@ -55,7 +58,7 @@ imdb =							       -- cache缓存规格，定义了支持的指标项规格
 不同egress对应不同的配置，在conf中定义
 
 ```shell
-web_server =							-- egress配置为promecheus，需要启动一个web server，对外提供查询metric指标的接口，promecheus会基于该接口查询节点指标信息；
+web_server =							-- egress配置为prometheus，需要启动一个web server，对外提供查询metric指标的接口，promecheus会基于该接口查询节点指标信息；
 {
     port = 8888;						-- 监听端口
 };

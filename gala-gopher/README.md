@@ -9,20 +9,14 @@ gala-gopher是基于eBPF的低负载探针框架，致力于提供裸机/虚机/
 
 - 安装依赖
 
-  安装开发库
-
   ```bash
-  yum install cmake -y
-  yum install gcc-c++ -y
-  yum install libconfig-devel -y
-  yum install librdkafka-devel -y
-  yum install libmicrohttpd-devel -y
+  sh build.sh check
   ```
 
 - 构建
 
   ```bash
-  sh build.sh
+  sh build.sh build
   ```
 
 - 安装
@@ -39,6 +33,19 @@ gala-gopher是基于eBPF的低负载探针框架，致力于提供裸机/虚机/
 
 ### 基于rpm包安装运行
 
+- yum源配置
+  
+  根据要安装的gala-gopher版本配置指定的yum源。例，
+
+  ```
+  [gala-gopher]
+  name=gala-gopher
+  baseurl=https://repo.huaweicloud.com/openeuler/openEuler-21.09/EPOL/main/x86_64/
+  enabled=1
+  gpgcheck=0
+  ```
+
+
 - rpm安装
 
   ```bash
@@ -46,6 +53,14 @@ gala-gopher是基于eBPF的低负载探针框架，致力于提供裸机/虚机/
   ```
 
 - 运行
+
+  直接运行命令，
+
+  ```bash
+  systemctl start gala-gopher
+  ```
+  
+  或者通过 systemd 启动，
 
   ```bash
   systemctl start gala-gopher
@@ -81,9 +96,11 @@ gala-gopher是基于eBPF的低负载探针框架，并集成了常用的native�
 
 ![devops](doc/devops.JPG)
 
-
-
 ## 详细介绍
+
+### 开发指南
+
+[开发指南](doc/design_coe.md)
 
 ### 配置文件介绍
 

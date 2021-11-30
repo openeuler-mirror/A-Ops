@@ -13,7 +13,7 @@
 | 社区开发者 | 对项目感兴趣的并想参与到项目中，共同完善架构感知能力 |
 | 系统运维人员 | 系统运维人员，需要对整个集群系统做运维、升级、故障定位等工作 |
 
-## 1.3、依赖组件
+## 1.2、依赖组件
 |组件|组件描述|可获得性|
 |:--|:-------|:------|
 | neo4j browser | 图数据库浏览器 | Y |
@@ -55,11 +55,9 @@ Mulan PSL v2
 
      感知引擎的安装部署是否方便，三方探针集成是否方便；
 
-2. 数据库程序
+2. 数据库服务
 
    对于各个节点观测的数据，需要统一汇总到数据库存储，参考业界观测系统，需要支持kafka、promecheus、telemetry；数据库作为被依赖程序由解决方案提供；
-
-   数据库服务
 
 3. 拓扑绘制服务
 
@@ -71,12 +69,14 @@ Mulan PSL v2
    - 拓扑绘制算法可替换
    - UI层可替换
    - 可配置观测范围
+  
+   拓扑绘制功能在 [gala-spider](https://gitee.com/openeuler/A-Ops/tree/master/gala-spider) 项目中实现。
 
 4. 拓扑UI
 
    基于拓扑绘制服务加工的拓扑信息完成UI绘图，对比当前流行的图形绘制程序，选择neo4j browser作为UI程序；
 
-综合设计目标，采用基于eBPF技术，实现非侵入、低负载的架构感知服务；
+综合设计目标，采用基于eBPF技术，实现非侵入、低负载的架构感知服务。
 
 eBPF相关的详细介绍可参考：https://ebpf.io/zh-cn/
 
@@ -106,7 +106,7 @@ eBPF相关的详细介绍可参考：https://ebpf.io/zh-cn/
 
 ![usecase_observe](pic/usecase_observe.png)
 
-架构感知运行观测逻辑：各探针程序上报探针数据，有感知引擎上报给数据库系统，拓扑绘制程序从数据库中收集各节点上报的观测数据，整理分析集群的拓扑关系，交给UI呈现给用户；
+架构感知运行观测逻辑：各探针程序上报探针数据，由感知引擎上报给数据库系统，拓扑绘制程序从数据库中收集各节点上报的观测数据，整理分析集群的拓扑关系，交给UI呈现给用户；
 
 ## 3.2、逻辑视图
 
@@ -146,76 +146,48 @@ eBPF相关的详细介绍可参考：https://ebpf.io/zh-cn/
 
   测试框架；
 
-### 3.2.2 拓扑绘制
-
-![topo_logic](pic/topo_logic.png)
-
-拓扑绘制程序分为：绘制层、db适配层、ui适配层；
-
-- conf
-
-  配置文件，定义如：Db源、UI类型、关注的metric项、采集周期等；
-
-- db_agent
-
-  数据源适配层，用于适配各种拓扑数据源，并转换成内部数据结构；
-
-- 拓扑绘制
-
-  根据拓扑数据源数据，做数据处理，输出作为UI层的输入；其中数据处理（拓扑绘制）算法支持可替换；
-
-- ui_agent
-
-  UI适配层，将拓扑数据处理结果对接到不同UI系统，满足不同场景下的数据呈现要求；
-
-
 ## 3.3、开发视图
 ### 3.3.1 架构感知引擎
 
 ```shell
 gala-gopher
-    ├─config			// 默认配置文件
-    ├─doc				// 文档目录
-    ├─src				// 源码目录
-    │  ├─daemon
-    │  ├─egress
-    │  │  └─kafka
-    │  │  └─web_server
-    │  ├─ingress
-    │  ├─lib			// 基础库
-    │  │  ├─config
-    │  │  ├─fifo
-    │  │  ├─imdb
-    │  │  ├─meta
-    │  │  └─probe
-    │  ├─probes
-    │  │  ├─native
-    │  │  └─extends
-    │  │     ├─ebpf.probe
-    │  │     ├─python.probe
-    │  │     └─sh.probe
-    │  └─resource
-    └─test
-       ├─test_modules
-       └─test_probes
+  ├── build.sh                  # 项目构建脚本
+  ├── config/                   # 项目配置文件
+  │   └── gala-gopher.conf
+  ├── doc/                      # 项目开发和使用文档
+  ├── install.sh                # 项目安装脚本
+  ├── service/                  # systemd启动配置
+  │   └── gala-gopher.service
+  ├── src/                      # 项目源码
+  │   ├── cmd/                  # cmd模块
+  │   ├── daemon/               # daemon模块
+  │   ├── egress/               # egress模块
+  │   ├── ingress/              # ingress模块
+  │   ├── lib/                  # lib基础库
+  │   │   ├── base.h
+  │   │   ├── config/           # config模块
+  │   │   ├── fifo/             # fifo模块
+  │   │   ├── imdb/             # imdb模块
+  │   │   ├── kafka/            # kafka模块
+  │   │   ├── meta/             # meta模块
+  │   │   └── probe/            # probe模块
+  │   ├── probes/               # 探针开发源码
+  │   │   ├── example.probe           # native探针示例
+  │   │   ├── extends                 # 第三方探针源码
+  │   │   ├── system_inode.probe      # native探针
+  │   │   ├── system_meminfo.probe    # native探针
+  │   │   ├── system_tcp.probe        # native探针
+  │   │   └── system_vmstat.probe     # native探针
+  │   ├── resource/             # resource模块
+  │   └── web_server/           # webserver模块
+  └── test/                     # 测试代码
+      ├── test_modules/         # 模块测试代码
+      ├── test_modules.sh       # 模块测试脚本
+      ├── test_probes/          # 探针测试代码
+      └── test_probes.sh        # 探针测试脚本
 ```
 
 总体代码结构与逻辑图类似，lib基础库中封装了一些基础功能/api文件；
-
-### 3.3.2 拓扑绘制
-
-```shell
-spider
-  ├─config
-  ├─doc
-  ├─ui_agent
-  │  └─neo4j_browser
-  ├─data_process
-  │  └─topo_draw
-  ├─daemon
-  └─db_agent
-     └─kafka
-```
 
 ## 3.4、部署视图
 
