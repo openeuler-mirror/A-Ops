@@ -174,8 +174,15 @@ int main(int argc, char **argv)
     signal(SIGINT, sig_handler);
     signal(SIGTERM, sig_handler);
 
-	UBPF_ATTACH(trace_haproxy, haproxy, back_establish);
-	UBPF_ATTACH(trace_haproxy, haproxy, stream_free);
+    int ret = 0;
+    UBPF_ATTACH(trace_haproxy, haproxy, back_establish, ret);
+    if (ret == 0) {
+        goto err;
+    }
+    UBPF_ATTACH(trace_haproxy, haproxy, stream_free, ret);
+    if (ret == 0) {
+        goto err;
+    }
 
     /* create collect hash map */
     collect_map_fd = 

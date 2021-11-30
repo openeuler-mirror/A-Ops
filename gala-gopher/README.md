@@ -49,7 +49,7 @@ gala-gopher是基于eBPF的低负载探针框架，致力于提供裸机/虚机/
 - rpm安装
 
   ```bash
-  yum install gala-gopher-v1.1.1-5.oe1.x86_64.rpm
+  yum install gala-gopher-v1.1.0-2.x86_64.rpm
   ```
 
 - 运行
@@ -57,7 +57,7 @@ gala-gopher是基于eBPF的低负载探针框架，致力于提供裸机/虚机/
   直接运行命令，
 
   ```bash
-  gala-gopher
+  systemctl start gala-gopher
   ```
   
   或者通过 systemd 启动，
@@ -124,7 +124,9 @@ gala-gopher是基于eBPF的低负载探针框架，并集成了常用的native�
 
 ## 负载测试
 
-## 系统演示
+## 使用示例
+
+[CDN视频直播环境部署运行架构感知](doc/example_CDN_trace.md)
 
 基于CDN简化场景部署架构感知服务做了拓扑绘制的效果演示如下。
 

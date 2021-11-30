@@ -13,10 +13,9 @@ gala-spider是用于架构感知拓扑绘制服务，该程序提供一个配置
 
   ```bash
   yum install -y configparser multiprocessing
-  # DB源采用kafka
-  yum install -y python3-kafka-python
-  # UI程序采用neo4j
-  yum install -y python3-py2neo
+  yum install -y python3-connexion
+  yum install -y python3-kafka-python          	 # DB源采用kafka
+  yum install -y python3-py2neo                    # UI程序采用neo4j
   ```
 
 - 构建
@@ -42,13 +41,13 @@ gala-spider是用于架构感知拓扑绘制服务，该程序提供一个配置
 - 安装
 
   ```
-  yum localinstall gala-spider.rpm
+  yum install gala-spider-1.0.0.tar.gz
   ```
 
 - 运行
 
   ```
-  gala-spider
+  systemctl start gala-spider
   ```
 
 ## 总体介绍
@@ -110,9 +109,9 @@ gala-spider用于架构感知探测结果呈现，可以根据各个节点上报
 
 ### 配置文件介绍
 
-配置文件介绍
+[配置文件介绍](doc/conf_introduction.md)
 
 ### 如何开发其他呈现服务
 
-开发指南
+[开发指南](doc/development_guidelines.md)
 

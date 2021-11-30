@@ -7,6 +7,8 @@ gala-ragdoll是基于OS的配置托管服务，能够实现对OS配置的集群�
 ## 快速开始
 ### 基于源码编译、安装、运行
 - 安装依赖
+
+  配置21.09 Epol的镜像源（地址：[镜像源地址](https://repo.openeuler.org/openEuler-21.09/EPOL/main/x86_64/)），然后安装安装依赖
 ```
 yum install -y python3-devel python3-cffi gcc cmake pcre2-devel libyang python3-libyang
 pip3 install -r requirements.txt
@@ -30,27 +32,39 @@ python3 -m ragdoll
 ### 基于rpm包运行安装
 - rpm安装
 ```
-yum localinstall gala-ragdoll.rpm
+yum install python3-gala-ragdoll gala-ragdoll
 ```
 
 - 运行
 ```
-gala-ragdoll
+systemctl start gala-ragdoll
 ```
 
+- 详情可以参考：
+
+  [基于rpm安装指导](https://gitee.com/openeuler/A-Ops/blob/master/gala-ragdoll/installDoc)
+
 ## 运行后的REST API使用
-默认提供的REST API地址为：
+
+- 默认提供的REST API地址为：
+
 ```
 http://localhost:port/ui/
 ```
 
-当前采用swagger框架定义REST API:
+- 当前采用swagger框架定义REST API:
+
 
 ```
 http://localhost:port/swagger.json
 ```
 
+- 详情可以参考：
+
+  [配置溯源使用指导](https://gitee.com/openeuler/A-Ops/blob/master/gala-ragdoll/doc/instruction_manual.md)
+
 ## 总体介绍
+
 gala-ragdoll是一个OS场景下的配置托管服务，能够实现对OS配置的集群式管理，屏蔽不同OS类型的配置差异，实现统一的、可溯源的、预期配置可管理的可信的OS配置运维入口。
 
 ### 模块划分
@@ -86,14 +100,14 @@ gala-ragdoll是一个OS场景下的配置托管服务，能够实现对OS配置�
 该部分也由A-OPS中提供基于基于ansible的node配置操作接口。
 
 ### 整体流程
-![all_options](doc/pic/all_option)
+![all_options](doc/pic/all_option.png)
 
 ### 运行框架
-![runtime_arch](doc/pic/arch)
+![runtime_arch](doc/pic/arch.png)
 
 ### 配置溯源差异样例
 
-![diff_example](doc/pic/git_diff)
+![diff_example](doc/pic/git_diff.png)
 
 ## 详细介绍
 ### 设计文档

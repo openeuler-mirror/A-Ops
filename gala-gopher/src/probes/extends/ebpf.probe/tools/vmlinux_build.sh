@@ -50,7 +50,7 @@ function install_dep_packages()
 {
     yum install -y asciidoc audit-libs-devel bc \
                    binutils-devel bison gtk2-devel \
-                   java-1.8.0-openjdk libbabeltrace-devel \
+                   java-1.8.0-openjdk java-1.8.0-openjdk-devel libbabeltrace-devel \
                    libunwind-devel ncurses-devel net-tools \
                    newt-devel numactl-devel openssl-devel \
                    pciutils-devel perl-generators python3-devel \
