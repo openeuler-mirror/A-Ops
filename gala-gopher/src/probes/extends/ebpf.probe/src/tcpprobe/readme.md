@@ -170,3 +170,22 @@
   - 删除时机：
 
     pull_probe_data 中对于状态包含 `TCP_CLOSE `的链路从map中删除；即统计输出后已关闭的链路从map中移除；
+
+## 压测报告
+
+测试环境：openEuler-20.03-LTS + VM + 16核
+
+测试结果：10w并发连接下，tcpprobe的cpu占用率平均为 4.0% （16核共1600%），内存占用率10%。
+
+测试服务器程序：https://github.com/smallnest/1m-go-tcp-server/tree/master/2_epoll_server
+
+测试客户端程序：https://github.com/smallnest/1m-go-tcp-server/tree/master/4_epoll_client
+
+测试过程：
+
+1. 编译 epoll_server 服务器程序：`go build .`
+2. 启动 epoll_server 服务器：`./go_server`
+3. 编译 epoll_client 客户端程序：`go build --tags "static netgo" -o client  .`
+4. 启动 epoll_client 客户端：`./setup.sh 10000 10 172.17.0.1` ，创建10个容器，每个容器创建1w并发tcp连接，共10w并发连接。
+
+测试环境构建：https://colobu.com/2019/02/23/1m-go-tcp-connection/
