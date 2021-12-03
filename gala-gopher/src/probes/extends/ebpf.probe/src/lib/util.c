@@ -30,7 +30,7 @@
  * 3. start - offset获得进程基地址
  * 4. 使用 objdump -t /usr/sbin/nginx | grep <func_name> | awk \'{print $1}\'获得函数偏移地址
  */
-static int get_bin_process_id(char *bin_name)
+int get_bin_process_id(char *bin_name)
 {
     FILE *fp = NULL;
     char buffer[BUF_TMP_LEN] = {0};
@@ -39,7 +39,7 @@ static int get_bin_process_id(char *bin_name)
     if (bin_name == NULL) {
         return -1;
     }
-    snprintf(cmd, BUF_TMP_LEN, "ps -e | grep %s | awk \'{print $1}\'", bin_name);
+    snprintf(cmd, BUF_TMP_LEN, "ps -e | grep %s\$ | awk \'{print $1}\'", bin_name);
     fp = popen(cmd, "r");
     while (NULL != fgets(buffer, 10, fp)) {
         break;
