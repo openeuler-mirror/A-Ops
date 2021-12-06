@@ -1,0 +1,268 @@
+data_agent: gala_gopher
+observe_entities:
+  -
+    type: host
+    keys:
+      - machine_id
+    labels:
+      - &host_name hostname
+    name: *host_name
+    metrics: []
+    level: HOST
+    dependingitems:
+      -
+        id: connect
+        layer: indirect
+        toTypes:
+          - host
+    dependeditems:
+      -
+        id: runs_on
+        layer: direct
+        fromTypes:
+          - container
+          - task
+      -
+        id: connect
+        layer: indirect
+        fromTypes:
+          - host
+  -
+    type: container
+    keys:
+      - container_id
+      - machine_id
+    labels:
+      - &container_name container_name
+      - netns
+      - mntns
+      - netcgrp
+      - memcgrp
+      - cpucgrp
+    name: *container_name
+    metrics: []
+    level: CONTAINER
+    dependingitems:
+      -
+        id: runs_on
+        layer: direct
+        toTypes:
+          - host
+      -
+        id: connect
+        layer: indirect
+        toTypes:
+          - container
+    dependeditems:
+      -
+        id: runs_on
+        layer: direct
+        fromTypes:
+          - task
+      -
+        id: connect
+        layer: indirect
+        fromTypes:
+          - container
+  -
+    type: task
+    keys:
+      - pid
+      - machine_id
+    labels:
+      - &task_name task_name
+      - tgid
+      - pidns
+      - container_id
+    name: *task_name
+    metrics:
+      - fork_count
+    level: PROCESS
+    dependingitems:
+      -
+        id: runs_on
+        layer: direct
+        toTypes:
+          - container
+          - host
+      -
+        id: belongs_to
+        layer: direct
+        toTypes:
+          - task
+      -
+        id: connect
+        layer: indirect
+        toTypes:
+          - task
+    dependeditems:
+      -
+        id: belongs_to
+        layer: direct
+        fromTypes:
+          - task
+          - endpoint
+          - tcp_link
+          - ipvs_link
+          - nginx_link
+          - haproxy_link
+      -
+        id: connect
+        layer: indirect
+        fromTypes:
+          - task
+      -
+        id: belongs_to
+        layer: direct
+        fromTypes:
+          - task
+  -
+    type: endpoint
+    keys:
+      - type
+      - ip
+      - port
+      - pid
+      - machine_id
+    labels:
+      - netns
+    dependingitems:
+      -
+        id: belongs_to
+        layer: direct
+        toTypes:
+          - task
+    dependeditems: []
+  -
+    type: tcp_link
+    keys:
+      - server_ip
+      - server_port
+      - client_ip
+      - pid
+      - machine_id
+    labels:
+      - role
+      - protocol
+    metrics:
+      - rx_bytes
+      - tx_bytes
+      - packets_out
+      - packets_in
+      - retran_packets
+      - lost_packets
+      - rtt
+      - link_count
+    level: RPC
+    dependingitems:
+      -
+        id: belongs_to
+        layer: direct
+        toTypes:
+          - task
+      -
+        id: is_server
+        layer: direct
+        toTypes:
+          - ipvs_link
+          - nginx_link
+          - haproxy_link
+      -
+        id: is_client
+        layer: direct
+        toTypes:
+          - ipvs_link
+          - nginx_link
+          - haproxy_link
+      -
+        id: is_peer
+        layer: direct
+        toTypes:
+          - tcp_link
+    dependeditems:
+      -
+        id: is_peer
+        layer: direct
+        fromTypes:
+          - tcp_link
+  -
+    type: ipvs_link
+    keys: &lb_link_keys
+      - server_ip
+      - server_port
+      - virtual_ip
+      - virtual_port
+      - local_ip
+      - client_ip
+      - pid
+      - machine_id
+    labels:
+      - protocol
+    metrics:
+      - link_count
+    level: LB
+    dependingitems:
+      -
+        id: belongs_to
+        layer: direct
+        toTypes:
+          - task
+    dependeditems:
+      -
+        id: is_server
+        layer: direct
+        fromTypes:
+          - tcp_link
+      -
+        id: is_client
+        layer: direct
+        fromTypes:
+          - tcp_link
+  -
+    type: nginx_link
+    keys:
+      <<: *lb_link_keys
+    metrics:
+      - link_count
+    level: LB
+    dependingitems:
+      -
+        id: belongs_to
+        layer: direct
+        toTypes:
+          - task
+    dependeditems:
+      -
+        id: is_server
+        layer: direct
+        fromTypes:
+          - tcp_link
+      -
+        id: is_client
+        layer: direct
+        fromTypes:
+          - tcp_link
+  -
+    type: haproxy_link
+    keys:
+      <<: *lb_link_keys
+    metrics:
+      - link_count
+    level: LB
+    dependingitems:
+      -
+        id: belongs_to
+        layer: direct
+        toTypes:
+          - task
+    dependeditems:
+      -
+        id: is_server
+        layer: direct
+        fromTypes:
+          - tcp_link
+      -
+        id: is_client
+        layer: direct
+        fromTypes:
+          - tcp_link
