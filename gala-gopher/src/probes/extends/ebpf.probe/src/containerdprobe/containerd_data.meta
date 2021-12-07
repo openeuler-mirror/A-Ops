@@ -7,27 +7,27 @@ measurements:
         (
             {
                 description: "container_id",
-                type: "Unknown",
+                type: "key",
                 name: "container_id",
             },
             {
                 description: "namespace",
-                type: "Unknown",
+                type: "label",
                 name: "ns",
             },
             {
                 description: "task pid",
-                type: "Unknown",
+                type: "label",
                 name: "pid",
             },
             {
                 description: "status",
-                type: "Unknown",
+                type: "gauge",
                 name: "status",
             },
             {
                 description: "cgroup todo",
-                type: "Unknown",
+                type: "label",
                 name: "cgroup",
             }
         )

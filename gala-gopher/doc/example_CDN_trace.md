@@ -113,7 +113,7 @@ python3 daemon.py
 
 - 简介
 
-  ![系统结果框图](pic\cdn.png)
+  ![系统结果框图](pic/cdn.png)
 
 - 测试说明
 
@@ -127,7 +127,7 @@ python3 daemon.py
   ./ffmpeg -re -stream_loop -1 -i /home/record.flv -c copy -f flv "rtmp://pull.source.com/live/she"
   ```
 
-  ![one_ffmpeg](pic\one_ffmpeg.png)
+  ![one_ffmpeg](pic/one_ffmpeg.png)
 
   单条推拉pull流：
 
@@ -136,7 +136,7 @@ python3 daemon.py
   curl -v http://pull.source.com/live/she.flv > flv.log
   ```
 
-  ![条推拉流](pic\one_ffmpeg_pull.png)
+  ![条推拉流](pic/one_ffmpeg_pull.png)
 
   三条推拉流：
 
@@ -147,7 +147,7 @@ python3 daemon.py
   curl -v http://xhs.source.com/live/she.flv > flv.log
   ```
 
-  ![三条推拉流](pic\three_ffmpeg_pull.png)
+  ![三条推拉流](pic/three_ffmpeg_pull.png)
 
   构造异常测试：
   在nginx1节点模拟数据报重复：
@@ -157,4 +157,4 @@ python3 daemon.py
   ```
 
   然后观察，相应的curl流速度变慢；拓扑图上看到，从ipvs-fnat到nginx1.nginx的链路为红色，从链路指标数据可以看出，指标total_retrans为77；
-  ![nginx1节点构造重复包错误](pic\retrans_abnormal.png)
+  ![nginx1节点构造重复包错误](pic/retrans_abnormal.png)
