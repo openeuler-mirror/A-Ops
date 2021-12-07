@@ -14,39 +14,35 @@ struct bpf_map_def SEC("maps") task_map = {
     .max_entries = TASK_MAP_ENTRY_SIZE,
 };
 
-KPROBE(wake_up_new_task, pt_regs)
+KRAWTRACE(sched_process_fork, bpf_raw_tracepoint_args)
 {
-    struct task_key ctkey = {0};
-    struct task_kdata *ctkd;
-    struct task_key ntkey = {0};
-    struct task_kdata ntkd = {0};
-    struct task_struct *task;
+    struct task_key parent_key = {0};
+    struct task_kdata *parent_data;
+    struct task_key child_key = {0};
+    struct task_kdata child_data = {0};
+    
+    struct task_struct* parent = (struct task_struct*)ctx->args[0];
+    struct task_struct* child = (struct task_struct*)ctx->args[1];
 
-    ctkey.tgid = bpf_get_current_pid_tgid() >> 32;
-    ctkey.pid = bpf_get_current_pid_tgid();
-    bpf_printk("[TaskProbe|PARENT]: tgid-%d, pid-%d.\n", ctkey.tgid, ctkey.pid);
-    ctkd = bpf_map_lookup_elem(&task_map, &ctkey);
-    if (ctkd){
-        ctkd->fork_count++;
-        bpf_map_update_elem(&task_map, &ctkey, ctkd, BPF_ANY);
+    parent_key.tgid = _(parent->tgid);
+    parent_key.pid = _(parent->pid);
+    parent_data = bpf_map_lookup_elem(&task_map, &parent_key);
+    if (parent_data){
+        __sync_fetch_and_add(&parent_data->fork_count, 1);
     }
-
-    task = (struct task_struct *)PT_REGS_PARM1(ctx);
-    ntkey.tgid = _(task->tgid);
-    ntkey.pid = _(task->pid);
-    ntkd.ptid = ctkey.tgid;
-    bpf_map_update_elem(&task_map, &ntkey, &ntkd, BPF_ANY);
-    bpf_printk("[TaskProbe|CREATE]: tgid-%d, pid-%d.\n", ntkey.tgid, ntkey.pid);
-    return;
+    
+    child_key.tgid = _(child->tgid);
+    child_key.pid = _(child->pid);
+    child_data.ptid = child_key.tgid;
+    bpf_map_update_elem(&task_map, &child_key, &child_data, BPF_ANY);
 }
 
-KPROBE(do_exit, pt_regs)
+KRAWTRACE(sched_process_exit, bpf_raw_tracepoint_args)
 {
     struct task_key tkey = {0};
+    struct task_struct* task = (struct task_struct*)ctx->args[0];
 
-    tkey.tgid = bpf_get_current_pid_tgid() >> 32;
-    tkey.pid = bpf_get_current_pid_tgid();
+    tkey.tgid = _(task->tgid);
+    tkey.pid = _(task->pid);
     bpf_map_delete_elem(&task_map, &tkey);
-    bpf_printk("[TaskProbe|DELETE]: tgid-%d, pid-%d.\n", tkey.tgid, tkey.pid);
-    return;
 }
