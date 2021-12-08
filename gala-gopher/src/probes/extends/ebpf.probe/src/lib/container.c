@@ -6,6 +6,7 @@
 #define ERR_MSG "No such file or directory"
 #define ERR_MSG2 "not installe"
 #define RUNNING "active (running)"
+#define MERGED_DIR "MergedDir"
 
 #define DOCKER "/usr/bin/docker"
 #define ISULAD "/usr/bin/isulad"
@@ -17,6 +18,8 @@
 #define DOCKER_NETNS_COMMAND "/usr/bin/ls -l /proc/%u/ns/net | awk -F '[' '{print $2}' | awk -F ']' '{print $1}'"
 #define DOCKER_CGP_COMMAND "/usr/bin/ls -l /proc/%u/ns/cgroup | awk -F '[' '{print $2}' | awk -F ']' '{print $1}'"
 #define DOCKER_MNTNS_COMMAND "/usr/bin/ls -l /proc/%u/ns/mnt | awk -F '[' '{print $2}' | awk -F ']' '{print $1}'"
+#define DOCKER_INSPECT_COMMAND "inspect"
+#define DOCKER_MERGED_COMMAND "MergedDir | awk -F '\"' '{print $4}'"
 
 #define LEN_BUF 256
 #define COMMAND_LEN 512
@@ -42,7 +45,7 @@ bool __is_install_rpm(const char* command){
     }
     is_installed = true;
 out:
-    (void)fclose(f);
+    (void)pclose(f);
     return is_installed;
 }
 
@@ -70,7 +73,7 @@ bool __is_service_running(const char* service){
     }
     
 out:
-    (void)fclose(f);
+    (void)pclose(f);
     return is_running;
 }
 
@@ -114,7 +117,7 @@ int __get_container_count(const char *command_s) {
     }
 
 out:
-    (void)fclose(f);
+    (void)pclose(f);
     return container_num;
 }
 
@@ -147,7 +150,7 @@ int __get_containers_id(container_tbl* cstbl, const char *command_s) {
     }
 
 out:
-    (void)fclose(f);
+    (void)pclose(f);
     return ret;
 }
 
@@ -171,12 +174,12 @@ int __get_containers_pid(container_tbl* cstbl, const char *command_s) {
         }
         (void)memset(line, 0, LEN_BUF);
         if (NULL == fgets(line, LEN_BUF, f)) {
-            (void)fclose(f);
+            (void)pclose(f);
             continue;
         }
         p->pid = (unsigned int)atoi((const char *)line);
         p++;
-        (void)fclose(f);
+        (void)pclose(f);
     }
     return 0;
 }
@@ -201,12 +204,12 @@ int __get_containers_comm(container_tbl* cstbl, const char *command_s) {
         }
         (void)memset(line, 0, LEN_BUF);
         if (NULL == fgets(line, LEN_BUF, f)) {
-            (void)fclose(f);
+            (void)pclose(f);
             continue;
         }
         (void)snprintf(p->comm, COMM_LEN, "%s", line);
         p++;
-        (void)fclose(f);
+        (void)pclose(f);
     }
     return 0;
 }
@@ -232,12 +235,12 @@ int __get_containers_pod(container_tbl* cstbl, const char *command_s) {
         }
         (void)memset(line, 0, LEN_BUF);
         if (NULL == fgets(line, LEN_BUF, f)) {
-            (void)fclose(f);
+            (void)pclose(f);
             continue;
         }
         (void)snprintf(p->pod, POD_NAME_LEN, "%s", line);
         p++;
-        (void)fclose(f);
+        (void)pclose(f);
     }
     return 0;
 }
@@ -255,10 +258,10 @@ int __get_pid_namespace(unsigned int pid, const char *namespace) {
     }
     (void)memset(line, 0, LEN_BUF);
     if (NULL == fgets(line, LEN_BUF, f)) {
-        (void)fclose(f);
+        (void)pclose(f);
         return -1;
     }
-    (void)fclose(f);
+    (void)pclose(f);
     return (int)atoi((const char *)line);
 }
 
@@ -392,6 +395,72 @@ const char* get_container_id_by_pid(container_tbl* cstbl, unsigned int pid) {
 void free_container_tbl(container_tbl **pcstbl) {
     free(*pcstbl);
     *pcstbl = NULL;
+}
+
+/*
+parse string
+[root@node2 ~]# docker inspect 92a7a60249cb | grep MergedDir | awk -F '"' '{print $4}' 
+                /var/lib/docker/overlay2/82c62b73874d9a17a78958d5e13af478b1185db6fa614a72e0871c1b7cd107f5/merged
+*/
+int get_container_merged_path(const char *container_id, char *path, unsigned int len) {
+    FILE *f;
+    char command[COMMAND_LEN];
+
+    command[0] = 0;
+    path[0] = 0;
+    if (__is_dockerd()) {
+        (void)snprintf(command, COMMAND_LEN, "%s %s %s | grep %S", \
+            DOCKER, DOCKER_INSPECT_COMMAND, container_id, DOCKER_MERGED_COMMAND);
+    } else if (__is_isulad()) {
+        (void)snprintf(command, COMMAND_LEN, "%s %s %s | grep %S", \
+            ISULAD, DOCKER_INSPECT_COMMAND, container_id, DOCKER_MERGED_COMMAND);
+    } else {
+        return -1;
+    }
+
+    f = popen(command, "r");
+    if (f == NULL) {
+        return -1;
+    }
+
+    if (NULL == fgets(path, len, f)) {
+        (void)pclose(f);
+        return -1;
+    }
+
+    (void)pclose(f);
+    return 0;
+}
+
+/* docker exec -it 92a7a60249cb [xxx] */
+int exec_container_command(const char *container_id, const char *exec, char *buf, unsigned int len) {
+    FILE *f;
+    char command[COMMAND_LEN];
+
+    command[0] = 0;
+    buf[0] = 0;
+    if (__is_dockerd()) {
+        (void)snprintf(command, COMMAND_LEN, "%s exec -it %s %s", \
+            DOCKER, container_id, exec);
+    } else if (__is_isulad()) {
+        (void)snprintf(command, COMMAND_LEN, "%s exec -it %s %s", \
+            ISULAD, container_id, exec);
+    } else {
+        return -1;
+    }
+
+    f = popen(command, "r");
+    if (f == NULL) {
+        return -1;
+    }
+
+    if (NULL == fgets(buf, len, f)) {
+        (void)pclose(f);
+        return -1;
+    }
+
+    (void)pclose(f);
+    return 0;
 }
 
 
