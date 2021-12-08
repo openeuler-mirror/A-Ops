@@ -1,7 +1,7 @@
 #ifndef __TASKPROBE__H
 #define __TASKPROBE__H
 
-#define TASK_MAP_ENTRY_SIZE 256
+#define TASK_MAP_ENTRY_SIZE 256 * 10
 
 struct task_key {
     __u32 tgid;
@@ -10,8 +10,8 @@ struct task_key {
 
 struct task_kdata {
     __u32 ptid;                // parent task id
+    __u32 fork_count;
     __u64 offcpu_time;
-    __u16 fork_count;
     __u64 signal_count;
     __u64 syscall_fails;
     __u32 oom_count;
