@@ -1,8 +1,6 @@
 #ifndef __GOPHER_BPF_H__
 #define __GOPHER_BPF_H__
 
-
-
 #define __PROBE_MATCH_MAP_PIN_PATH "/sys/fs/bpf/probe/match_map"
 struct __probe_key {
     unsigned int smp_id;
@@ -15,7 +13,8 @@ struct __probe_key {
 #define __PROBE_PARAM3 2
 #define __PROBE_PARAM4 3
 #define __PROBE_PARAM5 4
-#define __PROBE_PARAM_MAX 5
+#define __PROBE_PARAM6 5
+#define __PROBE_PARAM_MAX 6
 struct __probe_val {
     long params[__PROBE_PARAM_MAX];
 };
@@ -108,12 +107,14 @@ static __always_inline void __get_probe_val(struct __probe_val *val,
                                                     const long p2,
                                                     const long p3,
                                                     const long p4,
-                                                    const long p5) {
+                                                    const long p5,
+                                                    const long p6) {
     val->params[__PROBE_PARAM1] = p1;
     val->params[__PROBE_PARAM2] = p2;
     val->params[__PROBE_PARAM3] = p3;
     val->params[__PROBE_PARAM4] = p4;
     val->params[__PROBE_PARAM5] = p5;
+    val->params[__PROBE_PARAM6] = p6;
 }
 
 static __always_inline int __do_push_match_map(const struct __probe_key *key, 
@@ -132,7 +133,8 @@ static __always_inline int __do_push_match_map(const struct __probe_key *key,
                                (const long)PT_REGS_PARM2(ctx),\
                                (const long)PT_REGS_PARM3(ctx),\
                                (const long)PT_REGS_PARM4(ctx),\
-                               (const long)PT_REGS_PARM5(ctx));\
+                               (const long)PT_REGS_PARM5(ctx),\
+                               (const long)PT_REGS_PARM6(ctx));\
         ret = __do_push_match_map(&__key, &__val);\
         if (ret < 0) {\
             bpf_printk("---KPROBE_RET[" #func "] push failed.\n"); \
@@ -154,6 +156,7 @@ int __do_pop_match_map_entry(const struct __probe_key *key,
     val->params[__PROBE_PARAM3] = tmp->params[__PROBE_PARAM3];
     val->params[__PROBE_PARAM4] = tmp->params[__PROBE_PARAM4];
     val->params[__PROBE_PARAM5] = tmp->params[__PROBE_PARAM5];
+    val->params[__PROBE_PARAM6] = tmp->params[__PROBE_PARAM6];
     return bpf_map_delete_elem(&__probe_match_map, (const void *)key);
 }
                 
@@ -178,6 +181,7 @@ int __do_pop_match_map_entry(const struct __probe_key *key,
 #define PROBE_PARM3(probe_val) (probe_val).val.params[__PROBE_PARAM3]
 #define PROBE_PARM4(probe_val) (probe_val).val.params[__PROBE_PARAM4]
 #define PROBE_PARM5(probe_val) (probe_val).val.params[__PROBE_PARAM5]
+#define PROBE_PARM6(probe_val) (probe_val).val.params[__PROBE_PARAM6]
 
 #endif
 

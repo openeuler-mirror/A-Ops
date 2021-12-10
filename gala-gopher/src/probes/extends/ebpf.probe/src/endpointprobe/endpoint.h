@@ -12,6 +12,17 @@ static const char *ep_file_path = "/sys/fs/bpf/endpoint";
 
 enum {
     EP_STATS_LISTEN_DROPS = 0,
+    EP_STATS_LISTEN_OVERFLOW,
+    EP_STATS_ACTIVE_OPENS,
+    EP_STATS_PASSIVE_OPENS,
+    EP_STATS_ATTEMPT_FAILS,
+    EP_STATS_ABORT_CLOSE,
+    EP_STATS_REQUEST_FAILS,
+    EP_STATS_RMEM_SCHEDULE,
+    EP_STATS_CONNTRACK_FAILS,
+    EP_STATS_TCP_OOM,
+    EP_STATS_KEEPLIVE_TIMEOUT,
+    EP_STATS_SEND_TCP_RSTS,
 };
 
 struct endpoint_stats {

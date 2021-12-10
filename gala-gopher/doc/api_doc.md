@@ -6,14 +6,14 @@ gala-gopher通过三种方式提供收集的原始数据，数据包含实体(�
 
 ## http方式
 
-本方式仅提供指标数据输出。
+本方式仅提供指标数据输出，即产生的每条数据是基于指标粒度上报的。
 
-访问/metrics地址时返回如下内容：
+访问 `/metrics` 地址时返回如下内容：
 
 ```
-# HELP tcp_link_rx_byte byte received of the tcp link.
-# TYPE tcp_link_rx_byte gauge
-tcp_link_rx_byte{pid="3426",client_ip="192.168.100.110",client_port="1235",server_ip="192.168.100.110",server_port="22"} 3812
+# HELP gala_gopher_tcp_link_rx_byte byte received of the tcp link.
+# TYPE gala_gopher_tcp_link_rx_byte gauge
+gala_gopher_tcp_link_rx_byte{pid="3426",client_ip="192.168.100.110",client_port="1235",server_ip="192.168.100.110",server_port="22", machine_id="xxxx", hostname="k8s-node1"} 3812 1637823172000
 ```
 
 返回的数据，由三部分组成：注释（HELP），类型（TYPE）和数据。
@@ -42,9 +42,15 @@ metric_name和label_name必须遵循gala-gopher的观测对象和观测指标命
 
 ## kafka方式
 
+本方式提供观测对象数据输出，即产生的每条数据是观测对象的一个实例信息，包括观测对象类型、标签、指标等信息。
+
+gala-gopher产生的kafka数据内容如下：
+
 ```
 {"table_name": "tcp_link", "timestamp": 1301469816, "machine_id": "5002b12c68744d1a8e0309f7d00462a2", "pid": "35331", "process_name": "curl", "role": "1", "client_ip": "192.168.100.110", "client_port": "1235", "server_ip": "192.168.100.111", "server_port": "80", "protocol": "2", "rx_bytes": "1710139", "tx_bytes": "94", "packets_in": "324", "packets_out": "282", "retran_packets": "0", "lost_packets": "0", "rtt": "404", ...}
 ```
+
+遵循以下格式规范：
 
 ```
 {"table_name": tablename, "timestamp": timestamp, "machine_id": machine_id, "key": value, ...}
@@ -76,10 +82,9 @@ bare_matal timestamp machine_id hostname [vm_names] [container_ids] [pids] [ips]
 每一行以实体类型开头，后面是该实体类型的属性以及指标，指标是可选的。
 
 文件gala-gopher.output.data中内容：
+```
 tcp-link 1631351950 5002b12c68744d1a8e0309f7d00462a2 342695 192.168.100.110 1235 192.168.100.111 22 1710139 94 324 282 0 0 404
 tcp-link 1631351950 5002b12c68744d1a8e0309f7d00462a2 342696 192.168.100.110 1238 192.168.100.111 80 1710139 94 324 282 0 0 404
-```
-
 ```
 
 ## 命名规范

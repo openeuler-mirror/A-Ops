@@ -1,0 +1,35 @@
+version = "1.0.0"
+measurements:
+(
+    {
+        name: "container_data",
+        fields:
+        (
+            {
+                description: "container_id",
+                type: "key",
+                name: "container_id",
+            },
+            {
+                description: "namespace",
+                type: "label",
+                name: "ns",
+            },
+            {
+                description: "task pid",
+                type: "label",
+                name: "pid",
+            },
+            {
+                description: "status",
+                type: "gauge",
+                name: "status",
+            },
+            {
+                description: "cgroup todo",
+                type: "label",
+                name: "cgroup",
+            }
+        )
+    }
+)

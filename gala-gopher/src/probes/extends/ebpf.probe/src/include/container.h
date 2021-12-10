@@ -23,4 +23,7 @@ typedef struct container_tbl_s {
 container_tbl* get_all_container();
 const char* get_container_id_by_pid(container_tbl* cstbl, unsigned int pid);
 void free_container_tbl(container_tbl **pcstbl);
+int get_container_merged_path(const char *container_id, char *path, unsigned int len);
+int exec_container_command(const char *container_id, const char *exec, char *buf, unsigned int len);
+
 #endif
