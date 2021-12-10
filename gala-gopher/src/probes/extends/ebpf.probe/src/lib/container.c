@@ -24,6 +24,23 @@
 #define LEN_BUF 256
 #define COMMAND_LEN 512
 
+/* cmd result may have '\n' or '\t', delete them */
+static void __delete_ending_sym(char *path) {
+    char *p = NULL;
+
+    if (path == NULL) {
+        return;
+    }
+    p = strchr(path, '\r');
+    if (p) {
+        *p = '\0';
+    }
+    p = strchr(path, '\n');
+    if (p) {
+        *p = '\0';
+    }
+    return;
+}
 
 bool __is_install_rpm(const char* command){
     char line[LEN_BUF];
@@ -79,7 +96,7 @@ out:
 
 bool __is_dockerd(){
     if(__is_install_rpm("/usr/bin/rpm -ql docker-engine")) {
-        return __is_service_running("/usr/bin/systemctl service dockerd");
+        return __is_service_running("/usr/bin/systemctl status docker");
     }
 }
 
@@ -409,10 +426,10 @@ int get_container_merged_path(const char *container_id, char *path, unsigned int
     command[0] = 0;
     path[0] = 0;
     if (__is_dockerd()) {
-        (void)snprintf(command, COMMAND_LEN, "%s %s %s | grep %S", \
+        (void)snprintf(command, COMMAND_LEN, "%s %s %s | grep %s", \
             DOCKER, DOCKER_INSPECT_COMMAND, container_id, DOCKER_MERGED_COMMAND);
     } else if (__is_isulad()) {
-        (void)snprintf(command, COMMAND_LEN, "%s %s %s | grep %S", \
+        (void)snprintf(command, COMMAND_LEN, "%s %s %s | grep %s", \
             ISULAD, DOCKER_INSPECT_COMMAND, container_id, DOCKER_MERGED_COMMAND);
     } else {
         return -1;
@@ -427,7 +444,7 @@ int get_container_merged_path(const char *container_id, char *path, unsigned int
         (void)pclose(f);
         return -1;
     }
-
+    __delete_ending_sym(path);
     (void)pclose(f);
     return 0;
 }
@@ -458,7 +475,7 @@ int exec_container_command(const char *container_id, const char *exec, char *buf
         (void)pclose(f);
         return -1;
     }
-
+    __delete_ending_sym(buf);
     (void)pclose(f);
     return 0;
 }
