@@ -24,6 +24,14 @@
 #define LEN_BUF 256
 #define COMMAND_LEN 512
 
+#define __SPLIT_NEWLINE_SYMBOL(s) \
+    do { \
+        int __len = strlen(s); \
+        if (__len > 0 && s[__len - 1] == '\n') { \
+            s[__len - 1] = 0; \
+        } \
+    } while(0) \
+
 
 bool __is_install_rpm(const char* command){
     char line[LEN_BUF];
@@ -79,7 +87,7 @@ out:
 
 bool __is_dockerd(){
     if(__is_install_rpm("/usr/bin/rpm -ql docker-engine")) {
-        return __is_service_running("/usr/bin/systemctl service dockerd");
+        return __is_service_running("/usr/bin/systemctl status docker");
     }
 }
 
@@ -144,8 +152,9 @@ int __get_containers_id(container_tbl* cstbl, const char *command_s) {
             ret = -1;
             goto out;
         }
+        __SPLIT_NEWLINE_SYMBOL(line);
         (void)snprintf(p->container, CONTAINER_ID_LEN, "%s", line);
-         p++;
+        p++;
         index++;
     }
 
@@ -177,6 +186,7 @@ int __get_containers_pid(container_tbl* cstbl, const char *command_s) {
             (void)pclose(f);
             continue;
         }
+        __SPLIT_NEWLINE_SYMBOL(line);
         p->pid = (unsigned int)atoi((const char *)line);
         p++;
         (void)pclose(f);
@@ -207,6 +217,7 @@ int __get_containers_comm(container_tbl* cstbl, const char *command_s) {
             (void)pclose(f);
             continue;
         }
+        __SPLIT_NEWLINE_SYMBOL(line);
         (void)snprintf(p->comm, COMM_LEN, "%s", line);
         p++;
         (void)pclose(f);
@@ -238,6 +249,7 @@ int __get_containers_pod(container_tbl* cstbl, const char *command_s) {
             (void)pclose(f);
             continue;
         }
+        __SPLIT_NEWLINE_SYMBOL(line);
         (void)snprintf(p->pod, POD_NAME_LEN, "%s", line);
         p++;
         (void)pclose(f);
@@ -245,7 +257,7 @@ int __get_containers_pod(container_tbl* cstbl, const char *command_s) {
     return 0;
 }
 
-int __get_pid_namespace(unsigned int pid, const char *namespace) {
+unsigned int __get_pid_namespace(unsigned int pid, const char *namespace) {
     char line[LEN_BUF];
     char command[COMMAND_LEN];
     FILE *f;
@@ -262,11 +274,13 @@ int __get_pid_namespace(unsigned int pid, const char *namespace) {
         return -1;
     }
     (void)pclose(f);
-    return (int)atoi((const char *)line);
+    __SPLIT_NEWLINE_SYMBOL(line);
+    return (unsigned int)strtoul((const char *)line, NULL, 10);
 }
 
 int __get_containers_netns(container_tbl* cstbl, const char *command_s) {
-    int index, netns;
+    int index;
+    unsigned int netns;
     container_info *p;
 
     p = cstbl->cs;
@@ -283,7 +297,8 @@ int __get_containers_netns(container_tbl* cstbl, const char *command_s) {
 }
 
 int __get_containers_mntns(container_tbl* cstbl, const char *command_s) {
-    int index, mntns;
+    int index;
+    unsigned int mntns;
     container_info *p;
 
     p = cstbl->cs;
@@ -293,14 +308,15 @@ int __get_containers_mntns(container_tbl* cstbl, const char *command_s) {
         mntns = __get_pid_namespace(p->pid, DOCKER_MNTNS_COMMAND);
         if (mntns > 0) {
             p->mntns = mntns;
-        }        
+        }
         p++;
     }
     return 0;
 }
 
 int __get_containers_cgroup(container_tbl* cstbl, const char *command_s) {
-    int index, cgroup;
+    int index;
+    unsigned int cgroup;
     container_info *p;
 
     p = cstbl->cs;
@@ -309,8 +325,8 @@ int __get_containers_cgroup(container_tbl* cstbl, const char *command_s) {
     for (index = 0; index < cstbl->num; index++) {
         cgroup = __get_pid_namespace(p->pid, DOCKER_CGP_COMMAND);
         if (cgroup > 0) {
-            p->cgroup = (unsigned int)cgroup;
-        }        
+            p->cgroup = cgroup;
+        }
         p++;
     }
     return 0;
@@ -370,7 +386,7 @@ container_tbl* get_all_container() {
 
 const char* get_container_id_by_pid(container_tbl* cstbl, unsigned int pid) {
     int i;
-    int cgroup, mntns, netns;
+    unsigned int cgroup, mntns, netns;
     container_info *p = cstbl->cs;
     
     cgroup = __get_pid_namespace(pid, DOCKER_CGP_COMMAND);
