@@ -32,7 +32,6 @@
         } \
     } while(0) \
 
-
 bool __is_install_rpm(const char* command){
     char line[LEN_BUF];
     FILE *f;
@@ -425,10 +424,10 @@ int get_container_merged_path(const char *container_id, char *path, unsigned int
     command[0] = 0;
     path[0] = 0;
     if (__is_dockerd()) {
-        (void)snprintf(command, COMMAND_LEN, "%s %s %s | grep %S", \
+        (void)snprintf(command, COMMAND_LEN, "%s %s %s | grep %s", \
             DOCKER, DOCKER_INSPECT_COMMAND, container_id, DOCKER_MERGED_COMMAND);
     } else if (__is_isulad()) {
-        (void)snprintf(command, COMMAND_LEN, "%s %s %s | grep %S", \
+        (void)snprintf(command, COMMAND_LEN, "%s %s %s | grep %s", \
             ISULAD, DOCKER_INSPECT_COMMAND, container_id, DOCKER_MERGED_COMMAND);
     } else {
         return -1;
@@ -443,7 +442,7 @@ int get_container_merged_path(const char *container_id, char *path, unsigned int
         (void)pclose(f);
         return -1;
     }
-
+    __SPLIT_NEWLINE_SYMBOL(path);
     (void)pclose(f);
     return 0;
 }
@@ -474,7 +473,7 @@ int exec_container_command(const char *container_id, const char *exec, char *buf
         (void)pclose(f);
         return -1;
     }
-
+    __SPLIT_NEWLINE_SYMBOL(buf);
     (void)pclose(f);
     return 0;
 }

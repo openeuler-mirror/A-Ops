@@ -1,10 +1,12 @@
 #ifndef __ELF_READER_H__
 #define __ELF_READER_H__
 
+#define BPF_ELF_DESC(desc) 1
+
 #define IS_DEBUG_FILE   1
 #define NOT_DEBUG_FILE  0
 #define ELF_ST_TYPE(x)  (((uint32_t) x) & 0xf)
-static const uint32_t BCC_SYM_ALL_TYPES = 65535;
+#define BCC_SYM_ALL_TYPES   65535
 
 struct symbol_info {
     const char *name;
@@ -39,5 +41,10 @@ int resolve_symbol_infos(const char *bin_path, const char *sym_name,
                          struct symbol_info_option *option, uint64_t *sym_offset);
 
 int get_glibc_path(const char *container_id, char *path, unsigned int len);
+
+int get_exec_file_path(const char *binary_file, const char *specified_path, const char *container_id,
+                        char **res_buf, int res_len);
+
+void free_exec_path_buf(char **ptr, int len);
 
 #endif
