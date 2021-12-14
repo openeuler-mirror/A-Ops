@@ -10,7 +10,7 @@
 
 char g_license[] SEC("license") = "GPL";
 
-struct bpf_map_def SEC("maps") containerd_create_map = {
+struct bpf_map_def SEC("maps") containers_map = {
     .type = BPF_MAP_TYPE_HASH,
     .key_size = sizeof(struct container_key),
     .value_size = sizeof(struct container_value),
@@ -57,7 +57,7 @@ UPROBE(linux_Task_Start, pt_regs)
     value.status = 1;
 
     /* update hash map */
-    bpf_map_update_elem(&containerd_create_map, &key, &value, BPF_ANY);
+    bpf_map_update_elem(&containers_map, &key, &value, BPF_ANY);
 
     return;
 }
@@ -86,7 +86,7 @@ UPROBE(linux_Task_Delete, pt_regs)
     bpf_probe_read_str(&key.container_id, CONTAINER_ID_LEN * sizeof(char), id_str);
 
     /* lookup containerd map, update status */
-    v_str = bpf_map_lookup_elem(&containerd_create_map, &key);
+    v_str = bpf_map_lookup_elem(&containers_map, &key);
     if (!v_str) {
         bpf_printk("===containerd Delete containerID not in hash map.\n");
         return;
@@ -95,7 +95,7 @@ UPROBE(linux_Task_Delete, pt_regs)
     v_str->status = 0;
 
     /* update hash map */
-    bpf_map_update_elem(&containerd_create_map, &key, v_str, BPF_ANY);
+    bpf_map_update_elem(&containers_map, &key, v_str, BPF_ANY);
 
     return;
 }

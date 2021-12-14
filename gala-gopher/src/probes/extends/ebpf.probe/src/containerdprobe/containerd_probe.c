@@ -17,6 +17,7 @@
 #include "args.h"
 
 #define METRIC_NAME_RUNC_TRACE    "container_data"
+#define CONTAINERS_MAP_FILE_PATH  "/sys/fs/bpf/probe/containers"
 
 static struct probe_params params = {.period = 5};
 static volatile bool exiting = false;
@@ -136,13 +137,24 @@ int main(int argc, char **argv)
         goto err;
     }
 
+    int pinned = bpf_obj_pin(GET_MAP_FD(containers_map), CONTAINERS_MAP_FILE_PATH);
+    if (pinned < 0) {
+        printf("Failed to pin containers_map to the file system: %d (%s)\n", pinned, strerror(errno));
+        goto err;
+    }
+
     while (!exiting) {
-        print_container_metric(GET_MAP_FD(containerd_create_map));
+        print_container_metric(GET_MAP_FD(containers_map));
         sleep(params.period);
     }
  
 err:
 /* Clean up */
     UNLOAD(containerd_probe);
+    if (access(CONTAINERS_MAP_FILE_PATH, F_OK) == 0){
+        if (remove(CONTAINERS_MAP_FILE_PATH) < 0) {
+            printf("Delete the pinned file:%s failed!\n", CONTAINERS_MAP_FILE_PATH);
+        }
+    }
     return -err;
 }
