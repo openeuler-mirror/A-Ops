@@ -20,8 +20,8 @@
 
 #define METRIC_NAME_HAPROXY_LINK "haproxy_link"
 
-
-static struct probe_params params = {.period = 5};
+static struct probe_params params = {.period = 5,
+                                     .elf_path = {0}};
 static volatile bool exiting = false;
 static void sig_handler(int sig)
 {
@@ -161,26 +161,45 @@ int main(int argc, char **argv)
 {
     int err = -1;
     int collect_map_fd = -1;
+    char *elf[PATH_NUM] = {0};
+    int elf_num = -1;
+    int attach_flag = 0;
 
-    err = args_parse(argc, argv, "t:", &params);
+    err = args_parse(argc, argv, "t:p:", &params);
     if (err != 0) {
         return -1;
     }
     printf("arg parse interval time:%us\n", params.period);
+    printf("arg parse input elf's path:%s\n", params.elf_path);
 
-	LOAD(trace_haproxy);
+    LOAD(trace_haproxy);
 
     /* Cleaner handling of Ctrl-C */
     signal(SIGINT, sig_handler);
     signal(SIGTERM, sig_handler);
 
-    int ret = 0;
-    UBPF_ATTACH(trace_haproxy, haproxy, back_establish, ret);
-    if (ret == 0) {
-        goto err;
+    /* Find elf's abs_path */
+    ELF_REAL_PATH(haproxy, params.elf_path, NULL, elf, elf_num);
+    if (elf_num <= 0) {
+        printf("get proc:haproxy abs_path error \n");
+        return -1;
     }
-    UBPF_ATTACH(trace_haproxy, haproxy, stream_free, ret);
-    if (ret == 0) {
+
+    /* Attach tracepoint handler for each elf_path */
+    for (int i = 0; i < elf_num; i++) {
+        int ret = 0;
+        UBPF_ATTACH(back_establish, elf[i], back_establish, ret);
+        if (ret <= 0) {
+            continue;
+        }
+        UBPF_ATTACH(stream_free, elf[i], stream_free, ret);
+        if (ret <= 0) {
+            continue;
+        }
+        attach_flag = 1;
+    }
+    free_exec_path_buf(elf, elf_num);
+    if (!attach_flag) {
         goto err;
     }
 

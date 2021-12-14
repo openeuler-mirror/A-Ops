@@ -196,7 +196,7 @@ int get_exec_file_path(const char *binary_file, const char *specified_path, cons
         return -1;
     }
     /* specified file path */
-    if (specified_path != NULL && strcmp(specified_path, "NULL")) {
+    if (specified_path != NULL && strlen(specified_path)) {
         if (!__is_exec_file(specified_path)) {
             printf("specified path check error[%d].\n", errno);
             return -1;

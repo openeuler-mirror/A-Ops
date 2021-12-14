@@ -18,7 +18,8 @@
 
 #define METRIC_NAME_RUNC_TRACE    "container_data"
 
-static struct probe_params params = {.period = 5};
+static struct probe_params params = {.period = 5,
+                                     .elf_path = {0}};
 static volatile bool exiting = false;
 static void sig_handler(int sig)
 {
@@ -86,14 +87,16 @@ static void print_container_metric(int fd)
 int main(int argc, char **argv)
 {
     int err = -1;
-    //struct containerd_probe_bpf *skel;
-    long uprobe_offset = -1;
+    char *elf[PATH_NUM] = {0};
+    int elf_num = -1;
+    int attach_flag = 0;
 
-    err = args_parse(argc, argv, "t:", &params);
+    err = args_parse(argc, argv, "t:p:", &params);
     if (err != 0) {
         return -1;
     }
     printf("arg parse interval time:%us\n", params.period);
+    printf("arg parse input elf's path:%s\n", params.elf_path);
 
     LOAD(containerd_probe);
 
@@ -104,35 +107,27 @@ int main(int argc, char **argv)
     /* Update BPF symaddrs for this binary */
     bpf_update_containerd_symaddrs(GET_MAP_FD(containerd_symaddrs_map));
 
-    /* Specify function offset, 
-       TODO: get offset from elf file */
-    /* 00000000017ac400  F .text  00000000000002e5  github.com/containerd/containerd/runtime/v1/linux.(*Task).Start */
-    uprobe_offset = 0x17ac400 - 0x400000;
-    printf("Success to get func(Start) offset[%ld].\n", uprobe_offset);
-    /* Attach tracepoint handler */
-    skel->links.ubpf_linux_Task_Start = bpf_program__attach_uprobe(skel->progs.ubpf_linux_Task_Start,
-                            false /* not uretprobe */,
-                            -1 /* self pid */,
-                            "/usr/local/bin/containerd",
-                            uprobe_offset);
-    err = libbpf_get_error(skel->links.ubpf_linux_Task_Start);
-    if (err) {
-        fprintf(stderr, "Failed to attach uprobe: %d\n", err);
-        goto err;
+    /* Find elf's abs_path */
+    ELF_REAL_PATH(containerd, params.elf_path, NULL, elf, elf_num);
+    if (elf_num <= 0) {
+        return -1;
     }
 
-    /* 00000000017abd80  F .text  000000000000066b  github.com/containerd/containerd/runtime/v1/linux.(*Task).Delete */
-    uprobe_offset = 0x17abd80 - 0x400000;
-    printf("Success to get func(Delete) offset[%ld].\n", uprobe_offset);
-    /* Attach tracepoint handler */
-    skel->links.ubpf_linux_Task_Delete = bpf_program__attach_uprobe(skel->progs.ubpf_linux_Task_Delete,
-                            false /* not uretprobe */,
-                            -1 /* self pid */,
-                            "/usr/local/bin/containerd",
-                            uprobe_offset);
-    err = libbpf_get_error(skel->links.ubpf_linux_Task_Delete);
-    if (err) {
-        fprintf(stderr, "Failed to attach uprobe: %d\n", err);
+    /* Attach tracepoint handler for each elf_path */
+    for (int i = 0; i < elf_num; i++) {
+        int ret = 0;
+        UBPF_ATTACH(linux_Task_Start, elf[i], github.com/containerd/containerd/runtime/v1/linux.(*Task).Start, ret);
+        if (ret <= 0) {
+            continue;
+        }
+        UBPF_ATTACH(linux_Task_Delete, elf[i], github.com/containerd/containerd/runtime/v1/linux.(*Task).Delete, ret);
+        if (ret <= 0) {
+            continue;
+        }
+        attach_flag = 1;
+    }
+    free_exec_path_buf(elf, elf_num);
+    if (!attach_flag) {
         goto err;
     }
 
@@ -140,7 +135,7 @@ int main(int argc, char **argv)
         print_container_metric(GET_MAP_FD(containerd_create_map));
         sleep(params.period);
     }
- 
+
 err:
 /* Clean up */
     UNLOAD(containerd_probe);

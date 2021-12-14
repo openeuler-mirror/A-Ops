@@ -19,8 +19,8 @@
 #include "nginx_probe.h"
 #include "args.h"
 
-
-static struct probe_params params = {.period = 5};
+static struct probe_params params = {.period = 5,
+                                     .elf_path = {0}};
 static volatile bool exiting = false;
 static void sig_handler(int sig)
 {
@@ -134,33 +134,50 @@ void print_statistic_map(int fd)
 
 int main(int argc, char **argv)
 {
-    int err;
+    int err = -1;
     int map_fd = -1;
+    char *elf[PATH_NUM] = {0};
+    int elf_num = -1;
+    int attach_flag = 0;
 
-    err = args_parse(argc, argv, "t:", &params);
+    err = args_parse(argc, argv, "t:p:", &params);
     if (err != 0) {
         return -1;
     }
     printf("arg parse interval time:%us\n", params.period);
+    printf("arg parse input elf's path:%s\n", params.elf_path);
 
-	LOAD(nginx_probe);
+    LOAD(nginx_probe);
 
     /* Clean handling of Ctrl-C */
     signal(SIGINT, sig_handler);
     signal(SIGTERM, sig_handler);
 
-
-    int ret = 0;
-    int ret2 = 0;
-    UBPF_ATTACH(nginx_probe, nginx, ngx_stream_proxy_init_upstream,ret);
-    UBPF_RET_ATTACH(nginx_probe, nginx, ngx_stream_proxy_init_upstream,ret);
-    UBPF_ATTACH(nginx_probe, nginx, ngx_http_upstream_handler,ret2);
-    ret |= ret2;
-    if (ret == 0) {
-        goto err;
+    /* Find elf's abs_path */
+    ELF_REAL_PATH(nginx, params.elf_path, NULL, elf, elf_num);
+    if (elf_num <= 0) {
+        printf("get proc:nginx abs_path error \n");
+        return -1;
     }
-    UBPF_ATTACH(nginx_probe, nginx, ngx_close_connection,ret);
-    if (ret == 0) {
+
+    /* Attach tracepoint handler for each elf_path */
+    for (int i = 0; i < elf_num; i++) {
+        int ret = 0;
+        int ret1 = 0;
+        UBPF_ATTACH(ngx_stream_proxy_init_upstream, elf[i], ngx_stream_proxy_init_upstream, ret1);
+        UBPF_RET_ATTACH(ngx_stream_proxy_init_upstream, elf[i], ngx_stream_proxy_init_upstream, ret1);
+        UBPF_ATTACH(ngx_http_upstream_handler, elf[i], ngx_http_upstream_handler, ret);
+        if (ret <= 0 && ret1 <= 0) {
+            continue;
+        }
+        UBPF_ATTACH(ngx_close_connection, elf[i], ngx_close_connection, ret);
+        if (ret <= 0) {
+            continue;
+        }
+        attach_flag = 1;
+    }
+    free_exec_path_buf(elf, elf_num);
+    if (!attach_flag) {
         goto err;
     }
 

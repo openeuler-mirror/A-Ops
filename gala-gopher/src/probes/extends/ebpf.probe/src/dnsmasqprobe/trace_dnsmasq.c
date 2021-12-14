@@ -18,8 +18,8 @@
 
 #define METRIC_NAME_DNSMASQ_LINK    "dnsmasq_link"
 
-
-static struct probe_params params = {.period = 5};
+static struct probe_params params = {.period = 5,
+                                     .elf_path = {0}};
 static volatile bool exiting = false;
 static void sig_handler(int sig)
 {
@@ -113,25 +113,44 @@ int main(int argc, char **argv)
 {
     int err = -1;
     int collect_map_fd = -1;
+    char *elf[PATH_NUM] = {0};
+    int elf_num = -1;
+    int attach_flag = 0;
 
-    err = args_parse(argc, argv, "t:", &params);
+    err = args_parse(argc, argv, "t:p:", &params);
     if (err != 0) {
         return -1;
     }
     printf("arg parse interval time:%us\n", params.period);
+    printf("arg parse input elf's path:%s\n", params.elf_path);
 
-	LOAD(trace_dnsmasq);
+    LOAD(trace_dnsmasq);
 
     /* Cleaner handling of Ctrl-C */
     signal(SIGINT, sig_handler);
     signal(SIGTERM, sig_handler);
-    
-    int ret = 0;
-    UBPF_ATTACH(trace_dnsmasq, dnsmasq, send_from, ret);
-    if (ret == 0) {
+
+    /* Find elf's abs_path */
+    ELF_REAL_PATH(dnsmasq, params.elf_path, NULL, elf, elf_num);
+    if (elf_num <= 0) {
+        printf("get proc:dnsmasq abs_path error \n");
+        return -1;
+    }
+
+    /* Attach tracepoint handler for each elf_path */
+    for (int i = 0; i < elf_num; i++) {
+        int ret = 0;
+        UBPF_ATTACH(send_from, elf[i], send_from, ret);
+        if (ret <= 0) {
+            continue;
+        }
+        attach_flag = 1;
+    }
+    free_exec_path_buf(elf, elf_num);
+    if (!attach_flag) {
         goto err;
     }
- 
+
     /* create collect hash map */
     collect_map_fd = 
         bpf_create_map(BPF_MAP_TYPE_HASH, sizeof(struct collect_key), sizeof(struct collect_value), 8192, 0);
