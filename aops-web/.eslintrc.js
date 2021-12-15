@@ -33,6 +33,7 @@ module.exports = {
         'vue/multiline-html-element-content-newline': 0,
         'vue/no-use-v-if-with-v-for': 0,
         'vue/html-closing-bracket-newline': 0,
+        'vue/html-indent': 4,
         'vue/no-parsing-error': 0,
         'no-tabs': 0,
         quotes: [
