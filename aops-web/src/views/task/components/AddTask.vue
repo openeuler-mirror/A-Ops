@@ -30,7 +30,7 @@
           <a-textarea
             v-decorator="['description',{rules: [{ required: true, message: '请输入该配置任务的描述' }, { validator: checkTaskdesc }]}]"
             :rows="4"
-            placeholder="请输入该配置任务的描述"
+            placeholder="请输入该配置任务的描述, 100字以内"
           />
         </a-form-item>
       </a-col>
@@ -131,9 +131,9 @@ import { getTemplateList, generateTask } from '@/api/task'
           cb()
         },
         checkTaskdesc (rule, value, cb) {
-          if (value && value.length > 256) {
+          if (value && value.length > 100) {
             /* eslint-disable */
-            cb('长度不超过256个字符')
+            cb('长度不超过100个字符')
             /* eslint-enable */
             return
           }

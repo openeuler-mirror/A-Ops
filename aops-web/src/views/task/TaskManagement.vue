@@ -3,52 +3,89 @@
   <my-page-header-wrapper>
     <a-card :bordered="false" class="aops-theme">
       <div>
-        <a-row class="aops-table-control-row" type="flex" justify="space-between">
-          <a-col>
-            <div>
-              <h2 class="card-title">部署任务列表</h2>
-            </div>
-          </a-col>
-          <a-col>
-            <a-row type="flex" :gutter="16">
-              <a-col>
-                <drawer-view title="新增部署任务">
-                  <template slot="click">
-                    <a-button type="primary">
-                      新增部署任务<a-icon type="plus"/>
-                    </a-button>
-                  </template>
-                  <template slot="drawerView">
-                    <add-task :saveSuccess="addTaskSuccess"></add-task>
-                  </template>
-                </drawer-view>
-              </a-col>
-            </a-row>
-          </a-col>
-        </a-row>
-        <a-table
-          :rowKey="rowKey"
-          :columns="columns"
-          :data-source="tableData"
-          :pagination="pagination"
-          :row-selection="rowSelection"
-          @change="handleTableChange"
-          :loading="tableIsLoading"
-        >
-          <span slot="action" slot-scope="record">
-            <a @click="executeTask(record)">执行</a>
-            <a-divider type="vertical" />
-            <a-popconfirm title="你确定删除这个任务吗?" ok-text="确认" cancel-text="取消" @confirm="deleteTask(record)">
-              <a-icon slot="icon" type="close-circle" style="color: red" />
-              <a>删除</a>
-            </a-popconfirm>
-          </span>
-        </a-table>
+        <div>
+          <h3 class="card-title">
+            部署任务列表
+            <a-icon
+              :type="expandedStatus[0] ? 'caret-up' : 'caret-down'"
+              @click="setExpandStatus(0, !expandedStatus[0])"
+            />
+          </h3>
+        </div>
+        <div v-show="expandedStatus[0]">
+          <a-row class="aops-app-table-control-row" type="flex" justify="space-between">
+            <a-col>
+              <a-row type="flex" :gutter="6">
+                <a-col>
+                  <a-alert type="info" show-icon class="selection-alert">
+                    <div slot="message">
+                      <span>{{ `已选择`+ selectedRowKeys.length +`项` }}</span>
+                      <a v-if="selectedRowKeys.length > 0" @click="resetSelection">清除选择</a>
+                    </div>
+                  </a-alert>
+                </a-col>
+                <a-col>
+                  <a-button :disabled="selectedRowKeys.length <= 0" @click="deleteTaskBash(selectedRowKeys, selectedRowsAll)">批量删除</a-button>
+                </a-col>
+                <a-col>
+                  <a-button :disabled="selectedRowKeys.length <= 0" @click="executeTaskBash(selectedRowKeys, selectedRowsAll)">批量执行</a-button>
+                </a-col>
+              </a-row>
+            </a-col>
+            <a-col>
+              <a-row type="flex" :gutter="16">
+                <a-col>
+                  <drawer-view title="新增部署任务">
+                    <template slot="click">
+                      <a-button type="primary">
+                        新增部署任务<a-icon type="plus"/>
+                      </a-button>
+                    </template>
+                    <template slot="drawerView">
+                      <add-task :saveSuccess="addTaskSuccess"></add-task>
+                    </template>
+                  </drawer-view>
+                </a-col>
+              </a-row>
+            </a-col>
+          </a-row>
+          <a-table
+            :rowKey="rowKey"
+            :columns="columns"
+            :data-source="tableData"
+            :pagination="pagination"
+            :row-selection="rowSelection"
+            @change="handleTableChange"
+            :loading="tableIsLoading"
+          >
+            <span slot="name" slot-scope="text">
+              <cut-text :text="text" :length="20"/>
+            </span>
+            <span slot="desc" slot-scope="text">
+              <cut-text :text="text" :length="20"/>
+            </span>
+            <span slot="action" slot-scope="record">
+              <a @click="executeTask(record)">执行</a>
+              <a-divider type="vertical" />
+              <a-popconfirm title="你确定删除这个任务吗?" ok-text="确认" cancel-text="取消" @confirm="deleteTask(record)">
+                <a-icon slot="icon" type="close-circle" style="color: red" />
+                <a>删除</a>
+              </a-popconfirm>
+            </span>
+          </a-table>
+        </div>
       </div>
     </a-card>
     <a-card :bordered="false" class="aops-theme" style="margin-top: 20px">
-      <div class="ant-pro-pages-list-applications-filterCardList">
-        <a-list :loading="templateIsLoading" :data-source="templateData.slice(0,showIndex)" :grid="{ gutter: 24, xl: 3, lg: 3, md: 3, sm: 2, xs: 1 }" >
+      <h3>
+        Playbook模板
+        <a-icon
+          :type="expandedStatus[1] ? 'caret-up' : 'caret-down'"
+          @click="setExpandStatus(1, !expandedStatus[1])"
+        />
+      </h3>
+      <div class="ant-pro-pages-list-applications-filterCardList" v-show="expandedStatus[1]">
+        <a-list :loading="templateIsLoading" :data-source="templateData.slice(0,showIndex)" :grid="{ gutter: 24, xl: 3, lg: 3, md: 2, sm: 1, xs: 1 }" >
           <a-list-item slot="renderItem" slot-scope="item">
             <template v-if="!item.template_name">
               <drawer-view title="新增playbook模板">
@@ -63,48 +100,34 @@
               </drawer-view>
             </template>
             <template v-else>
-              <a-card>
-                <div>
-                  <div class="avatar-div">
-                    <img class="avatar-img" src="~@/assets/vertical-left.png">
-                  </div>
-                  <div class="content-div">
-                    <div class="title">{{ item.template_name }}</div>
-                    <div class="remark">{{ item.description }}</div>
-                  </div>
-                </div>
-                <template slot="actions">
-                  <div @click.prevent>
-                    <div class="tagList">
-                      <a-tag>安装</a-tag>
-                      <a-tag>用户管理</a-tag>
-                      <a-tag>加密</a-tag>
-                    </div>
-                    <div style="float: right;width: 100px;border-left: 1px solid #ddd">
-                      <a-tooltip title="编辑" style="float: left;width: 50%;text-align: center;line-height: 22px">
-                        <a-icon type="edit" />
-                      </a-tooltip>
-                      <a-dropdown style="float: right;width: 50%">
-                        <a class="ant-dropdown-link">
-                          <a-icon type="ellipsis" />
-                        </a>
-                        <a-menu slot="overlay">
-                          <a-menu-item>
-                            <a-popconfirm
-                              title="您确定要删除该模板吗?"
-                              ok-text="确认"
-                              cancel-text="取消"
-                              @confirm="deleteTemplate(item.template_name)"
-                            >
-                              <a href="javascript:;" >删除</a>
-                            </a-popconfirm>
-                          </a-menu-item>
-                        </a-menu>
-                      </a-dropdown>
-                    </div>
-                  </div>
+              <subject-card
+                :itemLabel="item.template_name"
+                :itemContent="item.description"
+                :tagList="['安装', '用户管理', '加密']"
+              >
+                <template #logoImg>
+                  <img class="avatar-img" src="~@/assets/playbook-icon.png">
                 </template>
-              </a-card>
+                <a-tooltip placement="bottom">
+                  <template slot="title">
+                    编辑
+                  </template>
+                  <a-icon type="edit" />
+                </a-tooltip>
+                <a-popconfirm
+                  title="您确定要删除该模板吗?"
+                  ok-text="确认"
+                  cancel-text="取消"
+                  @confirm="deleteTemplate(item.template_name)"
+                >
+                  <a-tooltip placement="bottom">
+                    <template slot="title">
+                      删除
+                    </template>
+                    <a-icon type="delete" />
+                  </a-tooltip>
+                </a-popconfirm>
+              </subject-card>
             </template>
           </a-list-item>
         </a-list>
@@ -117,10 +140,14 @@
 <script>
   import { PageHeaderWrapper } from '@ant-design-vue/pro-layout'
   import MyPageHeaderWrapper from '@/views/utils/MyPageHeaderWrapper'
-  import { getTaskList, deleteTask, executeTask, getTemplateList, deleteTemplate } from '@/api/task'
   import DrawerView from '@/views/utils/DrawerView'
   import AddTask from '@/views/task/components/AddTask'
   import AddTemplate from '@/views/task/components/AddTemplate'
+  import SubjectCard from '@/components/SubjectCard'
+  import CutText from '@/components/CutText'
+
+  import { getSelectedRow } from '@/views/utils/getSelectedRow'
+  import { getTaskList, deleteTask, executeTask, getTemplateList, deleteTemplate } from '@/api/task'
 
   const defaultPagination = {
     current: 1,
@@ -138,20 +165,14 @@
     {
       dataIndex: 'task_name',
       key: 'task_name',
-      title: '任务名称'
+      title: '任务名称',
+      scopedSlots: { customRender: 'name' }
     },
     {
       dataIndex: 'description',
       key: 'description',
       title: '任务描述',
-      customRender (text, record, index) {
-        if (text !== undefined && text.length >= 10) {
-          text = text.substr(0, 10) + '...'
-          return text
-        } else {
-          return text
-        }
-      }
+      scopedSlots: { customRender: 'desc' }
     },
     {
       dataIndex: 'playbook_name',
@@ -179,7 +200,9 @@
       MyPageHeaderWrapper,
       DrawerView,
       AddTask,
-      AddTemplate
+      AddTemplate,
+      SubjectCard,
+      CutText
     },
     data () {
       return {
@@ -190,11 +213,12 @@
         columns,
         tableData: [],
         selectedRowKeys: [],
-        selectedRows: [],
+        selectedRowsAll: [],
         tableIsLoading: false,
         templateData: [],
         showIndex: 6,
-        templateIsLoading: true
+        templateIsLoading: true,
+        expandedStatus: [true, true]
       }
     },
     computed: {
@@ -226,9 +250,9 @@
         // 出发排序、筛选、分页时，重新请求主机列表
         this.getTaskList()
       },
-      onSelectChange (selectedRowKeys, selectedRows) {
+      onSelectChange (selectedRowKeys) {
         this.selectedRowKeys = selectedRowKeys
-        this.selectedRows = selectedRows
+        this.selectedRowsAll = getSelectedRow(selectedRowKeys, this.selectedRowsAll, this.tableData, 'task_id')
       },
       // 获取列表数据
       getTaskList () {
@@ -275,9 +299,26 @@
           _this.getTaskList()
         }, 1500)
       },
+      resetSelection () {
+        this.selectedRowKeys = []
+        this.selectedRowsAll = []
+      },
       // 删除配置任务
       deleteTask (record) {
         return this.handleDeleteTask([record.task_id])
+      },
+      deleteTaskBash (rowKeys, rows) {
+        const _this = this
+        const list = rows.map((row, idx) => <p class="aops-app-list-in-modal-item">{`${idx + 1}:${row.task_name}`}</p>)
+        this.$confirm({
+            title: (<div><p>{ `确认批量删除以下${rowKeys.length}个任务：` }</p></div>),
+            content: () => (<div class="aops-app-list-in-modal">{list}</div>),
+            icon: () => <a-icon type="exclamation-circle" />,
+            okType: 'danger',
+            okText: '删除',
+            onOk: function () { return _this.handleDeleteTask(rowKeys, true) },
+            onCancel () {}
+        })
       },
       // 删除配置任务
       handleDeleteTask (taskList, isBash) {
@@ -299,7 +340,6 @@
       },
       // 执行配置任务
       executeTask (record) {
-        console.log(record)
         const hostNameList = record.host_list && record.host_list.map(host => host.host_name)
         const _this = this
         this.$confirm({
@@ -312,6 +352,20 @@
             okType: 'danger',
             okText: '执行',
             onOk: function () { return _this.handleExecuteTask([record.task_id]) },
+            onCancel () {}
+        })
+      },
+      // 批量执行
+      executeTaskBash (rowKeys, rows) {
+        const _this = this
+        const list = rows.map((row, idx) => <p class="aops-app-list-in-modal-item">{`${idx + 1}:${row.task_name}`}</p>)
+        this.$confirm({
+            title: (<div><p>{ `确认批量执行以下${rowKeys.length}个任务：` }</p></div>),
+            content: () => (<div class="aops-app-list-in-modal">{list}</div>),
+            icon: () => <a-icon type="exclamation-circle" />,
+            okType: 'danger',
+            okText: '执行',
+            onOk: function () { return _this.handleExecuteTask(rowKeys, true) },
             onCancel () {}
         })
       },
@@ -368,54 +422,22 @@
           _this.$message.error(err.response.data.msg)
         }).finally(function () {
         })
+      },
+      // 控制面板展开
+      setExpandStatus (idx, isExpaned) {
+        const newStatuses = Object.assign({}, this.expandedStatus)
+        newStatuses[idx] = isExpaned
+        this.expandedStatus = newStatuses
       }
     }
   }
 </script>
 
 <style lang="less" scoped>
-  .avatar-div {
-    float: left;
-    width: 80px;
-  }
-  .avatar-img {
-    height: 60px;
-    width: 80px;
-  }
-  .content-div {
-    float: left;
-    margin-left: 10px;
-    width: calc(100% - 90px);
-  }
-  .title {
-    font-weight: 600;
-  }
-  .tagList{
-    float: left;
-    text-align: left;
-    padding-left: 10px;
-    text-overflow: -o-ellipsis-lastline;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    display: -webkit-box;
-    -webkit-line-clamp: 1;
-    line-clamp: 1;
-    -webkit-box-orient: vertical;
-  }
-  .tagList span{cursor: pointer}
-  .remark {
-    text-overflow: -o-ellipsis-lastline;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    display: -webkit-box;
-    -webkit-line-clamp: 2;
-    line-clamp: 2;
-    -webkit-box-orient: vertical;
-  }
   .new-btn {
     background-color: #fff;
     border-radius: 2px;
     width: 100%;
-    height: 157px;
+    height: 175px;
   }
 </style>

@@ -20,7 +20,7 @@
         <a-form-item label="主机组名称">
           <a-input
             :maxLength="50"
-            placeholder="请输入"
+            placeholder="请输入主机组名称，50个字符以内"
             v-decorator="['name', { rules: [{ required: true, message: '请输入名称' }, { validator: checkHostGroupName }] }]"
           >
             <a-tooltip slot="suffix" title="最大长度50个字符，由数字、小写字母、英文下划线_组成。以小写字母开头，且结尾不能是英文下划线_">
@@ -30,7 +30,7 @@
         </a-form-item>
         <a-form-item label="主机组描述">
           <a-textarea
-            placeholder="请输入描述"
+            placeholder="请输入描述，60个字符以内"
             :rows="4"
             v-decorator="['description', { rules: [{ required: true, message: '请输人描述' }, { validator: checkHostGroupdesc }] }]"
           />
@@ -109,9 +109,9 @@ export default {
           cb()
         },
         checkHostGroupdesc (rule, value, cb) {
-          if (value && value.length > 256) {
+          if (value && value.length > 60) {
             /* eslint-disable */
-            cb('长度不超过256个字符')
+            cb('长度不超过60个字符')
             /* eslint-enable */
             return
           }

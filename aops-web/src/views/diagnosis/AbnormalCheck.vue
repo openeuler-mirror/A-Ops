@@ -1,115 +1,90 @@
 
 <template>
   <my-page-header-wrapper>
-    <a-row class="topBox">
-      <a-col span="24" :xl="5" class="topItem">
-        <div style="height: calc(100% - 35px);padding: 15px 10px;">
-          <div style="height: 100%;width:calc(40% - 5px);margin-right: 5px; float: left;position:relative;overflow: hidden">
-            <a-avatar :size="64" icon="database" style="background: #1890ee;position: absolute;top: 50%;left: 50%;margin-top: -32px;margin-left: -32px"/>
-          </div>
-          <div style="height: 100%;width:60%;float: left;position:relative;">
-            <div class="content">
-              <div style="color: #999;">异常检测规则数量</div>
-              <div style="color: #333;font-size: 32px;line-height: 1em">
+    <a-row :gutter="24">
+      <a-col :xs="24" :xl="7">
+        <a-card :bordered="false" class="aops-theme check-rule-card">
+          <a-row class="flex-no-wrap" type="flex" :gutter="16">
+            <a-col>
+              <div class="theme-img-box">
+                <img class="theme-img" src="~@/assets/dash-fault.png"/>
+              </div>
+            </a-col>
+            <a-col>
+              <p class="theme-title">异常检测规则数量</p>
+              <p class="theme-number">
                 <a-spin v-if="countIsLoading" />
                 <span v-else>{{ ruleCount.toString().replace(/(\d)(?=(?:\d{3})+$)/g, '$1,') }}</span>
-              </div>
-            </div>
+              </p>
+            </a-col>
+          </a-row>
+          <a-row class="flex-no-wrap theme-button-box" type="flex" justify="space-between">
+            <a-col span="12">
+              <drawer-view title="新建异常检测规则">
+                <template slot="click">
+                  <div class="theme-button make-space">新建规则</div>
+                </template>
+                <template slot="drawerView">
+                  <add-abnormal-check-rule-drawer :addSuccess="handleAddRuleSuccess"></add-abnormal-check-rule-drawer>
+                </template>
+              </drawer-view>
+            </a-col>
+            <a-col span="12">
+              <router-link :to="{ path: '/diagnosis/abnormal-check/rule-management' }">
+                <div class="theme-button theme-button-right">管理规则</div>
+              </router-link>
+            </a-col>
+          </a-row>
+        </a-card>
+      </a-col>
+      <a-col :xs="24" :xl="17">
+        <a-card :bordered="false" class="aops-theme check-result-card">
+          <h3>异常检测结果统计</h3>
+          <div>
+            <a-row type="flex" :gutter="12">
+              <a-table
+                class="check-result-table"
+                row-key="hostName"
+                :columns="columnsReulst"
+                :data-source="resultCountList.slice(0, 5)"
+                :bordered="false"
+                :pagination="false"
+                :loading="countTopLoading"
+              />
+            </a-row>
           </div>
-        </div>
-        <div style="width: 100%;height: 34px;line-height: 32px;color: #fff;padding:0 2px">
-          <drawer-view title="新建异常检测规则">
+          <drawer-view title="异常检测结果统计">
             <template slot="click">
-              <div class="myBtn" style="float: left">
-                <a-icon type="file-add" style="margin-right: 5px"/>新建规则
-              </div>
+              <p class="showAllResult">查看全部结果 ></p>
             </template>
             <template slot="drawerView">
-              <add-abnormal-check-rule-drawer :addSuccess="handleAddRuleSuccess"></add-abnormal-check-rule-drawer>
+              <get-check-result-drawer></get-check-result-drawer>
             </template>
           </drawer-view>
-          <router-link :to="{ path: '/diagnosis/abnormal-check/rule-management' }" target="_blank">
-            <div class="myBtn" style="float: right;color: #fff;margin-right: 1px">
-              <a-icon type="file-add" style="margin-right: 5px;"/>管理规则
-            </div>
-          </router-link>
-        </div>
-      </a-col>
-      <a-col span="24" :xl="19" class="topItem">
-        <a-row style="width: calc(100% - 45px);height: 100%;padding:10px 5px 5px;margin-left: 10px;background: #fff; float: left">
-          <a-col style="height: 100%;" :span="8">
-            <div style="width: 100%;height: 40%;">
-              <div style="padding-left: 20px;font-size: 18px;line-height: 40px;height: calc(100% - 30px);color: #000;font-weight: bold">异常检测结果统计</div>
-              <a-row style="color: #999;line-height: 30px">
-                <a-col :span="4" style="text-align: center" class="oneRow">排名</a-col>
-                <a-col :span="14" class="oneRow">主机名IP地址</a-col>
-                <a-col :span="6" class="oneRow">异常数</a-col>
-              </a-row>
-            </div>
-            <a-row class="myRow" v-for="(item,index) in resultCountList.slice(0, 2)" :key="index">
-              <a-col :span="4"><a-tag style="background: #1890ee;color: #fff;border-color:#1890ee">{{ index+1 }}</a-tag></a-col>
-              <a-col :span="14">
-                <p style="margin: 0">{{ item.hostName }}</p>
-                <p style="margin: 0">{{ item.ip }}</p>
-              </a-col>
-              <a-col :span="6" style="color: #ff58ab" class="oneRow">{{ item.count }}项</a-col>
-            </a-row>
-          </a-col>
-          <a-col style="float: left;height: 100%;" :span="8">
-            <a-row class="myRow" v-for="(item,index) in resultCountList.slice(2, 6)" :key="index">
-              <a-col :span="4"><a-tag>{{ index+3 }}</a-tag></a-col>
-              <a-col :span="14">
-                <p style="margin: 0">{{ item.hostName }}</p>
-                <p style="margin: 0">{{ item.ip }}</p>
-              </a-col>
-              <a-col :span="6" class="oneRow">{{ item.count }}项</a-col>
-            </a-row>
-          </a-col>
-          <a-col style="float: left;height: 100%;" :span="8">
-            <a-row class="myRow" v-for="(item,index) in resultCountList.slice(6, 9)" :key="index">
-              <a-col :span="4"><a-tag>{{ index+7 }}</a-tag></a-col>
-              <a-col :span="14">
-                <p style="margin: 0">{{ item.hostName }}</p>
-                <p style="margin: 0">{{ item.ip }}</p>
-              </a-col>
-              <a-col :span="6" class="oneRow">{{ item.count }}项</a-col>
-            </a-row>
-          </a-col>
-        </a-row>
-        <drawer-view title="异常检测结果统计">
-          <template slot="click">
-            <div class="showAllResult">查看全部结果</div>
-          </template>
-          <template slot="drawerView">
-            <get-check-result-drawer></get-check-result-drawer>
-          </template>
-        </drawer-view>
+        </a-card>
       </a-col>
     </a-row>
-    <a-card style="width: 100%;float: left;margin-top: 10px">
-      <div style="font-weight: bold;font-size: 18px;margin-top: -12px;margin-bottom: 10px">异常检测记录</div>
-      <a-row class="filters-row" type="flex" justify="space-between">
+    <a-card class="aops-theme">
+      <h3>异常检测记录</h3>
+      <a-row class="filters-row aops-app-table-control-row" type="flex" justify="space-between">
         <a-col>
           <a-row type="flex" :gutter="10">
             <a-col >
-              <a-range-picker
+              <aops-range-picker
                 :show-time="{ format: 'HH:mm:ss' }"
                 format="YYYY-MM-DD HH:mm:ss"
                 :placeholder="['开始时间', '结束时间']"
-                @change="handleTimeSelect"
-                @ok="handleTimeSelect"
+                @ok="timeRangeOk"
+                @clear="timeRangeClear"
                 style="width: 380px"
               />
-            </a-col>
-            <a-col>
-              <a-button @click="filterByTime">按时间筛选</a-button>
             </a-col>
           </a-row>
         </a-col>
         <a-col>
           <drawer-view title="新建故障诊断" :bodyStyle="{ paddingBottom: '80px' }">
             <template slot="click">
-              <a-button type="primary">
+              <a-button type="primary" @click="setDiagnosisParams">
                 故障诊断<a-icon type="plus"/>
               </a-button>
             </template>
@@ -117,6 +92,7 @@
               <add-fault-diagnosis
                 :saveSuccess="addFaultDiagnosisSuccess"
                 :faultTreeList="treeDataAll"
+                :diagnosisParams="diagnosisParams"
               ></add-fault-diagnosis>
             </template>
           </drawer-view>
@@ -129,13 +105,17 @@
         @change="handleTableChange"
         :loading="tableIsLoading"
         :expandIconAsCell="false"
-        :expandIconColumnIndex="3">
+        :expandIconColumnIndex="4"
+      >
         <span slot="index" slot-scope="text, record, index">
           {{ index + firstIndex }}
         </span>
         <div slot="expandedRowRender" slot-scope="result" style="width: 100%;margin: 1px;padding-left: 50px;">
           <check-result-expanded :dataSource="result.data_list"></check-result-expanded>
         </div>
+        <span slot="desc" slot-scope="text">
+          <cut-text :text="text" :length="10"/>
+        </span>
       </a-table>
     </a-card>
   </my-page-header-wrapper>
@@ -147,11 +127,15 @@ import DrawerView from '@/views/utils/DrawerView'
 import GetCheckResultDrawer from '@/views/diagnosis/components/GetCheckResultDrawer'
 import AddAbnormalCheckRuleDrawer from '@/views/diagnosis/components/AddAbnormalCheckRuleDrawer'
 import AddFaultDiagnosis from '@/views/diagnosis/components/AddFaultDiagnosis'
+import CheckResultExpanded from '@/views/diagnosis/components/CheckResultExpanded'
+import CutText from '@/components/CutText'
+import AopsRangePicker from './components/AopsRangePicker.vue'
+
+import { getSelectedRow } from '@/views/utils/getSelectedRow'
 import { getRuleAll, getRuleCount, getResultCountTopTen, getResult } from '@/api/check'
 import { getDiagTree } from '@/api/diagnosis'
 import { hostList } from '@/api/assest'
 import { dateFormat } from '@/views/utils/Utils'
-import CheckResultExpanded from '@/views/diagnosis/components/CheckResultExpanded'
 
 const defaultPagination = { current: 1, pageSize: 10, showSizeChanger: true, showQuickJumper: true }
 
@@ -163,7 +147,9 @@ const defaultPagination = { current: 1, pageSize: 10, showSizeChanger: true, sho
       AddAbnormalCheckRuleDrawer,
       GetCheckResultDrawer,
       CheckResultExpanded,
-      AddFaultDiagnosis
+      AddFaultDiagnosis,
+      CutText,
+      AopsRangePicker
     },
     mounted: function () {
       this.getRuleCount()
@@ -182,14 +168,12 @@ const defaultPagination = { current: 1, pageSize: 10, showSizeChanger: true, sho
           {
             title: '序号',
             dataIndex: 'index',
-            key: 'index',
             align: 'center',
             width: 70,
             scopedSlots: { customRender: 'index' }
           },
           {
             dataIndex: 'hostName',
-            key: 'hostName',
             title: '主机名称',
             filteredValue: filters.hostName || null,
             filters: this.hostAllList.map(host => {
@@ -201,12 +185,10 @@ const defaultPagination = { current: 1, pageSize: 10, showSizeChanger: true, sho
           },
           {
             dataIndex: 'ip',
-            key: 'ip',
             title: 'IP地址'
           },
           {
             dataIndex: 'check_item',
-            key: 'check_item',
             title: '检测项',
             filteredValue: filters.check_item || null,
             filters: this.ruleAllList.map(rule => {
@@ -218,17 +200,50 @@ const defaultPagination = { current: 1, pageSize: 10, showSizeChanger: true, sho
           },
           {
             dataIndex: 'condition',
-            key: 'condition',
             title: '检测条件'
           },
           {
             dataIndex: 'description',
-            key: 'description',
-            title: '描述'
+            title: '描述',
+            width: 120,
+            scopedSlots: { customRender: 'desc' }
           },
           {
-            title: '检测时间段',
+            dataIndex: 'count',
+            title: '异常时间段',
             customRender: (text, record, index) => dateFormat('YYYY-mm-dd HH:MM:SS', record.start * 1000) + ' 至 ' + dateFormat('YYYY-mm-dd HH:MM:SS', record.end * 1000)
+          }
+        ]
+      },
+      columnsReulst () {
+        return [
+          {
+            title: '序号',
+            dataIndex: 'index',
+            key: 'index',
+            align: 'center',
+            customRender: (text, record, index) => {
+              if (index < 3) {
+                return <a-tag class="result-tag hight-light">{ index + 1 }</a-tag>
+              } else {
+                return <a-tag class="result-tag">{ index + 1 }</a-tag>
+              }
+            }
+          },
+          {
+            dataIndex: 'hostName',
+            key: 'hostName',
+            title: '主机名称'
+          },
+          {
+            dataIndex: 'ip',
+            key: 'ip',
+            title: 'IP地址'
+          },
+          {
+            dataIndex: 'count',
+            title: '异常数',
+            customRender: count => (<span class="result-count">{count}</span>)
           }
         ]
       },
@@ -240,18 +255,27 @@ const defaultPagination = { current: 1, pageSize: 10, showSizeChanger: true, sho
       return {
         ruleCount: 0,
         countIsLoading: false,
+        countTopLoading: false,
         tableIsLoading: false,
         resultCountList: [],
         resultList: [],
+        resultListShort: [],
         pagination: defaultPagination,
         filters: null,
         sorter: null,
+        selectedRowKeys: [],
+        selectedRowsAll: [],
         ruleAllList: [],
         hostAllList: [],
-        treeDataAll: []
+        treeDataAll: [],
+        diagnosisParams: {}
       }
     },
     methods: {
+      onSelectChange (selectedRowKeys) {
+        this.selectedRowKeys = selectedRowKeys
+        this.selectedRowsAll = getSelectedRow(selectedRowKeys, this.selectedRowsAll, this.resultList, 'key')
+      },
       getDiagTreeList () {
         const _this = this
         getDiagTree({
@@ -275,6 +299,13 @@ const defaultPagination = { current: 1, pageSize: 10, showSizeChanger: true, sho
         } else {
           this.filters.timeRange = value
         }
+        this.filterByTime()
+      },
+      timeRangeOk (val) {
+        this.handleTimeSelect(val)
+      },
+      timeRangeClear (val) {
+        this.handleTimeSelect(val)
       },
       getFilterListData () {
         const _this = this
@@ -312,11 +343,14 @@ const defaultPagination = { current: 1, pageSize: 10, showSizeChanger: true, sho
         })
       },
       getResultCountTopTen () {
-        var that = this
+        const that = this
+        this.countTopLoading = true
         getResultCountTopTen().then(function (data) {
           that.resultCountList = data.results
         }).catch(function (err) {
           that.$message.error(err.response.data.msg)
+        }).finally(() => {
+          that.countTopLoading = false
         })
       },
       paginationChange (page, pageSize) {
@@ -371,6 +405,34 @@ const defaultPagination = { current: 1, pageSize: 10, showSizeChanger: true, sho
         return date.getTime() / 1000
       },
       addFaultDiagnosisSuccess () {
+        this.$router.push('/diagnosis/fault-diagnosis')
+      },
+      setDiagnosisParams () {
+        if (this.selectedRowsAll.length <= 0) {
+          this.diagnosisParams = {}
+          return
+        }
+        let startTime = this.selectedRowsAll[0].start
+        let endTime = this.selectedRowsAll[0].end
+        const hostList = [this.selectedRowsAll[0].host_id]
+        this.selectedRowsAll.forEach(rows => {
+          if (rows.start < startTime) {
+            startTime = rows.start
+          }
+          if (rows.end > endTime) {
+            endTime = rows.end
+          }
+          if (hostList.indexOf(rows.host_id) < 0) {
+            hostList.push(rows.host_id)
+          }
+        })
+        startTime -= 60
+        endTime += 60
+        this.diagnosisParams = Object.assign({}, {
+          startTime,
+          endTime,
+          hostList
+        })
       }
     }
   }
@@ -378,34 +440,129 @@ const defaultPagination = { current: 1, pageSize: 10, showSizeChanger: true, sho
 </script>
 
 <style lang="less" scoped>
-.topBox{display:inline-block;width: 100%}
-.topItem{height:170px;float: left;}
-.topItem:nth-child(1){min-width: 170px;background: #fff;}
-.topItem:nth-child(2){min-width: 670px;}
-.showAllResult{width: 35px;height:100%;float: right;background:#1890ee;border: 1px solid #fff;color: #fff;padding: 21px 5px;text-align: center;cursor: pointer}
-.showAllResult:hover{background: #0075d0;}
-.oneRow{
-  text-overflow: -o-ellipsis-lastline;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  display: -webkit-box;
-  -webkit-line-clamp: 1;
-  line-clamp: 1;
-  -webkit-box-orient: vertical;
-}
-.content{position: absolute;width: 100%;height: 60px;top: 50%;margin-top: -30px;padding-left: 5px}
-.myBtn{width: calc(50% - 2px);height: 100%;background:#1890ee;text-align: center;cursor: pointer}
-.myBtn:hover{background: #0075d0;}
-.myRow{height: calc(25% - 5px);width: 100%;margin-bottom:5px}
-.myRow>.ant-col:nth-child(1){position: relative;height: 100%}
-.myRow>.ant-col:nth-child(1) .ant-tag{border-radius: 50%;padding: 0 1px 0 0;width: 24px;height: 24px;line-height: 22px;text-align: center;position: absolute;top: 50%;left: 50%;margin-top: -12px;margin-left: -12px}
-.myRow>.ant-col:nth-child(2){line-height: 1.2em!important;}
-.myRow>.ant-col:nth-child(3){line-height: 30px}
-
 .filters-row {
   margin: 10px 0;
   /deep/ .ant-calendar-range-picker-input {
     width: 160px;
+  }
+}
+
+/deep/ td:nth-child(5) {
+  white-space: nowrap;
+}
+
+.check-rule-card {
+  margin-bottom: 20px;
+  height:220px;
+  /deep/ .ant-card-body {
+    padding: 24px 12px;
+  }
+  .theme-img-box {
+    width: 136px;
+    margin-top: 22px;
+  }
+  .theme-img {
+    display: block;
+    width: 74px;
+    height: 74px;
+    margin:0 auto 26px;
+  }
+  .theme-title {
+    margin-top: 22px;
+    font-size: 14px;
+    font-weight: 400;
+    line-height: 20px;
+    text-align: center;
+  }
+  .theme-number {
+    font-size: 36px;
+    font-weight: bold;
+    line-height: 20px;
+    margin-bottom: 8px;
+    text-align: center;
+  }
+  .theme-button-box {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    width: 100%;
+    height: 50px;
+  }
+  .theme-button {
+    width: 100%;
+    height: 100%;
+    line-height: 50px;
+    background: #537de7;
+    border-radius: 0 0 0 8px;
+    &-right {
+      border-radius: 0 0 8px 0;
+      border-left: 1px solid #fff;
+    }
+    text-align: center;
+    color: #fff;
+    cursor: pointer;
+    font-weight: 600;
+    font-size: 16px;
+    &:hover {
+      background: #7997e4;
+    }
+  }
+}
+.check-result-card {
+  min-height:220px;
+  margin-bottom: 20px;
+  h3 {
+    margin-top: -12px;
+    margin-bottom: 4px;
+  }
+  .result-item {
+    margin-bottom:10px;
+    &:last-child {
+      margin-bottom: 0;
+    }
+  }
+  .result-tag {
+    color: #002FA7;
+    font-weight: 900;
+    background: none;
+    border: 0;
+    &.hight-light {
+      background: #dde6fa;
+      border-radius: 50%;
+      border: 0;
+    }
+  }
+  /deep/ .check-result-table {
+    .ant-table-thead > tr > th {
+      padding:2px 16px;
+      border-bottom: 0;
+      background: #fff;
+    }
+    .ant-table-tbody > tr > td {
+      padding:2px 16px;
+      border-bottom: 0;
+    }
+    .ant-empty-normal {
+      margin-top: 16px;
+      margin-bottom: 0;
+    }
+    .ant-table-placeholder {
+      border: 0;
+    }
+  }
+  .result-count {
+    color: #F95858;
+  }
+  .showAllResult{
+    position: absolute;
+    top: 12px;
+    right: 24px;
+    font-weight: 600;
+    color: #002FA7;
+    cursor:pointer;
+    &:hover {
+      color: #3455a7;
+    }
   }
 }
 </style>

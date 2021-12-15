@@ -96,7 +96,7 @@ import { hostList, hostGroupList, deleteHostGroup } from '@/api/assest'
 
 const defaultPagination = {
     current: 1,
-    pageSize: 5,
+    pageSize: 10,
     showSizeChanger: true,
     showQuickJumper: true
 }

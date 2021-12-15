@@ -51,10 +51,19 @@ export default {
     'menu.diagnosis.network-topo-diagram': '拓扑图',
     'menu.configuration': '配置溯源',
     'menu.configuration.transcation-domain-management': '业务域管理',
-    'menu.configuration.transcation-domain-management.query_host_list': '业务域主机列表',
+    'menu.configuration.transcation-domain-management.detail': '业务域详情',
     'menu.configuration.transcation-domain-configurations': '业务域配置管理',
     'menu.configuration.host-configurations': '主机配置管理',
     'menu.task': '部署管理',
     'menu.task.task-management': '部署任务',
+    'menu.leaks': '漏洞管理',
+    'menu.leaks.cves-management': 'CVEs',
+    'menu.leaks.cves-detail': 'CVE 详情',
+    'menu.leaks.host-leak-list': '主机列表',
+    'menu.leaks.host-detail': '主机详情',
+    'menu.leaks.leak-task': '任务',
+    'menu.leaks.leak-task-list': '任务',
+    'menu.leaks.leak-task-detail': '任务详情',
+    'menu.leaks.leak-task-report': '任务报告',
     'menu.networkTopo': '架构感知'
-}
+};

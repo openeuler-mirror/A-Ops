@@ -1,4 +1,4 @@
-const responseBody = {
+const responseBodyInit = {
   message: '',
   timestamp: 0,
   result: null,
@@ -6,7 +6,7 @@ const responseBody = {
 }
 
 export const builder = (data, message, code = 0, headers = {}) => {
-  responseBody.result = data
+  const responseBody = { ...responseBodyInit, ...data }
   if (message !== undefined && message !== null) {
     responseBody.message = message
   }

@@ -1,33 +1,32 @@
 
 <template>
-  <page-header-wrapper>
+  <page-header-wrapper :breadcrumb="breadcrumb">
     <a-card :bordered="false" class="aops-theme">
       <div>
         <h3 class="card-title">业务域列表</h3>
         <span>共有业务域{{ domainData.length }}个</span>
       </div>
       <div>
-        <a-list :loading="domainLoading" :data-source="cardListData" :grid="{ gutter: 24, xl: 3, lg: 3, md: 3, sm: 2, xs: 1 }" >
+        <a-list :loading="domainLoading" :data-source="cardListData" :grid="{ gutter: 24, xl: 3, lg: 3, md: 2, sm: 1, xs: 1 }" >
           <a-list-item slot="renderItem" slot-scope="domain, index">
-            <a-card :bodyStyle="{ padding: 0 }">
+            <a-card :bodyStyle="{ padding: 0 }" :bordered="false" :class="index !== 0 ? 'aops-theme-incard' : ''">
               <div class="aops-card-body">
-                <div class="aops-card-content">
-                  {{ `业务域 ${domain.domainName}` }}
-                </div>
+                <router-link :to="`${domain.domainName || ''}`">
+                  <div class="aops-card-content">
+                    <h3>{{ `业务域 ${domain.domainName}` }}</h3>
+                  </div>
+                </router-link>
                 <div class="aops-card-bottom">
                   <a-row type="flex" justify="space-between">
                     <a-col>priority</a-col>
                     <a-col>
-                      <router-link :to="`transcation-domain-configurations/${domain.domainName}`" target="_blank">查看域内配置</router-link>
+                      <router-link :to="`/configuration/transcation-domain-configurations/${domain.domainName}`">查看域内配置</router-link>
                       <a-divider type="vertical" />
                       <a-dropdown>
                         <a class="ant-dropdown-link" @click="e => e.preventDefault()">
                           更多 <a-icon type="down" />
                         </a>
                         <a-menu slot="overlay">
-                          <a-menu-item>
-                            <a :href="`query_host_list/`+domain.domainName" target="_blank">查看主机列表</a>
-                          </a-menu-item>
                           <a-menu-item>
                             <a href="javascript:;" @click="showAddHostDrawer(domain.domainName)">添加主机</a>
                           </a-menu-item>
@@ -59,6 +58,8 @@
 
 <script>
 import { PageHeaderWrapper } from '@ant-design-vue/pro-layout'
+import { i18nRender } from '@/appCore/locales'
+
 import DrawerView from '@/views/utils/DrawerView'
 import AddHostDrawer from './components/AddHostDrawer'
 import AddTranscationDomainModal from './components/AddTranscationDomainModal'
@@ -82,6 +83,27 @@ export default {
         }
     },
     computed: {
+      // 自定义面包屑内容
+      breadcrumb () {
+          const routes = this.$route.meta.diyBreadcrumb.map((route) => {
+              return {
+                  path: route.path,
+                  breadcrumbName: i18nRender(route.breadcrumbName)
+              }
+          })
+          return {
+              props: {
+                  routes,
+                  itemRender: ({ route, params, routes, paths, h }) => {
+                      if (routes.indexOf(route) === routes.length - 1) {
+                          return <span>{route.breadcrumbName}</span>
+                      } else {
+                          return <router-link to={route.path}>{route.breadcrumbName}</router-link>
+                      }
+                  }
+              }
+          }
+      },
       cardListData () {
         if (this.domainData.length > 0) {
           return [{}].concat(this.domainData).slice(0, this.showNumber)

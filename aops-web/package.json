@@ -12,6 +12,7 @@
   },
   "dependencies": {
     "@ant-design-vue/pro-layout": "^1.0.8",
+    "@antv/data-set": "^0.10.2",
     "@antv/g6": "^4.3.5",
     "ant-design-vue": "^1.7.6",
     "axios": ">=0.21.1",

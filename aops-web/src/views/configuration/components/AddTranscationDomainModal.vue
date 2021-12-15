@@ -15,8 +15,8 @@
       >
         <a-form-item label="业务域名称">
           <a-input
-            :maxLength="150"
-            placeholder="请输入"
+            :maxLength="26"
+            placeholder="请输入业务域名称，26个字符以内"
             v-decorator="['domainName', { rules: [{ required: true, message: '请输入业务域名称' }, { validator: checkDomainName }] }]"
           >
           </a-input>
@@ -117,5 +117,9 @@
   align-items: center;
   font-size: 36px;
   cursor: pointer;
+  border: 1px dashed #d9d9d9;
+  &:hover {
+    border-color: #3265F2;
+  }
 }
 </style>
