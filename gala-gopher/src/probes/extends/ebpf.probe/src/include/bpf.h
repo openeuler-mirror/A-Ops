@@ -364,6 +364,8 @@ static __always_inline int set_memlock_rlimit(void)
 #if UNIT_TESTING
 #define LOAD(probe_name) \
     struct probe_name##_bpf *skel;                 \
+    struct bpf_link *link[PATH_NUM];    \
+    int current = 0;    \
     do { \
         int err; \
         /* Set up libbpf errors and debug info callback */ \
@@ -395,6 +397,8 @@ static __always_inline int set_memlock_rlimit(void)
 #else
 #define LOAD(probe_name) \
     struct probe_name##_bpf *skel;                 \
+    struct bpf_link *link[PATH_NUM];    \
+    int current = 0;    \
     do { \
         int err; \
         /* Set up libbpf errors and debug info callback */ \
@@ -423,58 +427,79 @@ static __always_inline int set_memlock_rlimit(void)
 
 
 #define UNLOAD(probe_name) \
-    if (skel != NULL) {\
-        probe_name##_bpf__destroy(skel);\
-    }\
+    do { \
+	    int err; \
+        if (skel != NULL) { \
+            probe_name##_bpf__destroy(skel); \
+        } \
+        for (int i = 0; i < current; i++) { \
+            err = bpf_link__destroy(link[i]); \
+            if (err < 0) { \
+                fprintf(stderr, "Failed to detach uprobe: %d\n", err); \
+                break; \
+            } \
+        } \
+    } while (0)
 
-#define __BIN_FILE_PATH_LEN 256
-#define UBPF_ATTACH(probe_name,proc_name,func_name,error) \
+
+#define PATH_NUM   20
+#define ELF_REAL_PATH(proc_name,elf_abs_path,container_id,elf_path,path_num) \
+    do { \
+        path_num = get_exec_file_path( #proc_name, elf_abs_path, #container_id, elf_path, PATH_NUM); \
+        if (path_num <= 0) { \
+            fprintf(stderr, "Failed to get proc(" #proc_name ") abs_path.\n"); \
+            (void)free_exec_path_buf(elf_path, path_num); \
+            break; \
+        } \
+    } while (0)
+
+#define UBPF_ATTACH(probe_name,elf_path,func_name,error) \
     do { \
         int err; \
-        long offset; \
-        char bin_file_path[__BIN_FILE_PATH_LEN] = {0}; \
-        \
-        offset = get_func_offset( #proc_name, #func_name, bin_file_path); \
-        if (offset <= 0) { \
-            printf("Failed to get func(" #func_name ") offset.\n"); \
+        long symbol_offset; \
+        err = resolve_symbol_infos(elf_path, #func_name, NULL, &symbol_offset); \
+        if (err < 0) { \
+            fprintf(stderr, "Failed to get func(" #func_name ") in(%s) offset.\n", elf_path); \
             error = 0; \
             break; \
         } \
         \
         /* Attach tracepoint handler */ \
-        skel->links.ubpf_##func_name = bpf_program__attach_uprobe( \
-            skel->progs.ubpf_##func_name, false /* not uretprobe */, -1, bin_file_path, offset); \
-        err = libbpf_get_error(skel->links.ubpf_##func_name); \
+        link[current] = bpf_program__attach_uprobe( \
+            skel->progs.ubpf_##probe_name, false /* not uretprobe */, -1, elf_path, symbol_offset); \
+        err = libbpf_get_error(link[current]); \
         if (err) { \
             fprintf(stderr, "Failed to attach uprobe: %d\n", err); \
             error = 0; \
             break; \
         } \
+        fprintf(stdout, "Success to attach uprobe to elf: %s\n", elf_path); \
+        current += 1; \
         error = 1; \
     } while (0)
 
-#define UBPF_RET_ATTACH(probe_name,proc_name,func_name,error) \
+#define UBPF_RET_ATTACH(probe_name,elf_path,func_name,error) \
     do { \
         int err; \
-        long offset; \
-        char bin_file_path[__BIN_FILE_PATH_LEN] = {0}; \
-        \
-        offset = get_func_offset( #proc_name, #func_name, bin_file_path); \
-        if (offset <= 0) { \
-            printf("Failed to get func(" #func_name ") offset.\n"); \
+        long symbol_offset; \
+        err = resolve_symbol_infos(elf_path, #func_name, NULL, &symbol_offset); \
+        if (err < 0) { \
+            fprintf(stderr, "Failed to get func(" #func_name ") in(%s) offset.\n", elf_path); \
             error = 0; \
             break; \
         } \
         \
         /* Attach tracepoint handler */ \
-        skel->links.ubpf_ret_##func_name = bpf_program__attach_uprobe( \
-            skel->progs.ubpf_ret_##func_name, true /* uretprobe */, -1, bin_file_path, offset); \
-        err = libbpf_get_error(skel->links.ubpf_ret_##func_name); \
+        link[current] = bpf_program__attach_uprobe( \
+            skel->progs.ubpf_ret_##probe_name, true /* uretprobe */, -1, elf_path, symbol_offset); \
+        err = libbpf_get_error(link[current]); \
         if (err) { \
             fprintf(stderr, "Failed to attach uprobe: %d\n", err); \
             error = 0; \
             break; \
         } \
+        fprintf(stdout, "Success to attach uretprobe to elf: %s\n", elf_path); \
+        current += 1; \
         error = 1; \
     } while (0)
 
