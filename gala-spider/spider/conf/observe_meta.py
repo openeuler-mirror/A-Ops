@@ -1,7 +1,7 @@
 import os
-from dataclasses import dataclass
 from enum import Enum
-from typing import List
+from typing import List, Dict, Set
+from dataclasses import dataclass, field
 
 import yaml
 
@@ -68,7 +68,7 @@ class RequireMeta:
     value: str
 
 
-@dataclass
+@dataclass(unsafe_hash=True)
 class RelationMeta:
     id: str
     layer: str
@@ -76,13 +76,13 @@ class RelationMeta:
     to_type: str
 
 
-@dataclass
+@dataclass(unsafe_hash=True)
 class DirectRelationMeta(RelationMeta):
-    matches: List[MatchMeta]
-    requires: List[RequireMeta]
+    matches: List[MatchMeta] = field(compare=False)
+    requires: List[RequireMeta] = field(default_factory=list, compare=False)
 
 
-@dataclass
+@dataclass(unsafe_hash=True)
 class IndirectRelationMeta(RelationMeta):
     pass
 
@@ -124,7 +124,6 @@ def _check_relation_require(data) -> bool:
 
     side = data.get("side")
     label = data.get("label")
-    value = data.get("value")
 
     if not RelationSideType.check_value(side):
         print("Unsupported require side.")
@@ -134,8 +133,8 @@ def _check_relation_require(data) -> bool:
         print("Require label must be a string.")
         return False
 
-    if value is None:
-        print("Require value can't be empty.")
+    if "value" not in data:
+        print("Require value must be set.")
         return False
 
     return True
@@ -277,7 +276,8 @@ def _check_yaml_type(data) -> bool:
 class ObserveMetaMgt:
     def __init__(self):
         self.data_agent = ""
-        self.observe_meta_map = {}
+        self.observe_meta_map: Dict[str, ObserveMeta] = {}
+        self.relation_meta_set: Set[RelationMeta] = set()
 
     def load_from_yaml(self, observe_path: str) -> bool:
         try:
@@ -298,7 +298,7 @@ class ObserveMetaMgt:
             return False
 
         observe_entities = data.get("observe_entities", [])
-        observe_meta_map = {}
+        observe_meta_map: Dict[str, ObserveMeta] = {}
         for item in observe_entities:
             entity_type = item.get("type")
             if entity_type in observe_meta_map:
@@ -312,7 +312,25 @@ class ObserveMetaMgt:
 
         self.data_agent = data_agent
         self.observe_meta_map = observe_meta_map
+        for observe_meta in self.observe_meta_map.values():
+            for relation_meta in observe_meta.depending_items:
+                self.relation_meta_set.add(relation_meta)
+
         return True
+
+    def get_observe_meta(self, entity_type: str) -> ObserveMeta:
+        return self.observe_meta_map.get(entity_type)
+
+    def check_relation(self, relation_id: str, layer: str, from_type: str, to_type: str) -> bool:
+        relation_meta = None
+        if layer == RelationLayerType.DIRECT.value:
+            relation_meta = DirectRelationMeta(relation_id, layer, from_type, to_type)
+        elif layer == RelationLayerType.INDIRECT.value:
+            relation_meta = IndirectRelationMeta(relation_id, layer, from_type, to_type)
+
+        if relation_meta in self.relation_meta_set:
+            return True
+        return False
 
     @staticmethod
     def _get_observe_meta_from_dict(data: dict) -> ObserveMeta:
@@ -384,6 +402,6 @@ g_observe_meta_mgt = ObserveMetaMgt()
 
 # TODO : just for test, to delete
 if __name__ == '__main__':
-    g_observe_meta_mgt.load_from_yaml("../../doc/observe.yaml")
+    g_observe_meta_mgt.load_from_yaml("../../config/observe.yaml")
     for k, v in g_observe_meta_mgt.observe_meta_map.items():
         print(k, v)

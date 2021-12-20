@@ -1,4 +1,4 @@
-from typing import List
+from typing import List, Any
 from dataclasses import dataclass
 from dataclasses import field
 
@@ -6,14 +6,14 @@ from dataclasses import field
 @dataclass
 class Label:
     name: str
-    value: str
+    value: Any
 
 
 @dataclass
 class DataRecord:
     metric_id: str
     timestamp: float
-    metric_value: str
+    metric_value: Any
     labels: List[Label] = field(default_factory=list)
 
 
