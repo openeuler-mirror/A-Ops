@@ -5,6 +5,7 @@
 #define CONTAINER_MAX_ENTRIES   1000
 #define CONTAINER_ID_LEN          64
 #define NAMESPACE_LEN             64
+#define SYMADDRS_MAP_KEY      0xacbd
 
 struct go_containerd_t {
     // Arguments of runtime/v1/linux.(*Task).Start.
@@ -37,6 +38,13 @@ struct container_value {
     __u32 containerd_pid;
     __u32 status;
     char comm[16];
+    __u64 memory_usage_in_bytes;
+    __u64 memory_limit_in_bytes;
+    __u64 memory_stat_cache;
+    __u64 cpuacct_usage;
+    __u64 cpuacct_usage_percpu[16];
+    __u64 pids_current;
+    __u64 pids_limit;
 };
 
 #endif /* __TRACE_CONTAINERD__H */
