@@ -95,12 +95,12 @@ int RunExtendProbe(ExtendProbe *probe)
 
     }
 
-    fclose(f);
+    pclose(f);
     return 0;
 ERR1:
     free(dataStr);
 ERR2:
-    fclose(f);
+    pclose(f);
     return -1;
 }
 

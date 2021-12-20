@@ -36,7 +36,7 @@ int main()
 		(void)memset(line, 0, LEN_BUF);
 		index = 0;
 		if (NULL == fgets(line, LEN_BUF, f)) {
-			(void)fclose(f);
+			(void)pclose(f);
 			return -1;
 		}
 		p = strtok(line, ":");
@@ -52,7 +52,7 @@ int main()
 			pp[METRICS_IUSE_PER]);
 	}
 
-    (void)fclose(f);
+    (void)pclose(f);
 
     return 0;
 }
