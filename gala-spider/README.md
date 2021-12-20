@@ -111,6 +111,9 @@ gala-spider用于架构感知探测结果呈现，可以根据各个节点上报
 
 [配置文件介绍](doc/conf_introduction.md)
 
+### 如何新增观测对象
+[如何新增观测对象](doc/how_to_add_new_observe_object.md)
+
 ### 如何开发其他呈现服务
 
 [开发指南](doc/development_guidelines.md)
