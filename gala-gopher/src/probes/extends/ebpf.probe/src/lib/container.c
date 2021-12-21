@@ -20,6 +20,11 @@
 #define DOCKER_MNTNS_COMMAND "/usr/bin/ls -l /proc/%u/ns/mnt | awk -F '[' '{print $2}' | awk -F ']' '{print $1}'"
 #define DOCKER_INSPECT_COMMAND "inspect"
 #define DOCKER_MERGED_COMMAND "MergedDir | awk -F '\"' '{print $4}'"
+#define DOCKER_MEMCG_COMMAND "/usr/bin/cat /sys/fs/cgroup/memory/%s/%s"
+#define DOCKER_MEMCG_STAT_COMMAND 
+    "/usr/bin/cat /sys/fs/cgroup/memory/%s/memory.stat | grep -w \"%s\" | awk '{print $2}'"
+#define DOCKER_CPUCG_COMMAND "/usr/bin/cat /sys/fs/cgroup/cpuacct/%s/%s"
+#define DOCKER_PIDS_COMMAND "/usr/bin/cat /sys/fs/cgroup/pids/%s/%s"
 
 #define LEN_BUF 256
 #define COMMAND_LEN 512
@@ -410,6 +415,133 @@ const char* get_container_id_by_pid(container_tbl* cstbl, unsigned int pid) {
 void free_container_tbl(container_tbl **pcstbl) {
     free(*pcstbl);
     *pcstbl = NULL;
+}
+
+static int __get_container_cgroup(const char *cmd, char *line)
+{
+    FILE *f = NULL;
+
+    if (cmd == NULL || line == NULL) {
+        return -1;
+    }
+
+    f = popen(cmd, "r");
+    if (f == NULL) {
+        return -1;
+    }
+
+    if (fgets(line, LEN_BUF, f) == NULL) {
+        (void)pclose(f);
+        return -1;
+    }
+    (void)pclose(f);
+    
+    __SPLIT_NEWLINE_SYMBOL(line);
+    return 0;
+}
+
+static void __get_container_memory_metric(const char *sub_dir, struct cgroup_metric *cgroup)
+{
+    char command[COMMAND_LEN] = {0};
+    char line[LEN_BUF] = {0};
+
+    /* memory.usage_in_bytes */
+    (void)snprintf(command, COMMAND_LEN, DOCKER_MEMCG_COMMAND, sub_dir, "memory.usage_in_bytes");
+    if (__get_container_cgroup(command, line) == -1) {
+        return;
+    }
+    cgroup->memory_usage_in_bytes = strtoull((char *)line, NULL, 10);
+
+    /* memory.limit_in_bytes */
+    (void)memset(command, 0, COMMAND_LEN);
+    (void)memset(line, 0, LEN_BUF);
+    (void)snprintf(command, COMMAND_LEN, DOCKER_MEMCG_COMMAND, sub_dir, "memory.limit_in_bytes");
+    if (__get_container_cgroup(command, line) == -1) {
+        return;
+    }
+    cgroup->memory_limit_in_bytes = strtoull((char *)line, NULL, 10);
+
+    /* memory.stat.cache */
+    (void)memset(command, 0, COMMAND_LEN);
+    (void)memset(line, 0, LEN_BUF);
+    (void)snprintf(command, COMMAND_LEN, DOCKER_MEMCG_STAT_COMMAND, sub_dir, "cache");
+    if (__get_container_cgroup(command, line) == -1) {
+        return;
+    }
+    cgroup->memory_stat_cache = strtoull((char *)line, NULL, 10);
+
+    return;
+}
+
+static void __get_container_cpuaccet_metric(const char *sub_dir, struct cgroup_metric *cgroup)
+{
+    char command[COMMAND_LEN] = {0};
+    char line[LEN_BUF] = {0};
+    char *p = NULL;
+    int cpu_no = 0;
+
+    /* cpuacct.usage */
+    (void)snprintf(command, COMMAND_LEN, DOCKER_CPUCG_COMMAND, sub_dir, "cpuacct.usage");
+    if (__get_container_cgroup(command, line) == -1) {
+        return;
+    }
+    cgroup->cpuacct_usage = strtoull((char *)line, NULL, 10);
+
+    /* cpuacct.usage_percpu */
+    (void)memset(command, 0, COMMAND_LEN);
+    (void)memset(line, 0, LEN_BUF);
+    (void)snprintf(command, COMMAND_LEN, DOCKER_CPUCG_COMMAND, sub_dir, "cpuacct.usage_percpu");
+    if (__get_container_cgroup(command, line) == -1) {
+        return;
+    }
+    p = strtok(line, " ");
+    while (p != NULL) {
+        cgroup->cpuacct_usage_percpu[cpu_no++] = strtoull(p, NULL, 10);
+        p = strtok(NULL, " ");
+    }
+
+    return;
+}
+
+static void __get_container_pids_metric(const char *sub_dir, struct cgroup_metric *cgroup)
+{
+    char command[COMMAND_LEN] = {0};
+    char line[LEN_BUF] = {0};
+
+    /* pids.current */
+    (void)snprintf(command, COMMAND_LEN, DOCKER_PIDS_COMMAND, sub_dir, "pids.current");
+    if (__get_container_cgroup(command, line) == -1) {
+        return;
+    }
+    cgroup->pids_current = strtoull((char *)line, NULL, 10);
+
+    /* pids.limit */
+    (void)snprintf(command, COMMAND_LEN, DOCKER_PIDS_COMMAND, sub_dir, "pids.max");
+    if (__get_container_cgroup(command, line) == -1) {
+        return;
+    }
+    if (!strcmp((char *)line, "max")) {
+        cgroup->pids_limit = strtoull((char *)line, NULL, 10);
+    }
+
+    return;
+}
+
+void get_container_cgroup_metric(const char *container_id, const char *namespace, struct cgroup_metric *cgroup)
+{
+    char sub_dir[COMMAND_LEN] = {0};
+
+    if (!strcmp(namespace, "moby")) {    // docker == moby
+        (void)snprintf(sub_dir, COMMAND_LEN, "docker/%s", container_id);
+    } else {
+        (void)snprintf(sub_dir, COMMAND_LEN, "%s/%s", namespace, container_id);
+    }
+
+    __get_container_memory_metric(sub_dir, cgroup);
+    __get_container_cpuaccet_metric(sub_dir, cgroup);
+    __get_container_pids_metric(sub_dir, cgroup);
+
+    return;
 }
 
 /*

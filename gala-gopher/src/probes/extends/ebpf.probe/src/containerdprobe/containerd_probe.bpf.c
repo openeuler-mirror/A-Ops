@@ -28,13 +28,14 @@ UPROBE(linux_Task_Start, pt_regs)
 {
     struct container_key key = {0};
     struct container_value value = {0};
+    unsigned int sym_key = SYMADDRS_MAP_KEY;
 
     // containerd's info [pid + comm]
     value.containerd_pid = bpf_get_current_pid_tgid() >> 32;
     bpf_get_current_comm(&value.comm, sizeof(value.comm));
     
     // symbol's offset
-    struct go_containerd_t *sym_str = bpf_map_lookup_elem(&containerd_symaddrs_map, &value.containerd_pid);
+    struct go_containerd_t *sym_str = bpf_map_lookup_elem(&containerd_symaddrs_map, &sym_key);
     if (!sym_str) {
         bpf_printk("=== Please Check containerd_symaddrs Update. \n");
         return;
@@ -43,15 +44,15 @@ UPROBE(linux_Task_Start, pt_regs)
     // contained info [ID + ns + PID] from struct Task
     const void *sp = (const void *)PT_REGS_SP(ctx);
     void *t_ptr;
-    bpf_probe_read(&t_ptr, sizeof(void *), sp + sym_str->task_Start_t_offset);
-    bpf_probe_read(&value.task_pid, sizeof(int), t_ptr + sym_str->linux_Task_pid_offset);
+    bpf_probe_read(&t_ptr, sizeof(void *), (void *)sp + sym_str->task_Start_t_offset);
+    bpf_probe_read(&value.task_pid, sizeof(int), (void *)t_ptr + sym_str->linux_Task_pid_offset);
 
     void *id_str;
-    bpf_probe_read(&id_str, sizeof(void *), t_ptr + sym_str->linux_Task_id_offset);
+    bpf_probe_read(&id_str, sizeof(void *), (void *)t_ptr + sym_str->linux_Task_id_offset);
     bpf_probe_read_str(&key.container_id, CONTAINER_ID_LEN * sizeof(char), id_str);
 
     void *ns_str;
-    bpf_probe_read(&ns_str, sizeof(void *), t_ptr + sym_str->linux_Task_namespace_offset);
+    bpf_probe_read(&ns_str, sizeof(void *), (void *)t_ptr + sym_str->linux_Task_namespace_offset);
     bpf_probe_read_str(&value.namespace, NAMESPACE_LEN * sizeof(char), ns_str);
 
     value.status = 1;
@@ -66,12 +67,13 @@ UPROBE(linux_Task_Delete, pt_regs)
 {
     struct container_key key = {0};
     struct container_value *v_str;
+    unsigned int sym_key = SYMADDRS_MAP_KEY;
 
     // containerd's info
     unsigned int containerd_pid = bpf_get_current_pid_tgid() >> 32;
     
     // symbol's offset
-    struct go_containerd_t *sym_str = bpf_map_lookup_elem(&containerd_symaddrs_map, &containerd_pid);
+    struct go_containerd_t *sym_str = bpf_map_lookup_elem(&containerd_symaddrs_map, &sym_key);
     if (!sym_str) {
         bpf_printk("=== Please Check containerd_symaddrs Update. \n");
         return;
@@ -80,9 +82,9 @@ UPROBE(linux_Task_Delete, pt_regs)
     // contained info [ID + ns + PID] from struct Task
     const void *sp = (const void *)PT_REGS_SP(ctx);
     void *t_ptr;
-    bpf_probe_read(&t_ptr, sizeof(void *), sp + sym_str->task_Delete_t_offset);
+    bpf_probe_read(&t_ptr, sizeof(void *), (void *)sp + sym_str->task_Delete_t_offset);
     void *id_str;
-    bpf_probe_read(&id_str, sizeof(void *), t_ptr + sym_str->linux_Task_id_offset);
+    bpf_probe_read(&id_str, sizeof(void *), (void *)t_ptr + sym_str->linux_Task_id_offset);
     bpf_probe_read_str(&key.container_id, CONTAINER_ID_LEN * sizeof(char), id_str);
 
     /* lookup containerd map, update status */
