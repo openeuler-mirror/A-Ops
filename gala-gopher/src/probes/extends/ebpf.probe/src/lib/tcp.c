@@ -394,7 +394,7 @@ static int __get_estabs(struct tcp_estabs* tes) {
             }
         }
     }
-    (void)fclose(f);
+    (void)pclose(f);
     return 0;
 }
 
@@ -564,7 +564,7 @@ static int __get_tlps(struct tcp_listen_ports* tlps) {
             (void)free(tlp);
         }
     }
-    (void)fclose(f);
+    (void)pclose(f);
     return 0;
 }
 
