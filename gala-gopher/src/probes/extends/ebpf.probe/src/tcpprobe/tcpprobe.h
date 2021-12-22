@@ -142,11 +142,10 @@ struct link_data {
         (data).rcv_wnd = _(__tcp_sock->rcv_wnd);\
     } while(0)
 
-#define __TCPPROBE_INC_EVT_BACKLOG_DROPS(data, old) ((data).backlog_drops = (old).backlog_drops + 1)
-#define __TCPPROBE_INC_EVT_MD5_DROPS(data, old) ((data).md5_hash_drops = (old).md5_hash_drops + 1)
-#define __TCPPROBE_INC_EVT_FILTER_DROPS(data, old) ((data).filter_drops = (old).filter_drops + 1)
-#define __TCPPROBE_INC_EVT_OFO(data, old) ((data).ofo_count = (old).ofo_count + 1)
-
+#define __TCPPROBE_INC_EVT_BACKLOG_DROPS(data) __sync_fetch_and_add(&((data).backlog_drops), 1)
+#define __TCPPROBE_INC_EVT_MD5_DROPS(data) __sync_fetch_and_add(&((data).md5_hash_drops), 1)
+#define __TCPPROBE_INC_EVT_FILTER_DROPS(data) __sync_fetch_and_add(&((data).filter_drops), 1)
+#define __TCPPROBE_INC_EVT_OFO(data) __sync_fetch_and_add(&((data).ofo_count), 1)
 
 enum TCPPROBE_EVT_E{
     TCPPROBE_EVT_BACKLOG,
@@ -160,16 +159,16 @@ enum TCPPROBE_EVT_E{
         switch (type)\
         {\
             case TCPPROBE_EVT_BACKLOG:\
-                __TCPPROBE_INC_EVT_BACKLOG_DROPS(data, data);\
+                __TCPPROBE_INC_EVT_BACKLOG_DROPS(data);\
                 break;\
             case TCPPROBE_EVT_MD5:\
-                __TCPPROBE_INC_EVT_MD5_DROPS(data, data);\
+                __TCPPROBE_INC_EVT_MD5_DROPS(data);\
                 break;\
             case TCPPROBE_EVT_FILTER:\
-                __TCPPROBE_INC_EVT_FILTER_DROPS(data, data);\
+                __TCPPROBE_INC_EVT_FILTER_DROPS(data);\
                 break;\
             case TCPPROBE_EVT_OFO:\
-                __TCPPROBE_INC_EVT_OFO(data, data);\
+                __TCPPROBE_INC_EVT_OFO(data);\
                 break;\
         }\
     }while(0)
