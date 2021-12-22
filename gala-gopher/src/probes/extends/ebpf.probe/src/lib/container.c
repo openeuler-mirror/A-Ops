@@ -21,7 +21,7 @@
 #define DOCKER_INSPECT_COMMAND "inspect"
 #define DOCKER_MERGED_COMMAND "MergedDir | awk -F '\"' '{print $4}'"
 #define DOCKER_MEMCG_COMMAND "/usr/bin/cat /sys/fs/cgroup/memory/%s/%s"
-#define DOCKER_MEMCG_STAT_COMMAND 
+#define DOCKER_MEMCG_STAT_COMMAND \
     "/usr/bin/cat /sys/fs/cgroup/memory/%s/memory.stat | grep -w \"%s\" | awk '{print $2}'"
 #define DOCKER_CPUCG_COMMAND "/usr/bin/cat /sys/fs/cgroup/cpuacct/%s/%s"
 #define DOCKER_PIDS_COMMAND "/usr/bin/cat /sys/fs/cgroup/pids/%s/%s"
