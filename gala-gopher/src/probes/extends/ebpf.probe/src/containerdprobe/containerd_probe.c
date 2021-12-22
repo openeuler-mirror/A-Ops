@@ -101,6 +101,28 @@ static void print_container_metric(int fd)
     return;
 }
 
+static void update_current_containers_info(int map_fd)
+{   
+    int ret;
+    int i;
+    struct container_value c_value = {0};
+
+    container_tbl* cstbl = get_all_container();
+    if (cstbl) {
+        container_info *p = cstbl->cs;
+        for (i = 0; i < cstbl->num; i++) {
+            ret = bpf_map_lookup_elem(map_fd, p->container, &c_value);
+            if (ret) {
+                c_value.task_pid = p->pid;
+                c_value.status = 1;
+                bpf_map_update_elem(map_fd, p->container, &c_value, BPF_ANY);
+            }
+            p++;
+        }
+        free_container_tbl(&cstbl);
+    }
+}
+
 int main(int argc, char **argv)
 {
     int err = -1;
@@ -116,6 +138,8 @@ int main(int argc, char **argv)
     printf("arg parse input elf's path:%s\n", params.elf_path);
 
     LOAD(containerd_probe);
+
+    update_current_containers_info(GET_MAP_FD(containers_map));
 
     /* Cleaner handling of Ctrl-C */
     signal(SIGINT, sig_handler);
