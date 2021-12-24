@@ -1,5 +1,5 @@
 global:
-    data_source: "kafka"
+    data_source: "prometheus"
     ui_source: "neo4j"
     observe_conf_path: /etc/spider/observe.yaml
 
@@ -7,9 +7,9 @@ kafka:
     topic: gala_gopher
     broker: ["1.1.1.1:9092"]
     group_id: group_id
+    broker:
 
 prometheus:
-    broker:
     base_url: "http://localhost:9090/"
     instant_api: "/api/v1/query"
     range_api: "/api/v1/query_range"
@@ -39,11 +39,5 @@ anomaly_detection:
     tcp_link:
         detection_model_type: EXPERT_MODEL
         detection_attributes:
-            retran_packets: {threshold: 1, method: ">"}
-            lost_packets: {threshold: 1, method: ">"}
-            rtt: {threshold: 1, method: ">"}
-    process:
-        detection_model_type: EXPERT_MODEL
-        detection_attributes:
-            attribute_1: {threshold: 1, method: ">"}
-            attribute_2: {threshold: 1, method: ">"}
+            retran_packets: {detection_interval: 5, threshold: 0, method: ">="}
+            lost_packets: {detection_interval: 5, threshold: 0, method: ">="}
