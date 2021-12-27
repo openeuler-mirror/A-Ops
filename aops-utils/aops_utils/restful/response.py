@@ -18,7 +18,6 @@ Description: response function
 import json
 import requests
 
-
 from aops_utils.log.log import LOGGER
 from aops_utils.restful.serialize.validate import validate
 from aops_utils.restful.status import HTTP_CONNECT_ERROR, PARAM_ERROR,\

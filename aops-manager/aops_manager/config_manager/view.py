@@ -191,8 +191,8 @@ def generate_yaml_vars():
     """
     # generate_read_config_vars.yaml
     yaml_init = {}
-    ymlpath = os.path.join('/tmp/', "read_config_vars.yml")
-    with open(ymlpath, 'w', encoding="utf-8") as file:
+    yml_path = os.path.join('/tmp/', "read_config_vars.yml")
+    with open(yml_path, 'w', encoding="utf-8") as file:
         yaml.dump(yaml_init, file)
 
 

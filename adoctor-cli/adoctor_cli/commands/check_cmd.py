@@ -17,7 +17,7 @@ Class:CheckCommand
 from adoctor_cli.base_cmd import BaseCommand
 from aops_utils.restful.helper import make_check_url
 from aops_utils.conf.constant import CHECK_GET_RESULT
-from aops_utils.time_utils import time_check_generate, time_transfer
+from aops_utils.time_utils import time_transfer
 from aops_utils.validate import name_check, str_split
 from aops_utils.cli_utils import add_page, add_access_token, add_query_args
 from aops_utils.cli_utils import add_start_and_end, request_without_print, pretty_json

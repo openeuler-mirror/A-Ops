@@ -11,15 +11,33 @@
 # See the Mulan PSL v2 for more details.
 # ******************************************************************************/
 """
-Time:
-Author:
-Description: mysql tables
+Time: 2021-12-23 10:47:56
+Author: peixiaochao
+Description:
 """
 from sqlalchemy import Column, ForeignKey
 from sqlalchemy.orm import relationship
 from sqlalchemy.sql.sqltypes import Boolean, Integer, String
 
-from aops_utils.database.table import Base,MyBase
+from sqlalchemy.ext.declarative import declarative_base
+from werkzeug.security import generate_password_hash, check_password_hash
+
+Base = declarative_base()
+
+
+class MyBase:  # pylint: disable=R0903
+    """
+    Class that provide helper function
+    """
+
+    def to_dict(self):
+        """
+        Transfer query data to dict
+
+        Returns:
+            dict
+        """
+        return {col.name: getattr(self, col.name) for col in self.__table__.columns}
 
 
 class Host(Base, MyBase):  # pylint: disable=R0903
@@ -43,8 +61,8 @@ class Host(Base, MyBase):  # pylint: disable=R0903
     owner = relationship('User', back_populates='hosts')
 
     def __eq__(self, o):
-        return self.user == o.user and (self.host_name == o.host_name or\
-            self.public_ip == o.public_ip)
+        return self.user == o.user and (self.host_name == o.host_name or \
+                                        self.public_ip == o.public_ip)
 
 
 class HostGroup(Base, MyBase):
@@ -64,3 +82,25 @@ class HostGroup(Base, MyBase):
 
     def __eq__(self, o):
         return self.username == o.username and self.host_group_name == o.host_group_name
+
+
+class User(Base, MyBase):  # pylint: disable=R0903
+    """
+    User Table
+    """
+    __tablename__ = "user"
+
+    username = Column(String(40), primary_key=True)
+    password = Column(String(255), nullable=False)
+
+    host_groups = relationship(
+        'HostGroup', order_by=HostGroup.host_group_name, back_populates='user')
+    hosts = relationship('Host', back_populates='owner')
+
+    @staticmethod
+    def hash_password(password):
+        return generate_password_hash(password)
+
+    @staticmethod
+    def check_hash_password(raw_password, password):
+        return check_password_hash(raw_password, password)
