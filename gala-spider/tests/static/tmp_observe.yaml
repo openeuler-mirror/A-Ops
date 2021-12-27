@@ -17,46 +17,12 @@ observe_entities:
           -
             type: host
   -
-    type: container
-    keys:
-      - container_id
-      - machine_id
-    labels:
-      - &container_name container_name
-      - netns
-      - mntns
-      - netcgrp
-      - memcgrp
-      - cpucgrp
-    name: *container_name
-    metrics: []
-    level: CONTAINER
-    dependingitems:
-      -
-        id: runs_on
-        layer: direct
-        toTypes:
-          -
-            type: host
-            matches:
-              -
-                from: machine_id
-                to: machine_id
-      -
-        id: connect
-        layer: indirect
-        toTypes:
-          -
-            type: container
-  -
     type: task
     keys:
       - pid
       - machine_id
     labels:
       - &task_name task_name
-      - tgid
-      - pidns
       - container_id
     name: *task_name
     metrics:
@@ -67,15 +33,6 @@ observe_entities:
         id: runs_on
         layer: direct
         toTypes:
-          -
-            type: container
-            matches:
-              -
-                from: container_id
-                to: container_id
-              -
-                from: machine_id
-                to: machine_id
           -
             type: host
             matches:
@@ -88,48 +45,11 @@ observe_entities:
                 label: container_id
                 value: null
       -
-        id: belongs_to
-        layer: direct
-        toTypes:
-          -
-            type: task
-            matches:
-              -
-                from: tgid
-                to: pid
-              -
-                from: machine_id
-                to: machine_id
-      -
         id: connect
         layer: indirect
         toTypes:
           -
             type: task
-  -
-    type: endpoint
-    keys:
-      - type
-      - ip
-      - port
-      - pid
-      - machine_id
-    labels:
-      - netns
-    dependingitems:
-      -
-        id: belongs_to
-        layer: direct
-        toTypes:
-          -
-            type: task
-            matches:
-              -
-                from: pid
-                to: pid
-              -
-                from: machine_id
-                to: machine_id
   -
     type: tcp_link
     keys:
@@ -140,16 +60,9 @@ observe_entities:
       - machine_id
     labels:
       - role
-      - protocol
     metrics:
       - rx_bytes
       - tx_bytes
-      - packets_out
-      - packets_in
-      - retran_packets
-      - lost_packets
-      - rtt
-      - link_count
     level: RPC
     dependingitems:
       -
@@ -266,31 +179,3 @@ observe_entities:
               -
                 from: machine_id
                 to: machine_id
-  -
-    type: nginx_link
-    keys: *lb_link_keys
-    metrics:
-      - link_count
-    level: LB
-    dependingitems:
-      -
-        id: belongs_to
-        layer: direct
-        toTypes:
-          -
-            type: task
-            matches: *lb_link_belong_task
-  -
-    type: haproxy_link
-    keys: *lb_link_keys
-    metrics:
-      - link_count
-    level: LB
-    dependingitems:
-      -
-        id: belongs_to
-        layer: direct
-        toTypes:
-          -
-            type: task
-            matches: *lb_link_belong_task
