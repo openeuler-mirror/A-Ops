@@ -20,7 +20,7 @@ from flask import request
 from flask_restful import Resource
 
 from aops_utils.restful.status import make_response
-from aops_database.function.helper import operate
+from aops_utils.database.helper import operate
 
 
 class BaseResource(Resource):

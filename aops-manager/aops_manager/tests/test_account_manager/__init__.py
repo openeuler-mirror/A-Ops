@@ -11,18 +11,7 @@
 # See the Mulan PSL v2 for more details.
 # ******************************************************************************/
 """
-Time:
-Author:
-Description: manager constant
+Time: 2021-12-29 14:16:26
+Author: peixiaochao
+Description: 
 """
-import os
-from aops_utils.conf.constant import BASE_CONFIG_PATH
-
-# path of manager configuration
-MANAGER_CONFIG_PATH = os.path.join(BASE_CONFIG_PATH, 'manager.ini')
-
-# database config
-DATABASE_CONFIG_PATH = os.path.join(BASE_CONFIG_PATH, 'database.ini')
-
-TEMPLATE_INDEX = "ansible_templates"
-TASK_INDEX = "ansible_task"

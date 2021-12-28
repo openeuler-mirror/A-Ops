@@ -21,21 +21,29 @@ from marshmallow import fields
 
 class LoginSchema(Schema):
     """
-    validators for parameter of /manage/acount/login
+    validators for parameter of /manage/account/login
     """
     username = fields.String(required=True, validate=lambda s: len(s) > 0)
     password = fields.String(required=True, validate=lambda s: len(s) > 0)
 
 
+class AddUserSchema(LoginSchema):
+    """
+    validators for parameter of /manage/account/add
+    """
+    pass
+
+
 class ChangePasswordSchema(Schema):
     """
-    validators for parameter of /manage/acount/change
+    validators for parameter of /manage/account/change
     """
     password = fields.String(required=True, validate=lambda s: len(s) > 0)
 
 
 class CertificateSchema(Schema):
     """
-    validators for parameter of /manage/acount/certificate
+    validators for parameter of /manage/account/certificate
     """
     key = fields.String(required=True, validate=lambda s: len(s) > 0)
+    token = fields.String(required=True, validate=lambda s: len(s) > 0)

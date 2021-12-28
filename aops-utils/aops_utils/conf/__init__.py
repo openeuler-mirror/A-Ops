@@ -19,7 +19,7 @@ import os
 import configparser
 
 from aops_utils.conf import default_config
-from aops_utils.conf.constant import SYSTEM_CONFIG_PATH
+from aops_utils.conf.constant import SYSTEM_CONFIG_PATH, MANAGER_CONFIG_PATH
 
 
 class Config:
@@ -82,3 +82,4 @@ class Config:
 
 
 configuration = Config(SYSTEM_CONFIG_PATH, default_config)
+proxy_configuration = Config(MANAGER_CONFIG_PATH,default_config)

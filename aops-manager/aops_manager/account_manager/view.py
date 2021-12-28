@@ -18,6 +18,7 @@ Description: Restful APIs for user
 from aops_utils.database.helper import SESSION
 from aops_manager.account_manager.database.proxy.account import UserDatabase
 from aops_utils.restful.resource import BaseResource
+from aops_manager.function.verify.acount import LoginSchema, ChangePasswordSchema, CertificateSchema, AddUserSchema
 
 
 class AddUser(BaseResource):
@@ -37,7 +38,7 @@ class AddUser(BaseResource):
         Returns:
             dict: response body
         """
-        return self.do_action('add_user', UserDatabase(), SESSION)
+        return self.restful_result('add_user', UserDatabase(), AddUserSchema, SESSION)
 
 
 class Login(BaseResource):
@@ -57,7 +58,7 @@ class Login(BaseResource):
         Returns:
             dict: response body
         """
-        return self.do_action('login', UserDatabase(), SESSION)
+        return self.restful_result('login', UserDatabase(), LoginSchema, SESSION)
 
 
 class ChangePassword(BaseResource):
@@ -77,7 +78,7 @@ class ChangePassword(BaseResource):
         Returns:
             dict: response body
         """
-        return self.do_action('change_password', UserDatabase(), SESSION)
+        return self.restful_result('change_password', UserDatabase(), ChangePasswordSchema, SESSION)
 
 
 class Certificate(BaseResource):
@@ -97,4 +98,4 @@ class Certificate(BaseResource):
         Returns:
             dict: response body
         """
-        return self.do_action('certificate', UserDatabase(), SESSION)
+        return self.restful_result('certificate', UserDatabase(), CertificateSchema, SESSION)

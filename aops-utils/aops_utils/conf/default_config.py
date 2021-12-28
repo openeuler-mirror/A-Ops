@@ -13,7 +13,7 @@
 """
 Time:
 Author:
-Description: default config.
+Description: default config for database and log
 """
 import os
 
@@ -24,3 +24,4 @@ log = {
     "MAX_BYTES": 31457280,
     "BACKUP_COUNT": 30
 }
+

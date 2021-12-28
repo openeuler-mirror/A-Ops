@@ -24,7 +24,7 @@ from elasticsearch import Elasticsearch, ElasticsearchException, helpers, Transp
     NotFoundError
 from prometheus_api_client import PrometheusConnect, PrometheusApiClientException
 from aops_utils.log.log import LOGGER
-from aops_database.conf import configuration
+from aops_utils.conf import proxy_configuration
 
 
 class DataBaseProxy(ABC):
@@ -173,9 +173,9 @@ class ElasticsearchProxy(DataBaseProxy):
             host(str)
             port(int)
         """
-        self._host = host or configuration.elasticsearch.get(
+        self._host = host or proxy_configuration.elasticsearch.get(
             'IP')  # pylint: disable=E1101
-        self._port = port or configuration.elasticsearch.get(
+        self._port = port or proxy_configuration.elasticsearch.get(
             'PORT')  # pylint: disable=E1101
         self.connected = False
         self._es_db = None
@@ -431,7 +431,7 @@ class ElasticsearchProxy(DataBaseProxy):
 
     def update_settings(self, **kwargs):
         """
-        Update es configuration, e.g. the maximum number of modified queries
+        Update es proxy_configuration, e.g. the maximum number of modified queries
 
         Args:
             kwargs(dict)
@@ -509,9 +509,9 @@ class PromDbProxy(DataBaseProxy):
             port (int)
         """
         DataBaseProxy.__init__(self)
-        self._host = host or configuration.prometheus.get(
+        self._host = host or proxy_configuration.prometheus.get(
             'IP')  # pylint: disable=E1101
-        self._port = port or configuration.prometheus.get(
+        self._port = port or proxy_configuration.prometheus.get(
             'PORT')  # pylint: disable=E1101
         self.connected = False
         self._prom = None
