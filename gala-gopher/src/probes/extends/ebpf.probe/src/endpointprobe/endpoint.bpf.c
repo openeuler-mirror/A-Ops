@@ -236,7 +236,7 @@ static __always_inline void update_ep_listen_overflow(struct endpoint_val_t *ep_
                                                       struct pt_regs *ctx)
 {
     if (sk_acceptq_is_full(sk)) {
-        (ep_val->ep_stats.stats[EP_STATS_LISTEN_OVERFLOW])++;
+        __sync_fetch_and_add(&ep_val->ep_stats.stats[EP_STATS_LISTEN_OVERFLOW], 1);
     }
     return;
 }
@@ -252,7 +252,7 @@ static __always_inline void update_ep_listen_overflow_v6(struct endpoint_val_t *
     }
 
     if (sk_acceptq_is_full(sk)) {
-        (ep_val->ep_stats.stats[EP_STATS_LISTEN_OVERFLOW])++;
+        __sync_fetch_and_add(&ep_val->ep_stats.stats[EP_STATS_LISTEN_OVERFLOW], 1);
     }
     return;
 }
@@ -261,7 +261,7 @@ static __always_inline void update_ep_requestfails(struct endpoint_val_t *ep_val
 {
     struct sock *ret = (struct sock *)PT_REGS_RC(ctx);
     if (!ret) {
-        (ep_val->ep_stats.stats[EP_STATS_REQUEST_FAILS])++;
+        __sync_fetch_and_add(&ep_val->ep_stats.stats[EP_STATS_REQUEST_FAILS], 1);
     }
     return;
 }
@@ -340,7 +340,7 @@ KPROBE_RET(tcp_create_openreq_child, pt_regs)
 
     ep_val = get_ep_val_by_sock(sk);
     if (ep_val) {
-        (ep_val->ep_stats.stats[EP_STATS_PASSIVE_OPENS])++;
+        __sync_fetch_and_add(&ep_val->ep_stats.stats[EP_STATS_PASSIVE_OPENS], 1);
     }
 
     return;
@@ -380,7 +380,7 @@ KPROBE_RET(tcp_connect, pt_regs)
 
     ep_val = get_ep_val_by_sock(sk);
     if (ep_val) {
-        (ep_val->ep_stats.stats[EP_STATS_ACTIVE_OPENS])++;
+        __sync_fetch_and_add(&ep_val->ep_stats.stats[EP_STATS_ACTIVE_OPENS], 1);
     }
     return;
 }
@@ -398,7 +398,7 @@ KPROBE(tcp_done, pt_regs)
 
         ep_val = get_ep_val_by_sock(sk);
         if (ep_val) {
-            (ep_val->ep_stats.stats[EP_STATS_ATTEMPT_FAILS])++;
+            __sync_fetch_and_add(&ep_val->ep_stats.stats[EP_STATS_ATTEMPT_FAILS], 1);
         }
     }
 
@@ -431,7 +431,7 @@ static __always_inline void update_ep_abortclose(struct endpoint_val_t *ep_val, 
     unsigned char state = _(sk->sk_state);
 
     if (state == TCP_SYN_SENT) {
-        (ep_val->ep_stats.stats[EP_STATS_ABORT_CLOSE])++;
+        __sync_fetch_and_add(&ep_val->ep_stats.stats[EP_STATS_ABORT_CLOSE], 1);
     }
 
     return;
@@ -472,7 +472,7 @@ KPROBE_RET(tcp_try_rmem_schedule, pt_regs)
     lsk = listen_sock(sk);
     ep_val = get_ep_val_by_sock(lsk);
     if (ep_val) {
-        (ep_val->ep_stats.stats[EP_STATS_RMEM_SCHEDULE])++;
+        __sync_fetch_and_add(&ep_val->ep_stats.stats[EP_STATS_RMEM_SCHEDULE], 1);
     }
     return;
 }
@@ -500,7 +500,7 @@ KPROBE_RET(tcp_check_oom, pt_regs)
     lsk = listen_sock(sk);
     ep_val = get_ep_val_by_sock(lsk);
     if (ep_val) {
-        (ep_val->ep_stats.stats[EP_STATS_TCP_OOM])++;
+        __sync_fetch_and_add(&ep_val->ep_stats.stats[EP_STATS_TCP_OOM], 1);
     }
     return;
 }
@@ -512,7 +512,7 @@ KPROBE(tcp_send_active_reset, pt_regs)
     struct endpoint_val_t *ep_val = get_ep_val_by_sock(lsk);
 
     if (ep_val) {
-        (ep_val->ep_stats.stats[EP_STATS_SEND_TCP_RSTS])++;
+        __sync_fetch_and_add(&ep_val->ep_stats.stats[EP_STATS_SEND_TCP_RSTS], 1);
     }
     
     return;
@@ -531,7 +531,7 @@ KPROBE(tcp_write_wakeup, pt_regs)
 
     ep_val = get_ep_val_by_sock(sk);
     if (ep_val) {
-        (ep_val->ep_stats.stats[EP_STATS_KEEPLIVE_TIMEOUT])++;
+        __sync_fetch_and_add(&ep_val->ep_stats.stats[EP_STATS_KEEPLIVE_TIMEOUT], 1);
     }
 
     return;
