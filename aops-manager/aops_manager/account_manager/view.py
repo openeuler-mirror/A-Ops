@@ -15,26 +15,38 @@ Time:
 Author:
 Description: Restful APIs for user
 """
-import secrets
-from flask import request
-from flask import jsonify
-from flask_restful import Resource
-
-from aops_manager.account_manager.key import HostKey
-from aops_manager.function.verify.acount import ChangePasswordSchema, LoginSchema, CertificateSchema
-from aops_utils.conf.constant import DATA_USER_CHANGEPASSWORD, DATA_USER_LOGIN
-from aops_utils.restful.status import CHANGE_PASSWORD, SUCCEED, StatusCode
-from aops_utils.restful.response import MyResponse
-from aops_utils.restful.helper import make_datacenter_url
+from aops_utils.database.helper import SESSION
+from aops_manager.account_manager.database.proxy.account import UserDatabase
+from aops_utils.restful.resource import BaseResource
 
 
-class Login(Resource):
+class AddUser(BaseResource):
     """
-    Interface for login.
+    Interface for register user.
     Restful API: post
     """
-    @staticmethod
-    def post():
+
+    def post(self):
+        """
+        Add user
+
+        Args:
+            username(str)
+            password(str)
+
+        Returns:
+            dict: response body
+        """
+        return self.do_action('add_user', UserDatabase(), SESSION)
+
+
+class Login(BaseResource):
+    """
+    Interface for user login.
+    Restful API: post
+    """
+
+    def post(self):
         """
         User login
 
@@ -45,70 +57,44 @@ class Login(Resource):
         Returns:
             dict: response body
         """
-        args = request.get_json()
-        database_url = make_datacenter_url(DATA_USER_LOGIN)
-        verify_res = MyResponse.verify_args(args, LoginSchema)
-        response = MyResponse.get_result(
-            verify_res, 'post', database_url, args)
-
-        if response['code'] in (SUCCEED, CHANGE_PASSWORD):
-            # generate access token
-            access_token = secrets.token_hex(16)
-            response['access_token'] = access_token
-
-        return jsonify(response)
+        return self.do_action('login', UserDatabase(), SESSION)
 
 
-class ChangePassword(Resource):
+class ChangePassword(BaseResource):
     """
-    Interface for change password.
+    Interface for user change password.
     Restful API: post
     """
-    @staticmethod
-    def post():
+
+    def post(self):
         """
-        Add host
+        Change password
 
         Args:
+            username(str)
             password(str)
 
         Returns:
             dict: response body
         """
-        args = request.get_json()
-        access_token = request.headers.get('access_token')
-        verify_res = MyResponse.verify_all(
-            args, ChangePasswordSchema, access_token)
-        database_url = make_datacenter_url(DATA_USER_CHANGEPASSWORD)
-        response = MyResponse.get_result(
-            verify_res, 'post', database_url, args)
-
-        return jsonify(response)
+        return self.do_action('change_password', UserDatabase(), SESSION)
 
 
-class Certificate(Resource):
+class Certificate(BaseResource):
     """
-    Interface for host certificate.
+    Interface for user certificate.
     Restful API: post
     """
-    @staticmethod
-    def post():
+
+    def post(self):
         """
-        User certificate
+        Certificate  user
 
         Args:
-            key(str)
+            username(str)
+            password(str)
 
         Returns:
             dict: response body
         """
-        args = request.get_json()
-        access_token = request.headers.get('access_token')
-        verify_res = MyResponse.verify_all(
-            args, CertificateSchema, access_token)
-        if verify_res == SUCCEED:
-            # save key
-            HostKey.update(access_token, args['key'])
-
-        response = StatusCode.make_response(verify_res)
-        return jsonify(response)
+        return self.do_action('certificate', UserDatabase(), SESSION)
