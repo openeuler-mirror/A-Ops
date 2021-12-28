@@ -11,7 +11,7 @@
 #define MAX_IMDB_METRIC_DESC_LEN        1024
 #define MAX_IMDB_METRIC_TYPE_LEN        32
 #define MAX_IMDB_METRIC_NAME_LEN        32
-#define MAX_IMDB_METRIC_VAL_LEN         32
+#define MAX_IMDB_METRIC_VAL_LEN         512
 
 // table specification
 #define MAX_IMDB_TABLE_NAME_LEN         32

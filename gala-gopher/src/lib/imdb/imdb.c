@@ -739,6 +739,63 @@ static int IMDB_Record2Json(IMDB_DataBaseMgr *mgr, IMDB_Table *table, IMDB_Recor
     return 0;
 }
 
+static int IMDB_RecordEvent2Json(IMDB_DataBaseMgr *mgr, IMDB_Table *table, IMDB_Record *record, char *jsonStr, int jsonStrLen)
+{
+    int ret = 0;
+    char buffer[MAX_DATA_STR_LEN];
+    char *json_cursor = jsonStr;
+    int maxLen = jsonStrLen;
+    char name[MAX_IMDB_METRIC_NAME_LEN];
+    char value[MAX_IMDB_METRIC_VAL_LEN];
+
+    memset(jsonStr, 0, jsonStrLen);
+    ret = snprintf(json_cursor, maxLen, "{");
+    if (ret < 0) {
+        return -1;
+    }
+    json_cursor += ret;
+    maxLen -= ret;
+
+    for (int i = 0; i < record->metricsNum; i++) {
+        strcpy(name, record->metrics[i]->name);
+        strcpy(value, record->metrics[i]->val);
+
+        if(strcmp(name, "Body") == 0){
+            ret = snprintf(json_cursor, maxLen,
+                           "\"Resource\": {\"host.hostname\": \"%s\", \"host.machineid\": \"%s\"}, ",
+                           mgr->nodeInfo.hostName, mgr->nodeInfo.machineId);
+            if (ret < 0) {
+                return -1;
+            }
+            json_cursor += ret;
+            maxLen -= ret;
+
+            ret = snprintf(json_cursor, maxLen, "\"%s\": \"%s\"", name, value);
+            if (ret < 0) {
+                return -1;
+            }
+            json_cursor += ret;
+            maxLen -= ret;
+        }else{
+            ret = snprintf(json_cursor, maxLen, "\"%s\": \"%s\", ", name, value);
+            if (ret < 0) {
+                return -1;
+            }
+            json_cursor += ret;
+            maxLen -= ret;
+        }
+    }
+
+    ret = snprintf(json_cursor, maxLen, "}");
+    if (ret < 0) {
+        return -1;
+    }
+    json_cursor += ret;
+    maxLen -= ret;
+
+    return 0;
+}
+
 int IMDB_DataStr2Json(IMDB_DataBaseMgr *mgr, char *recordStr, int recordLen, char *jsonStr, int jsonStrLen)
 {
     pthread_rwlock_wrlock(&mgr->rwlock);
@@ -814,7 +871,13 @@ int IMDB_DataStr2Json(IMDB_DataBaseMgr *mgr, char *recordStr, int recordLen, cha
         index += 1;
     }
 
-    ret = IMDB_Record2Json(mgr, table, record, jsonStr, jsonStrLen);
+    // ‘event’ log to json
+    if (strcmp(table->name, "event") == 0) {
+        ret = IMDB_RecordEvent2Json(mgr, table, record, jsonStr, jsonStrLen);
+    } else {
+        ret = IMDB_Record2Json(mgr, table, record, jsonStr, jsonStrLen);
+    }
+
     if (ret != 0) {
         free(buffer_head);
         goto ERR;
