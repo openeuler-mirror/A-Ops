@@ -4,7 +4,7 @@ from spider.util.conf import neo4j_addr
 from spider.util.conf import neo4j_uname
 from spider.util.conf import neo4j_pwd
 from spider.controllers.gala_spider import get_observed_entity_list
-from anomaly_detection.util import ANOMALY_STATUS
+from anomaly_detection.util import AnomalyStatus
 
 # Color list (Just list here...)
 colors_list = ['black', 'red', 'green', 'blue', 'saddlebrown', 'brown', 'chocolate', 'yellow', 'violet',
@@ -13,6 +13,9 @@ colors_list = ['black', 'red', 'green', 'blue', 'saddlebrown', 'brown', 'chocola
 def ui_neo4j_agent(n):
     # connect to neo4j datebase
     graph = Graph(str(neo4j_addr), username=str(neo4j_uname), password=str(neo4j_pwd))
+    # py2neo version: 2021.1 
+    # graph = Graph(str(neo4j_addr), auth=(str(neo4j_uname), str(neo4j_pwd)))
+	
     # loop every n second
     while True:
         print("---------------------------")
@@ -47,9 +50,9 @@ def ui_neo4j_agent(n):
 
                 # tcp_link color: link missing->blue, attribute normal->black, attribute abnormal->red.
 
-                if entity.anomaly.status == ANOMALY_STATUS.ANOMALY_LACKING:
+                if entity.anomaly.status == AnomalyStatus.ANOMALY_LACKING:
                     _color = "blue"
-                elif entity.anomaly.status == ANOMALY_STATUS.ANOMALY_YES:
+                elif entity.anomaly.status == AnomalyStatus.ANOMALY_YES:
                     _color = "red"
                 else:
                     _color = "black"

@@ -1,5 +1,6 @@
 from dataclasses import asdict
 from typing import Dict, List
+import time
 
 from spider.models.base_response import BaseResponse  # noqa: E501
 from spider.models.entities_response import EntitiesResponse  # noqa: E501
@@ -13,7 +14,7 @@ from spider.models.anomaly import Anomaly
 from spider.data_process.data_to_entity import node_entity_process
 from spider.data_process.data_to_entity import clear_tmp
 from anomaly_detection.anomaly_detection import detection
-from anomaly_detection.util import ANOMALY_STATUS
+from anomaly_detection.util import AnomalyStatus
 from spider.data_process.models import HostNode, ProcessNode
 from spider.data_process.models import LbLinkInfo, LbLinkKey
 from spider.data_process.models import TcpLinkKey, TcpLinkInfo
@@ -36,8 +37,8 @@ def get_tcp_link_entities(link_infos: Dict[TcpLinkKey, TcpLinkInfo], anomaly_inf
             for i in this_anomaly_infos:
                 _anomaly_items.append(AnomalyItem(anomaly_attr = i.get("anomaly_attr"),
                                                   anomaly_type = i.get("anomaly_type")))
-        _anomaly_status = ANOMALY_STATUS.ANOMALY_YES if len(_anomaly_items) > 0 else ANOMALY_STATUS.ANOMALY_NO
-        _anomaly_status = ANOMALY_STATUS.ANOMALY_LACKING if not link_info.status else _anomaly_status
+        _anomaly_status = AnomalyStatus.ANOMALY_YES if len(_anomaly_items) > 0 else AnomalyStatus.ANOMALY_NO
+        _anomaly_status = AnomalyStatus.ANOMALY_LACKING if not link_info.status else _anomaly_status
 
         left_call = Call(type="PROCESS", id=link_info.c_node_id())
         right_call = Call(type="PROCESS", id=link_info.s_node_id())
@@ -126,6 +127,8 @@ def get_observed_entity_list():  # noqa: E501
 
     :rtype: EntitiesResponse
     """
+
+    timestamp = time.time()
     entities = []
     # obtain tcp_link entities
     _edges_table, proc_nodes_table, lb_table, vm_table = node_entity_process()
@@ -133,11 +136,11 @@ def get_observed_entity_list():  # noqa: E501
         clear_tmp()
         return entities, 500
 
-    object_item_data = {"tcp_link": _edges_table, "nodes": proc_nodes_table, "lb": lb_table, "vm": vm_table}
-    object_attr_data = {"tcp_link": _edges_table}
-    _object_item_data, _object_attr_data = detection(object_item_data, object_attr_data)
+    entity_item_data = {"tcp_link": _edges_table, "nodes": proc_nodes_table, "lb": lb_table, "vm": vm_table}
+    entity_attr_data = {"tcp_link": _edges_table}
+    _entity_item_data, _object_attr_data = detection(timestamp, entity_item_data, entity_attr_data)
 
-    edges_table = _object_item_data.get("tcp_link")
+    edges_table = _entity_item_data.get("tcp_link")
     anomaly_table = _object_attr_data.get("tcp_link")
 
     tcp_link_entities = get_tcp_link_entities(edges_table, anomaly_table)
