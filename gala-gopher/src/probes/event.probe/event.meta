@@ -1,0 +1,28 @@
+version = "1.0.0"
+
+measurements:
+(
+    {
+        name: "event",
+        fields:
+        (
+            {
+                description: "Time when the event occurred, uint64 nanoseconds since Unix epoch.",
+                type: "long",
+                name: "Timestamp",
+            },
+            {
+                description: "Event level",
+                type: "byte sequence",
+                name: "SeverityText",
+            },
+            {
+                description: "Event Body",
+                type: "byte sequence",
+                name: "Body",
+            },
+        )
+    }
+)
+
+

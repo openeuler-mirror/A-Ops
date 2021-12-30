@@ -10,25 +10,38 @@
 #define OUT_PUT_PERIOD_MIN     (1)		// 1s
 
 // gala-gopher.conf only support one arg, used set out put period
-int __period_arg_parse(char opt, char *arg, int idx, unsigned int *val)
+int __period_arg_parse(char opt, char *arg, struct probe_params *params)
 {
-    if (opt != 't' || !arg) {
+    unsigned int interval = 0;
+
+    if ((opt != 't' && opt != 'p') || !arg) {
         return -1;
     }
 
-    unsigned int interval = (unsigned int)atoi(arg);
-    if (interval < OUT_PUT_PERIOD_MIN || interval > OUT_PUT_PERIOD_MAX) {
-        return -1;
+    switch(opt) {
+        case 't':
+            interval = (unsigned int)atoi(arg);
+            if (interval < OUT_PUT_PERIOD_MIN || interval > OUT_PUT_PERIOD_MAX) {
+                printf("Please check arg(t), val shold inside 1~120.\n");
+                return -1;
+            }
+            params->period = interval;
+            break;
+        case 'p':
+            if (arg) {
+                (void)snprintf((void *)params->elf_path, MAX_PATH_LEN, "%s", arg);
+            }
+            break;
+        default:
+            break;
     }
-    val = interval;
+
     return 0;
 }
 
+int __args_parse(int argc, char **argv, char *opt_str, struct probe_params *params) {
+    int ch = -1;
 
-int __args_parse(int argc, char **argv, char *opt_str, struct probe_params* params) {
-    int ch;
-	unsigned int val;
-	
     if (!opt_str) {
         return -1;
     }
@@ -36,14 +49,14 @@ int __args_parse(int argc, char **argv, char *opt_str, struct probe_params* para
         if (!optarg) {
             return -1;
         }
-        if (__period_arg_parse(ch, optarg, optind, &val) == 0) {
-			params->period = val;
+        if (__period_arg_parse(ch, optarg, params) != 0) {
+            return -1;
         }
     }
     return 0;
 }
 
-int args_parse(int argc, char **argv, char *opt_str, struct probe_params* params) {
-	return __args_parse(argc, argv, opt_str, params);
+int args_parse(int argc, char **argv, char *opt_str, struct probe_params *params) {
+    return __args_parse(argc, argv, opt_str, params);
 }
 

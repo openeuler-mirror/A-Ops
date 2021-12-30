@@ -3,7 +3,7 @@
     <a-row :gutter="16">
       <a-col :span="24">
         <a-form-item label="故障树名称">
-          <a-input placeholder="请输入故障树名称，不超过20个字符" v-decorator="['tree_name',{trigger:'blur',rules: [{ required: true, message: '请输入故障树名称' },{ max: 20, message: '故障树名称不能超过20个字符' }]}]" />
+          <a-input placeholder="请输入故障树名称，不超过20个字符" v-decorator="['tree_name',{rules: [{ required: true, message: '请输入故障树名称' },{ max: 20, message: '故障树名称不能超过20个字符' }]}]" />
         </a-form-item>
       </a-col>
     </a-row>

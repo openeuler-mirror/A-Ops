@@ -1,4 +1,5 @@
 from typing import Dict, List
+import time
 
 from spider.models import BaseResponse, EntitiesResponse, Entity, Dependenceitem, Attr
 from spider.util import conf

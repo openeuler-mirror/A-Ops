@@ -2,7 +2,7 @@
   <my-page-header-wrapper>
     <a-card :bordered="false" class="aops-theme">
       <div style="height: 110px;position: relative;">
-        <img class="avatar-img" src="~@/assets/vertical-left.png">
+        <img class="avatar-img" src="~@/assets/dtree-icon.png">
         <div class="content-div">
           <div class="title">
             <span style="padding-right: 5px">报告ID：{{ reportData.report_id }}</span>
@@ -107,8 +107,8 @@ export default {
 </script>
 <style lang="less" scoped>
 .avatar-img {
-  width: 110px;
-  height: 110px;
+  width: 84px;
+  height: 84px;
   float: left;
   border-radius: 5px;
   margin-right: 10px;

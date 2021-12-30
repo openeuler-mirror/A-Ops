@@ -5,6 +5,15 @@
       <div>
         <a-row class="aops-table-control-row" type="flex" justify="space-between">
           <a-col>
+            <h3>
+              诊断任务
+              <a-icon
+                :type="expandedStatus[0] ? 'caret-up' : 'caret-down'"
+                @click="setExpandStatus(0, !expandedStatus[0])"
+              />
+            </h3>
+          </a-col>
+          <a-col>
             <a-row type="flex" :gutter="16">
               <a-col>
                 <drawer-view title="新建故障诊断" :bodyStyle="{ paddingBottom: '80px' }">
@@ -24,23 +33,32 @@
             </a-row>
           </a-col>
         </a-row>
-        <a-table
-          :rowKey="rowKey"
-          :columns="columns"
-          :data-source="taskList"
-          :pagination="pagination"
-          @change="handleTableChange"
-          :loading="tableIsLoading"
-        >
-          <span slot="action" slot-scope="record">
-            <a @click="handleReportListOpen(record)">查看报告</a>
-          </span>
-        </a-table>
+        <div v-show="expandedStatus[0]">
+          <a-table
+            :rowKey="rowKey"
+            :columns="columns"
+            :data-source="taskList"
+            :pagination="pagination"
+            @change="handleTableChange"
+            :loading="tableIsLoading"
+          >
+            <span slot="action" slot-scope="record">
+              <a @click="handleReportListOpen(record)">查看报告</a>
+            </span>
+          </a-table>
+        </div>
       </div>
     </a-card>
     <a-card :bordered="false" class="aops-theme" style="margin-top: 20px">
-      <div class="ant-pro-pages-list-applications-filterCardList">
-        <a-list :loading="loading" :data-source="treeData.slice(0,showIndex)" :grid="{ gutter: 24, xl: 3, lg: 3, md: 3, sm: 2, xs: 1 }" >
+      <h3>
+        故障树
+        <a-icon
+          :type="expandedStatus[1] ? 'caret-up' : 'caret-down'"
+          @click="setExpandStatus(1, !expandedStatus[1])"
+        />
+      </h3>
+      <div class="ant-pro-pages-list-applications-filterCardList" v-show="expandedStatus[1]">
+        <a-list :loading="loading" :data-source="treeData.slice(0,showIndex)" :grid="{ gutter: 24, xl: 3, lg: 3, md: 2, sm: 1, xs: 1 }" >
           <a-list-item slot="renderItem" slot-scope="item">
             <template v-if="!item.tree_name">
               <drawer-view title="新增故障树">
@@ -55,53 +73,41 @@
               </drawer-view>
             </template>
             <template v-else>
-              <router-link :to="{ path: '/diagnosis/fault-trees/'+item.tree_name }" target="_blank">
-                <a-card>
-                  <div>
-                    <div class="avatar-div">
-                      <img class="avatar-img" src="~@/assets/vertical-left.png">
-                    </div>
-                    <div class="content-div">
-                      <div class="title">{{ item.tree_name }}</div>
-                      <div class="remark">{{ item.description }}</div>
-                    </div>
-                  </div>
-                  <template slot="actions">
-                    <div @click.prevent>
-                      <div class="tagList">
-                        <a-tag>3C</a-tag>
-                        <a-tag>故障重启</a-tag>
-                        <a-tag>硬件</a-tag>
-                      </div>
-                      <div style="float: right;width: 100px;border-left: 1px solid #ddd">
-                        <a-tooltip title="编辑" style="float: left;width: 50%;text-align: center;line-height: 22px">
-                          <a-icon type="edit" />
-                        </a-tooltip>
-                        <a-dropdown style="float: right;width: 50%">
-                          <a class="ant-dropdown-link">
-                            <a-icon type="ellipsis" />
-                          </a>
-                          <a-menu slot="overlay">
-                            <a-menu-item>
-                              <a href="javascript:;" @click="getdiagtree">导出</a>
-                            </a-menu-item>
-                            <a-menu-item>
-                              <a-popconfirm
-                                title="您确定要删除该故障树吗?"
-                                ok-text="确认"
-                                cancel-text="取消"
-                                @confirm="deletediagtree(item.tree_name)"
-                              >
-                                <a href="javascript:;" >删除</a>
-                              </a-popconfirm>
-                            </a-menu-item>
-                          </a-menu>
-                        </a-dropdown>
-                      </div>
-                    </div>
+              <subject-card
+                :linkTo="'/diagnosis/fault-trees/'+item.tree_name"
+                :itemLabel="item.tree_name"
+                :itemContent="item.description"
+                :tagList="['3C', '故障重启', '硬件']"
+              >
+                <template #logoImg>
+                  <img src="~@/assets/dtree-icon.png">
+                </template>
+                <a-tooltip placement="bottom">
+                  <template slot="title">
+                    编辑
                   </template>
-                </a-card>
-              </router-link>
+                  <a-icon type="edit" />
+                </a-tooltip>
+                <a-tooltip placement="bottom">
+                  <template slot="title">
+                    导出
+                  </template>
+                  <a-icon type="download" />
+                </a-tooltip>
+                <a-popconfirm
+                  title="您确定要删除该故障树吗?"
+                  ok-text="确认"
+                  cancel-text="取消"
+                  @confirm="deletediagtree(item.tree_name)"
+                >
+                  <a-tooltip placement="bottom">
+                    <template slot="title">
+                      删除
+                    </template>
+                    <a-icon type="delete" />
+                  </a-tooltip>
+                </a-popconfirm>
+              </subject-card>
             </template>
           </a-list-item>
         </a-list>
@@ -146,6 +152,7 @@
   import DrawerView from '@/views/utils/DrawerView'
   import AddFaultTree from '@/views/diagnosis/components/AddFaultTree'
   import AddFaultDiagnosis from '@/views/diagnosis/components/AddFaultDiagnosis'
+  import SubjectCard from '@/components/SubjectCard'
   import { dateFormat } from '@/views/utils/Utils'
 
   import defaultSettings from '@/config/defaultSettings'
@@ -173,6 +180,7 @@
     {
       key: 'operation',
       title: '操作',
+      width: '90px',
       scopedSlots: { customRender: 'action' }
     }
   ]
@@ -200,25 +208,27 @@
       customRender: (text, item) => `${dateFormat('YYYY-mm-dd HH:MM:SS', item.start * 1000)} - ${dateFormat('YYYY-mm-dd HH:MM:SS', item.end * 1000)}`
     }
   ]
+  const defaultPagination = {
+    current: 1,
+    pageSize: 10,
+    total: 0,
+    showSizeChanger: true,
+    showQuickJumper: true
+  }
   export default {
     name: 'FaultDiagnosis',
     components: {
       MyPageHeaderWrapper,
       DrawerView,
       AddFaultTree,
-      AddFaultDiagnosis
+      AddFaultDiagnosis,
+      SubjectCard
     },
     data () {
       return {
         rowKey: 'task_id',
         taskList: [],
-        pagination: {
-          current: 1,
-          pageSize: 5,
-          total: 0,
-          showSizeChanger: true,
-          showQuickJumper: true
-        },
+        pagination: defaultPagination,
         filters: {},
         sorter: {},
         columns,
@@ -242,7 +252,8 @@
           finished: 0,
           total: 0
         },
-        hostInfoLoading: false
+        hostInfoLoading: false,
+        expandedStatus: [true, true]
       }
     },
     computed: {
@@ -284,6 +295,7 @@
         }, 1500)
       },
       addFaultDiagnosisSuccess () {
+        this.pagination = defaultPagination
         this.refreshFaultDiagnosisList()
       },
       handleTableChange (pagination, filters, sorter) {
@@ -313,6 +325,8 @@
         const that = this
         const pagination = that.pagination || {}
         that.tableIsLoading = true
+        tableInfo.sort = 'time'
+        tableInfo.direction = 'desc'
         getTaskList(tableInfo).then(function (data) {
           that.taskList = data.task_infos
           var taskMap = {}
@@ -504,54 +518,22 @@
         }).catch(function (err) {
           _this.$message.error(err.response.data.msg)
         }).finally(function () { _this.reportListLoading = false })
+      },
+      // 控制面板展开
+      setExpandStatus (idx, isExpaned) {
+        const newStatuses = Object.assign({}, this.expandedStatus)
+        newStatuses[idx] = isExpaned
+        this.expandedStatus = newStatuses
       }
     }
   }
 </script>
 
 <style lang="less" scoped>
-  .avatar-div {
-    float: left;
-    width: 80px;
-  }
-  .avatar-img {
-    height: 60px;
-    width: 80px
-  }
-  .content-div {
-    float: left;
-    margin-left: 10px;
-    width: calc(100% - 90px);
-  }
-  .title {
-    font-weight: 600;
-  }
-  .tagList{
-    float: left;
-    text-align: left;
-    padding-left: 10px;
-    text-overflow: -o-ellipsis-lastline;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    display: -webkit-box;
-    -webkit-line-clamp: 1;
-    line-clamp: 1;
-    -webkit-box-orient: vertical;
-  }
-  .tagList span{cursor: pointer}
-  .remark {
-    text-overflow: -o-ellipsis-lastline;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    display: -webkit-box;
-    -webkit-line-clamp: 2;
-    line-clamp: 2;
-    -webkit-box-orient: vertical;
-  }
   .new-btn {
     background-color: #fff;
     border-radius: 2px;
     width: 100%;
-    height: 157px;
+    height: 175px;
   }
 </style>

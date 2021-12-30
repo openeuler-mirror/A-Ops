@@ -2,7 +2,7 @@
   <my-page-header-wrapper>
     <a-card :bordered="false" class="aops-theme">
       <div style="height: 110px;position: relative;">
-        <img class="avatar-img" src="~@/assets/vertical-left.png">
+        <img class="avatar-img" src="~@/assets/dtree-icon.png">
         <div class="content-div">
           <div class="title">
             <span style="padding-right: 5px">{{ faultTree.tree_name }}</span>
@@ -11,30 +11,38 @@
             <a-tag>配置</a-tag>
           </div>
           <div class="remark">描述：{{ faultTree.description }}</div>
-          <div class="btn-box">
-            <a-popconfirm
-              title="您确定要删除该故障树吗?"
-              ok-text="确认"
-              cancel-text="取消"
-              @confirm="deletediagtree(faultTree.tree_name)"
-            >
-              <a href="javascript:;" >删除</a>
-            </a-popconfirm>
-          </div>
         </div>
-        <drawer-view title="新建故障诊断">
-          <template slot="click">
-            <a-button type="primary" style="position: absolute;right: 0;top: -8px">
-              故障诊断<a-icon type="plus"/>
-            </a-button>
-          </template>
-          <template slot="drawerView">
-            <add-fault-diagnosis
-              :saveSuccess="addFaultDiagnosisSuccess"
-              :faultTreeList="treeDataAll"
-            />
-          </template>
-        </drawer-view>
+        <div class="conotrl-box">
+          <a-row type="flex" align="middle">
+            <a-col>
+              <div class="btn-box">
+                <a-popconfirm
+                  title="您确定要删除该故障树吗?"
+                  ok-text="确认"
+                  cancel-text="取消"
+                  @confirm="deletediagtree(faultTree.tree_name)"
+                >
+                  <a href="javascript:;" >删除</a>
+                </a-popconfirm>
+              </div>
+            </a-col>
+            <a-col>
+              <drawer-view title="新建故障诊断">
+                <template slot="click">
+                  <a-button type="primary">
+                    故障诊断<a-icon type="plus"/>
+                  </a-button>
+                </template>
+                <template slot="drawerView">
+                  <add-fault-diagnosis
+                    :saveSuccess="addFaultDiagnosisSuccess"
+                    :faultTreeList="treeDataAll"
+                  />
+                </template>
+              </drawer-view>
+            </a-col>
+          </a-row>
+        </div>
       </div>
       <a-tabs default-active-key="1" style="min-height: 350px">
         <a-tab-pane key="1" tab="树图">
@@ -132,8 +140,8 @@ export default {
 </script>
 <style lang="less" scoped>
 .avatar-img {
-  width: 110px;
-  height: 110px;
+  width: 84px;
+  height: 84px;
   float: left;
   border-radius: 5px;
   margin-right: 10px;
@@ -163,6 +171,11 @@ export default {
   -webkit-line-clamp: 3;
   line-clamp: 3;
   -webkit-box-orient: vertical;
+}
+.conotrl-box {
+  position: absolute;
+  right:0;
+  top: 0;
 }
 .btn-box a{
   margin-right: 20px;

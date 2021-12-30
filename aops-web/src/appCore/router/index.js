@@ -14,5 +14,8 @@ Vue.use(Router)
 export default new Router({
   mode: 'history',
   // set inital routers(login、register、 etc...)
-  routes: constantRouterMap
+  routes: constantRouterMap,
+  scrollBehavior () {
+    return { x: 0, y: 0 }
+  }
 })

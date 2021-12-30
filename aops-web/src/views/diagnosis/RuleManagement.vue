@@ -1,89 +1,15 @@
 
 <template>
   <my-page-header-wrapper>
-    <a-row class="topBox">
-      <a-col span="24" :xl="5" class="topItem">
-        <div style="height: calc(100% - 35px);padding: 15px 10px;">
-          <div style="height: 100%;width:calc(40% - 5px);margin-right: 5px; float: left;position:relative;overflow: hidden">
-            <a-avatar :size="64" icon="database" style="background: #1890ee;position: absolute;top: 50%;left: 50%;margin-top: -32px;margin-left: -32px"/>
-          </div>
-          <div style="height: 100%;width:60%;float: left;position:relative;">
-            <div class="content">
-              <div style="color: #999;">异常检测规则数量</div>
-              <div style="color: #333;font-size: 32px;line-height: 1em">
-                <a-spin v-if="countIsLoading" />
-                <span v-else>{{ ruleCount.toString().replace(/(\d)(?=(?:\d{3})+$)/g, '$1,') }}</span>
-              </div>
-            </div>
-          </div>
-        </div>
-        <div style="width: 100%;height: 34px;line-height: 32px;color: #fff;padding-left:2px">
-          <drawer-view title="新建异常检测规则">
-            <template slot="click">
-              <div class="newRule" style="float: left">
-                <a-icon type="file-add" style="margin-right: 5px"/>新建规则
-              </div>
-            </template>
-            <template slot="drawerView">
-              <add-abnormal-check-rule-drawer :addSuccess="handleAddSuccess"></add-abnormal-check-rule-drawer>
-            </template>
-          </drawer-view>
-        </div>
-      </a-col>
-      <a-col span="24" :xl="19" class="topItem">
-        <a-row style="width: calc(100% - 45px);height: 100%;padding:10px 5px 5px;margin-left: 10px;background: #fff; float: left">
-          <a-col style="height: 100%;" :span="8">
-            <div style="width: 100%;height: 40%;">
-              <div style="padding-left: 20px;font-size: 18px;line-height: 40px;height: calc(100% - 30px);color: #000;font-weight: bold">异常检测结果统计</div>
-              <a-row style="color: #999;line-height: 30px">
-                <a-col :span="4" style="text-align: center" class="oneRow">排名</a-col>
-                <a-col :span="14" class="oneRow">主机名IP地址</a-col>
-                <a-col :span="6" class="oneRow">异常数</a-col>
-              </a-row>
-            </div>
-            <a-row class="myRow" v-for="(item,index) in resultCountList.slice(0, 2)" :key="index">
-              <a-col :span="4"><a-tag style="background: #1890ee;color: #fff;border-color:#1890ee">{{ index+1 }}</a-tag></a-col>
-              <a-col :span="14">
-                <p style="margin: 0">{{ item.hostName }}</p>
-                <p style="margin: 0">{{ item.ip }}</p>
-              </a-col>
-              <a-col :span="6" style="color: #ff58ab" class="oneRow">{{ item.count }}项</a-col>
-            </a-row>
-          </a-col>
-          <a-col style="float: left;height: 100%;" :span="8">
-            <a-row class="myRow" v-for="(item,index) in resultCountList.slice(2, 6)" :key="index">
-              <a-col :span="4"><a-tag>{{ index+3 }}</a-tag></a-col>
-              <a-col :span="14">
-                <p style="margin: 0">{{ item.hostName }}</p>
-                <p style="margin: 0">{{ item.ip }}</p>
-              </a-col>
-              <a-col :span="6" class="oneRow">{{ item.count }}项</a-col>
-            </a-row>
-          </a-col>
-          <a-col style="float: left;height: 100%;" :span="8">
-            <a-row class="myRow" v-for="(item,index) in resultCountList.slice(6, 9)" :key="index">
-              <a-col :span="4"><a-tag>{{ index+7 }}</a-tag></a-col>
-              <a-col :span="14">
-                <p style="margin: 0">{{ item.hostName }}</p>
-                <p style="margin: 0">{{ item.ip }}</p>
-              </a-col>
-              <a-col :span="6" class="oneRow">{{ item.count }}项</a-col>
-            </a-row>
-          </a-col>
-        </a-row>
-        <drawer-view title="异常检测结果统计">
-          <template slot="click">
-            <div class="showAllResult">查看全部结果</div>
-          </template>
-          <template slot="drawerView">
-            <get-check-result-drawer></get-check-result-drawer>
-          </template>
-        </drawer-view>
-      </a-col>
-    </a-row>
-    <a-card style="width: 100%;float: left;margin-top: 10px">
-      <div style="font-weight: bold;font-size: 18px;margin-top: -12px;margin-bottom: 10px">异常检测规则列表</div>
-      <a-row type="flex" :gutter="16">
+    <a-card :bordered="false" class="aops-theme">
+      <h3>
+        异常检测规则列表
+        <a-spin v-if="countIsLoading" size="small" />
+        <span v-else style="font-size: 14px">
+          {{ `共${ruleCount.toString().replace(/(\d)(?=(?:\d{3})+$)/g, '$1,')}项` }}
+        </span>
+      </h3>
+      <a-row class="aops-app-table-control-row" type="flex" :gutter="6" justify="space-between">
         <a-col>
           <a-alert type="info" show-icon>
             <div slot="message">
@@ -91,6 +17,18 @@
               <a v-if="selectedRowKeys.length > 0" @click="handleDeleteBash()">批量删除</a>
             </div>
           </a-alert>
+        </a-col>
+        <a-col>
+          <drawer-view title="新建异常检测规则">
+            <template slot="click">
+              <a-button type="primary">
+                新建规则
+              </a-button>
+            </template>
+            <template slot="drawerView">
+              <add-abnormal-check-rule-drawer :addSuccess="handleAddSuccess"></add-abnormal-check-rule-drawer>
+            </template>
+          </drawer-view>
         </a-col>
       </a-row>
       <a-table
@@ -101,9 +39,13 @@
         :row-selection="rowSelection"
         @change="handleTableChange"
         :loading="tableIsLoading"
-        :expandIconColumnIndex="1">
+        :expandIconAsCell="false"
+        :expandIconColumnIndex="2">
         <span slot="index" slot-scope="text, record, index">
           {{ index + firstIndex }}
+        </span>
+        <span slot="desc" slot-scope="text">
+          <cut-text :text="text" :length="8"/>
         </span>
         <span slot="action" slot-scope="rule">
           <a href="#" @click="handleDelete([rule.check_item])">删除</a>
@@ -122,6 +64,8 @@ import DrawerView from '@/views/utils/DrawerView'
 import GetCheckResultDrawer from '@/views/diagnosis/components/GetCheckResultDrawer'
 import AddAbnormalCheckRuleDrawer from '@/views/diagnosis/components/AddAbnormalCheckRuleDrawer'
 import CheckResultExpanded from '@/views/diagnosis/components/CheckResultExpanded'
+import CutText from '@/components/CutText'
+
 import { getRule, getResultCountTopTen, getRuleCount, deleteRule } from '@/api/check'
 
 export default {
@@ -131,7 +75,8 @@ export default {
     DrawerView,
     AddAbnormalCheckRuleDrawer,
     GetCheckResultDrawer,
-    CheckResultExpanded
+    CheckResultExpanded,
+    CutText
   },
   mounted: function () {
     this.getRuleCount()
@@ -283,10 +228,12 @@ const columns = [
   {
     dataIndex: 'description',
     key: 'description',
-    title: '检测结果描述'
+    title: '检测结果描述',
+    scopedSlots: { customRender: 'desc' }
   },
   {
     title: '操作',
+    width: 70,
     scopedSlots: { customRender: 'action' }
   }
 ]
@@ -318,4 +265,11 @@ const columns = [
 .myRow>.ant-col:nth-child(1) .ant-tag{border-radius: 50%;padding: 0 1px 0 0;width: 24px;height: 24px;line-height: 22px;text-align: center;position: absolute;top: 50%;left: 50%;margin-top: -12px;margin-left: -12px}
 .myRow>.ant-col:nth-child(2){line-height: 1.2em!important;}
 .myRow>.ant-col:nth-child(3){line-height: 30px}
+
+/deep/ td:nth-child(3) {
+  white-space: nowrap;
+}
+/deep/ td:nth-child(5) {
+  white-space: nowrap;
+}
 </style>

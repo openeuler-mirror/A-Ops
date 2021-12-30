@@ -21,14 +21,39 @@ measurements:
                 name: "pid",
             },
             {
-                description: "status",
-                type: "gauge",
-                name: "status",
+                description: "memory.usage_in_bytes",
+                type: "label",
+                name: "memory.usage_in_bytes",
             },
             {
-                description: "cgroup todo",
+                description: "memory.limit_in_bytes",
                 type: "label",
-                name: "cgroup",
+                name: "memory.limit_in_byte",
+            },
+            {
+                description: "memory.stat.cache",
+                type: "label",
+                name: "memory.stat.cache",
+            },
+            {
+                description: "cpuacct.usage",
+                type: "label",
+                name: "cpuacct.usage",
+            },
+            {
+                description: "pids.current",
+                type: "label",
+                name: "pids.current",
+            },
+            {
+                description: "pids.limit",
+                type: "label",
+                name: "pids.limit",
+            },
+            {
+                description: "status",
+                type: "label",
+                name: "status",
             }
         )
     }

@@ -1,58 +1,74 @@
 import ast
 from spider.util.conf import anomaly_detection_conf
-from anomaly_detection.util import ATTR_ANOMALY_TYPE
+from anomaly_detection.util import AttrAnomalyType, get_instant_data
 
 
-def threshold_based_anomaly_detection(object_base_info, detection_data):
+def threshold_based_anomaly_detection(entity_base_info, detection_data):
     """
-    threshold based anomaly detection
-    :param:
-        object_base_info:
-            dict, basic information of observation object, example:{"machine_name":"exe", "object_type": "tcp_link", "item_name":"ffmpeg1"}
-        detection_data:
-            dict, data to be detected, example: {'rx_bytes': '123', 'tx_bytes': '123'}
-    :return:
-        dict, [{"anomaly_attr":"", "anomaly_type":""},{"anomaly_attr":"", "anomaly_type":""}...]
+    :param entity_base_info: 
+        example: {"timestamp": timestamp,
+                  "entity_name": EntityName.TCP_LINK,
+                  "label_info": {"server_ip"="", 
+                                 "server_port"="",
+                                 "client_ip"="",
+                                 "process_name"=""}}
+
+    :param detection_data:
+        example: {rx_bytes='3613', tx_bytes='3304039'...}
+    :return: 
+        example: [{'anomaly_attr': 'rx_bytes', 'anomaly_type': 'ABOVE THRESHOLD'},
+                  {'anomaly_attr': 'tx_bytes', 'anomaly_type': 'ABOVE THRESHOLD'}]
     """
     result = []
 
-    if not object_base_info or not detection_data:
+    if not entity_base_info or not detection_data:
         return result
 
-    machine_name = object_base_info.get("machine_name")
-    item_name = object_base_info.get("item_name")
-    object_type = object_base_info.get("object_type")
-    if not machine_name or not item_name or not object_type:
+    timestamp = entity_base_info.get("timestamp")
+    entity_name = entity_base_info.get("entity_name")
+    label_info = entity_base_info.get("label_info")
+    if not entity_name or not timestamp:
         return result
 
-    # Get model parameters (threshold information)
-    this_threshold_info = anomaly_detection_conf.get(object_type, {}).get("detection_attributes")
+    this_threshold_info = anomaly_detection_conf.get(entity_name, {}).get("detection_attributes")
     if not this_threshold_info:
         return result
 
+    # detection
     for attr in this_threshold_info:
-        attr_val = ast.literal_eval(str(detection_data.get(attr)))
-        if not attr_val:
+        _attr_val = detection_data.get(attr)
+        if _attr_val == "":
+            continue
+        attr_val = ast.literal_eval(_attr_val)
+
+        entity_info = {"entity_name": entity_name, "metric_name": attr}
+        _timestamp = timestamp - this_threshold_info.get(attr).get("detection_interval", 5)
+        _old_attr_val = get_instant_data(entity_info, label_info, _timestamp)
+        if _old_attr_val == "":
+            continue
+        old_attr_val = ast.literal_eval(_old_attr_val)
+        attr_increment = attr_val - old_attr_val
+
+        threshold = this_threshold_info.get(attr).get("threshold")
+        if threshold is None:
             continue
 
-        _threshold = ast.literal_eval(str(this_threshold_info.get(attr).get("threshold")))
-        _model = this_threshold_info.get(attr).get("method")
-        if not _threshold or not _model:
+        model = this_threshold_info.get(attr).get("method")
+        if model is None:
             continue
 
-        # detection
-        if _model == ">":
-            if attr_val > _threshold:
-                result.append({"anomaly_attr": attr, "anomaly_type": ATTR_ANOMALY_TYPE.ABOVE_THRESHOLD})
-        elif _model == ">=":
-            if attr_val >= _threshold:
-                result.append({"anomaly_attr": attr, "anomaly_type": ATTR_ANOMALY_TYPE.ABOVE_THRESHOLD})
-        elif _model == "<":
-            if attr_val > _threshold:
-                result.append({"anomaly_attr": attr, "anomaly_type": ATTR_ANOMALY_TYPE.BELOW_THRESHOLD})
-        elif _model == "<=":
-            if attr_val >= _threshold:
-                result.append({"anomaly_attr": attr, "anomaly_type": ATTR_ANOMALY_TYPE.BELOW_THRESHOLD})
+        if model == ">":
+            if attr_increment > threshold:
+                result.append({"anomaly_attr": attr, "anomaly_type": AttrAnomalyType.ABOVE_THRESHOLD})
+        elif model == ">=":
+            if attr_increment >= threshold:
+                result.append({"anomaly_attr": attr, "anomaly_type": AttrAnomalyType.ABOVE_THRESHOLD})
+        elif model == "<":
+            if attr_increment > threshold:
+                result.append({"anomaly_attr": attr, "anomaly_type": AttrAnomalyType.BELOW_THRESHOLD})
+        elif model == "<=":
+            if attr_increment >= threshold:
+                result.append({"anomaly_attr": attr, "anomaly_type": AttrAnomalyType.BELOW_THRESHOLD})
         else:
             continue
 
