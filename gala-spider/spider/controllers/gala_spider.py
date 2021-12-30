@@ -1,122 +1,72 @@
-from dataclasses import asdict
 from typing import Dict, List
 
-from spider.models.base_response import BaseResponse  # noqa: E501
-from spider.models.entities_response import EntitiesResponse  # noqa: E501
-from spider.models.entity import Entity
-from spider.models.dependenceitem import Dependenceitem
-from spider.models.call import Call
-from spider.models.runon import Runon
-from spider.models.attr import Attr
-from spider.models.anomaly_item import AnomalyItem
-from spider.models.anomaly import Anomaly
-from spider.data_process.data_to_entity import node_entity_process
-from spider.data_process.data_to_entity import clear_tmp
-from anomaly_detection.anomaly_detection import detection
-from anomaly_detection.util import ANOMALY_STATUS
-from spider.data_process.models import HostNode, ProcessNode
-from spider.data_process.models import LbLinkInfo, LbLinkKey
-from spider.data_process.models import TcpLinkKey, TcpLinkInfo
+from spider.models import BaseResponse, EntitiesResponse, Entity, Dependenceitem, Attr
+from spider.util import conf
+from spider.entity_mgt import ObserveEntity, Relation
+from spider.entity_mgt import DirectRelationCreator, IndirectRelationCreator
+from spider.data_process.prometheus_processor import g_prometheus_processor
 
 
-def get_tcp_link_entities(link_infos: Dict[TcpLinkKey, TcpLinkInfo], anomaly_infos) -> List[Entity]:
-    entities = []
-    for link_key, link_info in link_infos.items():
-        if link_key.c_process is None or link_info.s_process is None:
-            continue
+def _get_observe_entities(timestamp=None) -> List[ObserveEntity]:
+    entities: List[ObserveEntity] = []
+    db_agent = conf.db_agent
 
-        edge_attrs = []
-        if link_info.link_metric:
-            for m_key, m_val in asdict(link_info.link_metric).items():
-                edge_attrs.append(Attr(key=m_key, value=m_val, vtype="string"))
-
-        _anomaly_items = []
-        this_anomaly_infos = anomaly_infos.get(link_key, {}).get("anomaly_infos")
-        if this_anomaly_infos:
-            for i in this_anomaly_infos:
-                _anomaly_items.append(AnomalyItem(anomaly_attr = i.get("anomaly_attr"),
-                                                  anomaly_type = i.get("anomaly_type")))
-        _anomaly_status = ANOMALY_STATUS.ANOMALY_YES if len(_anomaly_items) > 0 else ANOMALY_STATUS.ANOMALY_NO
-        _anomaly_status = ANOMALY_STATUS.ANOMALY_LACKING if not link_info.status else _anomaly_status
-
-        left_call = Call(type="PROCESS", id=link_info.c_node_id())
-        right_call = Call(type="PROCESS", id=link_info.s_node_id())
-
-        entity = Entity(entityid=link_info.link_id(),
-                        type=link_info.link_type.upper(),
-                        name=link_info.link_id(),
-                        dependeditems=[Dependenceitem(calls=[left_call])],
-                        dependingitems=[Dependenceitem(calls=[right_call])],
-                        attrs=edge_attrs,
-                        anomaly=Anomaly(status=_anomaly_status, anomalyitem=_anomaly_items))
-        entities.append(entity)
+    if db_agent == "prometheus":
+        entities = g_prometheus_processor.get_observe_entities(timestamp)
+    elif db_agent == "kafka":
+        # TODO: get entities from kafka
+        pass
+    else:
+        print("Unknown data source:{}, please check!".format(db_agent))
 
     return entities
 
 
-def get_lb_link_entities(lb_infos: Dict[LbLinkKey, LbLinkInfo]) -> List[Entity]:
-    entities = []
-    for lb_key, lb_info in lb_infos.items():
-        if not lb_info.link_id():
-            continue
-        lb_attrs = []
-        left_call = Call(type="PROCESS", id=lb_info.c_node_id())
-        right_call = Call(type="PROCESS", id=lb_info.s_node_id())
-        run_on = Runon(type="PROCESS", id=lb_info.lb_node_id())
-        lb_attrs.append(Attr(key='example', value='0.1', vtype='float'))
-        entity = Entity(entityid=lb_info.link_id(),
-                        type=lb_info.link_type.upper(),
-                        name=lb_info.link_id(),
-                        dependeditems=[Dependenceitem(calls=[left_call])],
-                        dependingitems=[Dependenceitem(calls=[right_call], run_ons=[run_on])])
-        entities.append(entity)
+def _get_entity_relations(observe_entities: List[ObserveEntity]) -> List[Relation]:
+    res: List[Relation] = []
 
-    return entities
+    direct_relations = DirectRelationCreator.create_relations(observe_entities)
+    res.extend(direct_relations)
+    indirect_relations = IndirectRelationCreator.create_relations(observe_entities, direct_relations)
+    res.extend(indirect_relations)
+
+    return res
 
 
-def get_process_node_entities(process_infos: Dict[str, ProcessNode]) -> List[Entity]:
-    entities = []
-    for proc_key, proc_info in process_infos.items():
-        left_calls = []
-        right_calls = []
-        lb_runons = []
-        node_attrs = []
-        for l_edge in proc_info.l_edges:
-            left_calls.append(Call(type=l_edge[1], id=l_edge[0]))
-        for r_edge in proc_info.r_edges:
-            right_calls.append(Call(type=r_edge[1], id=r_edge[0]))
-        for lb_edge in proc_info.lb_edges:
-            lb_runons.append(Runon(type=lb_edge[1], id=lb_edge[0]))
-        on_runon = Runon(type="VM", id=proc_info.host.node_id())
-        node_attrs.append(Attr(key='example', value="0xabcd", vtype="int"))
-        entity = Entity(entityid=proc_key,
-                        type="PROCESS",
-                        name=proc_key,
-                        dependeditems=[Dependenceitem(calls=left_calls, run_ons=lb_runons)],
-                        dependingitems=[Dependenceitem(calls=right_calls, run_ons=[on_runon])],
-                        attrs=node_attrs)
-        entities.append(entity)
+def _get_response_entities(observe_entities: List[ObserveEntity]) -> Dict[str, Entity]:
+    res: Dict[str, Entity] = {}
 
-    return entities
+    for observe_entity in observe_entities:
+        attrs = []
+        for attr_key, attr_val in observe_entity.attrs.items():
+            attrs.append(Attr(attr_key, attr_val, 'string'))
+
+        entity = Entity(entityid=observe_entity.id,
+                        type=observe_entity.type,
+                        name=observe_entity.name,
+                        level=observe_entity.level,
+                        dependingitems=[],
+                        dependeditems=[],
+                        attrs=attrs)
+        res.setdefault(observe_entity.id, entity)
+
+    return res
 
 
-def get_vm_node_entities(vm_infos: Dict[str, HostNode]) -> List[Entity]:
-    entities = []
-    for vm_key, vm_info in vm_infos.items():
-        procs = []
-        for proc in vm_info.processes:
-            procs.append(Runon(type="PROCESS", id=proc))
-        entity = Entity(entityid=vm_key,
-                        type="VM",
-                        name=vm_key,
-                        dependeditems=[Dependenceitem(run_ons=procs)],
-                        dependingitems=[Dependenceitem()])
-        entities.append(entity)
+def _append_dependence_info(resp_entity_map: Dict[str, Entity], relations: List[Relation]):
+    for relation in relations:
+        depending_item = Dependenceitem(relation_id=relation.type, layer=relation.layer,
+                                        target={'type': relation.obj_entity.type, 'entityid': relation.obj_entity.id})
+        if relation.sub_entity.id in resp_entity_map:
+            resp_entity_map.get(relation.sub_entity.id).dependingitems.append(depending_item)
 
-    return entities
+        depended_item = Dependenceitem(relation_id=relation.type, layer=relation.layer,
+                                       target={'type': relation.sub_entity.type, 'entityid': relation.sub_entity.id})
+        if relation.obj_entity.id in resp_entity_map:
+            resp_entity_map.get(relation.obj_entity.id).dependeditems.append(depended_item)
 
 
-def get_observed_entity_list():  # noqa: E501
+def get_observed_entity_list(timestamp=None):  # noqa: E501
     """get observed entity list
 
     get observed entity list # noqa: E501
@@ -126,44 +76,39 @@ def get_observed_entity_list():  # noqa: E501
 
     :rtype: EntitiesResponse
     """
-    entities = []
-    # obtain tcp_link entities
-    _edges_table, proc_nodes_table, lb_table, vm_table = node_entity_process()
-    if not _edges_table:
-        clear_tmp()
-        return entities, 500
+    # obtain observe entities
+    observe_entities = _get_observe_entities(timestamp)
+    relations = _get_entity_relations(observe_entities)
 
-    object_item_data = {"tcp_link": _edges_table, "nodes": proc_nodes_table, "lb": lb_table, "vm": vm_table}
-    object_attr_data = {"tcp_link": _edges_table}
-    _object_item_data, _object_attr_data = detection(object_item_data, object_attr_data)
+    # TODO: anomaly detect
 
-    edges_table = _object_item_data.get("tcp_link")
-    anomaly_table = _object_attr_data.get("tcp_link")
+    # transfer observe entities to response format
+    resp_entity_map = _get_response_entities(observe_entities)
+    _append_dependence_info(resp_entity_map, relations)
 
-    tcp_link_entities = get_tcp_link_entities(edges_table, anomaly_table)
-    entities.extend(tcp_link_entities)
+    # TODO: add anomaly info
 
-    lb_link_entities = get_lb_link_entities(lb_table)
-    entities.extend(lb_link_entities)
-
-    process_node_entities = get_process_node_entities(proc_nodes_table)
-    entities.extend(process_node_entities)
-
-    vm_node_entities = get_vm_node_entities(vm_table)
-    entities.extend(vm_node_entities)
-
-    if len(entities) == 0:
+    if len(resp_entity_map) == 0:
         code = 500
         msg = "Empty"
+        timestamp = None
     else:
         code = 200
         msg = "Successful"
+        timestamp = observe_entities[0].timestamp
+
+    entity_ids = []
+    resp_entities = []
+    for k, v in resp_entity_map.items():
+        entity_ids.append(k)
+        resp_entities.append(v)
 
     entities_res = EntitiesResponse(code=code,
                                     msg=msg,
-                                    timestamp=12345678,
-                                    entities=entities)
-    clear_tmp()
+                                    timestamp=timestamp,
+                                    entityids=entity_ids,
+                                    entities=resp_entities)
+
     return entities_res, 200
 
 
@@ -176,10 +121,4 @@ def get_topo_graph_status():  # noqa: E501
     :rtype: BaseResponse
     """
 
-    clear_tmp()
-    return 'clear tmp files!'
-
-
-if __name__ == '__main__':
-    res = get_observed_entity_list()
-    print(res)
+    return ''
