@@ -1,115 +1,22 @@
-# SPDX-License-Identifier: (LGPL-2.1 OR BSD-2-Clause)
-OUTPUT := .output
-CLANG ?= clang
-LLVM_STRIP ?= llvm-strip
-BPFTOOL ?= $(abspath ../tools/bpftool)
-LIBBPF_SRC := $(abspath ../libbpf/src)
-LIBBPF_OBJ := $(abspath $(OUTPUT)/libbpf.a)
-#INCLUDES := -I$(OUTPUT)
-UTIL_DIR ?= $(abspath ./lib)
-INCLUDES := -I$(OUTPUT) -I../libbpf/include/uapi \
-	    -Iinclude
+include mk/var.mk
 
-UTIL_SRC = $(wildcard $(UTIL_DIR)/*.c)
-UTIL_OBJ=$(patsubst %.c,%.o,$(UTIL_SRC))
-$(info $(UTIL_SRC))
-CFLAGS := -g -Wall
-INSTALL_DIR=/usr/bin/extends/ebpf.probe
+APPS = $(filter ./%/, $(dir $(shell find . -name Makefile)))
 
-ARCH = $(shell uname -m)
-ifeq ($(ARCH), x86_64)
-	ARCH = x86
-else ifeq ($(ARCH), aarch64)
-	ARCH = arm64
-endif
-
-# add probe
-APPS := tcpprobe/tcpprobe \
-	killprobe/killprobe \
-	lvsprobe/trace_lvs \
-	haproxyprobe/trace_haproxy \
-	dnsmasqprobe/trace_dnsmasq \
-	nginxprobe/nginx_probe \
-	taskprobe/taskprobe \
-	endpointprobe/endpoint \
-	containerdprobe/containerd_probe
-
-$(info === org apps: $(APPS) EBPF_TAILOR: ${EBPF_PROBES})
-ifneq ($(EBPF_PROBES),)
-    APPS := $(shell  echo ${APPS} | sed 's/ /\n/g' | grep -Ev "${EBPF_PROBES}" | sed ':a;N;s/\n/ /g;ba')
-endif
-$(info === apps after tailor: $(APPS))
-
-APPS_DIR = $(dir $(APPS))
-OUTPUT_APPS_DIR = $(addprefix $(OUTPUT)/, $(APPS_DIR))
-APPS_INC = $(addprefix -I./, $(OUTPUT_APPS_DIR))
-
-INCLUDES += $(APPS_INC)
-
-ifeq ($(V),1)
-	Q =
-	msg =
-else
-	Q = @
-	msg = @printf '  %-8s %s%s\n'					\
-		      "$(1)"						\
-		      "$(patsubst $(abspath $(OUTPUT))/%,%,$(2))"	\
-		      "$(if $(3), $(3))";
-	MAKEFLAGS += --no-print-directory
-endif
-
-.PHONY: all
-all: $(APPS)
-
-.PHONY: clean
-clean:
-	$(call msg,CLEAN)
-	$(Q)rm -rf $(OUTPUT) $(APPS) $(UTIL_OBJ)
-
-OUT_DIR = $(OUTPUT) $(OUTPUT_APPS_DIR) $(OUTPUT)/libbpf
-$(info $(OUT_DIR))
-$(OUT_DIR):
-	$(Q)mkdir -p $(OUT_DIR)
-
-# Build final application
-$(APPS): %: $(OUTPUT)/%.o $(LIBBPF_OBJ) $(UTIL_SRC) | $(OUTPUT)
-	$(call msg,BINARY,$@)
-	$(Q)$(CC) $(CFLAGS) $(INCLUDES) $^ -lelf -lz -o $@
-
-$(patsubst %,$(OUTPUT)/%.o,$(APPS)): %.o: %.skel.h
-
-# Build user-space code
-$(OUTPUT)/%.o: %.c $(wildcard %.h) | $(OUTPUT)
-	$(call msg,CC,$@)
-	$(Q)$(CC) $(CFLAGS) $(INCLUDES) -c $(filter %.c,$^) -o $@
-
-# Generate BPF skeletons
-$(OUTPUT)/%.skel.h: $(OUTPUT)/%.bpf.o | $(OUTPUT)
-	$(call msg,GEN-SKEL,$@)
-	$(Q)$(BPFTOOL) gen skeleton $< > $@
-
-# Build BPF code
-$(OUTPUT)/%.bpf.o: %.bpf.c $(LIBBPF_OBJ) | $(OUTPUT)
-	$(call msg,BPF,$@)
-	$(Q)$(CLANG) -g -O2 -target bpf -D__TARGET_ARCH_$(ARCH)		      \
-		     $(INCLUDES) -c $(filter %.c,$^) -o $@
-	$(Q)$(LLVM_STRIP) -g $@
-
+.PHONY: all clean install
+all:  bpf apps
+bpf: $(LIBBPF_OBJ)
 # Build libbpf
-$(LIBBPF_OBJ): $(wildcard $(LIBBPF_SRC)/*.[ch] $(LIBBPF_SRC)/Makefile) | $(OUTPUT)/libbpf
-	$(call msg,LIB,$@)
-	$(Q)$(MAKE) -C $(LIBBPF_SRC) BUILD_STATIC_ONLY=1		      \
-		    OBJDIR=$(dir $@)/libbpf DESTDIR=$(dir $@)		      \
-		    INCLUDEDIR= LIBDIR= UAPIDIR=			      \
-		    install
-# delete failed targets
-.DELETE_ON_ERROR:
+$(LIBBPF_OBJ): $(wildcard $(LIBBPF_SRC)/*.[ch] $(LIBBPF_SRC)/Makefile)
+	$(Q)$(MAKE) -C $(LIBBPF_SRC) BUILD_STATIC_ONLY=1                      \
+                    OBJDIR=$(dir $@)/libbpf DESTDIR=$(dir $@)                 \
+                    INCLUDEDIR= LIBDIR= UAPIDIR=                              \
+                    install
+apps:
+	$(foreach app, $(APPS), make -s -C $(app);)
 
-# keep intermediate (.skel.h, .bpf.o, etc) targets
-.SECONDARY:
+clean:
+	rm -rf $(LIBBPF_DIR)
+	$(foreach app, $(APPS), make -s clean -C $(app);)
 
-$(info $(APPS) $(INSTALL_DIR))
-.PHONY: install
 install:
-	mkdir -p $(INSTALL_DIR)
-	cp $(APPS) $(INSTALL_DIR)
+	$(foreach app, $(APPS), make -s install -C $(app);)

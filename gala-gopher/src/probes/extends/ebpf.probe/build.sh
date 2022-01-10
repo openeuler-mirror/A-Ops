@@ -113,6 +113,8 @@ fi
 
 if [ "$1" == "-b"  -o  "$1" == "--build" ];
 then
+    checkout_libbpf
+    prepare_dep
     compile_probe
     exit
 fi
