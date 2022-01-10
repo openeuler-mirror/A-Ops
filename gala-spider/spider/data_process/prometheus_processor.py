@@ -1,24 +1,13 @@
-import yaml
 from typing import List, Dict
 import time
 
+from spider.util.singleton import Singleton
+from spider.conf.observe_meta import ObserveMetaMgt, ObserveMeta
 from spider.data_process.processor import DataProcessor
 from spider.entity_mgt import ObserveEntity, ObserveEntityCreator
 from spider.collector.data_collector import DataRecord, Label
-from spider.collector.prometheus_collector import g_prometheus_collector
-from spider.conf.observe_meta import g_observe_meta_mgt, ObserveMeta
-
-
-def resolve_observe_conf(conf_path: str) -> dict:
-    data = {}
-
-    try:
-        with open(conf_path, 'r') as f:
-            data = yaml.load(f, Loader=yaml.FullLoader)
-    except IOError as ex:
-        print("Unable to open observe config file: {}".format(ex))
-
-    return data
+from spider.collector.prometheus_collector import PrometheusCollector
+from spider.conf import SpiderConfig
 
 
 def _filter_unique_labels(labels: List[Label], entity_keys: List[str]) -> Dict[str, str]:
@@ -32,16 +21,16 @@ def _filter_unique_labels(labels: List[Label], entity_keys: List[str]) -> Dict[s
     return res
 
 
-def _id_of_keys(keys: Dict[str, str], entity_keys: List[str]) -> tuple:
+def _id_of_keys(keys: Dict[str, str], entity_keys: List[str]) -> (bool, tuple):
     tmp = []
     for key in entity_keys:
         if key not in keys:
-            return None
+            return False, ()
         tmp.append((key, keys.get(key)))
-    return tuple(tmp)
+    return True, tuple(tmp)
 
 
-class PrometheusProcessor(DataProcessor):
+class PrometheusProcessor(DataProcessor, metaclass=Singleton):
 
     def collect_observe_entity(self, observe_meta: ObserveMeta, timestamp: float = None) -> List[DataRecord]:
         """
@@ -67,7 +56,7 @@ class PrometheusProcessor(DataProcessor):
         timestamp = time.time() if timestamp is None else timestamp
         for metric in observe_meta.metrics:
             metric_id = self._get_metric_id(observe_meta.type, metric)
-            data = g_prometheus_collector.get_instant_data(metric_id, timestamp)
+            data = PrometheusCollector(**SpiderConfig().prometheus_conf).get_instant_data(metric_id, timestamp)
             if len(data) > 0:
                 res.extend(data)
         return res
@@ -98,7 +87,7 @@ class PrometheusProcessor(DataProcessor):
         """
         res = {}
         timestamp = time.time() if timestamp is None else timestamp
-        for type_, observe_meta in g_observe_meta_mgt.observe_meta_map.items():
+        for type_, observe_meta in ObserveMetaMgt().observe_meta_map.items():
             data = self.collect_observe_entity(observe_meta, timestamp)
             if len(data) > 0:
                 res[type_] = data
@@ -133,11 +122,11 @@ class PrometheusProcessor(DataProcessor):
 
         for entity_type, entity_records in observe_entities.items():
             label_map = {}
-            entity_keys = g_observe_meta_mgt.get_observe_meta(entity_type).keys
+            entity_keys = ObserveMetaMgt().get_observe_meta(entity_type).keys
             for record in entity_records:
                 _filter_keys = _filter_unique_labels(record.labels, entity_keys)
-                _id = _id_of_keys(_filter_keys, entity_keys)
-                if _id is None:
+                ok, _id = _id_of_keys(_filter_keys, entity_keys)
+                if not ok:
                     print("Data error: required key miss.")
                     continue
                 if _id not in label_map:
@@ -177,7 +166,7 @@ class PrometheusProcessor(DataProcessor):
             if not one_type_entities:
                 continue
 
-            entity_meta = g_observe_meta_mgt.get_observe_meta(entity_type)
+            entity_meta = ObserveMetaMgt().get_observe_meta(entity_type)
             for entity_data in one_type_entities:
                 entity = ObserveEntityCreator.create_observe_entity(entity_type, entity_data, entity_meta)
                 if entity is not None:
@@ -186,11 +175,8 @@ class PrometheusProcessor(DataProcessor):
         return res
 
     def _get_metric_id(self, entity_type: str, metric_name: str):
-        return "{}_{}_{}".format(g_observe_meta_mgt.data_agent, entity_type, metric_name)
+        return "{}_{}_{}".format(ObserveMetaMgt().data_agent, entity_type, metric_name)
 
     def _get_metric_name(self, metric_id: str, entity_name: str) -> str:
-        start = len("{}_{}_".format(g_observe_meta_mgt.data_agent, entity_name))
+        start = len("{}_{}_".format(ObserveMetaMgt().data_agent, entity_name))
         return metric_id[start:len(metric_id)]
-
-
-g_prometheus_processor = PrometheusProcessor()

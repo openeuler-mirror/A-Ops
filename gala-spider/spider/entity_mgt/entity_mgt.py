@@ -1,8 +1,8 @@
 from typing import List, Dict, Tuple
 
-from .models import ObserveEntity, Relation
-from spider.conf.observe_meta import g_observe_meta_mgt, ObserveMeta
+from spider.conf.observe_meta import ObserveMetaMgt, ObserveMeta
 from spider.conf.observe_meta import DirectRelationMeta, RelationSideType, RelationType, RelationLayerType
+from .models import ObserveEntity, Relation
 
 ConnectPair = Tuple[ObserveEntity, ObserveEntity]
 
@@ -18,7 +18,7 @@ class ObserveEntityCreator:
         @return: 返回类型为 entity_type 的一个观测对象实例
         """
         if entity_meta is None:
-            entity_meta = g_observe_meta_mgt.get_observe_meta(entity_type)
+            entity_meta = ObserveMetaMgt().get_observe_meta(entity_type)
             if entity_meta is None:
                 return None
 
@@ -76,7 +76,7 @@ class DirectRelationCreator:
 
         res: List[Relation] = []
         for sub_entity in observe_entities:
-            observe_meta = g_observe_meta_mgt.get_observe_meta(sub_entity.type)
+            observe_meta = ObserveMetaMgt().get_observe_meta(sub_entity.type)
             for relation_meta in observe_meta.depending_items:
                 if not isinstance(relation_meta, DirectRelationMeta):
                     continue
@@ -120,7 +120,7 @@ class IndirectRelationCreator:
             return None
         if sub_entity.id == obj_entity.id:
             return None
-        if not g_observe_meta_mgt.check_relation(RelationType.CONNECT.value, RelationLayerType.INDIRECT.value,
+        if not ObserveMetaMgt().check_relation(RelationType.CONNECT.value, RelationLayerType.INDIRECT.value,
                                                  sub_entity.type, obj_entity.type):
             return None
 

@@ -2,9 +2,9 @@ from typing import List
 
 import requests
 
+from spider.util.singleton import Singleton
 from spider.collector.data_collector import DataCollector
 from spider.collector.data_collector import DataRecord, Label
-from spider.util.conf import prometheus_conf
 
 
 def generate_query_sql(metric_id: str, query_options: dict = None) -> str:
@@ -18,8 +18,8 @@ def generate_query_sql(metric_id: str, query_options: dict = None) -> str:
     return sql
 
 
-class PrometheusCollector(DataCollector):
-    def __init__(self, base_url: str, instant_api: str, range_api: str = None, step=1):
+class PrometheusCollector(DataCollector, metaclass=Singleton):
+    def __init__(self, base_url: str = None, instant_api: str = None, range_api: str = None, step: int = None):
         super().__init__()
         self.base_url = base_url
         self.instant_api = instant_api
@@ -117,11 +117,3 @@ class PrometheusCollector(DataCollector):
                 for value in values:
                     data_list.append(DataRecord(metric_id, value[0], value[1], labels))
         return data_list
-
-
-# init global prometheus collector
-g_prometheus_collector = PrometheusCollector(base_url=prometheus_conf.get("base_url"),
-                                             instant_api=prometheus_conf.get("instant_api"),
-                                             range_api=prometheus_conf.get("range_api"))
-if prometheus_conf.get("step") is not None:
-    g_prometheus_collector.step = prometheus_conf.get("step")

@@ -1,11 +1,16 @@
-from spider.conf.observe_meta import ObserveMetaMgt, DirectRelationMeta, RelationMeta, g_observe_meta_mgt
+from spider.conf.observe_meta import ObserveMetaMgt, DirectRelationMeta
 from spider.entity_mgt import ObserveEntityCreator, DirectRelationCreator, IndirectRelationCreator
-from common import gen_host_entity, gen_task_entity, gen_tcp_link_entity, gen_ipvs_link_entity
+from .common import gen_host_entity, gen_task_entity, gen_tcp_link_entity, gen_ipvs_link_entity
+from .common import init_spider_config, init_observe_meta_mgt
+
+
+def setup_module():
+    init_spider_config()
+    init_observe_meta_mgt()
 
 
 class TestObserveEntityCreator:
-
-    def test_create_observe_entity(self, observe_meta_mgt: ObserveMetaMgt):
+    def test_create_observe_entity(self):
         entity_type = 'task'
         entity_attrs = {
             'fork_count': 1,
@@ -14,6 +19,7 @@ class TestObserveEntityCreator:
             'pid': 1,
             'machine_id': '123',
         }
+        observe_meta_mgt = ObserveMetaMgt()
         entity_meta = observe_meta_mgt.get_observe_meta(entity_type)
 
         entity = ObserveEntityCreator.create_observe_entity(entity_type, entity_attrs, entity_meta)
@@ -46,12 +52,8 @@ class TestObserveEntityCreator:
 
 
 class TestDirectRelationCreator:
-
-    def _mock_context(self, mocker, observe_meta_mgt: ObserveMetaMgt):
-        mocker.patch.object(g_observe_meta_mgt, 'data_agent', observe_meta_mgt.data_agent)
-        mocker.patch.object(g_observe_meta_mgt, 'observe_meta_map', observe_meta_mgt.observe_meta_map)
-
-    def test_create_relation(self, observe_meta_mgt: ObserveMetaMgt):
+    def test_create_relation(self):
+        observe_meta_mgt = ObserveMetaMgt()
         sub_entity = gen_task_entity(observe_meta_mgt.get_observe_meta('task'))
         obj_entity = gen_host_entity(observe_meta_mgt.get_observe_meta('host'))
         relation_meta = DirectRelationMeta('runs_on', 'direct', 'task', 'host', [])
@@ -84,8 +86,8 @@ class TestDirectRelationCreator:
         relation = DirectRelationCreator.create_relation(sub_entity, obj_entity, relation_meta1)
         assert relation is None
 
-    def test_create_relations(self, mocker, observe_meta_mgt: ObserveMetaMgt):
-        self._mock_context(mocker, observe_meta_mgt)
+    def test_create_relations(self):
+        observe_meta_mgt = ObserveMetaMgt()
 
         observe_entities = []
         relations = DirectRelationCreator.create_relations(observe_entities)
@@ -111,14 +113,8 @@ class TestDirectRelationCreator:
 
 
 class TestIndirectRelationCreator:
-
-    def _mock_context(self, mocker, observe_meta_mgt: ObserveMetaMgt):
-        mocker.patch.object(g_observe_meta_mgt, 'data_agent', observe_meta_mgt.data_agent)
-        mocker.patch.object(g_observe_meta_mgt, 'observe_meta_map', observe_meta_mgt.observe_meta_map)
-        mocker.patch.object(g_observe_meta_mgt, 'relation_meta_set', observe_meta_mgt.relation_meta_set)
-
-    def test_create_connect_relation(self, mocker, observe_meta_mgt: ObserveMetaMgt):
-        self._mock_context(mocker, observe_meta_mgt)
+    def test_create_connect_relation(self):
+        observe_meta_mgt = ObserveMetaMgt()
 
         # create success
         sub_entity = gen_task_entity(observe_meta_mgt.get_observe_meta('task'), pid=1, machine_id='123')
@@ -126,7 +122,7 @@ class TestIndirectRelationCreator:
         relation = IndirectRelationCreator.create_connect_relation(sub_entity, obj_entity)
         assert relation is not None
 
-        # sub_entity == obj_entity
+        # object entity is subject entity
         obj_entity = gen_task_entity(observe_meta_mgt.get_observe_meta('task'), pid=1, machine_id='123')
         relation = IndirectRelationCreator.create_connect_relation(sub_entity, obj_entity)
         assert relation is None
@@ -136,8 +132,8 @@ class TestIndirectRelationCreator:
         relation = IndirectRelationCreator.create_connect_relation(sub_entity, obj_entity)
         assert relation is None
 
-    def test_create_connect_relations(self, mocker, observe_meta_mgt: ObserveMetaMgt):
-        self._mock_context(mocker, observe_meta_mgt)
+    def test_create_connect_relations(self):
+        observe_meta_mgt = ObserveMetaMgt()
 
         observe_entities = []
         direct_relations = DirectRelationCreator.create_relations(observe_entities)
@@ -175,8 +171,8 @@ class TestIndirectRelationCreator:
         print(connect_relations)
         assert len(connect_relations) == 2
 
-    def test_create_relations(self, mocker, observe_meta_mgt: ObserveMetaMgt):
-        self._mock_context(mocker, observe_meta_mgt)
+    def test_create_relations(self):
+        observe_meta_mgt = ObserveMetaMgt()
 
         task1 = gen_task_entity(observe_meta_mgt.get_observe_meta('task'), pid=1, machine_id='123')
         tcp_link1 = gen_tcp_link_entity(observe_meta_mgt.get_observe_meta('tcp_link'), pid=1, machine_id='123')

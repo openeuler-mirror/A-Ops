@@ -1,6 +1,5 @@
 # coding: utf-8
 
-import sys
 from setuptools import setup, find_packages
 
 NAME = "spider"
@@ -13,7 +12,7 @@ VERSION = "1.0.0"
 # prerequisite: setuptools
 # http://pypi.python.org/pypi/setuptools
 
-REQUIRES = ["connexion"]
+REQUIRES = ["connexion", "requests", "pyyaml"]
 
 setup(
     name=NAME,
@@ -25,6 +24,7 @@ setup(
     install_requires=REQUIRES,
     packages=find_packages(),
     package_data={'': ['swagger/swagger.yaml']},
+    data_files=[('/etc/spider/', ['config/gala-spider.yaml', 'config/observe.yaml'])],
     include_package_data=True,
     entry_points={
         'console_scripts': ['spider=spider.__main__:main']},

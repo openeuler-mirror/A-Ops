@@ -1,19 +1,18 @@
 from typing import Dict, List
-import time
 
+from spider.conf import SpiderConfig
+from spider.data_process.prometheus_processor import PrometheusProcessor
 from spider.models import BaseResponse, EntitiesResponse, Entity, Dependenceitem, Attr
-from spider.util import conf
 from spider.entity_mgt import ObserveEntity, Relation
 from spider.entity_mgt import DirectRelationCreator, IndirectRelationCreator
-from spider.data_process.prometheus_processor import g_prometheus_processor
 
 
 def _get_observe_entities(timestamp=None) -> List[ObserveEntity]:
     entities: List[ObserveEntity] = []
-    db_agent = conf.db_agent
+    db_agent = SpiderConfig().db_agent
 
     if db_agent == "prometheus":
-        entities = g_prometheus_processor.get_observe_entities(timestamp)
+        entities = PrometheusProcessor().get_observe_entities(timestamp)
     elif db_agent == "kafka":
         # TODO: get entities from kafka
         pass

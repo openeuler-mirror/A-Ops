@@ -5,6 +5,8 @@ from dataclasses import dataclass, field
 
 import yaml
 
+from spider.util.singleton import Singleton
+
 
 class ValueCheckEnum(Enum):
     @classmethod
@@ -273,7 +275,7 @@ def _check_yaml_type(data) -> bool:
     return True
 
 
-class ObserveMetaMgt:
+class ObserveMetaMgt(metaclass=Singleton):
     def __init__(self):
         self.data_agent = ""
         self.observe_meta_map: Dict[str, ObserveMeta] = {}
@@ -283,7 +285,7 @@ class ObserveMetaMgt:
         try:
             observe_path = os.path.abspath(observe_path)
             with open(observe_path, 'r') as f:
-                data = yaml.load(f, Loader=yaml.FullLoader)
+                data = yaml.safe_load(f)
         except IOError as ex:
             print("Unable to open observe config file: {}.".format(ex))
             return False
@@ -397,11 +399,9 @@ class ObserveMetaMgt:
         return res
 
 
-g_observe_meta_mgt = ObserveMetaMgt()
-
-
 # TODO : just for test, to delete
 if __name__ == '__main__':
-    g_observe_meta_mgt.load_from_yaml("../../config/observe.yaml")
-    for k, v in g_observe_meta_mgt.observe_meta_map.items():
+    observe_meta_mgt = ObserveMetaMgt()
+    observe_meta_mgt.load_from_yaml("../../config/observe.yaml")
+    for k, v in observe_meta_mgt.observe_meta_map.items():
         print(k, v)
