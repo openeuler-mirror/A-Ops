@@ -6,8 +6,6 @@ from datetime import date, datetime  # noqa: F401
 from typing import List, Dict  # noqa: F401
 
 from spider.models.base_model_ import Model
-from spider.models.call import Call
-from spider.models.runon import Runon
 from spider import util
 
 
@@ -17,26 +15,31 @@ class Dependenceitem(Model):
     Do not edit the class manually.
     """
 
-    def __init__(self, calls: List[Call]=None, run_ons: List[Runon]=None):  # noqa: E501
+    def __init__(self, relation_id: str=None, layer: str=None, target: object=None):  # noqa: E501
         """Dependenceitem - a model defined in Swagger
 
-        :param calls: The calls of this Dependenceitem.  # noqa: E501
-        :type calls: List[Call]
-        :param run_ons: The run_ons of this Dependenceitem.  # noqa: E501
-        :type run_ons: List[Runon]
+        :param relation_id: The relation_id of this Dependenceitem.  # noqa: E501
+        :type relation_id: str
+        :param layer: The layer of this Dependenceitem.  # noqa: E501
+        :type layer: str
+        :param target: The target of this Dependenceitem.  # noqa: E501
+        :type target: object
         """
         self.swagger_types = {
-            'calls': List[Call],
-            'run_ons': List[Runon]
+            'relation_id': str,
+            'layer': str,
+            'target': object
         }
 
         self.attribute_map = {
-            'calls': 'calls',
-            'run_ons': 'runOns'
+            'relation_id': 'relation_id',
+            'layer': 'layer',
+            'target': 'target'
         }
 
-        self._calls = calls
-        self._run_ons = run_ons
+        self._relation_id = relation_id
+        self._layer = layer
+        self._target = target
 
     @classmethod
     def from_dict(cls, dikt) -> 'Dependenceitem':
@@ -50,43 +53,76 @@ class Dependenceitem(Model):
         return util.deserialize_model(dikt, cls)
 
     @property
-    def calls(self) -> List[Call]:
-        """Gets the calls of this Dependenceitem.
+    def relation_id(self) -> str:
+        """Gets the relation_id of this Dependenceitem.
 
 
-        :return: The calls of this Dependenceitem.
-        :rtype: List[Call]
+        :return: The relation_id of this Dependenceitem.
+        :rtype: str
         """
-        return self._calls
+        return self._relation_id
 
-    @calls.setter
-    def calls(self, calls: List[Call]):
-        """Sets the calls of this Dependenceitem.
+    @relation_id.setter
+    def relation_id(self, relation_id: str):
+        """Sets the relation_id of this Dependenceitem.
 
 
-        :param calls: The calls of this Dependenceitem.
-        :type calls: List[Call]
+        :param relation_id: The relation_id of this Dependenceitem.
+        :type relation_id: str
         """
+        allowed_values = ["runs_on", "belongs_to", "is_peer", "is_server", "is_client", "connect"]  # noqa: E501
+        if relation_id not in allowed_values:
+            raise ValueError(
+                "Invalid value for `relation_id` ({0}), must be one of {1}"
+                .format(relation_id, allowed_values)
+            )
 
-        self._calls = calls
+        self._relation_id = relation_id
 
     @property
-    def run_ons(self) -> List[Runon]:
-        """Gets the run_ons of this Dependenceitem.
+    def layer(self) -> str:
+        """Gets the layer of this Dependenceitem.
 
 
-        :return: The run_ons of this Dependenceitem.
-        :rtype: List[Runon]
+        :return: The layer of this Dependenceitem.
+        :rtype: str
         """
-        return self._run_ons
+        return self._layer
 
-    @run_ons.setter
-    def run_ons(self, run_ons: List[Runon]):
-        """Sets the run_ons of this Dependenceitem.
+    @layer.setter
+    def layer(self, layer: str):
+        """Sets the layer of this Dependenceitem.
 
 
-        :param run_ons: The run_ons of this Dependenceitem.
-        :type run_ons: List[Runon]
+        :param layer: The layer of this Dependenceitem.
+        :type layer: str
+        """
+        allowed_values = ["direct", "indirect"]  # noqa: E501
+        if layer not in allowed_values:
+            raise ValueError(
+                "Invalid value for `layer` ({0}), must be one of {1}"
+                .format(layer, allowed_values)
+            )
+
+        self._layer = layer
+
+    @property
+    def target(self) -> object:
+        """Gets the target of this Dependenceitem.
+
+
+        :return: The target of this Dependenceitem.
+        :rtype: object
+        """
+        return self._target
+
+    @target.setter
+    def target(self, target: object):
+        """Sets the target of this Dependenceitem.
+
+
+        :param target: The target of this Dependenceitem.
+        :type target: object
         """
 
-        self._run_ons = run_ons
+        self._target = target

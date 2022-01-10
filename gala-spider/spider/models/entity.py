@@ -5,6 +5,7 @@ from datetime import date, datetime  # noqa: F401
 
 from typing import List, Dict  # noqa: F401
 
+from spider.models import Anomaly
 from spider.models.base_model_ import Model
 from spider.models.dependenceitem import Dependenceitem
 from spider.models.attr import Attr
@@ -17,7 +18,7 @@ class Entity(Model):
     Do not edit the class manually.
     """
 
-    def __init__(self, entityid: str=None, type: str=None, name: str=None, dependingitems: List[Dependenceitem]=None, dependeditems: List[Dependenceitem]=None, attrs: List[Attr]=None, anomaly: object=None):  # noqa: E501
+    def __init__(self, entityid: str=None, type: str=None, name: str=None, level: str=None, dependingitems: List[Dependenceitem]=None, dependeditems: List[Dependenceitem]=None, attrs: List[Attr]=None, anomaly: Anomaly=None):  # noqa: E501
         """Entity - a model defined in Swagger
 
         :param entityid: The entityid of this Entity.  # noqa: E501
@@ -26,6 +27,8 @@ class Entity(Model):
         :type type: str
         :param name: The name of this Entity.  # noqa: E501
         :type name: str
+        :param level: The level of this Entity.  # noqa: E501
+        :type level: str
         :param dependingitems: The dependingitems of this Entity.  # noqa: E501
         :type dependingitems: List[Dependenceitem]
         :param dependeditems: The dependeditems of this Entity.  # noqa: E501
@@ -33,22 +36,24 @@ class Entity(Model):
         :param attrs: The attrs of this Entity.  # noqa: E501
         :type attrs: List[Attr]
         :param anomaly: The anomaly of this Entity.  # noqa: E501
-        :type anomaly: object
+        :type anomaly: Anomaly
         """
         self.swagger_types = {
             'entityid': str,
             'type': str,
             'name': str,
+            'level': str,
             'dependingitems': List[Dependenceitem],
             'dependeditems': List[Dependenceitem],
             'attrs': List[Attr],
-            'anomaly': object
+            'anomaly': Anomaly
         }
 
         self.attribute_map = {
             'entityid': 'entityid',
             'type': 'type',
             'name': 'name',
+            'level': 'level',
             'dependingitems': 'dependingitems',
             'dependeditems': 'dependeditems',
             'attrs': 'attrs',
@@ -58,6 +63,7 @@ class Entity(Model):
         self._entityid = entityid
         self._type = type
         self._name = name
+        self._level = level
         self._dependingitems = dependingitems
         self._dependeditems = dependeditems
         self._attrs = attrs
@@ -113,7 +119,7 @@ class Entity(Model):
         :param type: The type of this Entity.
         :type type: str
         """
-        allowed_values = ["PROCESS", "CONTAINER", "POD", "VM", "BM", "TCP-LINK", "LVS-LINK", "NGNIX-LINK"]  # noqa: E501
+        allowed_values = ["host", "container", "task", "endpoint", "tcp_link", "ipvs_link", "ngnix_link", "haproxy_link"]  # noqa: E501
         if type not in allowed_values:
             raise ValueError(
                 "Invalid value for `type` ({0}), must be one of {1}"
@@ -142,6 +148,33 @@ class Entity(Model):
         """
 
         self._name = name
+
+    @property
+    def level(self) -> str:
+        """Gets the level of this Entity.
+
+
+        :return: The level of this Entity.
+        :rtype: str
+        """
+        return self._level
+
+    @level.setter
+    def level(self, level: str):
+        """Sets the level of this Entity.
+
+
+        :param level: The level of this Entity.
+        :type level: str
+        """
+        allowed_values = ["HOST", "CONTAINER", "RUNTIME", "PROCESS", "RPC", "LB", "MB"]  # noqa: E501
+        if level not in allowed_values:
+            raise ValueError(
+                "Invalid value for `level` ({0}), must be one of {1}"
+                .format(level, allowed_values)
+            )
+
+        self._level = level
 
     @property
     def dependingitems(self) -> List[Dependenceitem]:
@@ -207,22 +240,22 @@ class Entity(Model):
         self._attrs = attrs
 
     @property
-    def anomaly(self) -> object:
+    def anomaly(self) -> Anomaly:
         """Gets the anomaly of this Entity.
 
 
         :return: The anomaly of this Entity.
-        :rtype: object
+        :rtype: Anomaly
         """
         return self._anomaly
 
     @anomaly.setter
-    def anomaly(self, anomaly: object):
+    def anomaly(self, anomaly: Anomaly):
         """Sets the anomaly of this Entity.
 
 
         :param anomaly: The anomaly of this Entity.
-        :type anomaly: object
+        :type anomaly: Anomaly
         """
 
         self._anomaly = anomaly
