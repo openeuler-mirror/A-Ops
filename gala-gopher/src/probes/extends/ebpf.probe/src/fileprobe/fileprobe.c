@@ -1,3 +1,7 @@
+/*
+ * Copyright (c) Huawei Technologies Co., Ltd. 2020-2020. All rights reserved.
+ * Description: file_probe user prog
+ */
 #include <errno.h>
 #include <signal.h>
 #include <stdio.h>
@@ -23,31 +27,29 @@ static int libbpf_print_fn(enum libbpf_print_level level, const char *format, va
 {
     if (level == LIBBPF_WARN)
         return vfprintf(stderr, format, args);
-
     return 0;
 }
 
 static volatile sig_atomic_t stop;
-
 static void sig_int(int signo)
 {
     stop = 1;
 }
 
-int get_file_name(const u32 inode, char *file_name, u32 max_len) {
-    char command[64];
+int get_file_name(const u32 inode, char *file_name, u32 max_len)
+{
+    char command[COMMAND_LEN];
     char line[FILE_NAME_LEN];
     FILE *f = NULL;
 
     // init
-    command[0] = 0; 
+    command[0] = 0;
     line[0] = 0;
-    
-    if (snprintf(command, 64, INODE_TO_FILE, inode) < 0) {
+    if (snprintf(command, COMMAND_LEN - 1, INODE_TO_FILE, inode) < 0) {
         return -1;
     }
     f = popen(command, "r");
-    if (!f) {
+    if (f == NULL) {
         return -1;
     }
 
@@ -103,10 +105,10 @@ void read_probe_data(int map_fd)
     return;
 }
 
-void run(struct fileprobe_bpf *skel)
+void run(const struct fileprobe_bpf *skel)
 {
     if (signal(SIGINT, sig_int) == SIG_ERR) {
-        fprintf(stderr, "can't set signal handler: %s\n", strerror(errno));
+        fprintf(stderr, "can't set signal handler: %s\n", errno);
         return;
     }
 
@@ -120,9 +122,9 @@ void run(struct fileprobe_bpf *skel)
 
 struct fileprobe_bpf* load_and_attach_progs()
 {
-    struct fileprobe_bpf *skel;
+    struct fileprobe_bpf *skel = NULL;
     int err;
-    
+
     /* Set up libbpf errors and debug info callback */
     libbpf_set_print(libbpf_print_fn);
 
@@ -135,7 +137,7 @@ struct fileprobe_bpf* load_and_attach_progs()
 
     /* Open load and verify BPF application */
     skel = fileprobe_bpf__open_and_load();
-    if (!skel) {
+    if (skel == NULL) {
         fprintf(stderr, "Failed to open fileprobe BPF skeleton\n");
         return NULL;
     }
@@ -147,39 +149,42 @@ struct fileprobe_bpf* load_and_attach_progs()
         fileprobe_bpf__destroy(skel);
         return NULL;
     }
-    
+
     return skel;
 }
 
 
-bool is_valid_file(const char* file_name) {
+bool is_valid_file(const char* file_name)
+{
     if (access(file_name, 0) == 0) {
         return true;
     }
     return false;
 }
 
-bool is_executable_file(const char* exe) {
+bool is_executable_file(const char* exe)
+{
     if (access(exe, 1) == 0) {
         return true;
     }
     return false;
 }
 
-int get_file_inode_id(const char* file_name, u32 *i_inode) {
+int get_file_inode_id(const char* file_name, u32 *i_inode)
+{
     char command[512];
     char line[32];
     FILE *f = NULL;
 
     // init
-    command[0] = 0; 
+    command[0] = 0;
     line[0] = 0;
-    
+
     if (snprintf(command, 512, FILE_TO_INODE, file_name) < 0) {
         return -1;
     }
     f = popen(command, "r");
-    if (!f) {
+    if (f == NULL) {
         return -1;
     }
 
@@ -194,11 +199,12 @@ int get_file_inode_id(const char* file_name, u32 *i_inode) {
 }
 
 
-int update_snoop_files(const char* file_name, int map_fd) {
+int update_snoop_files(const char* file_name, int map_fd)
+{
     u32 i_inode;
     u32 v = 0;
     struct snoop_inode s_inode;
-    
+
     if (!is_valid_file(file_name)) {
         return -1;
     }
@@ -208,12 +214,13 @@ int update_snoop_files(const char* file_name, int map_fd) {
     }
 
     s_inode.inode = (unsigned long)i_inode;
-    
+
     return bpf_map_update_elem(map_fd, &s_inode, &v, BPF_ANY);
 }
 
 
-int update_permissions(const char* file_name, const char* exe, u32 permission, int map_fd) {
+int update_permissions(const char* file_name, const char* exe, u32 permission, int map_fd)
+{
     u32 i_inode;
     struct snoop_inode s_inode;
     struct inode_permissions inode_permission;
@@ -222,7 +229,7 @@ int update_permissions(const char* file_name, const char* exe, u32 permission, i
     if (snprintf(inode_permission.exe, FILE_NAME_LEN, exe) < 0) {
         return -1;
     }
-    
+
     if (!is_executable_file(exe)) {
         return -1;
     }
@@ -236,7 +243,7 @@ int update_permissions(const char* file_name, const char* exe, u32 permission, i
     }
 
     s_inode.inode = (unsigned long)i_inode;
-    
+
     return bpf_map_update_elem(map_fd, &s_inode, &inode_permission, BPF_ANY);
 }
 
@@ -246,22 +253,22 @@ int main(int argc, char **argv)
     struct fileprobe_bpf *skel;
 
     skel = load_and_attach_progs();
-    if (!skel) {
+    if (skel == NULL) {
         return -1;
     }
 
-    if (update_snoop_files((const char *)sf[0].file, 
+    if (update_snoop_files((const char *)sf[0].file,
                 bpf_map__fd(skel->maps.snoop_files_map)) < 0) {
         goto err;
     }
 
-    if (update_permissions((const char *)sf[0].file, 
+    if (update_permissions((const char *)sf[0].file,
                 (const char *)sf[0].exe,
                 sf[0].permission,
                 bpf_map__fd(skel->maps.permissions_map)) < 0) {
         goto err;
     }
-    
+
     run(skel);
 
 err:

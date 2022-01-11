@@ -1,3 +1,7 @@
+/*
+ * Copyright (c) Huawei Technologies Co., Ltd. 2020-2020. All rights reserved.
+ * Description: endpoint_probe user prog
+ */
 #include <stdio.h>
 #include <signal.h>
 #include <errno.h>
@@ -11,8 +15,8 @@
 #undef BPF_PROG_USER
 #endif
 
-#include "bpf.h"
 #include <bpf/bpf.h>
+#include "bpf.h"
 #include "endpoint.skel.h"
 #include "endpoint.h"
 #include "args.h"
@@ -21,7 +25,7 @@
 #define INET6_ADDRSTRLEN (48)
 
 static volatile sig_atomic_t stop;
-static struct probe_params params = {.period = 5};
+static struct probe_params params = {.period = DEFAULT_PERIOD};
 
 static void sig_int(int signo)
 {
@@ -31,7 +35,8 @@ static void sig_int(int signo)
 static void pull_endpoint_data(int ep_map_fd)
 {
     int ret = 0;
-    struct endpoint_key_t key = {0}, next_key = {0};
+    struct endpoint_key_t key = {0};
+    struct endpoint_key_t next_key = {0};
     struct endpoint_val_t data = {0};
     unsigned char s_addr[INET6_ADDRSTRLEN];
     char *time_fmt = get_cur_time();
@@ -43,7 +48,6 @@ static void pull_endpoint_data(int ep_map_fd)
                 key = next_key;
                 continue;
             }
-
             ip_str(data.family, (unsigned char *)&data.s_addr, s_addr, INET6_ADDRSTRLEN);
             fprintf(stdout,
                     "|%s|%d|%s|%d|%u|%d|%d|%d|%s|%u|%lu|%lu|%lu|%lu|%lu|%lu|%lu|%lu|%lu|%lu|%lu|\n",
@@ -111,11 +115,11 @@ int main(int argc, char **argv)
         return -1;
     }
     printf("arg parse interval time:%us\n", params.period);
-    
+
     LOAD(endpoint);
 
     if (signal(SIGINT, sig_int) == SIG_ERR) {
-        fprintf(stderr, "Can't set signal handler: %s\n", strerror(errno));
+        fprintf(stderr, "Can't set signal handler: %d\n", errno);
         goto err;
     }
 
@@ -124,7 +128,7 @@ int main(int argc, char **argv)
     remove(ep_file_path);
     err = bpf_obj_pin(GET_MAP_FD(endpoint_map), ep_file_path);
     if (err) {
-        fprintf(stderr, "Failed to pin endpoint map: %s\n", strerror(errno));
+        fprintf(stderr, "Failed to pin endpoint map: %d\n", errno);
         goto err;
     }
     printf("Endpoint map pin success.\n");

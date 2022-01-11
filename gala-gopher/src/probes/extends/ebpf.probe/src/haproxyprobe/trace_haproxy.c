@@ -1,3 +1,7 @@
+/*
+ * Copyright (c) Huawei Technologies Co., Ltd. 2020-2020. All rights reserved.
+  * Description: haproxy_probe user prog
+ */
 #include <errno.h>
 #include <signal.h>
 #include <stdio.h>
@@ -20,27 +24,27 @@
 
 #define METRIC_NAME_HAPROXY_LINK "haproxy_link"
 
-static struct probe_params params = {.period = 5,
+static struct probe_params params = {.period = DEFAULT_PERIOD,
                                      .elf_path = {0}};
-static volatile bool exiting = false;
+static volatile bool g_stop = false;
 static void sig_handler(int sig)
 {
-    exiting = true;
+    g_stop = true;
 }
 
 static void get_host_ip(unsigned char *value, unsigned short family)
 {
     FILE *fp = NULL;
     char buffer[INET6_ADDRSTRLEN] = {0};
-    char cmd[CMD_LEN] = {0};
+    char cmd[CMD_LEN] = {""};
     int num = -1;
 
     if (family == AF_INET) {
-        snprintf(cmd, CMD_LEN - 1, "ifconfig | grep inet | grep -v 127.0.0.1 | grep -v inet6 | awk '{print $2}'");
+        snprintf(cmd, CMD_LEN - 1, "/sbin/ifconfig | grep inet | grep -v 127.0.0.1 | grep -v inet6 | awk '{print $2}'");
     } else {
-        snprintf(cmd, CMD_LEN - 1, "ifconfig | grep inet6 | grep -v ::1 | awk '{print $2}'");
+        snprintf(cmd, CMD_LEN - 1, "/sbin/ifconfig | grep inet6 | grep -v ::1 | awk '{print $2}'");
     }
-    
+
     fp = popen(cmd, "r");
     if (fgets(buffer, 32, fp) == NULL) {
         printf("Fail get_host_ip.\n");
@@ -101,7 +105,10 @@ static void pull_probe_data(int fd, int collect_fd)
             ip_str(value.family, (unsigned char *)&(next_key.c_addr), cli_ip_str, INET6_ADDRSTRLEN);
             ip_str(value.family, (unsigned char *)&(next_key.p_addr), lb_ip_str, INET6_ADDRSTRLEN);
             ip_str(value.family, (unsigned char *)&(next_key.s_addr), src_ip_str, INET6_ADDRSTRLEN);
-	    printf("---- new connect protocol[%s] type[%s] c[%s:%d]--lb[%s:%d]--s[%s:%d] state[%d]. \n",
+            if (next_key.p_addr.ip4 == 0x0) {
+                get_host_ip(lb_ip_str, value.family);
+            }
+        printf("---- new connect protocol[%s] type[%s] c[%s:%d]--lb[%s:%d]--s[%s:%d] state[%d]. \n",
                 (value.type == PR_MODE_TCP) ? "TCP" : "HTTP",
                 (value.family == AF_INET) ? "IPv4" : "IPv6",
                 cli_ip_str,
@@ -138,7 +145,7 @@ static void print_haproxy_collect(int map_fd)
             ip_str(value.family, (unsigned char *)&(next_key.c_addr), cli_ip_str, INET6_ADDRSTRLEN);
             ip_str(value.family, (unsigned char *)&(next_key.p_addr), lb_ip_str, INET6_ADDRSTRLEN);
             ip_str(value.family, (unsigned char *)&(next_key.s_addr), src_ip_str, INET6_ADDRSTRLEN);
-	    fprintf(stdout,
+        fprintf(stdout,
                 "|%s|%s|%s|%s|%u|%u|%u|%llu|\n",
                 METRIC_NAME_HAPROXY_LINK,
                 cli_ip_str,
@@ -156,7 +163,6 @@ static void print_haproxy_collect(int map_fd)
 }
 
 
-
 int main(int argc, char **argv)
 {
     int err = -1;
@@ -170,7 +176,6 @@ int main(int argc, char **argv)
         return -1;
     }
     printf("arg parse interval time:%us\n", params.period);
-    printf("arg parse input elf's path:%s\n", params.elf_path);
 
     LOAD(trace_haproxy);
 
@@ -204,14 +209,14 @@ int main(int argc, char **argv)
     }
 
     /* create collect hash map */
-    collect_map_fd = 
-        bpf_create_map(BPF_MAP_TYPE_HASH, sizeof(struct collect_key), sizeof(struct collect_value), 8192, 0);
+    collect_map_fd =
+        bpf_create_map(BPF_MAP_TYPE_HASH, sizeof(struct collect_key), sizeof(struct collect_value), METRIC_ENTRIES, 0);
     if (collect_map_fd < 0) {
         fprintf(stderr, "Haproxy Failed to create map.\n");
         goto err;
     }
-    
-    while (!exiting) {
+
+    while (!g_stop) {
         pull_probe_data(GET_MAP_FD(haproxy_link_map), collect_map_fd);
         print_haproxy_collect(collect_map_fd);
         sleep(params.period);

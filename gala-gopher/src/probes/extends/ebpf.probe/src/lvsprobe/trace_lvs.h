@@ -1,8 +1,10 @@
+/*
+ * Copyright (c) Huawei Technologies Co., Ltd. 2020-2020. All rights reserved.
+ */
 #ifndef __LVSPROBE__H
 #define __LVSPROBE__H
 
-#define IP6_LEN         16
-
+#define IP6_LEN             16
 #define INET_ADDRSTRLEN     16
 #define INET6_ADDRSTRLEN    48
 

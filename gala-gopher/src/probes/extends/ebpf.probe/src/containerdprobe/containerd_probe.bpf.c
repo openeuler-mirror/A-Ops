@@ -1,6 +1,7 @@
-// SPDX-License-Identifier: GPL-2.0 OR BSD-3-Clause
-/* Copyright (c) 2021 Huawei */
-
+/*
+ * Copyright (c) Huawei Technologies Co., Ltd. 2020-2020. All rights reserved.
+ * Description: container_probe bpf prog
+ */
 #ifdef BPF_PROG_KERN
 #undef BPF_PROG_KERN
 #endif
@@ -33,14 +34,14 @@ UPROBE(linux_Task_Start, pt_regs)
     // containerd's info [pid + comm]
     value.containerd_pid = bpf_get_current_pid_tgid() >> 32;
     bpf_get_current_comm(&value.comm, sizeof(value.comm));
-    
+
     // symbol's offset
     struct go_containerd_t *sym_str = bpf_map_lookup_elem(&containerd_symaddrs_map, &sym_key);
-    if (!sym_str) {
+    if (sym_str == (void *)0) {
         bpf_printk("=== Please Check containerd_symaddrs Update. \n");
         return;
     }
-    
+
     // contained info [ID + ns + PID] from struct Task
     const void *sp = (const void *)PT_REGS_SP(ctx);
     void *t_ptr;
@@ -71,14 +72,14 @@ UPROBE(linux_Task_Delete, pt_regs)
 
     // containerd's info
     unsigned int containerd_pid = bpf_get_current_pid_tgid() >> 32;
-    
+
     // symbol's offset
     struct go_containerd_t *sym_str = bpf_map_lookup_elem(&containerd_symaddrs_map, &sym_key);
-    if (!sym_str) {
+    if (sym_str == (void *)0) {
         bpf_printk("=== Please Check containerd_symaddrs Update. \n");
         return;
     }
-    
+
     // contained info [ID + ns + PID] from struct Task
     const void *sp = (const void *)PT_REGS_SP(ctx);
     void *t_ptr;
@@ -89,11 +90,10 @@ UPROBE(linux_Task_Delete, pt_regs)
 
     /* lookup containerd map, update status */
     v_str = bpf_map_lookup_elem(&containers_map, &key);
-    if (!v_str) {
+    if (!v_str == (void *)0) {
         bpf_printk("===containerd Delete containerID not in hash map.\n");
         return;
     }
-
     v_str->status = 0;
 
     /* update hash map */

@@ -1,18 +1,17 @@
+/*
+ * Copyright (c) Huawei Technologies Co., Ltd. 2020-2020. All rights reserved.
+ */
 #ifndef __NGX_VERSION_1_12_1_H__
 #define __NGX_VERSION_1_12_1_H__
 
 #define TASK_COMM_LEN 16
 #define MAX_FILENAME_LEN 127
-
-#define size_t long unsigned int
-
-typedef short unsigned int sa_family_t;
 #define AF_INET 2   /* Internet IP Protocol 	*/
 #define AF_INET6 10 /* IP version 6			*/
-
 #define IP_STR_LEN 32
+
 struct sockaddr {
-    sa_family_t sa_family;
+    unsigned short sa_family;
     char sa_data[14];
 };
 
@@ -26,7 +25,7 @@ struct sockaddr_in {
     struct in_addr sin_addr;   /* Internet address		*/
 
     /* Pad to size of `struct sockaddr'. */
-    unsigned char __pad[16 - sizeof(short int) - sizeof(unsigned short int) - sizeof(struct in_addr)];
+    unsigned char __pad[8];
 };
 
 struct in6_addr {
@@ -52,39 +51,35 @@ struct sockaddr_in6 {
     __u32 sin6_scope_id;            /* scope id (new in RFC2553) */
 };
 
-typedef unsigned int socklen_t;
-
 typedef struct {
-    size_t len;
+    unsigned int len;
     unsigned char data[32];
 } ngx_str_addr_t;
 
 typedef struct {
-    size_t len;
+    unsigned int len;
     unsigned char *data;
 } ngx_str_t;
-
-typedef int ngx_socket_t;
 
 struct ngx_connection_s {
     void *data;
     void *read;  /* ngx_event_t *read */
     void *write; /* ngx_event_t *write */
-    ngx_socket_t fd;
+    int fd;
     unsigned char temp1[68];
     int type;                   // 96
     struct sockaddr *sockaddr;  // 104
-    socklen_t socklen;          // 112
+    unsigned int socklen;          // 112
     unsigned char temp2[40];
     struct sockaddr *local_sockaddr;  // 160
-    socklen_t local_socklen;          // 168
+    unsigned int local_socklen;          // 168
     unsigned char temp3[48];
 };
 
 struct ngx_peer_connection_s {
     struct ngx_connection_s *connection;
     struct sockaddr *sockaddr;
-    socklen_t socklen;
+    unsigned int socklen;
     ngx_str_t *name;
     unsigned char temp[80];
 };

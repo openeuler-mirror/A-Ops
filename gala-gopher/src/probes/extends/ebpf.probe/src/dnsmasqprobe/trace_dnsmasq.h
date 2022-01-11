@@ -1,3 +1,7 @@
+/*
+ * Copyright (c) Huawei Technologies Co., Ltd. 2020-2020. All rights reserved.
+ 
+ */
 #ifndef __TRACE_DNSMASQ__H
 #define __TRACE_DNSMASQ__H
 
@@ -11,6 +15,7 @@
 #define INET6_ADDRSTRLEN    48
 #define MAXDNAME            128 /* maximum presentation domain name */
 #define LINK_MAX_ENTRIES    81920
+#define METRIC_ENTRIES      8192
 
 #define F_FORWARD   (1u<<3)
 #define F_SERVER    (1u<<18)
@@ -59,13 +64,11 @@ struct server {
     union mysockaddr    source_addr;
     char                interface[20];
     unsigned int        ifindex;
-    //char                temp[64];
 };
 
 struct frec {
     char            temp1[72];
     struct server   *sentto;
-    //char          temp2[304];
 };
 
 struct link_key {

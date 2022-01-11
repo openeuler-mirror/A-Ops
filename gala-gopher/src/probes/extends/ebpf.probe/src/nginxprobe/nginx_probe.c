@@ -1,5 +1,7 @@
-// SPDX-License-Identifier: (LGPL-2.1 OR BSD-2-Clause)
-/* Copyright (c) 2020 Facebook */
+/*
+ * Copyright (c) Huawei Technologies Co., Ltd. 2020-2020. All rights reserved.
+ * Description: nginx_probe user prog
+ */
 #include <errno.h>
 #include <signal.h>
 #include <stdio.h>
@@ -19,15 +21,15 @@
 #include "nginx_probe.h"
 #include "args.h"
 
-static struct probe_params params = {.period = 5,
+static struct probe_params params = {.period = DEFAULT_PERIOD,
                                      .elf_path = {0}};
-static volatile bool exiting = false;
+static volatile bool stop = false;
 static void sig_handler(int sig)
 {
-    exiting = true;
+    stop = true;
 }
 
-void update_statistic_map(int map_fd, struct ngx_metric *data)
+void update_statistic_map(int map_fd, const struct ngx_metric *data)
 {
     struct ngx_statistic_key k = {0};
     struct ngx_statistic v = {0};
@@ -84,7 +86,6 @@ void pull_probe_data(int map_fd, int statistic_map_fd)
     return;
 }
 
-
 #define METRIC_STATISTIC_NAME "nginx_link"
 void print_statistic_map(int fd)
 {
@@ -96,7 +97,7 @@ void print_statistic_map(int fd)
     unsigned char cip_str[INET6_ADDRSTRLEN];
     unsigned char ngxip_str[INET6_ADDRSTRLEN];
     unsigned char sip_str[INET6_ADDRSTRLEN];
-    
+
     char *colon = NULL;
 
     while (bpf_map_get_next_key(fd, &k, &nk) != -1) {
@@ -106,7 +107,7 @@ void print_statistic_map(int fd)
             ip_str(d.ngx_ip.family, (unsigned char *)&(d.ngx_ip.ipaddr), ngxip_str, INET6_ADDRSTRLEN);
 
             colon = strrchr(nk.sip_str, ':');
-            if (colon) {
+            if (colon != NULL) {
                 *colon = '\0';
             }
 
@@ -116,12 +117,12 @@ void print_statistic_map(int fd)
                 cip_str,
                 ngxip_str,
                 nk.sip_str,
-		ntohs(d.ngx_ip.port),
+                ntohs(d.ngx_ip.port),
                 (colon ? (colon + 1) : "0"),
                 nk.is_l7,
                 d.link_count);
 
-            if (colon) {
+            if (colon != NULL) {
                 *colon = ':';
             }
         }
@@ -144,8 +145,7 @@ int main(int argc, char **argv)
     if (err != 0) {
         return -1;
     }
-    printf("arg parse interval time:%us\n", params.period);
-    printf("arg parse input elf's path:%s\n", params.elf_path);
+    printf("arg parse interval time:%us  \n", params.period);
 
     LOAD(nginx_probe);
 
@@ -159,7 +159,6 @@ int main(int argc, char **argv)
         printf("get proc:nginx abs_path error \n");
         return -1;
     }
-
     /* Attach tracepoint handler for each elf_path */
     for (int i = 0; i < elf_num; i++) {
         int ret = 0;
@@ -177,7 +176,7 @@ int main(int argc, char **argv)
         attach_flag = 1;
     }
     free_exec_path_buf(elf, elf_num);
-    if (!attach_flag) {
+    if (attach_flag == 0) {
         goto err;
     }
 
@@ -188,16 +187,14 @@ int main(int argc, char **argv)
         printf("Failed to create statistic map fd.\n");
         goto err;
     }
-
     printf("Successfully started!\n");
 
     /* try to hit probe info */
-    while (!exiting) {
+    while (!stop) {
         pull_probe_data(GET_MAP_FD(hs), map_fd);
         print_statistic_map(map_fd);
         sleep(params.period);
     }
-
 err:
     if (map_fd > 0) {
         close(map_fd);

@@ -1,22 +1,11 @@
-/******************************************************************************
- * Copyright (c) Huawei Technologies Co., Ltd. 2021. All rights reserved.
- * gala-gopher licensed under the Mulan PSL v2.
- * You can use this software according to the terms and conditions of the Mulan PSL v2.
- * You may obtain a copy of Mulan PSL v2 at:
- *     http://license.coscl.org.cn/MulanPSL2
- * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR
- * IMPLIED, INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY OR FIT FOR A PARTICULAR
- * PURPOSE.
- * See the Mulan PSL v2 for more details.
- * Author: algorithmofdish
- * Create: 2021-09-28
- * Description: provide gala-gopher epbf util functions
- ******************************************************************************/
+/*
+ * Copyright (c) Huawei Technologies Co., Ltd. 2020-2020. All rights reserved.
+ */
 #ifndef __EBPF_UTIL_H__
 #define __EBPF_UTIL_H__
 
 #include <bpf/libbpf.h>
-/* if eBPF probe need to be integrated by gala-gopher, should redefinition the macro*/
+/* if eBPF probe need to be integrated by gala-gopher, should redefinition the macro */
 
 #define BPF_UTIL_DESC(desc) 1
 
@@ -29,8 +18,8 @@
 #endif
 
 #define NIP6(addr)                                                                                  \
-    ntohs(addr[0]), ntohs(addr[1]), ntohs(addr[2]), ntohs(addr[3]), ntohs(addr[4]), ntohs(addr[5]), \
-        (ntohs(addr[6]) >> 8), (ntohs(addr[6]) & 0xff), (ntohs(addr[7]) >> 8), (ntohs(addr[7]) & 0xff)
+    ntohs((addr)[0]), ntohs(addr[1]), ntohs(addr[2]), ntohs(addr[3]), ntohs(addr[4]), ntohs(addr[5]), \
+        (ntohs((addr)[6]) >> 8), (ntohs(addr[6]) & 0xff), (ntohs(addr[7]) >> 8), (ntohs(addr[7]) & 0xff)
 #define NIP6_FMT "%04x:%04x:%04x:%04x:%04x:%04x:%u.%u.%u.%u"
 
 

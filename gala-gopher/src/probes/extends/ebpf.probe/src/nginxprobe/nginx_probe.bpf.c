@@ -1,3 +1,7 @@
+/*
+ * Copyright (c) Huawei Technologies Co., Ltd. 2020-2020. All rights reserved.
+ * Description: nginx_probe bpf prog
+ */
 #ifdef BPF_PROG_KERN
 #undef BPF_PROG_KERN
 #endif
@@ -45,28 +49,28 @@ static void bpf_copy_ip_addr(struct sockaddr *addr, struct ip_addr *ip)
     return;
 }
 
-UPROBE(ngx_http_upstream_handler, pt_regs)
+static UPROBE(ngx_http_upstream_handler, pt_regs)
 {
     __u64 tid = bpf_get_current_pid_tgid();
     struct ngx_event_s *evt = (struct ngx_event_s *)PT_REGS_PARM1(ctx);
 
     struct ngx_connection_s *c = (struct ngx_connection_s *)_(evt->data);
-    if (!c) {
+    if (c == (void *)0) {
         return;
     }
 
     struct ngx_http_request_s *r = (struct ngx_http_request_s *)_(c->data);
-    if (!r) {
+    if (r == (void *)0) {
         return;
     }
 
     struct ngx_http_upstream_s *u = (struct ngx_http_upstream_s *)_(r->upstream);
-    if (!u) {
+    if (u == (void *)0) {
         return;
     }
 
     c = (struct ngx_connection_s *)_(r->connection);
-    if (!c) {
+    if (c == (void *)0) {
         return;
     }
 
@@ -81,13 +85,13 @@ UPROBE(ngx_http_upstream_handler, pt_regs)
 
     ngx_str_t *p_name;
     bpf_probe_read_user(&p_name, sizeof(void **), &(u->peer.name));
-    if (!p_name) {
+    if (p_name == (void *)0) {
         return;
     }
 
     unsigned char *dt;
     bpf_probe_read_user(&dt, sizeof(void **), &(p_name->data));
-    if (!dt) {
+    if (dt == (void *)0) {
         return;
     }
     bpf_probe_read_user_str(metric.dst_ip_str, INET6_ADDRSTRLEN, dt);
@@ -121,7 +125,7 @@ URETPROBE(ngx_stream_proxy_init_upstream, pt_regs)
 
     __u64 tid = bpf_get_current_pid_tgid();
     t = (struct ngx_stream_session_s **)bpf_map_lookup_elem(&para_hs, &tid);
-    if (!t) {
+    if (t == (void *)0) {
         bpf_printk("bpf_map_lookup_elem para_hs tid:%llu failed\n", tid);
         return;
     }
@@ -136,26 +140,25 @@ URETPROBE(ngx_stream_proxy_init_upstream, pt_regs)
     bpf_copy_ip_addr(tmp, &metric.ngx_ip);
 
     bpf_probe_read_user(&stream, sizeof(void **), &(s->upstream));
-    if (!stream) {
+    if (stream == (void *)0) {
         bpf_printk("stream null:%p\n", stream);
         return;
     }
 
     p_name = _(stream->peer.name);
-    if (!p_name) {
+    if (p_name == (void *)0) {
         bpf_printk("peer.name null\n");
         return;
     }
 
     unsigned char *dt = _(p_name->data);
-    if (!dt) {
+    if (dt == (void *)0) {
         bpf_printk("name->data null\n");
         return;
     }
     bpf_probe_read_user_str(metric.dst_ip_str, INET6_ADDRSTRLEN, dt);
     bpf_map_update_elem(&hs, &(metric.src_ip), &metric, BPF_ANY);
 
-    // bpf_printk(">>>>>ngx_stream_proxy_init_upstream src_port:%u\n", metric.src_ip.port);
     return;
 }
 
@@ -170,7 +173,7 @@ UPROBE(ngx_close_connection, pt_regs)
     client_addr = _(conn->sockaddr);
     bpf_copy_ip_addr(client_addr, &src_ip);
     metric = (struct ngx_metric *)bpf_map_lookup_elem(&hs, &src_ip);
-    if (!metric) {
+    if (metric == (void *)0) {
         return;
     }
 

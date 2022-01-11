@@ -1,3 +1,6 @@
+/*
+ * Copyright (c) Huawei Technologies Co., Ltd. 2020-2020. All rights reserved.
+ */
 #ifndef __FILEPROBE__H
 #define __FILEPROBE__H
 
@@ -8,6 +11,7 @@
 #define SUSPICIOUS_MAX 100
 #define TASK_COMM_LEN 16
 #define FILE_NAME_LEN 256
+#define COMMAND_LEN   64
 #define OP_TYPE_READ  0x01
 #define OP_TYPE_WRITE 0x02
 

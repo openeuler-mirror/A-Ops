@@ -1,3 +1,7 @@
+/*
+ * Copyright (c) Huawei Technologies Co., Ltd. 2020-2020. All rights reserved.
+ * Description: ipvs_probe user prog
+ */
 #include <errno.h>
 #include <signal.h>
 #include <stdio.h>
@@ -13,6 +17,7 @@
 #endif
 
 #include "bpf.h"
+#include "args.h"
 #include "trace_lvs.skel.h"
 #include "trace_lvs.h"
 
@@ -20,6 +25,7 @@
 
 
 static volatile sig_atomic_t stop;
+static struct probe_params params = {.period = DEFAULT_PERIOD};
 
 static void sig_int(int signo)
 {
@@ -28,21 +34,21 @@ static void sig_int(int signo)
 
 static void ippro_to_str(unsigned short protocol, unsigned char *type_str)
 {
-    switch(protocol) {
+    switch (protocol) {
         case IPPROTO_IP:
-            memcpy(type_str, "IP", 16 * sizeof(char));
+            memcpy(type_str, "IP", INET6_ADDRSTRLEN * sizeof(char));
             break;
         case IPPROTO_TCP:
-            memcpy(type_str, "TCP", 16 * sizeof(char));
+            memcpy(type_str, "TCP", INET6_ADDRSTRLEN * sizeof(char));
             break;
         case IPPROTO_UDP:
-            memcpy(type_str, "UDP", 16 * sizeof(char));
+            memcpy(type_str, "UDP", INET6_ADDRSTRLEN * sizeof(char));
             break;
         case IPPROTO_IPV6:
-            memcpy(type_str, "IPV6", 16 * sizeof(char));
+            memcpy(type_str, "IPV6", INET6_ADDRSTRLEN * sizeof(char));
             break;
         default:
-            memcpy(type_str, "Err", 16 * sizeof(char));
+            memcpy(type_str, "Err", INET6_ADDRSTRLEN * sizeof(char));
     }
     return;
 }
@@ -50,11 +56,10 @@ static void ippro_to_str(unsigned short protocol, unsigned char *type_str)
 void update_ipvs_collect_data(struct collect_value *dd)
 {
     dd->link_count++;
-
     return;
 }
 
-void update_ipvs_collect_map(struct link_key *k, unsigned short protocol, struct ip *laddr, int map_fd)
+void update_ipvs_collect_map(const struct link_key *k, unsigned short protocol, const struct ip *laddr, int map_fd)
 {
     struct collect_key      key = {0};
     struct collect_value    val = {0};
@@ -82,11 +87,11 @@ static void pull_probe_data(int fd, int collect_fd)
     struct link_key   key = {0};
     struct link_key   next_key = {0};
     struct link_value value;
-    unsigned char ip_pro_str[16];
-    unsigned char cli_ip_str[16];
-    unsigned char vir_ip_str[16];
-    unsigned char loc_ip_str[16];
-    unsigned char src_ip_str[16];
+    unsigned char ip_pro_str[INET6_ADDRSTRLEN];
+    unsigned char cli_ip_str[INET6_ADDRSTRLEN];
+    unsigned char vir_ip_str[INET6_ADDRSTRLEN];
+    unsigned char loc_ip_str[INET6_ADDRSTRLEN];
+    unsigned char src_ip_str[INET6_ADDRSTRLEN];
 
     while (bpf_map_get_next_key(fd, &key, &next_key) == 0) {
         ret = bpf_map_lookup_elem(fd, &next_key, &value);
@@ -116,7 +121,6 @@ static void pull_probe_data(int fd, int collect_fd)
         } else {
             key = next_key;
         }
-        
     }
 }
 
@@ -152,7 +156,7 @@ void print_ipvs_collect(int map_fd)
                 value.protocol,
                 value.link_count);
 
-            printf("collect c_ip[%s], v_ip[%s:%d] l_ip[%s] s_ip[%s:%d] link_count[%lld]. \n", 
+            printf("collect c_ip[%s], v_ip[%s:%d] l_ip[%s] s_ip[%s:%d] link_count[%lld]. \n",
                 cli_ip_str,
                 vir_ip_str,
                 ntohs(next_key.v_port),
@@ -170,8 +174,15 @@ void print_ipvs_collect(int map_fd)
 int main(int argc, char **argv)
 {
     int collect_map_fd = -1;
+    int err = -1;
 
-	LOAD(trace_lvs);
+    err = args_parse(argc, argv, "t:", &params);
+    if (err != 0) {
+        return -1;
+    }
+    printf("arg parse interval time:%us\n", params.period);
+
+    LOAD(trace_lvs);
 
     if (signal(SIGINT, sig_int) == SIG_ERR) {
         fprintf(stderr, "can't set signal handler: %s\n", strerror(errno));
@@ -179,19 +190,19 @@ int main(int argc, char **argv)
     }
 
     /* create collect hash map */
-    collect_map_fd = 
-        bpf_create_map(BPF_MAP_TYPE_HASH, sizeof(struct collect_key), sizeof(struct collect_value), 8192, 0);
+    collect_map_fd =
+        bpf_create_map(BPF_MAP_TYPE_HASH, sizeof(struct collect_key), sizeof(struct collect_value), IPVS_MAX_ENTRIES, 0);
     if (collect_map_fd < 0) {
         fprintf(stderr, "bpf_create_map collect map fd failed.\n");
         goto err;
     }
 
     printf("Successfully started! \n");
-    
+
     while (!stop) {
         pull_probe_data(GET_MAP_FD(lvs_link_map), collect_map_fd);
         print_ipvs_collect(collect_map_fd);
-        sleep(5);
+        sleep(params.period);
     }
 
 err:

@@ -1,3 +1,6 @@
+/*
+ * Copyright (c) Huawei Technologies Co., Ltd. 2020-2020. All rights reserved.
+ */
 #ifndef __NGX_PROBE_H__
 #define __NGX_PROBE_H__
 #include "nginx_1.12.1.h"

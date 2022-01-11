@@ -1,3 +1,6 @@
+/*
+ * Copyright (c) Huawei Technologies Co., Ltd. 2020-2020. All rights reserved.
+ */
 #ifndef __TRACE_HAPROXY__H
 #define __TRACE_HAPROXY__H
 
@@ -6,6 +9,7 @@
 #define TASK_COMM_LEN       16
 #define CMD_LEN             100
 #define LINK_MAX_ENTRIES    81920
+#define METRIC_ENTRIES      8192
 
 #define AF_INET     2   /* IP protocol family.  */
 #define AF_INET6    10  /* IP version 6.  */
@@ -48,7 +52,7 @@ enum obj_type {
     OBJ_TYPE_SERVER,       /* object is a struct server */
     OBJ_TYPE_APPLET,       /* object is a struct applet */
     OBJ_TYPE_APPCTX,       /* object is a struct appctx */
-    OBJ_TYPE_CONN,         /* object is a struct connection xxx*/
+    OBJ_TYPE_CONN,         /* object is a struct connection xxx */
     OBJ_TYPE_SRVRQ,        /* object is a struct dns_srvrq */
     OBJ_TYPE_CS,           /* object is a struct conn_stream */
     OBJ_TYPE_STREAM,       /* object is a struct stream */
@@ -70,7 +74,6 @@ struct proxy {
     char temp1[2];
     enum pr_mode mode;
     char temp2[1];
-    //char temp[6460];
 };
 
 struct receiver {
@@ -87,7 +90,6 @@ struct session {
     struct proxy        *fe;
     struct ha_listener  *listener;
     enum obj_type       *origin;
-    //char temp2[152];
 };
 
 struct connection_s {
@@ -115,7 +117,6 @@ struct stream_s {
     enum obj_type obj_type;
     char temp4[122];
     struct ssockaddr_s *target_addr;
-    //char temp5[592];
 };
 
 struct ip {

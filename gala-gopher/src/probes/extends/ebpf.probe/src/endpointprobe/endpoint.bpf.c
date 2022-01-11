@@ -1,3 +1,7 @@
+/*
+ * Copyright (c) Huawei Technologies Co., Ltd. 2020-2020. All rights reserved.
+ * Description: endpoint_probe bpf prog
+ */
 #ifdef BPF_PROG_USER
 #undef BPF_PROG_USER
 #endif
@@ -12,8 +16,7 @@
 #define LITTLE_INDIAN_SK_FL_PROTO_MASK  0x0000ff00
 #define ETH_P_IP 0x0800
 #define TCP_SOCK_REPAIR_MASK 0x02
-
-#define rsk_listener	__req_common.skc_listener
+#define rsk_listener    __req_common.skc_listener
 
 char LICENSE[] SEC("license") = "GPL";
 
@@ -61,7 +64,7 @@ static __always_inline void init_ep_val(struct endpoint_val_t *ep_val, struct so
     } else {
         ep_val->protocol = (sk_flags_offset & BIG_INDIAN_SK_FL_PROTO_MASK) >> BIG_INDIAN_SK_FL_PROTO_SHIFT;
     }
-    
+
     return;
 }
 
@@ -95,7 +98,6 @@ KPROBE_RET(__sock_create, pt_regs)
     type = (int)PROBE_PARM3(val);
     res = (struct socket **)PROBE_PARM5(val);
     kern = (int)PROBE_PARM6(val);
-
     if (kern != 0) {
         return;
     }
@@ -106,7 +108,7 @@ KPROBE_RET(__sock_create, pt_regs)
 
     sock = _(*res);
     sk = _(sock->sk);
-    if (!sk) {
+    if (sk == (void *)0) {
         bpf_printk("====[tid=%u]: sock is null.\n", tid);
         return;
     }
@@ -141,14 +143,14 @@ KPROBE_RET(inet_bind, pt_regs)
     PROBE_GET_PARMS(inet_bind, ctx, val);
     sock = (struct socket *)PROBE_PARM1(val);
     sk = _(sock->sk);
-    if (!sk) {
+    if (sk == (void *)0) {
         bpf_printk("====[tid=%u]: sock is null.\n", tid);
         return;
     }
 
     init_ep_key(&ep_key, (unsigned long)sk);
     ep_val = (struct endpoint_val_t *)bpf_map_lookup_elem(&endpoint_map, &ep_key);
-    if (!ep_val) {
+    if (ep_val == (void *)0) {
         bpf_printk("====[tid=%u]: endpoint can not find.\n", tid);
         return;
     }
@@ -188,14 +190,14 @@ KPROBE_RET(inet_listen, pt_regs)
     PROBE_GET_PARMS(inet_listen, ctx, val);
     sock = (struct socket *)PROBE_PARM1(val);
     sk = _(sock->sk);
-    if (!sk) {
+    if (sk == (void *)0) {
         bpf_printk("====[tid=%u]: sock is null.\n", tid);
         return;
     }
 
     init_ep_key(&ep_key, (unsigned long)sk);
     ep_val = (struct endpoint_val_t *)bpf_map_lookup_elem(&endpoint_map, &ep_key);
-    if (ep_val) {
+    if (ep_val != (void *)0) {
         ep_val->type = SK_TYPE_LISTEN_TCP;
         bpf_printk("====[tid=%u]: endpoint has been set to tcp listening state.\n", tid);
     }
@@ -260,7 +262,7 @@ static __always_inline void update_ep_listen_overflow_v6(struct endpoint_val_t *
 static __always_inline void update_ep_requestfails(struct endpoint_val_t *ep_val, struct pt_regs *ctx)
 {
     struct sock *ret = (struct sock *)PT_REGS_RC(ctx);
-    if (!ret) {
+    if (ret == (void *)0) {
         __sync_fetch_and_add(&ep_val->ep_stats.stats[EP_STATS_REQUEST_FAILS], 1);
     }
     return;
@@ -271,7 +273,7 @@ KPROBE(tcp_conn_request, pt_regs)
     struct sock *sk = (struct sock *)PT_REGS_PARM3(ctx);
     struct endpoint_val_t *ep_val = get_ep_val_by_sock(sk);
 
-    if (ep_val) {
+    if (ep_val != (void *)0) {
         update_ep_listen_drop(ep_val, sk, ctx);
         // here want_cookie may bypass listen overflow
         update_ep_listen_overflow(ep_val, sk, ctx);
@@ -285,7 +287,7 @@ KPROBE(tcp_v4_syn_recv_sock, pt_regs)
     struct sock *sk = (struct sock *)PT_REGS_PARM1(ctx);
     struct endpoint_val_t *ep_val = get_ep_val_by_sock(sk);
 
-    if (ep_val) {
+    if (ep_val != (void *)0) {
         update_ep_listen_drop(ep_val, sk, ctx);
         update_ep_listen_overflow(ep_val, sk, ctx);
     }
@@ -298,7 +300,7 @@ KPROBE(tcp_v6_syn_recv_sock, pt_regs)
     struct sock *sk = (struct sock *)PT_REGS_PARM1(ctx);
     struct endpoint_val_t *ep_val = get_ep_val_by_sock(sk);
 
-    if (ep_val) {
+    if (ep_val != (void *)0) {
         update_ep_listen_drop(ep_val, sk, ctx);
         update_ep_listen_overflow_v6(ep_val, sk, ctx);
     }
@@ -312,7 +314,7 @@ KPROBE(tcp_req_err, pt_regs)
     struct sock *lsk = listen_sock(sk);
     struct endpoint_val_t *ep_val = get_ep_val_by_sock(lsk);
 
-    if (ep_val) {
+    if (ep_val != (void *)0) {
         update_ep_listen_drop(ep_val, lsk, ctx);
     }
 
@@ -328,18 +330,18 @@ KPROBE_RET(tcp_create_openreq_child, pt_regs)
     struct endpoint_val_t *ep_val;
     u32 tid = bpf_get_current_pid_tgid();
 
-    if (!ret) {
+    if (ret == (void *)0) {
         return;
     }
 
     PROBE_GET_PARMS(tcp_create_openreq_child, ctx, val);
     sk = (struct sock *)PROBE_PARM1(val);
-    if (!sk) {
+    if (sk == (void *)0) {
         return;
     }
 
     ep_val = get_ep_val_by_sock(sk);
-    if (ep_val) {
+    if (ep_val != (void *)0) {
         __sync_fetch_and_add(&ep_val->ep_stats.stats[EP_STATS_PASSIVE_OPENS], 1);
     }
 
@@ -364,7 +366,7 @@ KPROBE_RET(tcp_connect, pt_regs)
 
     PROBE_GET_PARMS(tcp_connect, ctx, val);
     sk = (struct sock *)PROBE_PARM1(val);
-    if (!sk) {
+    if (sk == (void *)0) {
         return;
     }
 
@@ -379,7 +381,7 @@ KPROBE_RET(tcp_connect, pt_regs)
     }
 
     ep_val = get_ep_val_by_sock(sk);
-    if (ep_val) {
+    if (ep_val != (void *)0) {
         __sync_fetch_and_add(&ep_val->ep_stats.stats[EP_STATS_ACTIVE_OPENS], 1);
     }
     return;
@@ -397,7 +399,7 @@ KPROBE(tcp_done, pt_regs)
         }
 
         ep_val = get_ep_val_by_sock(sk);
-        if (ep_val) {
+        if (ep_val != (void *)0) {
             __sync_fetch_and_add(&ep_val->ep_stats.stats[EP_STATS_ATTEMPT_FAILS], 1);
         }
     }
@@ -415,12 +417,12 @@ KPROBE_RET(tcp_check_req, pt_regs)
 
     PROBE_GET_PARMS(tcp_check_req, ctx, val);
     sk = (struct sock *)PROBE_PARM1(val);
-    if (!sk) {
+    if (sk == (void *)0) {
         return;
     }
 
     ep_val = get_ep_val_by_sock(sk);
-    if (ep_val) {
+    if (ep_val != (void *)0) {
         update_ep_requestfails(ep_val, ctx);
     }
     return;
@@ -442,10 +444,10 @@ KPROBE(tcp_reset, pt_regs)
     struct sock *sk = (struct sock *)PT_REGS_PARM1(ctx);
     struct endpoint_val_t *ep_val = get_ep_val_by_sock(sk);
 
-    if (ep_val) {
+    if (ep_val != (void *)0) {
         update_ep_abortclose(ep_val, sk);
     }
-    
+
     return;
 }
 
@@ -465,13 +467,13 @@ KPROBE_RET(tcp_try_rmem_schedule, pt_regs)
 
     PROBE_GET_PARMS(tcp_try_rmem_schedule, ctx, val);
     sk = (struct sock *)PROBE_PARM1(val);
-    if (!sk) {
+    if (sk == (void *)0) {
         return;
     }
 
     lsk = listen_sock(sk);
     ep_val = get_ep_val_by_sock(lsk);
-    if (ep_val) {
+    if (ep_val != (void *)0) {
         __sync_fetch_and_add(&ep_val->ep_stats.stats[EP_STATS_RMEM_SCHEDULE], 1);
     }
     return;
@@ -493,13 +495,13 @@ KPROBE_RET(tcp_check_oom, pt_regs)
 
     PROBE_GET_PARMS(tcp_check_oom, ctx, val);
     sk = (struct sock *)PROBE_PARM1(val);
-    if (!sk) {
+    if (sk == (void *)0) {
         return;
     }
 
     lsk = listen_sock(sk);
     ep_val = get_ep_val_by_sock(lsk);
-    if (ep_val) {
+    if (ep_val != (void *)0) {
         __sync_fetch_and_add(&ep_val->ep_stats.stats[EP_STATS_TCP_OOM], 1);
     }
     return;
@@ -511,10 +513,10 @@ KPROBE(tcp_send_active_reset, pt_regs)
     struct sock *lsk = listen_sock(sk);
     struct endpoint_val_t *ep_val = get_ep_val_by_sock(lsk);
 
-    if (ep_val) {
+    if (ep_val != (void *)0) {
         __sync_fetch_and_add(&ep_val->ep_stats.stats[EP_STATS_SEND_TCP_RSTS], 1);
     }
-    
+
     return;
 }
 
@@ -530,7 +532,7 @@ KPROBE(tcp_write_wakeup, pt_regs)
     }
 
     ep_val = get_ep_val_by_sock(sk);
-    if (ep_val) {
+    if (ep_val != (void *)0) {
         __sync_fetch_and_add(&ep_val->ep_stats.stats[EP_STATS_KEEPLIVE_TIMEOUT], 1);
     }
 

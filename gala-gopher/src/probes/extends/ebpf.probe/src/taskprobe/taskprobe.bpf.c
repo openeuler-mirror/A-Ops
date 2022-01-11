@@ -1,3 +1,7 @@
+/*
+ * Copyright (c) Huawei Technologies Co., Ltd. 2020-2020. All rights reserved.
+ * Description: task_probe bpf prog
+ */
 #ifdef BPF_PROG_USER
 #undef BPF_PROG_USER
 #endif
@@ -20,17 +24,17 @@ KRAWTRACE(sched_process_fork, bpf_raw_tracepoint_args)
     struct task_kdata *parent_data;
     struct task_key child_key = {0};
     struct task_kdata child_data = {0};
-    
+
     struct task_struct* parent = (struct task_struct*)ctx->args[0];
     struct task_struct* child = (struct task_struct*)ctx->args[1];
 
     parent_key.tgid = _(parent->tgid);
     parent_key.pid = _(parent->pid);
     parent_data = bpf_map_lookup_elem(&task_map, &parent_key);
-    if (parent_data){
+    if (parent_data != (void *)0) {
         __sync_fetch_and_add(&parent_data->fork_count, 1);
     }
-    
+
     child_key.tgid = _(child->tgid);
     child_key.pid = _(child->pid);
     child_data.ptid = child_key.tgid;

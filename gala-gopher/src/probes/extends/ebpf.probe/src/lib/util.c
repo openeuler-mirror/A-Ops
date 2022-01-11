@@ -1,17 +1,6 @@
-/******************************************************************************
- * Copyright (c) Huawei Technologies Co., Ltd. 2021. All rights reserved.
- * gala-gopher licensed under the Mulan PSL v2.
- * You can use this software according to the terms and conditions of the Mulan PSL v2.
- * You may obtain a copy of Mulan PSL v2 at:
- *     http://license.coscl.org.cn/MulanPSL2
- * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR
- * IMPLIED, INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY OR FIT FOR A PARTICULAR
- * PURPOSE.
- * See the Mulan PSL v2 for more details.
- * Author: algorithmofdish
- * Create: 2021-09-28
- * Description: provide gala-gopher epbf util functions
- ******************************************************************************/
+/*
+ * Copyright (c) Huawei Technologies Co., Ltd. 2020-2020. All rights reserved.
+ */
 #include <stdio.h>
 #include <stdlib.h>
 #include <getopt.h>
@@ -29,7 +18,7 @@ char *get_cur_time()
 {
     /* return time str, ex: 2021/5/17 19:56:03 */
     static char tm[TM_STR_LEN] = {0};
-    struct tm *tmp_ptr;
+    struct tm *tmp_ptr = NULL;
     time_t t;
 
     time(&t);
@@ -56,7 +45,7 @@ void ip6_str(unsigned char *ip6, unsigned char *ip_str, unsigned int ip_str_size
     snprintf((char *)str, ip_str_size, NIP6_FMT, NIP6(addr));
     /* 2. compress */
     for (i = 0, j = 0; str[j] != '\0'; i++, j++) {
-        if (str[j] == '0' && (j == 0 || ip_str[i - 1] == ':')) {  //the first 0
+        if (str[j] == '0' && (j == 0 || ip_str[i - 1] == ':')) {  // the first 0
             if (str[j + 1] != '0') {        // 0XXX
                 j = j + 1;
             } else if (str[j + 2]!='0') {   // 00XX

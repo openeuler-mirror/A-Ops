@@ -1,17 +1,7 @@
-/******************************************************************************
- * Copyright (c) Huawei Technologies Co., Ltd. 2021. All rights reserved.
- * gala-gopher licensed under the Mulan PSL v2.
- * You can use this software according to the terms and conditions of the Mulan PSL v2.
- * You may obtain a copy of Mulan PSL v2 at:
- *     http://license.coscl.org.cn/MulanPSL2
- * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR
- * IMPLIED, INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY OR FIT FOR A PARTICULAR
- * PURPOSE.
- * See the Mulan PSL v2 for more details.
- * Author: algorithmofdish
- * Create: 2021-09-28
- * Description: provide gala-gopher epbf endpoint functions
- ******************************************************************************/
+/*
+ * Copyright (c) Huawei Technologies Co., Ltd. 2020-2020. All rights reserved.
+ */
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <ctype.h>
@@ -50,7 +40,8 @@
 #define FID_LEN 32
 
 
-static char __is_digit_str(const char *s) {
+static char __is_digit_str(const char *s)
+{
     int len = strlen(s);
     for (int i = 0; i < len; i++) {
         if (!(isdigit(s[i]))) {
@@ -60,7 +51,8 @@ static char __is_digit_str(const char *s) {
     return 1;
 }
 
-static int __get_next_str_offset(const char *s, const char* target) {
+static int __get_next_str_offset(const char *s, const char* target)
+{
     char *p;
 
     p = strstr(s, target);
@@ -70,8 +62,9 @@ static int __get_next_str_offset(const char *s, const char* target) {
     return -1;
 }
 
-static int __get_sub_str(const char *s, const char* start, const char *end, 
-                                 char* sub_str_buf, unsigned int buf_len) {
+static int __get_sub_str(const char *s, const char* start, const char *end,
+                                 char* sub_str_buf, unsigned int buf_len)
+{
     const char *p2, *p1;
     int len;
 
@@ -82,8 +75,7 @@ static int __get_sub_str(const char *s, const char* start, const char *end,
     // Point to end, if no terminator is specified
     if (end == NULL) {
         p2 = s + strlen(s);
-    }
-    else {
+    } else {
         p2 = strstr(s, end);
         if (p2 == NULL) {
             return -1;
@@ -93,15 +85,14 @@ static int __get_sub_str(const char *s, const char* start, const char *end,
     // Point to start, if no start character is specified
     if (start == NULL) {
         p1 = s;
-    }
-    else {
+    } else {
         p1 = strstr(s, start);
         if (p1 == NULL) {
             return -1;
         }
         p1 += strlen(start);
     }
-    
+
     len = p2 - p1;
     if ((len <= 0) || (len >= buf_len)) {
         return -1;
@@ -111,12 +102,12 @@ static int __get_sub_str(const char *s, const char* start, const char *end,
     return 0;
 }
 
-static int __erase_square_brackets(const char* s, char *buf, unsigned int buf_len) {
-
+static int __erase_square_brackets(const char* s, char *buf, unsigned int buf_len)
+{
     char *p1, *p2;
     int len;
     char tmp[LEN_BUF];
-    
+
     p1 = strchr(s, '[');
     p2 = strchr(s, ']');
     if ((p1 == NULL) || (p2 == NULL)) {
@@ -135,7 +126,7 @@ static int __erase_square_brackets(const char* s, char *buf, unsigned int buf_le
     if (len >= buf_len) {
         return -1;
     }
-    
+
     (void)memcpy(buf, tmp, len);
     buf[len] = 0;
     return 0;
@@ -145,8 +136,9 @@ static int __erase_square_brackets(const char* s, char *buf, unsigned int buf_le
 input : [::ffff:7.183.6.160]:10250
 7.183.6.160:57239
 */
-static int __get_estab_addr(const char *s, struct ip_addr* ip_addr, 
-               const char *addr_buf) {
+static int __get_estab_addr(const char *s, struct ip_addr* ip_addr,
+               const char *addr_buf)
+{
     char *p;
     int local_len, port_len, ip_len;
     char port_str[PORT_LEN];
@@ -155,7 +147,7 @@ static int __get_estab_addr(const char *s, struct ip_addr* ip_addr,
     if (p == NULL) {
         goto err;
     }
-    
+
     local_len = strlen(addr_buf);
     ip_len = p - addr_buf;
     if ((ip_len >= local_len) || (ip_len <= 0)) {
@@ -187,7 +179,8 @@ err:
     return -1;
 }
 
-static struct tcp_estab_comm* __get_estab_comm(const char *start, unsigned int len) {
+static struct tcp_estab_comm* __get_estab_comm(const char *start, unsigned int len)
+{
     /* ("sshd",pid=1264958,fd=3) */
     int ret;
     char comm[COMM_LEN];
@@ -196,7 +189,7 @@ static struct tcp_estab_comm* __get_estab_comm(const char *start, unsigned int l
     char tmp[LEN_BUF];
     const char *s = tmp;
     struct tcp_estab_comm *te_comm;
-    
+
     if ((start == NULL) || (len >= LEN_BUF)) {
         return NULL;
     }
@@ -207,7 +200,7 @@ static struct tcp_estab_comm* __get_estab_comm(const char *start, unsigned int l
     ret = __get_sub_str(s, "(\"", "\",", comm, COMM_LEN);
     ret |= __get_sub_str(s, "pid=", ",fd", pid_s, PID_LEN);
     ret |= __get_sub_str(s, ",fd=", ")", fd_s, FID_LEN);
-    if (ret < 0 || !__is_digit_str((const char *)pid_s) 
+    if (ret < 0 || !__is_digit_str((const char *)pid_s)
            || !__is_digit_str((const char *)fd_s)) {
         return NULL;
     }
@@ -220,7 +213,8 @@ static struct tcp_estab_comm* __get_estab_comm(const char *start, unsigned int l
     return te_comm;
 }
 
-static int __add_estab_comm(struct tcp_estab* te, struct tcp_estab_comm *te_comm) {
+static int __add_estab_comm(const struct tcp_estab* te, const struct tcp_estab_comm *te_comm)
+{
     if (te->te_comm_num >= TCP_ESTAB_COMM_MAX) {
         return -1;
     }
@@ -228,7 +222,8 @@ static int __add_estab_comm(struct tcp_estab* te, struct tcp_estab_comm *te_comm
     return 0;
 }
 
-static int __add_estab(struct tcp_estabs* tes, struct tcp_estab* te) {
+static int __add_estab(struct tcp_estabs* tes, struct tcp_estab* te)
+{
     if (tes->te_num >= TCP_ESTAB_MAX) {
         return -1;
     }
@@ -236,7 +231,8 @@ static int __add_estab(struct tcp_estabs* tes, struct tcp_estab* te) {
     return 0;
 }
 
-static struct tcp_estab* __new_estab() {
+static struct tcp_estab* __new_estab()
+{
     struct tcp_estab* te;
 
     te = (struct tcp_estab *)malloc(sizeof(struct tcp_estab));
@@ -247,7 +243,8 @@ static struct tcp_estab* __new_estab() {
     return te;
 }
 
-static void __free_estab(struct tcp_estab** pte) {
+static void __free_estab(struct tcp_estab** pte)
+{
     struct tcp_estab* te = *pte;
     if (te == NULL) {
         return;
@@ -264,7 +261,8 @@ static void __free_estab(struct tcp_estab** pte) {
     return;
 }
 
-static struct tcp_estabs* __new_estabs() {
+static struct tcp_estabs* __new_estabs()
+{
     struct tcp_estabs* tes;
 
     tes = (struct tcp_estabs *)malloc(sizeof(struct tcp_estabs));
@@ -275,7 +273,8 @@ static struct tcp_estabs* __new_estabs() {
     return tes;
 }
 
-static void __free_estabs(struct tcp_estabs** ptes) {
+static void __free_estabs(struct tcp_estabs** ptes)
+{
     struct tcp_estabs* tes = *ptes;
     if (tes == NULL) {
         return;
@@ -295,7 +294,8 @@ static void __free_estabs(struct tcp_estabs** ptes) {
 /*
     input : 7.183.6.160:22|10.136.115.208:56802@users:(("sshd",pid=1264958,fd=3),("sshd",pid=1264945,fd=3))
 */
-static int __get_estab(const char *s, struct tcp_estab* te) {
+static int __get_estab(const char *s, struct tcp_estab* te)
+{
     int ret;
     int offset;
     char *start, *end;
@@ -319,7 +319,7 @@ static int __get_estab(const char *s, struct tcp_estab* te) {
         goto err;
     }
 
-    // get all comm, pid, fd of establish tcp 
+    // get all comm, pid, fd of establish tcp
     ret = __get_sub_str(s, "@users:(", NULL, comms_str, LEN_BUF);
     if (ret < 0) {
         goto err;
@@ -354,14 +354,15 @@ static int __get_estab(const char *s, struct tcp_estab* te) {
             (void)free(te_comm);
         }
     }
-    
+
     return 0;
 err:
     return -1;
 }
 
 
-static int __get_estabs(struct tcp_estabs* tes) {
+static int __get_estabs(struct tcp_estabs* tes)
+{
     char line[LEN_BUF];
     FILE *f;
     const char *command = SS_ESTAB_COMMAND;
@@ -375,7 +376,7 @@ static int __get_estabs(struct tcp_estabs* tes) {
 
     while (!feof(f)) {
         (void)memset(line, 0, LEN_BUF);
-        if (NULL == fgets(line, LEN_BUF, f)) {
+        if (fgets(line, LEN_BUF, f) == NULL) {
             break;
         }
 
@@ -386,8 +387,7 @@ static int __get_estabs(struct tcp_estabs* tes) {
         ret = __get_estab((const char *)line, te);
         if (ret < 0) {
             __free_estab(&te);
-        } 
-        else {
+        }
             ret = __add_estab(tes, te);
             if (ret < 0) {
                 __free_estab(&te);
@@ -398,12 +398,13 @@ static int __get_estabs(struct tcp_estabs* tes) {
     return 0;
 }
 
-/* 
+/*
                        _______
-                       |     |                             
-   s example: 127.0.0.1:38338users:(("lubanagent",pid=1709,fd=4)) 
+                       |     |
+   s example: 127.0.0.1:38338users:(("lubanagent",pid=1709,fd=4))
 */
-static int __get_listen_port(const char *s, unsigned int *port) {
+static int __get_listen_port(const char *s, unsigned int *port)
+{
     int ret;
     char port_str[PORT_LEN];
     unsigned int port_num;
@@ -413,18 +414,17 @@ static int __get_listen_port(const char *s, unsigned int *port) {
         if (ret < 0) {
             return -1;
         }
-    }
-    else {
+    } else {
         ret = __get_sub_str(s, ":", "users:", port_str, PORT_LEN);
         if (ret < 0) {
             return -1;
         }
     }
-    
+
     if (!__is_digit_str((const char *)port_str)) {
         return -1;
     }
-   
+
     port_num = (unsigned int)atoi(port_str);
     if (port_num >= PORT_MAX_NUM) {
         return -1;
@@ -433,21 +433,23 @@ static int __get_listen_port(const char *s, unsigned int *port) {
     return 0;
 }
 
-/* 
+/*
                                      ____________
-                                     |          |                             
-   s example: 127.0.0.1:38338users:(("lubanagent",pid=1709,fd=4)) 
+                                     |          |
+   s example: 127.0.0.1:38338users:(("lubanagent",pid=1709,fd=4))
 */
-static int __get_listen_comm(const char *s, char *comm_buf, unsigned int buf_len) {
+static int __get_listen_comm(const char *s, char *comm_buf, unsigned int buf_len)
+{
     return __get_sub_str(s, "((\"", "\",pid", comm_buf, buf_len);
 }
 
-/* 
+/*
                                                      ______
-                                                     |    |                             
-   s example: 127.0.0.1:38338users:(("lubanagent",pid=1709,fd=4)) 
+                                                     |    |
+   s example: 127.0.0.1:38338users:(("lubanagent",pid=1709,fd=4))
 */
-static int __get_listen_pid(const char *s, unsigned int *pid) {
+static int __get_listen_pid(const char *s, unsigned int *pid)
+{
     int ret;
     char pid_str[PID_LEN];
 
@@ -455,7 +457,7 @@ static int __get_listen_pid(const char *s, unsigned int *pid) {
     if (ret < 0) {
         return -1;
     }
-    
+
     if (!__is_digit_str((const char *)pid_str)) {
         return -1;
     }
@@ -463,22 +465,23 @@ static int __get_listen_pid(const char *s, unsigned int *pid) {
     return 0;
 }
 
-static struct tcp_listen_port* __new_tlp(const char *s) {
+static struct tcp_listen_port* __new_tlp(const char *s)
+{
     int ret;
     unsigned int port, pid;
     char comm[COMM_LEN];
     struct tcp_listen_port* tlp;
-    
+
     ret = __get_listen_port(s, &port);
     if (ret < 0) {
         return NULL;
     }
-    
+
     ret = __get_listen_comm(s, comm, COMM_LEN);
     if (ret < 0) {
         return NULL;
     }
-    
+
     ret = __get_listen_pid(s, &pid);
     if (ret < 0) {
         return NULL;
@@ -491,10 +494,11 @@ static struct tcp_listen_port* __new_tlp(const char *s) {
     tlp->pid = pid;
     tlp->port = port;
     memcpy(tlp->comm, comm, COMM_LEN);
-    return tlp; 
+    return tlp;
 }
 
-static struct tcp_listen_ports* __new_tlps() {
+static struct tcp_listen_ports* __new_tlps()
+{
     struct tcp_listen_ports *tlps;
     tlps = (struct tcp_listen_ports *)malloc(sizeof(struct tcp_listen_ports));
     if (tlps == NULL) {
@@ -504,8 +508,8 @@ static struct tcp_listen_ports* __new_tlps() {
     return tlps;
 }
 
-static void __free_tlps(struct tcp_listen_ports** ptlps) {
-
+static void __free_tlps(struct tcp_listen_ports** ptlps)
+{
     struct tcp_listen_ports* tlps = *ptlps;
 
     for (int i = 0; i < tlps->tlp_num; i++) {
@@ -520,8 +524,9 @@ static void __free_tlps(struct tcp_listen_ports** ptlps) {
     return;
 }
 
-static int __add_tlp(struct tcp_listen_ports* tlps, struct tcp_listen_port* tlp) {
-    // Already judge legal of 'tlp->port' in function __get_listen_port 
+static int __add_tlp(const struct tcp_listen_ports* tlps, const struct tcp_listen_port* tlp)
+{
+    // Already judge legal of 'tlp->port' in function __get_listen_port
     if (tlps->tlp_hash[tlp->port] == 1) {
         return -1;
     }
@@ -536,7 +541,8 @@ static int __add_tlp(struct tcp_listen_ports* tlps, struct tcp_listen_port* tlp)
     return 0;
 }
 
-static int __get_tlps(struct tcp_listen_ports* tlps) {
+static int __get_tlps(struct tcp_listen_ports* tlps)
+{
     char line[LEN_BUF];
     FILE *f;
     const char *command = SS_LISTEN_PORTS_COMMAND;
@@ -550,7 +556,7 @@ static int __get_tlps(struct tcp_listen_ports* tlps) {
 
     while (!feof(f)) {
         (void)memset(line, 0, LEN_BUF);
-        if (NULL == fgets(line, LEN_BUF, f)) {
+        if (fgets(line, LEN_BUF, f) == NULL) {
             break;
         }
 
@@ -558,9 +564,9 @@ static int __get_tlps(struct tcp_listen_ports* tlps) {
         if (tlp == NULL) {
             continue;
         }
-        
+
         ret = __add_tlp(tlps, tlp);
-        if (ret < 0 ) {
+        if (ret < 0) {
             (void)free(tlp);
         }
     }
@@ -568,20 +574,22 @@ static int __get_tlps(struct tcp_listen_ports* tlps) {
     return 0;
 }
 
-char is_listen_port(unsigned int port, struct tcp_listen_ports* tlps) {
+char is_listen_port(unsigned int port, struct tcp_listen_ports* tlps)
+{
     if (port >= PORT_MAX_NUM) {
         return 0;
     }
-    return (0 == tlps->tlp_hash[port]) ? 0 : 1;
+    return (tlps->tlp_hash[port] == 0) ? 0 : 1;
 }
 
-struct tcp_listen_ports* get_listen_ports() {
+struct tcp_listen_ports* get_listen_ports()
+{
     struct tcp_listen_ports* tlps;
     int ret;
 
     tlps = __new_tlps();
     if (tlps == NULL) {
-        return NULL;      
+        return NULL;
     }
     ret = __get_tlps(tlps);
     if (ret < 0) {
@@ -591,11 +599,13 @@ struct tcp_listen_ports* get_listen_ports() {
     return tlps;
 }
 
-void free_listen_ports(struct tcp_listen_ports** ptlps) {
+void free_listen_ports(struct tcp_listen_ports** ptlps)
+{
     __free_tlps(ptlps);
 }
 
-struct tcp_estabs* get_estab_tcps(struct tcp_listen_ports* tlps) {
+struct tcp_estabs* get_estab_tcps(struct tcp_listen_ports* tlps)
+{
     struct tcp_estabs* tes;
     int ret;
 
@@ -612,20 +622,21 @@ struct tcp_estabs* get_estab_tcps(struct tcp_listen_ports* tlps) {
     for (int i = 0; i < tes->te_num; i++) {
         if (is_listen_port(tes->te[i]->local.port, tlps)) {
             tes->te[i]->is_client = 0;
-        } 
-        else {
+        }
             tes->te[i]->is_client = 1;
         }
     }
     return tes;
 }
 
-void free_estab_tcps(struct tcp_estabs** ptes) {
+void free_estab_tcps(struct tcp_estabs** ptes)
+{
     __free_estabs(ptes);
 }
 
 
-static int __add_tcp_endpoint(struct tcp_endpoints *teps, struct tcp_endpoint *tep) {
+static int __add_tcp_endpoint(const struct tcp_endpoints *teps, const struct tcp_endpoint *tep)
+{
     if (teps->tep_num >= TCP_ENDPOINT_MAX) {
         return -1;
     }
@@ -633,7 +644,8 @@ static int __add_tcp_endpoint(struct tcp_endpoints *teps, struct tcp_endpoint *t
     return 0;
 }
 
-static struct tcp_endpoints* __new_tcp_endpoints() {
+static struct tcp_endpoints* __new_tcp_endpoints()
+{
     struct tcp_endpoints* teps = (struct tcp_endpoints *)malloc(sizeof(struct tcp_endpoints));
     if (teps) {
         (void)memset(teps, 0, sizeof(struct tcp_endpoints));
@@ -642,10 +654,11 @@ static struct tcp_endpoints* __new_tcp_endpoints() {
     return teps;
 }
 
-static void __free_tcp_endpoints(struct tcp_endpoints** pteps) {
+static void __free_tcp_endpoints(struct tcp_endpoints** pteps)
+{
     int i;
     struct tcp_endpoints* teps = *pteps;
-    
+
     if (teps == NULL) {
         return;
     }
@@ -661,8 +674,9 @@ static void __free_tcp_endpoints(struct tcp_endpoints** pteps) {
 }
 
 
-static struct tcp_endpoint* __new_tcp_endpoint(enum endpoint_type ep_type, unsigned int port, 
-                                                     int ipv4, char *ip, unsigned int pid) {
+static struct tcp_endpoint* __new_tcp_endpoint(enum endpoint_type ep_type, unsigned int port,
+                                                     int ipv4, char *ip, unsigned int pid)
+{
     struct tcp_endpoint* tep;
 
     tep = (struct tcp_endpoint*)malloc(sizeof(struct tcp_endpoint));
@@ -672,7 +686,7 @@ static struct tcp_endpoint* __new_tcp_endpoint(enum endpoint_type ep_type, unsig
     (void)memset(tep, 0, sizeof(struct tcp_endpoint));
 
     tep->pid = pid;
-    
+
     if (ep_type == EP_TYPE_LISTEN) {
         tep->ep_type = EP_TYPE_LISTEN;
         tep->port = port;
@@ -690,7 +704,7 @@ static struct tcp_endpoint* __new_tcp_endpoint(enum endpoint_type ep_type, unsig
         }
         goto out;
     }
-    
+
     if (ep_type == EP_TYPE_IP_PORT) {
         tep->ep_type = EP_TYPE_IP_PORT;
         if (ipv4) {
@@ -709,11 +723,11 @@ out:
 }
 
 
-struct tcp_endpoints *get_tcp_endpoints(struct tcp_listen_ports* tlps, struct tcp_estabs* tes) {
+struct tcp_endpoints *get_tcp_endpoints(struct tcp_listen_ports* tlps, struct tcp_estabs* tes)
+{
     int i, j;
     struct tcp_endpoint* tep;
     struct tcp_endpoints* teps;
-
 
     teps = __new_tcp_endpoints();
     if (teps == NULL) {
@@ -732,26 +746,26 @@ struct tcp_endpoints *get_tcp_endpoints(struct tcp_listen_ports* tlps, struct tc
     for (i = 0; i < tes->te_num; i++) {
         for (j = 0; j < tes->te[i]->te_comm_num; j++) {
             if (tes->te[i]->is_client) {
-                tep = __new_tcp_endpoint(EP_TYPE_IP, 0, 
-                                         tes->te[i]->local.ipv4, 
+                tep = __new_tcp_endpoint(EP_TYPE_IP, 0,
+                                         tes->te[i]->local.ipv4,
                                          tes->te[i]->local.ip, tes->te[i]->te_comm[j]->pid);
             } else {
-                tep = __new_tcp_endpoint(EP_TYPE_IP_PORT, 
-                                  tes->te[i]->local.port, tes->te[i]->local.ipv4, 
+                tep = __new_tcp_endpoint(EP_TYPE_IP_PORT,
+                                  tes->te[i]->local.port, tes->te[i]->local.ipv4,
                                   tes->te[i]->local.ip, tes->te[i]->te_comm[j]->pid);
             }
             if (tep) {
                 if (__add_tcp_endpoint(teps, tep) < 0) {
                     (void)free(tep);
                 }
-            }            
+            }
         }
     }
     return teps;
 }
 
-void free_tcp_endpoints(struct tcp_endpoints **pteps) {
+void free_tcp_endpoints(struct tcp_endpoints **pteps)
+{
     __free_tcp_endpoints(pteps);
 }
-
 

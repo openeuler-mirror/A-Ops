@@ -1,3 +1,6 @@
+/*
+ * Copyright (c) Huawei Technologies Co., Ltd. 2020-2020. All rights reserved.
+ */
 #ifndef __TRACE_CONTAINERD__H
 #define __TRACE_CONTAINERD__H
 
@@ -25,7 +28,6 @@ struct go_containerd_t {
     int linux_Task_pid_offset;              // 24
     int linux_Task_namespace_offset;        // 40
     int linux_Task_cg_offset;               // 56
-
 };
 
 struct container_key {

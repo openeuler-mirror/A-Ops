@@ -1,3 +1,7 @@
+/*
+ * Copyright (c) Huawei Technologies Co., Ltd. 2020-2020. All rights reserved.
+ * Description: dnsmasq_probe user prog
+ */
 #include <errno.h>
 #include <signal.h>
 #include <stdio.h>
@@ -18,12 +22,12 @@
 
 #define METRIC_NAME_DNSMASQ_LINK    "dnsmasq_link"
 
-static struct probe_params params = {.period = 5,
+static struct probe_params params = {.period = DEFAULT_PERIOD,
                                      .elf_path = {0}};
-static volatile bool exiting = false;
+static volatile bool g_stop = false;
 static void sig_handler(int sig)
 {
-    exiting = true;
+    g_stop = true;
 }
 
 static void update_collect_map(struct link_key *k, struct link_value *v, int map_fd)
@@ -38,7 +42,7 @@ static void update_collect_map(struct link_key *k, struct link_value *v, int map
 
     /* lookup value */
     bpf_map_lookup_elem(map_fd, &key, &value);
-    
+
     /* update value */
     value.link_count++;
     value.pid = v->pid;
@@ -122,7 +126,6 @@ int main(int argc, char **argv)
         return -1;
     }
     printf("arg parse interval time:%us\n", params.period);
-    printf("arg parse input elf's path:%s\n", params.elf_path);
 
     LOAD(trace_dnsmasq);
 
@@ -152,10 +155,10 @@ int main(int argc, char **argv)
     }
 
     /* create collect hash map */
-    collect_map_fd = 
-        bpf_create_map(BPF_MAP_TYPE_HASH, sizeof(struct collect_key), sizeof(struct collect_value), 8192, 0);
-    
-    while (!exiting) {
+    collect_map_fd =
+        bpf_create_map(BPF_MAP_TYPE_HASH, sizeof(struct collect_key), sizeof(struct collect_value), METRIC_ENTRIES, 0);
+
+    while (!g_stop) {
         pull_probe_data(GET_MAP_FD(dns_query_link_map), collect_map_fd);
         print_dnsmasq_collect(collect_map_fd);
         sleep(params.period);

@@ -1,5 +1,7 @@
-// SPDX-License-Identifier: GPL-2.0 OR BSD-3-Clause
-/* Copyright (c) 2021 Huawei */
+/*
+ * Copyright (c) Huawei Technologies Co., Ltd. 2020-2020. All rights reserved.
+ * Description: haproxy_probe bpf prog
+ */
 #ifdef BPF_PROG_KERN
 #undef BPF_PROG_KERN
 #endif
@@ -21,8 +23,8 @@ static int sock_to_ip_str(struct ssockaddr_s *sock_addr, struct ip *ip_addr, uns
     struct sockaddr_in  *p;
     struct sockaddr_in6 *q;
     unsigned short family = _(sock_addr->ss_family);
-    
-    switch(family) {
+
+    switch (family) {
         case AF_INET:
             p = (struct sockaddr_in *)sock_addr;
             ip_addr->ip4 = _(p->sin_addr);
@@ -40,7 +42,7 @@ static int sock_to_ip_str(struct ssockaddr_s *sock_addr, struct ip *ip_addr, uns
     return family;
 }
 
-static int haproxy_obtain_key_value(struct stream_s *s, struct link_key *key)
+static int haproxy_obtain_key_value(const struct stream_s *s, struct link_key *key)
 {
     struct session      *sess_p;
     struct ha_listener  *l;
@@ -58,24 +60,24 @@ static int haproxy_obtain_key_value(struct stream_s *s, struct link_key *key)
     bpf_probe_read_user(&conn_p, sizeof(void *), &sess_p->origin);
     l = _(sess_p->listener);
 
-	/* client value */
+    /* client value */
     sock_p = _(conn_p->src);
     (void)sock_to_ip_str(sock_p, &key->c_addr, &key->c_port);
-    
-	/* haproxy value */
+
+    /* haproxy value */
     /* first, obtain info from listerner.rx.addr */
     bpf_probe_read_user(&rx_data, sizeof(struct receiver), (void *)&(l->rx));
-    switch(family) {
-		struct sockaddr_in  addr1;
+    switch (family) {
+        struct sockaddr_in  addr1;
         struct sockaddr_in6 addr2;
         case AF_INET:
             bpf_probe_read_user(&addr1, sizeof(struct sockaddr_in), (void *)&(rx_data.addr));
-			key->p_addr.ip4 = addr1.sin_addr;
+            key->p_addr.ip4 = addr1.sin_addr;
             key->p_port = addr1.sin_port;
             break;
         case AF_INET6:
             bpf_probe_read_user(&addr2, sizeof(struct sockaddr_in6), (void *)&(rx_data.addr));
-			__builtin_memcpy(&key->p_addr.ip6, &addr2.sin6_addr, IP6_LEN - 1);
+            __builtin_memcpy(&key->p_addr.ip6, &addr2.sin6_addr, IP6_LEN - 1);
             key->p_port = addr2.sin_port;
             break;
         default:
@@ -123,13 +125,12 @@ UPROBE(stream_free, pt_regs)
     struct stream_s *p = (struct stream_s *)PT_REGS_PARM1(ctx);
     struct link_key key = {0};
     struct link_value   *value_p;
-
     /* ip info */
     (void)haproxy_obtain_key_value(p, &key);
 
     /* lookup hash map, update connect state */
     value_p = bpf_map_lookup_elem(&haproxy_link_map, &key);
-    if (!value_p) {
+    if (value_p == (void *)0) {
         bpf_printk("===haproxy free stream not in hash map.\n");
         return;
     }
@@ -138,6 +139,6 @@ UPROBE(stream_free, pt_regs)
 
     /* update hash map */
     bpf_map_update_elem(&haproxy_link_map, &key, value_p, BPF_ANY);
-    
+
     return;
 }
