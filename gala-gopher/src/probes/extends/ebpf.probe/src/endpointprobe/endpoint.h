@@ -11,7 +11,6 @@
 
 #define MAX_ENTRIES 8192
 
-static const char *ep_file_path = "/sys/fs/bpf/endpoint";
 
 enum {
     EP_STATS_LISTEN_DROPS = 0,
@@ -33,9 +32,10 @@ struct endpoint_stats {
 };
 
 enum endpoint_type {
-    SK_TYPE_INIT = 0,
-    SK_TYPE_LISTEN_TCP,
+    SK_TYPE_LISTEN_TCP = 1,
     SK_TYPE_LISTEN_UDP,
+    SK_TYPE_CLIENT_TCP,
+    SK_TYPE_CLIENT_UDP,
 };
 
 struct ip {
@@ -45,14 +45,27 @@ struct ip {
     };
 };
 
-struct endpoint_key_t {
-    int pid;                /* 用户进程 ID */
+struct listen_port_key_t {
+    int protocol;           /* 协议族 */
+    unsigned short port;    /* 监听端口号 */
+};
+
+struct s_endpoint_key_t {
     unsigned long sock_p;   /* socket 地址 */
+};
+
+
+struct c_endpoint_key_t {
+    int pid;                /* 用户进程 ID */
+    int family;             /* 地址族 */
+    struct ip ip_addr;      /* 端口绑定的地址 */
+    int protocol;           /* 协议族 */
 };
 
 struct endpoint_val_t {
     enum endpoint_type type;    /* endpoint 类型 */
     unsigned int uid;           /* 用户 ID */
+    int pid;                    /* 用户进程 ID */
     char comm[TASK_COMM_LEN];   /* 进程名 */
     // unsigned int fd;            /* socket 文件描述符 */
     int family;                 /* 地址族 */

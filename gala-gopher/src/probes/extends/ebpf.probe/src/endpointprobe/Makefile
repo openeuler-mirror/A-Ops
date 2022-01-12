@@ -1,5 +1,6 @@
 include ../mk/var.mk
 INCLUDES = $(BASE_INC)
+INCLUDES += -I(../taskprobe)
 
 APP := endpoint
 
