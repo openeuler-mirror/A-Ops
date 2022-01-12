@@ -20,10 +20,9 @@ deps: $(DEPS)
 %.skel.h: %.bpf.o
 	$(BPFTOOL) gen skeleton $< > $@
 
-INCLUDES += -I$(LIBBPF_SRC)
 app: $(APP)
-%: %.c $(UTIL_SRC) $(LIBBPF_OBJ)
-	$(CC) $(CFLAGS) $(INCLUDES) $^ -lelf -lz -o $@
+%: %.c $(UTIL_SRC)
+	$(CC) $(CFLAGS) $(INCLUDES) $^ -lbpf -lelf -lz -o $@
 
 clean:
 	rm -rf $(DEPS)

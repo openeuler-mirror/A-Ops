@@ -5,9 +5,7 @@ Q = @
 CLANG ?= clang
 LLVM_STRIP ?= llvm-strip
 BPFTOOL ?= $(ROOT_DIR)/../../tools/bpftool
-LIBBPF_SRC := $(ROOT_DIR)/../../libbpf/src
 LIBBPF_DIR = $(ROOT_DIR)/../.output
-LIBBPF_OBJ = $(LIBBPF_DIR)/libbpf.a
 
 UTIL_DIR ?= $(ROOT_DIR)../lib
 UTIL_SRC ?= $(wildcard $(UTIL_DIR)/*.c)
@@ -24,6 +22,6 @@ EXTRA_CFLAGS ?= -g -O2 -Wall
 EXTRA_CDEFINE ?= -D__TARGET_ARCH_$(ARCH)
 CFLAGS := $(EXTRA_CFLAGS) $(EXTRA_CDEFINE)
 
-BASE_INC := -I$(ROOT_DIR)../../libbpf/include/uapi \
+BASE_INC := -I/usr/include \
             -I$(ROOT_DIR)../include \
 	    -I$(LIBBPF_DIR)

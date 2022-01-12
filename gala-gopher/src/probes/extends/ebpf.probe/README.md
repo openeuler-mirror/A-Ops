@@ -7,7 +7,6 @@ ebpf.probe是一个bpf探针程序的开发框架，定义了一些开发规范�
 目录结构：
 
 ```sh
-├── libbpf					# libbpf代码目录
 ├── build.sh				# BPF探针构建脚本
 ├── install.sh				# BPF探针安装脚本
 ├── src						# bpf程序源码目录

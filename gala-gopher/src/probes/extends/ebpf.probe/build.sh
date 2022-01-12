@@ -24,16 +24,6 @@ function add_bpftool() {
     fi
 }
 
-function checkout_libbpf()
-{
-    cd ${PRJ_DIR}
-    if [ ! -d "libbpf" ];then
-	git clone https://github.com/libbpf/libbpf.git
-        cd libbpf
-        git checkout v0.3
-    fi
-}
-
 function prepare_dep()
 {
     yum install -y elfutils-devel
@@ -50,7 +40,7 @@ function prepare_dep()
     V=`clang --version | grep version | awk -F ' ' '{print $3}' | awk -F . '{print $1}'`
     if [ "$V" -lt 10 ];then
         echo "Error: clange version need >= 10.x.x"
-	return 1
+        return 1
     fi
 
     yum install -y llvm
@@ -58,6 +48,19 @@ function prepare_dep()
         echo "Error: llvm install failed"
         return 1
     fi
+
+    yum install -y libbpf
+    if [ $? -ne 0 ]; then
+        echo "Error: Failed to install libbpf."
+        return 1
+    fi
+
+    yum install -y libbpf-devel
+    if [ $? -ne 0 ]; then
+        echo "Error: Failed to install libbpf-devel."
+        return 1
+    fi
+
     return 0
 }
 
@@ -98,7 +101,6 @@ fi
 
 if [ "$1" == "--check" ];
 then
-    checkout_libbpf
     prepare_dep
     exit
 fi
@@ -113,7 +115,6 @@ fi
 
 if [ "$1" == "-b"  -o  "$1" == "--build" ];
 then
-    checkout_libbpf
     prepare_dep
     compile_probe
     exit
