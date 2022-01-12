@@ -1,3 +1,7 @@
+/*
+ * Copyright (c) Huawei Technologies Co., Ltd. 2020-2020. All rights reserved.
+ * Description: tcp_probe user prog
+ */
 #include <errno.h>
 #include <signal.h>
 #include <stdio.h>
@@ -25,17 +29,19 @@
 #define FILTER_COMM "sshd"
 #define FILTER_COMM2 "broker"
 
-static volatile sig_atomic_t stop;
-static struct probe_params params = {.period = 5};
+static volatile sig_atomic_t g_stop;
+static struct probe_params params = {.period = DEFAULT_PERIOD};
 
-static int __is_filter_listen_port(int port) {
+static int __is_filter_listen_port(int port)
+{
     if (port == FILTER_LISTEN_PORT) {
         return 1;
     }
     return 0;
 }
 
-static int __is_filter_comm(char *comm) {
+static int __is_filter_comm(char *comm)
+{
     if (strstr(comm, FILTER_COMM)) {
         return 1;
     }
@@ -45,13 +51,12 @@ static int __is_filter_comm(char *comm) {
     return 0;
 }
 
-
 static void sig_int(int signo)
 {
-    stop = 1;
+    g_stop = 1;
 }
 
-void update_link_metric_data(struct metric_data *dd, struct link_data *d)
+static void update_link_metric_data(struct metric_data *dd, struct link_data *d)
 {
     __u32 tmp_srtt_max = dd->srtt_max;
 
@@ -66,9 +71,9 @@ void update_link_metric_data(struct metric_data *dd, struct link_data *d)
     /*
         metrics_rtt * (metrics_segs_in + metrics_segs_out) + link_rtt * (link_segs_in + link_segs_out)
        _________________________________________________________________________________________________
-       
+
        (metrics_segs_in + metrics_segs_out + link_segs_in + link_segs_out)
-    */ 
+    */
     if ((d->segs_in + d->segs_out + dd->segs_in + dd->segs_out)) {
         dd->srtt = (dd->srtt * (dd->segs_in + dd->segs_out) + d->srtt * (d->segs_in + d->segs_out)) /
                    (d->segs_in + d->segs_out + dd->segs_in + dd->segs_out);
@@ -86,7 +91,7 @@ void update_link_metric_data(struct metric_data *dd, struct link_data *d)
         }
     }
 
-    if (0 == dd->rcv_wnd_max) {
+    if (dd->rcv_wnd_max == 0) {
         dd->rcv_wnd_max = d->rcv_wnd;
     } else {
         if (d->rcv_wnd > dd->rcv_wnd_max) {
@@ -94,12 +99,12 @@ void update_link_metric_data(struct metric_data *dd, struct link_data *d)
         }
     }
 
-    if (0 == dd->rcv_wnd_avg || dd->link_num == 1) {
+    if (dd->rcv_wnd_avg == 0 || dd->link_num == 1) {
         dd->rcv_wnd_avg = d->rcv_wnd;
     } else {
         dd->rcv_wnd_avg = (dd->rcv_wnd_avg * (dd->link_num - 1) + d->rcv_wnd) / dd->link_num;
     }
-    
+
     dd->segs_in += d->segs_in;
     dd->segs_out += d->segs_out;
     dd->total_retrans += d->total_retrans;
@@ -111,7 +116,7 @@ void update_link_metric_data(struct metric_data *dd, struct link_data *d)
     dd->ofo_count += d->ofo_count;
 }
 
-void update_link_metric_map(struct link_key *k, struct link_data *d, int map_fd)
+static void update_link_metric_map(const struct link_key *k, struct link_data *d, int map_fd)
 {
     struct metric_key key = {0};
     struct metric_data data = {0};
@@ -142,7 +147,7 @@ void update_link_metric_map(struct link_key *k, struct link_data *d, int map_fd)
     return;
 }
 
-void pull_probe_data(int map_fd, int metric_map_fd)
+static void pull_probe_data(int map_fd, int metric_map_fd)
 {
     int ret;
     struct link_key key = {0};
@@ -154,31 +159,8 @@ void pull_probe_data(int map_fd, int metric_map_fd)
     while (bpf_map_get_next_key(map_fd, &key, &next_key) != -1) {
         ret = bpf_map_lookup_elem(map_fd, &next_key, &data);
         if (ret == 0) {
-
             ip_str(next_key.family, (unsigned char *)&(next_key.src_addr), src_ip_str, INET6_ADDRSTRLEN);
             ip_str(next_key.family, (unsigned char *)&(next_key.dst_addr), dst_ip_str, INET6_ADDRSTRLEN);
-            /*
-            printf("===[%s:%u]: src_addr:%s:%u, dst_addr:%s:%u, family:%u, role:%s, states:%x, rx:%llu, tx:%llu, "
-                   "seg_in:%u, segs_out:%u, total_retrans:%u, lost:%u, srtt:%uus, sk_err:%d, sk_err_soft:%d\n",
-                data.comm,
-                data.pid,
-                src_ip_str,
-                next_key.src_port,
-                dst_ip_str,
-                next_key.dst_port,
-                next_key.family,
-                (data.role ? "client" : "server"),
-                data.states,
-                data.rx,
-                data.tx,
-                data.segs_in,
-                data.segs_out,
-                data.total_retrans,
-                data.lost,
-                data.srtt,
-                data.sk_err,
-                data.sk_err_soft);
-            */
             /* 更新link metric */
             update_link_metric_map(&next_key, &data, metric_map_fd);
         }
@@ -189,14 +171,14 @@ void pull_probe_data(int map_fd, int metric_map_fd)
             key = next_key;
         }
     }
-    //printf("=========\n\n\n\n");
     return;
 }
 
-void print_link_metric(int map_fd)
+static void print_link_metric(int map_fd)
 {
     int ret = 0;
-    struct metric_key key = {0}, next_key = {0};
+    struct metric_key key = {0};
+    struct metric_key next_key = {0};
     struct metric_data data = {0};
 
     unsigned char src_ip_str[INET6_ADDRSTRLEN];
@@ -283,7 +265,8 @@ void bpf_add_long_link_info_to_map(int map_fd, __u32 proc_id, int fd, __u8 role)
     bpf_map_update_elem(map_fd, &proc_id, &ll, BPF_ANY);
 }
 
-void bpf_update_long_link_info_to_map(int long_link_map_fd, int listen_port_map_fd) {
+void bpf_update_long_link_info_to_map(int long_link_map_fd, int listen_port_map_fd)
+{
     int i, j;
     __u8 role;
     unsigned short listen_port;
@@ -294,7 +277,7 @@ void bpf_update_long_link_info_to_map(int long_link_map_fd, int listen_port_map_
     if (tlps == NULL) {
         goto err;
     }
-    
+
     /* insert listen ports into map */
     for (i = 0; i < tlps->tlp_num; i++) {
         listen_port = (unsigned short)tlps->tlp[i]->port;
@@ -314,10 +297,10 @@ void bpf_update_long_link_info_to_map(int long_link_map_fd, int listen_port_map_
         role = tes->te[i]->is_client == 1 ? LINK_ROLE_CLIENT : LINK_ROLE_SERVER;
         for (j = 0; j < tes->te[i]->te_comm_num; j++) {
             if (!__is_filter_comm(tes->te[i]->te_comm[j]->comm)) {
-                bpf_add_long_link_info_to_map(long_link_map_fd, 
+                bpf_add_long_link_info_to_map(long_link_map_fd,
                     (__u32)tes->te[i]->te_comm[j]->pid, (int)tes->te[i]->te_comm[j]->fd, role);
-                
-                printf("Update establish(pid = %u, fd = %d, role = %u)\n", 
+
+                printf("Update establish(pid = %u, fd = %d, role = %u)\n",
                     (__u32)tes->te[i]->te_comm[j]->pid, (int)tes->te[i]->te_comm[j]->fd, role);
             }
         }
@@ -343,11 +326,11 @@ int main(int argc, char **argv)
     if (err != 0) {
         return -1;
     }
-    
+
     printf("arg parse interval time:%us\n", params.period);
 
     LOAD(tcpprobe);
-    
+
     if (signal(SIGINT, sig_int) == SIG_ERR) {
         fprintf(stderr, "can't set signal handler: %s\n", strerror(errno));
         goto err;
@@ -366,7 +349,7 @@ int main(int argc, char **argv)
 
     printf("Successfully started!\n");
 
-    while (!stop) {
+    while (!g_stop) {
         pull_probe_data(GET_MAP_FD(link_map), metric_map_fd);
         print_link_metric(metric_map_fd);
         sleep(params.period);

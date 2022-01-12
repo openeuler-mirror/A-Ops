@@ -1,10 +1,13 @@
+/*
+ * Copyright (c) Huawei Technologies Co., Ltd. 2020-2020. All rights reserved.
+ * Description: kill_probe user prog
+ */
 #include <errno.h>
 #include <signal.h>
 #include <stdio.h>
 #include <unistd.h>
 #include <string.h>
 #include <sys/resource.h>
-
 
 #ifdef BPF_PROG_KERN
 #undef BPF_PROG_KERN
@@ -22,7 +25,7 @@
 
 #define PROBE_NAME "kill_info"
 
-static struct probe_params params = {.period = 5};
+static struct probe_params params = {.period = DEFAULT_PERIOD};
 
 static void print_bpf_output(void *ctx, int cpu, void *data, __u32 size)
 {
@@ -43,21 +46,21 @@ static void print_bpf_output(void *ctx, int cpu, void *data, __u32 size)
 int main(int argc, char **argv)
 {
     int map_fd, err;
-    struct perf_buffer* pb;
+    struct perf_buffer* pb = NULL;
 
     err = args_parse(argc, argv, "t:", &params);
     if (err != 0) {
         return -1;
     }
-	
+
     printf("arg parse interval time:%us\n", params.period);
 
-	LOAD(killprobe);
+    LOAD(killprobe);
 
-	map_fd = GET_MAP_FD(output);
+    map_fd = GET_MAP_FD(output);
 
     pb = create_pref_buffer(map_fd, print_bpf_output);
-    if (!pb) {
+    if (pb == NULL) {
         fprintf(stderr, "ERROR: crate perf buffer failed\n");
         goto err;
     }
@@ -65,7 +68,7 @@ int main(int argc, char **argv)
     poll_pb(pb, params.period * 1000);
 
     perf_buffer__free(pb);
-err:    
+err:
     UNLOAD(killprobe);
     return 0;
 }

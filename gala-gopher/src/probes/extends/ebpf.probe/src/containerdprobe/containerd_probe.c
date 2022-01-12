@@ -1,3 +1,7 @@
+/*
+ * Copyright (c) Huawei Technologies Co., Ltd. 2020-2020. All rights reserved.
+ * Description: container_probe user prog
+ */
 #include <errno.h>
 #include <signal.h>
 #include <stdio.h>
@@ -20,12 +24,12 @@
 #define METRIC_NAME_RUNC_TRACE    "container_data"
 #define CONTAINERS_MAP_FILE_PATH  "/sys/fs/bpf/probe/containers"
 
-static struct probe_params params = {.period = 5,
+static struct probe_params params = {.period = DEFAULT_PERIOD,
                                      .elf_path = {0}};
-static volatile bool exiting = false;
+static volatile bool g_stop = false;
 static void sig_handler(int sig)
 {
-    exiting = true;
+    g_stop = true;
 }
 
 static void bpf_update_containerd_symaddrs(int fd)
@@ -68,7 +72,7 @@ static void print_container_metric(int fd)
             /* add container's cgroup metrics when container start */
             if (v.memory_usage_in_bytes == 0) {
                 struct cgroup_metric   cgroup = {0};
-                get_container_cgroup_metric(nk.container_id, v.namespace, &cgroup);
+                get_container_cgroup_metric((char *)nk.container_id, (char *)v.namespace, &cgroup);
                 v.memory_usage_in_bytes = cgroup.memory_usage_in_bytes;
                 v.memory_limit_in_bytes = cgroup.memory_limit_in_bytes;
                 v.memory_stat_cache = cgroup.memory_stat_cache;
@@ -102,13 +106,13 @@ static void print_container_metric(int fd)
 }
 
 static void update_current_containers_info(int map_fd)
-{   
+{
     int ret;
     int i;
     struct container_value c_value = {0};
 
     container_tbl* cstbl = get_all_container();
-    if (cstbl) {
+    if (cstbl != NULL) {
         container_info *p = cstbl->cs;
         for (i = 0; i < cstbl->num; i++) {
             ret = bpf_map_lookup_elem(map_fd, p->container, &c_value);
@@ -134,26 +138,21 @@ int main(int argc, char **argv)
     if (err != 0) {
         return -1;
     }
-    printf("arg parse interval time:%us\n", params.period);
-    printf("arg parse input elf's path:%s\n", params.elf_path);
-
-    LOAD(containerd_probe);
-
-    update_current_containers_info(GET_MAP_FD(containers_map));
-
+    printf("arg parse interval time:%us  elf's path:%s\n", params.period, params.elf_path);
     /* Cleaner handling of Ctrl-C */
     signal(SIGINT, sig_handler);
     signal(SIGTERM, sig_handler);
-
+    /* load bpf prog */
+    LOAD(containerd_probe);
+    /* Update already running container */
+    update_current_containers_info(GET_MAP_FD(containers_map));
     /* Update BPF symaddrs for this binary */
     bpf_update_containerd_symaddrs(GET_MAP_FD(containerd_symaddrs_map));
-
     /* Find elf's abs_path */
     ELF_REAL_PATH(containerd, params.elf_path, NULL, elf, elf_num);
     if (elf_num <= 0) {
         return -1;
     }
-
     /* Attach tracepoint handler for each elf_path */
     for (int i = 0; i < elf_num; i++) {
         int ret = 0;
@@ -174,19 +173,17 @@ int main(int argc, char **argv)
 
     int pinned = bpf_obj_pin(GET_MAP_FD(containers_map), CONTAINERS_MAP_FILE_PATH);
     if (pinned < 0) {
-        printf("Failed to pin containers_map to the file system: %d (%s)\n", pinned, strerror(errno));
+        printf("Failed to pin containers_map to the file system: %d (%d)\n", pinned, errno);
         goto err;
     }
-
-    while (!exiting) {
+    while (!g_stop) {
         print_container_metric(GET_MAP_FD(containers_map));
         sleep(params.period);
     }
-
 err:
-/* Clean up */
+    /* Clean up */
     UNLOAD(containerd_probe);
-    if (access(CONTAINERS_MAP_FILE_PATH, F_OK) == 0){
+    if (access(CONTAINERS_MAP_FILE_PATH, F_OK) == 0) {
         if (remove(CONTAINERS_MAP_FILE_PATH) < 0) {
             printf("Delete the pinned file:%s failed!\n", CONTAINERS_MAP_FILE_PATH);
         }

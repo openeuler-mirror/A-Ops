@@ -1,7 +1,10 @@
+/*
+ * Copyright (c) Huawei Technologies Co., Ltd. 2020-2020. All rights reserved.
+ */
 #ifndef __TASKPROBE__H
 #define __TASKPROBE__H
 
-#define TASK_MAP_ENTRY_SIZE 256 * 10
+#define TASK_MAP_ENTRY_SIZE (256 * 10)
 
 struct task_key {
     __u32 tgid;

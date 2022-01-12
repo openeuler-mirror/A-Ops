@@ -1,3 +1,7 @@
+/*
+ * Copyright (c) Huawei Technologies Co., Ltd. 2020-2020. All rights reserved.
+ * Description: task_probe user prog
+ */
 #include <errno.h>
 #include <signal.h>
 #include <stdio.h>
@@ -57,9 +61,8 @@ int main(int argc, char **argv)
     int ret = -1;
 
     ret = signal(SIGINT, sig_int);
-    if (ret < 0) 
-    {
-        printf("Can't set signal handler: %s\n", strerror(errno));
+    if (ret < 0) {
+        printf("Can't set signal handler: %d\n", errno);
         goto err;
     }
 

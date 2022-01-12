@@ -1,3 +1,7 @@
+/*
+ * Copyright (c) Huawei Technologies Co., Ltd. 2020-2020. All rights reserved.
+ * Description: kill_probe bpf prog
+ */
 #ifdef BPF_PROG_USER
 #undef BPF_PROG_USER
 #endif
@@ -7,14 +11,12 @@
 
 char g_linsence[] SEC("license") = "GPL";
 
-
 struct bpf_map_def SEC("maps") output = {
     .type = BPF_MAP_TYPE_PERF_EVENT_ARRAY,
     .key_size = sizeof(u32),
     .value_size = sizeof(u32),
     .max_entries = 64,
 };
-
 
 struct bpf_map_def SEC("maps") monitor_killer_map = {
     .type = BPF_MAP_TYPE_HASH,

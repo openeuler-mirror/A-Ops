@@ -1,3 +1,6 @@
+/*
+ * Copyright (c) Huawei Technologies Co., Ltd. 2020-2020. All rights reserved.
+ */
 #ifndef __GOPHER_BPF_H__
 #define __GOPHER_BPF_H__
 
@@ -70,7 +73,7 @@ static __always_inline struct sock *sock_get_by_fd(int fd, struct task_struct *t
     if (fd >= max_fds) {
         return 0;
     }
-    
+
     bpf_probe_read_kernel(&f, sizeof(struct file *), (struct file *)(ff + fd));
     if (!f) {
         return 0;
@@ -117,35 +120,36 @@ static __always_inline void __get_probe_val(struct __probe_val *val,
     val->params[__PROBE_PARAM6] = p6;
 }
 
-static __always_inline int __do_push_match_map(const struct __probe_key *key, 
+static __always_inline int __do_push_match_map(const struct __probe_key *key,
                                     const struct __probe_val* val) {
     return bpf_map_update_elem(&__probe_match_map, key, val, BPF_ANY);
 }
 
 #define KPROBE_RET(func, type) \
     bpf_section("kprobe/" #func) \
-    void __kprobe_bpf_##func(struct type *ctx) {\
-        int ret;\
-        struct __probe_key __key = {0};\
-        struct __probe_val __val = {0};\
-        __get_probe_key(&__key, (const long)PT_REGS_FP(ctx));\ 
-        __get_probe_val(&__val, (const long)PT_REGS_PARM1(ctx),\
-                               (const long)PT_REGS_PARM2(ctx),\
-                               (const long)PT_REGS_PARM3(ctx),\
-                               (const long)PT_REGS_PARM4(ctx),\
-                               (const long)PT_REGS_PARM5(ctx),\
-                               (const long)PT_REGS_PARM6(ctx));\
-        ret = __do_push_match_map(&__key, &__val);\
-        if (ret < 0) {\
+    void __kprobe_bpf_##func(struct type *ctx) { \
+        int ret; \
+        struct __probe_key __key = {0}; \
+        struct __probe_val __val = {0}; \
+        __get_probe_key(&__key, (const long)PT_REGS_FP(ctx)); \
+        __get_probe_val(&__val, (const long)PT_REGS_PARM1(ctx), \
+                               (const long)PT_REGS_PARM2(ctx), \
+                               (const long)PT_REGS_PARM3(ctx), \
+                               (const long)PT_REGS_PARM4(ctx), \
+                               (const long)PT_REGS_PARM5(ctx), \
+                               (const long)PT_REGS_PARM6(ctx)); \
+        ret = __do_push_match_map(&__key, &__val); \
+        if (ret < 0) { \
             bpf_printk("---KPROBE_RET[" #func "] push failed.\n"); \
-        }\
-    }\
+        } \
+    } \
     \
     bpf_section("kretprobe/" #func) \
     void __kprobe_ret_bpf_##func(struct type *ctx)
 
-int __do_pop_match_map_entry(const struct __probe_key *key, 
-                                    struct __probe_val* val) {
+int __do_pop_match_map_entry(const struct __probe_key *key,
+                                    struct __probe_val* val)
+{
     struct __probe_val* tmp;
     tmp = bpf_map_lookup_elem(&__probe_match_map, (const void *)key);
     if (tmp == 0) {
@@ -159,23 +163,23 @@ int __do_pop_match_map_entry(const struct __probe_key *key,
     val->params[__PROBE_PARAM6] = tmp->params[__PROBE_PARAM6];
     return bpf_map_delete_elem(&__probe_match_map, (const void *)key);
 }
-                
+
 #define PROBE_GET_PARMS(func, ctx, probe_val) \
-    do {\
-        int ret;\
-        struct __probe_key __key = {0};\
-        struct __probe_val __val = {0};\
-        __get_probe_key(&__key, (const long)PT_REGS_FP(ctx));\
+    do { \
+        int ret; \
+        struct __probe_key __key = {0}; \
+        struct __probe_val __val = {0}; \
+        __get_probe_key(&__key, (const long)PT_REGS_FP(ctx)); \
         ret = __do_pop_match_map_entry((const struct __probe_key *)&__key, \
-                                        &__val);\
-        if (ret < 0) {\
+                                        &__val); \
+        if (ret < 0) { \
             bpf_printk("---PROBE_GET_PARMS[" #func "] pop failed.\n"); \
-        } else {\
-        __builtin_memcpy(&probe_val.val, &__val, sizeof(struct __probe_val));\
-        }\
+        } else { \
+        __builtin_memcpy(&probe_val.val, &__val, sizeof(struct __probe_val)); \
+        } \
         \
-    } while(0)
-                                                    
+    } while (0)
+
 #define PROBE_PARM1(probe_val) (probe_val).val.params[__PROBE_PARAM1]
 #define PROBE_PARM2(probe_val) (probe_val).val.params[__PROBE_PARAM2]
 #define PROBE_PARM3(probe_val) (probe_val).val.params[__PROBE_PARAM3]
@@ -244,35 +248,36 @@ static __always_inline void __get_probe_val(struct __probe_val *val,
     val->params[__PROBE_PARAM4] = p4;
     val->params[__PROBE_PARAM5] = p5;
 }
-                                                    
-static __always_inline int __do_push_match_map(const struct __probe_key *key, 
+
+static __always_inline int __do_push_match_map(const struct __probe_key *key,
                                     const struct __probe_val* val) {
     return bpf_map_update_elem(&__probe_match_map, key, val, BPF_ANY);
 }
 
 #define UPROBE_RET(func, type) \
     bpf_section("uprobe/" #func) \
-    void __uprobe_bpf_##func(struct type *ctx) {\
-        int ret;\
-        struct __probe_key __key = {0};\
-        struct __probe_val __val = {0};\
-        __get_probe_key(&__key, (const long)PT_REGS_FP(ctx));\
-        __get_probe_val(&__val, (const long)PT_REGS_PARM1(ctx),\
-                               (const long)PT_REGS_PARM2(ctx),\
-                               (const long)PT_REGS_PARM3(ctx),\
-                               (const long)PT_REGS_PARM4(ctx),\
-                               (const long)PT_REGS_PARM5(ctx));\
-        ret = __do_push_match_map(&__key, &__val);\
-        if (ret < 0) {\
+    void __uprobe_bpf_##func(struct type *ctx) { \
+        int ret; \
+        struct __probe_key __key = {0}; \
+        struct __probe_val __val = {0}; \
+        __get_probe_key(&__key, (const long)PT_REGS_FP(ctx)); \
+        __get_probe_val(&__val, (const long)PT_REGS_PARM1(ctx), \
+                               (const long)PT_REGS_PARM2(ctx), \
+                               (const long)PT_REGS_PARM3(ctx), \
+                               (const long)PT_REGS_PARM4(ctx), \
+                               (const long)PT_REGS_PARM5(ctx)); \
+        ret = __do_push_match_map(&__key, &__val); \
+        if (ret < 0) { \
             bpf_printk("---UPROBE_RET[" #func "] push failed.\n"); \
-        }\
-    }\
+        } \
+    } \
     \
     bpf_section("uretprobe/" #func) \
     void __uprobe_ret_bpf_##func(struct type *ctx)
 
-int __do_pop_match_map_entry(const struct __probe_key *key, 
-                                    struct __probe_val* val) {
+int __do_pop_match_map_entry(const struct __probe_key *key,
+                                    struct __probe_val* val)
+{
     struct __probe_val* tmp;
     tmp = bpf_map_lookup_elem(&__probe_match_map, (const void *)key);
     if (tmp == 0) {
@@ -285,23 +290,23 @@ int __do_pop_match_map_entry(const struct __probe_key *key,
     val->params[__PROBE_PARAM5] = tmp->params[__PROBE_PARAM5];
     return bpf_map_delete_elem(&__probe_match_map, (const void *)key);
 }
-        
+
 #define PROBE_GET_PARMS(func, ctx, probe_val) \
-    do {\
-        int ret;\
-        struct __probe_key __key = {0};\
-        struct __probe_val __val = {0};\
-        __get_probe_key(&__key, (const long)PT_REGS_FP(ctx));\
+    do { \
+        int ret; \
+        struct __probe_key __key = {0}; \
+        struct __probe_val __val = {0}; \
+        __get_probe_key(&__key, (const long)PT_REGS_FP(ctx)); \
         ret = __do_pop_match_map_entry((const struct __probe_key *)&__key, \
-                                        &__val);\
-        if (ret < 0) {\
+                                        &__val); \
+        if (ret < 0) { \
             bpf_printk("---PROBE_GET_PARMS[" #func "] pop failed.\n"); \
-        } else {\
-        __builtin_memcpy(&probe_val.val, &__val, sizeof(struct __probe_val));\
-        }\
+        } else { \
+        __builtin_memcpy(&probe_val.val, &__val, sizeof(struct __probe_val)); \
+        } \
         \
-    } while(0)
-                                            
+    } while (0)
+
 #define PROBE_PARM1(probe_val) (probe_val).val.params[__PROBE_PARAM1]
 #define PROBE_PARM2(probe_val) (probe_val).val.params[__PROBE_PARAM2]
 #define PROBE_PARM3(probe_val) (probe_val).val.params[__PROBE_PARAM3]
@@ -348,18 +353,18 @@ static __always_inline int set_memlock_rlimit(void)
 #define GET_PROG_FD(prog_name) bpf_program__fd(skel->progs.prog_name)
 
 #define __PROBE_MATCH_MAP_PIN(ret) \
-    do {\
-        int __fd;\
-        struct bpf_map *__map;\
+    do { \
+        int __fd; \
+        struct bpf_map *__map; \
         \
-        __map = GET_MAP_OBJ(__probe_match_map);\
+        __map = GET_MAP_OBJ(__probe_match_map); \
         __fd = bpf_obj_get(__PROBE_MATCH_MAP_PIN_PATH); \
-        if (__fd > 0) {\
-            ret = bpf_map__reuse_fd(__map, __fd);\
+        if (__fd > 0) { \
+            ret = bpf_map__reuse_fd(__map, __fd); \
             break; \
-        }\
-        ret = bpf_map__pin(__map, __PROBE_MATCH_MAP_PIN_PATH);\
-    } while(0)
+        } \
+        (ret) = bpf_map__pin(__map, __PROBE_MATCH_MAP_PIN_PATH); \
+    } while (0)
 
 #if UNIT_TESTING
 #define LOAD(probe_name) \
@@ -386,13 +391,13 @@ static __always_inline int set_memlock_rlimit(void)
         if (err) { \
             fprintf(stderr, "Failed to attach BPF skeleton\n"); \
             probe_name##_bpf__destroy(skel); \
-            skel = NULL;\
+            skel = NULL; \
             goto err; \
-        }\
-        __PROBE_MATCH_MAP_PIN(err);\
-        if (err < 0) {\
+        } \
+        __PROBE_MATCH_MAP_PIN(err); \
+        if (err < 0) { \
             goto err; \
-        }\
+        } \
     } while (0)
 #else
 #define LOAD(probe_name) \
@@ -415,13 +420,13 @@ static __always_inline int set_memlock_rlimit(void)
         if (err) { \
             fprintf(stderr, "Failed to attach BPF skeleton\n"); \
             probe_name##_bpf__destroy(skel); \
-            skel = NULL;\
+            skel = NULL; \
             goto err; \
-        }\
-        __PROBE_MATCH_MAP_PIN(err);\
-        if (err < 0) {\
+        } \
+        __PROBE_MATCH_MAP_PIN(err); \
+        if (err < 0) { \
             goto err; \
-        }\
+        } \
     } while (0)
 #endif
 
@@ -443,17 +448,17 @@ static __always_inline int set_memlock_rlimit(void)
 
 
 #define PATH_NUM   20
-#define ELF_REAL_PATH(proc_name,elf_abs_path,container_id,elf_path,path_num) \
+#define ELF_REAL_PATH(proc_name, elf_abs_path, container_id, elf_path, path_num) \
     do { \
         path_num = get_exec_file_path( #proc_name, elf_abs_path, #container_id, elf_path, PATH_NUM); \
-        if (path_num <= 0) { \
+        if ((path_num) <= 0) { \
             fprintf(stderr, "Failed to get proc(" #proc_name ") abs_path.\n"); \
             (void)free_exec_path_buf(elf_path, path_num); \
             break; \
         } \
     } while (0)
 
-#define UBPF_ATTACH(probe_name,elf_path,func_name,error) \
+#define UBPF_ATTACH(probe_name, elf_path, func_name, error) \
     do { \
         int err; \
         long symbol_offset; \
@@ -478,7 +483,7 @@ static __always_inline int set_memlock_rlimit(void)
         error = 1; \
     } while (0)
 
-#define UBPF_RET_ATTACH(probe_name,elf_path,func_name,error) \
+#define UBPF_RET_ATTACH(probe_name, elf_path, func_name, error) \
     do { \
         int err; \
         long symbol_offset; \
@@ -508,7 +513,7 @@ static __always_inline struct perf_buffer* create_pref_buffer(int map_fd, perf_b
     struct perf_buffer_opts pb_opts = {};
     struct perf_buffer *pb;
     int ret;
-    
+
     pb_opts.sample_cb = cb;
     pb = perf_buffer__new(map_fd, 8, &pb_opts);
     if (pb == NULL){
@@ -527,7 +532,7 @@ static __always_inline struct perf_buffer* create_pref_buffer(int map_fd, perf_b
 static __always_inline void poll_pb(struct perf_buffer *pb, int timeout_ms)
 {
     int ret;
-    
+
     while ((ret = perf_buffer__poll(pb, timeout_ms)) >= 0) {
         ;
     }

@@ -1,3 +1,6 @@
+/*
+ * Copyright (c) Huawei Technologies Co., Ltd. 2020-2020. All rights reserved.
+ */
 #ifndef __TCPPROBE__H
 #define __TCPPROBE__H
 
@@ -75,9 +78,9 @@ struct metric_data {
     __u32 rcv_wnd_avg;
     __u32 rcv_wnd_max;
     __u32 backlog_drops;
-    __u32 sk_drops;         
-    __u32 md5_hash_drops;   
-    __u32 filter_drops; 
+    __u32 sk_drops;
+    __u32 md5_hash_drops;
+    __u32 filter_drops;
     __u32 ofo_count;
     char role;
 };
@@ -106,7 +109,7 @@ struct link_key {
 struct link_data {
     pid_t pid;
     char comm[TASK_COMM_LEN];
-    __u16 states; /* established之后的状态合集 */
+    __u16 states; /* status after established */
     __u16 role;   /* 0: server 1: client */
     __u64 rx;               // FROM tcp_sock.sk_err
     __u64 tx;               // FROM tcp_sock.sk_err
@@ -126,28 +129,27 @@ struct link_data {
 };
 
 #define TCPPROBE_UPDATE_STATS(data, sk, new_state) \
-    do {\
-        struct tcp_sock *__tcp_sock = (struct tcp_sock *)sk;\
-        \
-        (data).rx = _(__tcp_sock->bytes_received);\
-        (data).tx = _(__tcp_sock->bytes_acked);\
-        (data).segs_in = _(__tcp_sock->segs_in);\
-        (data).segs_out = _(__tcp_sock->segs_out);\
-        (data).sk_err = _(sk->sk_err);\
-        (data).sk_err_soft = _(sk->sk_err_soft);\
-        (data).states |= (1 << new_state);\
-        (data).srtt = _(__tcp_sock->srtt_us) >> 3;\
-        (data).total_retrans = _(__tcp_sock->total_retrans);\
-        (data).lost_out = _(__tcp_sock->lost_out);\
-        (data).rcv_wnd = _(__tcp_sock->rcv_wnd);\
-    } while(0)
+    do { \
+        struct tcp_sock *__tcp_sock = (struct tcp_sock *)(sk); \
+        (data).rx = _(__tcp_sock->bytes_received); \
+        (data).tx = _(__tcp_sock->bytes_acked); \
+        (data).segs_in = _(__tcp_sock->segs_in); \
+        (data).segs_out = _(__tcp_sock->segs_out); \
+        (data).sk_err = _((sk)->sk_err); \
+        (data).sk_err_soft = _((sk)->sk_err_soft); \
+        (data).states |= (1 << (new_state)); \
+        (data).srtt = _(__tcp_sock->srtt_us) >> 3; \
+        (data).total_retrans = _(__tcp_sock->total_retrans); \
+        (data).lost_out = _(__tcp_sock->lost_out); \
+        (data).rcv_wnd = _(__tcp_sock->rcv_wnd); \
+    } while (0)
 
 #define __TCPPROBE_INC_EVT_BACKLOG_DROPS(data) __sync_fetch_and_add(&((data).backlog_drops), 1)
 #define __TCPPROBE_INC_EVT_MD5_DROPS(data) __sync_fetch_and_add(&((data).md5_hash_drops), 1)
 #define __TCPPROBE_INC_EVT_FILTER_DROPS(data) __sync_fetch_and_add(&((data).filter_drops), 1)
 #define __TCPPROBE_INC_EVT_OFO(data) __sync_fetch_and_add(&((data).ofo_count), 1)
 
-enum TCPPROBE_EVT_E{
+enum TCPPROBE_EVT_E {
     TCPPROBE_EVT_BACKLOG,
     TCPPROBE_EVT_MD5,
     TCPPROBE_EVT_FILTER,
@@ -155,29 +157,29 @@ enum TCPPROBE_EVT_E{
 };
 
 #define TCPPROBE_INC_EVT(type, data) \
-    do {\
-        switch (type)\
-        {\
-            case TCPPROBE_EVT_BACKLOG:\
-                __TCPPROBE_INC_EVT_BACKLOG_DROPS(data);\
-                break;\
-            case TCPPROBE_EVT_MD5:\
-                __TCPPROBE_INC_EVT_MD5_DROPS(data);\
-                break;\
-            case TCPPROBE_EVT_FILTER:\
-                __TCPPROBE_INC_EVT_FILTER_DROPS(data);\
-                break;\
-            case TCPPROBE_EVT_OFO:\
-                __TCPPROBE_INC_EVT_OFO(data);\
-                break;\
-        }\
-    }while(0)
+    do { \
+        switch (type) \
+        { \
+            case TCPPROBE_EVT_BACKLOG: \
+                __TCPPROBE_INC_EVT_BACKLOG_DROPS(data); \
+                break; \
+            case TCPPROBE_EVT_MD5: \
+                __TCPPROBE_INC_EVT_MD5_DROPS(data); \
+                break; \
+            case TCPPROBE_EVT_FILTER: \
+                __TCPPROBE_INC_EVT_FILTER_DROPS(data); \
+                break; \
+            case TCPPROBE_EVT_OFO: \
+                __TCPPROBE_INC_EVT_OFO(data); \
+                break; \
+        } \
+    }while (0)
 
 #define TCPPROBE_UPDATE_PRCINFO(data, proc_info) \
-    do {\
-        (data).pid = proc_info->pid;\
-        (data).role = proc_info->role;\
-        __builtin_memcpy(&(data).comm, &proc_info->comm, TASK_COMM_LEN);\
-    } while(0)
+    do { \
+        (data).pid = (proc_info)->pid; \
+        (data).role = (proc_info)->role; \
+        __builtin_memcpy(&(data).comm, &(proc_info)->comm, TASK_COMM_LEN); \
+    } while (0)
 
 #endif

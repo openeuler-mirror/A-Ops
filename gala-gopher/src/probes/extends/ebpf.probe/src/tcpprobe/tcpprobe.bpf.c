@@ -1,3 +1,7 @@
+/*
+ * Copyright (c) Huawei Technologies Co., Ltd. 2020-2020. All rights reserved.
+ * Description: tcp_probe bpf prog
+ */
 #ifdef BPF_PROG_USER
 #undef BPF_PROG_USER
 #endif
@@ -64,13 +68,13 @@ static __always_inline struct proc_info *__get_sock_data(struct sock *sk) {
 
 static __always_inline struct link_data *__get_link_entry_by_sock(struct sock *sk) {
     struct link_key key = {0};
-    
+
     __get_link_key_by_sock(&key, sk);
-    
+
     return bpf_map_lookup_elem(&link_map, &key);
 }
 
-static __always_inline void __create_link_entry_by_sock(struct link_key *key, 
+static __always_inline void __create_link_entry_by_sock(struct link_key *key,
                                 struct sock *sk, u16 new_state) {
     struct link_data data = {0};
     struct proc_info *p;
@@ -88,7 +92,8 @@ static __always_inline void __create_link_entry_by_sock(struct link_key *key,
     bpf_map_update_elem(&link_map, key, &data, BPF_ANY);
 }
 
-static void __update_link_stats(struct sock *sk, u16 new_state) {
+static void __update_link_stats(struct sock *sk, u16 new_state)
+{
     struct link_data *data;
     struct link_key key = {0};
 
@@ -102,10 +107,11 @@ static void __update_link_stats(struct sock *sk, u16 new_state) {
     return;
 }
 
-static void update_link_event(struct sock *sk, enum TCPPROBE_EVT_E type) {
+static void update_link_event(const struct sock *sk, enum TCPPROBE_EVT_E type)
+{
     struct link_data *data;
     struct link_key key = {0};
-    
+
     __get_link_key_by_sock(&key, sk);
     data = __get_link_entry_by_sock(sk);
     if (!data) {
@@ -116,23 +122,21 @@ static void update_link_event(struct sock *sk, enum TCPPROBE_EVT_E type) {
     return;
 }
 
-static void bpf_add_link(struct sock *sk, int role)
+static void bpf_add_link(const struct sock *sk, int role)
 {
-    long ret = -1;
+    long ret;
     struct proc_info proc = {0};
     u16 src_port = _(sk->sk_num);
     u16 dst_port = _(sk->sk_dport);
     /* if port 0, break. */
-    if (dst_port == 0 || src_port == 0) {
+    if (dst_port == 0 || src_port == 0)
         return;
-    }
 
     bpf_get_current_comm(&proc.comm, sizeof(proc.comm));
+    /* skip ssh sshd proc */
     if (proc.comm[0] == 's' && proc.comm[1] == 's' && proc.comm[2] == 'h' &&
-        (proc.comm[3] == '\0' || (proc.comm[3] == 'd' && proc.comm[4] == '\0'))) {
-        /* skip ssh sshd proc */
+        (proc.comm[3] == '\0' || (proc.comm[3] == 'd' && proc.comm[4] == '\0')))
         return;
-    }
 
     proc.pid = bpf_get_current_pid_tgid() >> 32;
     proc.ts = bpf_ktime_get_ns();
@@ -184,6 +188,7 @@ static void bpf_add_each_long_link(int fd, int role)
     if (sk) {
         bpf_add_link(sk, role);
     }
+
     return;
 }
 
@@ -253,18 +258,19 @@ KPROBE(tcp_set_state, pt_regs)
     return;
 }
 
-static inline int bpf_get_sk_role(struct sock *sk)
+static inline int bpf_get_sk_role(const struct sock *sk)
 {
     unsigned short sk_src_port = _(sk->sk_num);
     unsigned short *port = bpf_map_lookup_elem(&listen_port_map, &sk_src_port);
     if (port) {
         return LINK_ROLE_SERVER;
     }
+
     return LINK_ROLE_CLIENT;
 }
 
-// legal data path observation 
-static void update_link_stats(struct pt_regs *ctx)
+// legal data path observation
+static void update_link_stats(const struct pt_regs *ctx)
 {
     struct sock *sk = (struct sock *)PT_REGS_PARM1(ctx);
     struct proc_info *p = bpf_map_lookup_elem(&sock_map, &sk);
@@ -308,8 +314,9 @@ KPROBE(tcp_drop, pt_regs)
     __update_link_stats(sk, (u16)(_(sk->sk_state)));
 }
 
-KPROBE_RET(tcp_add_backlog, pt_regs) {
-    bool discard = (bool)PT_REGS_RC(ctx); 
+KPROBE_RET(tcp_add_backlog, pt_regs)
+{
+    bool discard = (bool)PT_REGS_RC(ctx);
     struct sock *sk;
     struct probe_val val;
 
@@ -320,8 +327,9 @@ KPROBE_RET(tcp_add_backlog, pt_regs) {
     }
 }
 
-KPROBE_RET(tcp_v4_inbound_md5_hash, pt_regs) {
-    bool discard = (bool)PT_REGS_RC(ctx); 
+KPROBE_RET(tcp_v4_inbound_md5_hash, pt_regs)
+{
+    bool discard = (bool)PT_REGS_RC(ctx);
     struct sock *sk;
     struct probe_val val;
 
@@ -332,8 +340,9 @@ KPROBE_RET(tcp_v4_inbound_md5_hash, pt_regs) {
     }
 }
 
-KPROBE_RET(tcp_filter, pt_regs) {
-    bool discard = (bool)PT_REGS_RC(ctx); 
+KPROBE_RET(tcp_filter, pt_regs)
+{
+    bool discard = (bool)PT_REGS_RC(ctx);
     struct sock *sk;
     struct probe_val val;
 
@@ -352,4 +361,3 @@ KPROBE(tcp_data_queue_ofo, pt_regs)
     update_link_event(sk, TCPPROBE_EVT_OFO);
 }
 */
-

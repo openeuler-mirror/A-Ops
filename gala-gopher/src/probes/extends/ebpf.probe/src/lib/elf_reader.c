@@ -1,3 +1,6 @@
+/*
+ * Copyright (c) Huawei Technologies Co., Ltd. 2020-2020. All rights reserved.
+ */
 #include <stdio.h>
 #include <stdlib.h>
 #include <ctype.h>
@@ -22,7 +25,8 @@
 #define COMMAND_ENV_PATH    "/usr/bin/env | grep PATH | awk -F '=' '{print $2}'"
 
 #if BPF_ELF_DESC("get glibc path")
-static int __get_link_path(const char* link, char *path, unsigned int len) {
+static int __get_link_path(const char* link, char *path, unsigned int len)
+{
     int ret;
 
     ret = readlink(link, path, len - 1);
@@ -34,9 +38,10 @@ static int __get_link_path(const char* link, char *path, unsigned int len) {
     return 0;
 }
 
-static int __do_get_glibc_path_host(char *path, unsigned int len) {
+static int __do_get_glibc_path_host(char *path, unsigned int len)
+{
     int ret;
-    FILE *f;
+    FILE *f = NULL;
     char line[LEN_BUF];
 
     path[0] = 0;
@@ -47,7 +52,7 @@ static int __do_get_glibc_path_host(char *path, unsigned int len) {
         return -1;
     }
 
-    if (NULL == fgets(line, LEN_BUF, f)) {
+    if (fgets(line, LEN_BUF, f) == NULL) {
         (void)pclose(f);
         return -1;
     }
@@ -62,7 +67,8 @@ static int __do_get_glibc_path_host(char *path, unsigned int len) {
     return 0;
 }
 
-static int __do_get_glibc_path_container(const char *container_id, char *path, unsigned int len) {
+static int __do_get_glibc_path_container(const char *container_id, char *path, unsigned int len)
+{
     int ret;
     char container_abs_path[PATH_LEN];
     char glibc_path[PATH_LEN];
@@ -91,7 +97,8 @@ static int __do_get_glibc_path_container(const char *container_id, char *path, u
     return 0;
 }
 
-int get_glibc_path(const char *container_id, char *path, unsigned int len) {
+int get_glibc_path(const char *container_id, char *path, unsigned int len)
+{
     if (container_id == NULL || container_id[0] == 0) {
         return __do_get_glibc_path_host(path, len);
     }
@@ -205,7 +212,7 @@ int get_exec_file_path(const char *binary_file, const char *specified_path, cons
         (void)snprintf(res_buf[0], PATH_LEN, "%s", specified_path);
         return 1;
     }
-    
+
     if (container_id == NULL || !strcmp(container_id, "NULL")) {
         /* exec file in host */
         ret_path_num = __do_get_path_from_host(binary_file, res_buf, res_len);
@@ -213,7 +220,7 @@ int get_exec_file_path(const char *binary_file, const char *specified_path, cons
         /* exec file in container */
         ret_path_num = __do_get_path_from_container(binary_file, container_id, res_buf, res_len);
     }
-    
+
     if (ret_path_num == 0) {
         printf("no executable in system default path, please specify abs_path.\n");
         return -1;
@@ -233,7 +240,7 @@ void free_exec_path_buf(char **ptr, int len)
 #endif
 
 #if BPF_ELF_DESC("get sym's offset from elf file")
-static int _find_sym(const char *sym_name, uint64_t addr, uint64_t len, void *payload) 
+static int _find_sym(const char *sym_name, uint64_t addr, uint64_t len, void *payload)
 {
     struct symbol_info *sym = (struct symbol_info *)payload;
     if (!strcmp(sym->name, sym_name)) {
@@ -249,7 +256,7 @@ static int openelf(const char *path, Elf **elf_out, int *fd_out)
     if (*fd_out < 0) {
         return -1;
     }
-    
+
     if (elf_version(EV_CURRENT) == EV_NONE) {
         close(*fd_out);
         return -1;
@@ -279,7 +286,7 @@ static int __elf_get_type(const char *path)
     elf_end(e);
     close(fd);
 
-    if (!res) {
+    if (res == NULL) {
         return -1;
     }
     return hdr.e_type;
@@ -317,7 +324,7 @@ static int __elf_foreach_load_section(const char *path, void *payload)
     err = 0;
 
 exit:
-    if (e) {
+    if (e != NULL) {
         elf_end(e);
     }
     if (fd >= 0) {
@@ -330,6 +337,10 @@ static int __list_in_scn(Elf *e, Elf_Scn *section, size_t stridx, size_t symsize
                         elf_symcb callback, elf_symcb_lazy callback_lazy, void *payload, bool debugfile)
 {
     Elf_Data *data = NULL;
+
+    if (symsize == 0) {
+        return -1;
+    }
 
     while ((data = elf_getdata(section, data)) != 0) {
         size_t symcount = data->d_size / symsize;
@@ -377,11 +388,11 @@ static int __list_in_scn(Elf *e, Elf_Scn *section, size_t stridx, size_t symsize
     return 0;
 }
 
-static int __listsymbols(Elf *e, elf_symcb callback, elf_symcb_lazy callback_lazy, 
+static int __listsymbols(Elf *e, elf_symcb callback, elf_symcb_lazy callback_lazy,
                         void *payload, struct symbol_info_option *option, bool debugfile)
 {
     Elf_Scn *section = NULL;
-    
+
     while ((section = elf_nextscn(e, section)) != 0) {
         GElf_Shdr header;
         if (!gelf_getshdr(section, &header)) {
@@ -414,16 +425,16 @@ static int __foreach_sym_core(const char *path, elf_symcb callback, elf_symcb_la
     int res = -1;
 
     res = openelf(path, &e, &fd);
-    if (!option || res < 0) {
+    if (option == NULL || res < 0) {
         return -1;
     }
 
     if (option->use_debug_file && debugfile == NOT_DEBUG_FILE) {
-        if (path) {
+        if (path != NULL) {
             __foreach_sym_core(path, callback, callback_lazy, option, payload, IS_DEBUG_FILE);
         }
     }
-    
+
     res = __listsymbols(e, callback, callback_lazy, payload, option, debugfile);
     elf_end(e);
     close(fd);
@@ -437,14 +448,14 @@ static int elf_reader_foreach_sym(const char *path, elf_symcb callback, void *op
     return __foreach_sym_core(path, callback, NULL, o, payload, IS_DEBUG_FILE);
 }
 
-static int elf_reader_foreach_sym_lazy(const char *path, elf_symcb_lazy callback, void *option, void *payload) 
+static int elf_reader_foreach_sym_lazy(const char *path, elf_symcb_lazy callback, void *option, void *payload)
 {
     struct symbol_info_option *o = option;
     o->lazy_symbolize = 1;
     return __foreach_sym_core(path, NULL, callback, o, payload, IS_DEBUG_FILE);
 }
 
-int resolve_symbol_infos(const char *bin_path, const char *sym_name, 
+int resolve_symbol_infos(const char *bin_path, const char *sym_name,
                          struct symbol_info_option *option, uint64_t *sym_offset)
 {
     int err = -1;
@@ -495,7 +506,7 @@ int resolve_symbol_infos(const char *bin_path, const char *sym_name,
         *sym_offset = sym.offset - load.binary_vaddr + load.binary_offset;
         err = 0;
     } else {
-        printf(" resolve_symbol_infos err, sym_off(%lld) beyond (%lld ~ %lld).\n", 
+        printf(" resolve_symbol_infos err, sym_off(%lld) beyond (%lld ~ %lld).\n",
                             sym.offset, load.binary_vaddr, load.binary_vaddr + load.binary_memsz);
         goto invalid_module;
     }

@@ -1,5 +1,7 @@
-// SPDX-License-Identifier: GPL-2.0 OR BSD-3-Clause
-/* Copyright (c) 2021 Huawei */
+/*
+ * Copyright (c) Huawei Technologies Co., Ltd. 2020-2020. All rights reserved.
+ * Description: ipvs_probe bpf prog
+ */
 #ifdef BPF_PROG_USER
 #undef BPF_PROG_USER
 #endif
@@ -8,7 +10,6 @@
 #include "trace_lvs.h"
 
 char g_linsence[] SEC("license") = "GPL";
-
 
 struct bpf_map_def SEC("maps") lvs_link_map = {
     .type = BPF_MAP_TYPE_HASH,
@@ -24,10 +25,10 @@ struct bpf_map_def SEC("maps") lvs_flag_map = {
     .max_entries = IPVS_MIN_ENTRIES,
 };
 
-static void ipvs_state_get_key(struct ip_vs_conn *p, struct link_key *key, struct ip *addr, u16 *port)
+static void ipvs_state_get_key(const struct ip_vs_conn *p, struct link_key *key, struct ip *addr, u16 *port)
 {
     key->family = _(p->af);
-    switch(key->family) {
+    switch (key->family) {
         case AF_INET:
             /* server */
             bpf_probe_read_kernel(&key->s_addr.in, sizeof(struct in_addr), &p->daddr);
@@ -56,10 +57,11 @@ static void ipvs_state_get_key(struct ip_vs_conn *p, struct link_key *key, struc
     return;
 }
 
-static void ipvs_fnat_state_get_key(struct ip_vs_conn_fnat *p, struct link_key *key, struct ip *addr, u16 *port)
+static void ipvs_fnat_state_get_key(const struct ip_vs_conn_fnat *p, struct link_key *key,
+                                    const struct ip *addr, u16 *port)
 {
     key->family = _(p->af);
-    switch(key->family) {
+    switch (key->family) {
         case AF_INET:
             /* server */
             bpf_probe_read_kernel(&key->s_addr.in, sizeof(struct in_addr), &p->daddr);
@@ -118,7 +120,7 @@ KRETPROBE(ip_vs_conn_new, pt_regs)
 
     /* lookup ipvs flags */
     char *buf = bpf_map_lookup_elem(&lvs_flag_map, &f_key);
-    if (buf) {
+    if (buf != (void *)0) {
         flags = *buf;
     }
     bpf_printk("===LVS new_ret get flags[0x%x]. \n", flags);
@@ -152,7 +154,7 @@ KPROBE(ip_vs_conn_expire, pt_regs)
 
     /* lookup ipvs flags */
     char *buf = bpf_map_lookup_elem(&lvs_flag_map, &f_key);
-    if (buf) {
+    if (buf != (void *)0) {
         flags = *buf;
     }
 
@@ -172,7 +174,7 @@ KPROBE(ip_vs_conn_expire, pt_regs)
 
     /* lookup hash map, update connect state */
     value_p = bpf_map_lookup_elem(&lvs_link_map, &key);
-    if (!value_p) {
+    if (value_p == (void *)0) {
         bpf_printk("===LVS ubind dest not in hash map.\n");
         return;
     }
@@ -180,7 +182,7 @@ KPROBE(ip_vs_conn_expire, pt_regs)
     value_p->close_ts = bpf_ktime_get_ns();
     value_p->l_addr = local_addr;
     value_p->l_port = local_port;
-    
+
     bpf_map_update_elem(&lvs_link_map, &key, value_p, BPF_ANY);
 
     return;
