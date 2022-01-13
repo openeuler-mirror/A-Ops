@@ -213,7 +213,7 @@ static struct tcp_estab_comm* __get_estab_comm(const char *start, unsigned int l
     return te_comm;
 }
 
-static int __add_estab_comm(const struct tcp_estab* te, const struct tcp_estab_comm *te_comm)
+static int __add_estab_comm(struct tcp_estab* te, const struct tcp_estab_comm *te_comm)
 {
     if (te->te_comm_num >= TCP_ESTAB_COMM_MAX) {
         return -1;
@@ -388,10 +388,9 @@ static int __get_estabs(struct tcp_estabs* tes)
         if (ret < 0) {
             __free_estab(&te);
         }
-            ret = __add_estab(tes, te);
-            if (ret < 0) {
-                __free_estab(&te);
-            }
+        ret = __add_estab(tes, te);
+        if (ret < 0) {
+            __free_estab(&te);
         }
     }
     (void)pclose(f);
@@ -524,7 +523,7 @@ static void __free_tlps(struct tcp_listen_ports** ptlps)
     return;
 }
 
-static int __add_tlp(const struct tcp_listen_ports* tlps, const struct tcp_listen_port* tlp)
+static int __add_tlp(struct tcp_listen_ports* tlps, const struct tcp_listen_port* tlp)
 {
     // Already judge legal of 'tlp->port' in function __get_listen_port
     if (tlps->tlp_hash[tlp->port] == 1) {
@@ -623,8 +622,7 @@ struct tcp_estabs* get_estab_tcps(struct tcp_listen_ports* tlps)
         if (is_listen_port(tes->te[i]->local.port, tlps)) {
             tes->te[i]->is_client = 0;
         }
-            tes->te[i]->is_client = 1;
-        }
+        tes->te[i]->is_client = 1;
     }
     return tes;
 }
@@ -635,7 +633,7 @@ void free_estab_tcps(struct tcp_estabs** ptes)
 }
 
 
-static int __add_tcp_endpoint(const struct tcp_endpoints *teps, const struct tcp_endpoint *tep)
+static int __add_tcp_endpoint(struct tcp_endpoints *teps, const struct tcp_endpoint *tep)
 {
     if (teps->tep_num >= TCP_ENDPOINT_MAX) {
         return -1;

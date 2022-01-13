@@ -1,3 +1,17 @@
+/******************************************************************************
+ * Copyright (c) Huawei Technologies Co., Ltd. 2021. All rights reserved.
+ * iSulad licensed under the Mulan PSL v2.
+ * You can use this software according to the terms and conditions of the Mulan PSL v2.
+ * You may obtain a copy of Mulan PSL v2 at:
+ *     http://license.coscl.org.cn/MulanPSL2
+ * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR
+ * IMPLIED, INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY OR FIT FOR A PARTICULAR
+ * PURPOSE.
+ * See the Mulan PSL v2 for more details.
+ * Author: Hubble_Zhu 
+ * Create: 2021-04-12
+ * Description:
+ ******************************************************************************/
 #include <stdio.h>
 #include <stdint.h>
 #include <string.h>
@@ -8,13 +22,13 @@
 
 #include "egress.h"
 
-EgressMgr *EgressMgrCreate()
+EgressMgr *EgressMgrCreate(void)
 {
     EgressMgr *mgr;
     mgr = (EgressMgr *)malloc(sizeof(EgressMgr));
-    if (mgr == NULL) {
+    if (mgr == NULL)
         return NULL;
-    }
+
     memset(mgr, 0, sizeof(EgressMgr));
 
     mgr->fifo = FifoCreate(MAX_FIFO_SIZE);
@@ -27,13 +41,12 @@ EgressMgr *EgressMgrCreate()
 
 void EgressMgrDestroy(EgressMgr *mgr)
 {
-    if (mgr == NULL) {
+    if (mgr == NULL)
         return;
-    }
 
-    if (mgr->fifo != NULL) {
+    if (mgr->fifo != NULL)
         FifoDestroy(mgr->fifo);
-    }
+
     free(mgr);
     return;
 }
@@ -44,9 +57,8 @@ static int EgressInit(EgressMgr *mgr)
     int ret = 0;
 
     mgr->epoll_fd = epoll_create(MAX_EPOLL_SIZE);
-    if (mgr->epoll_fd < 0) {
+    if (mgr->epoll_fd < 0)
         return -1;
-    }
 
     event.events = EPOLLIN;
     event.data.ptr = mgr->fifo;
@@ -59,10 +71,9 @@ static int EgressInit(EgressMgr *mgr)
     printf("[EGRESS] add EGRESS FIFO trigger success.\n");
 
     return 0;
-
 }
 
-static int EgressDataProcesssInput(Fifo *fifo, EgressMgr *mgr)
+static int EgressDataProcesssInput(Fifo *fifo, const EgressMgr *mgr)
 {
     // read data from fifo
     char *dataStr = NULL;
@@ -91,7 +102,7 @@ static int EgressDataProcesssInput(Fifo *fifo, EgressMgr *mgr)
     return 0;
 }
 
-static int EgressDataProcess(EgressMgr *mgr)
+static int EgressDataProcess(const EgressMgr *mgr)
 {
     struct epoll_event events[MAX_EPOLL_EVENTS_NUM];
     int32_t events_num = 0;
@@ -102,23 +113,19 @@ static int EgressDataProcess(EgressMgr *mgr)
     if (events_num < 0) {
         printf("Egress Msg wait failed: %s.\n", strerror(errno));
         if (errno == EINTR)
-        {
-            // 调试时会收到调试信号，返回-1，忽略即可
+            // if receive the debugging signal(-1) when debugging, please ignore it
             events_num = 0;
-        }
+
         return events_num;
     }
 
-    // printf("[EGRESS] Get epoll event.\n");
     for (int i = 0; i < events_num; i++) {
         fifo = (Fifo *)events[i].data.ptr;
         ret = EgressDataProcesssInput(fifo, mgr);
-        if (ret != 0) {
+        if (ret != 0)
             return -1;
-        }
     }
     return 0;
-
 }
 
 void EgressMain(EgressMgr *mgr)
@@ -139,4 +146,3 @@ void EgressMain(EgressMgr *mgr)
         }
     }
 }
-

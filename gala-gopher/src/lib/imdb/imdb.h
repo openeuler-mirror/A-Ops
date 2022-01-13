@@ -1,3 +1,17 @@
+/******************************************************************************
+ * Copyright (c) Huawei Technologies Co., Ltd. 2021. All rights reserved.
+ * iSulad licensed under the Mulan PSL v2.
+ * You can use this software according to the terms and conditions of the Mulan PSL v2.
+ * You may obtain a copy of Mulan PSL v2 at:
+ *     http://license.coscl.org.cn/MulanPSL2
+ * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR
+ * IMPLIED, INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY OR FIT FOR A PARTICULAR
+ * PURPOSE.
+ * See the Mulan PSL v2 for more details.
+ * Author: Hubble_Zhu
+ * Create: 2021-04-12
+ * Description:
+ ******************************************************************************/
 #ifndef __IMDB_H__
 #define __IMDB_H__
 
@@ -28,18 +42,12 @@
 #define METRIC_TYPE_LABEL "label"
 #define METRIC_TYPE_KEY "key"
 
+#define THOUSAND        1000
+
 typedef struct {
     char machineId[MAX_IMDB_MACHINEID_LEN];
     char hostName[MAX_IMDB_HOSTNAME_LEN];
 } IMDB_NodeInfo;
-
-// typedef enum {
-//     METRIC_TYPE_COUNTER = 0,
-//     METRIC_TYPE_GAUGE,
-//     METRIC_TYPE_HISTOGRAM,
-//     METRIC_TYPE_SUMMARY,
-//     METRIC_TYPE_MAX,
-// } MetricType;
 
 typedef struct {
     char description[MAX_IMDB_METRIC_DESC_LEN];
@@ -88,11 +96,11 @@ int IMDB_RecordAppendKey(IMDB_Record *record, uint32_t keyIdx, char *val);
 void IMDB_RecordUpdateTime(IMDB_Record *record, time_t seconds);
 void IMDB_RecordDestroy(IMDB_Record *record);
 
-IMDB_Record *HASH_findRecord(IMDB_Record **records, IMDB_Record *record);
-void HASH_deleteRecord(IMDB_Record **records, IMDB_Record *record);
-void HASH_deleteAndFreeRecords(IMDB_Record **records);
+IMDB_Record *HASH_findRecord(const IMDB_Record **records, const IMDB_Record *record);
+void HASH_deleteRecord(const IMDB_Record **records, const IMDB_Record *record);
+void HASH_deleteAndFreeRecords(const IMDB_Record **records);
 void HASH_addRecord(IMDB_Record **records, IMDB_Record *record);
-uint32_t HASH_recordCount(IMDB_Record **records);
+uint32_t HASH_recordCount(const IMDB_Record **records);
 
 IMDB_Table *IMDB_TableCreate(char *name, uint32_t capacity);
 int IMDB_TableSetMeta(IMDB_Table *table, IMDB_Record *metaRecord);
@@ -108,9 +116,9 @@ int IMDB_DataBaseMgrAddTable(IMDB_DataBaseMgr *mgr, IMDB_Table* table);
 IMDB_Table *IMDB_DataBaseMgrFindTable(IMDB_DataBaseMgr *mgr, char *tableName);
 
 int IMDB_DataBaseMgrAddRecord(IMDB_DataBaseMgr *mgr, char *recordStr, int len);
-int IMDB_DataBaseMgrData2String(IMDB_DataBaseMgr *mgr, char *buffer, int maxLen);
+int IMDB_DataBaseMgrData2String(IMDB_DataBaseMgr *mgr, char *buffer, uint32_t maxLen);
 
-int IMDB_DataStr2Json(IMDB_DataBaseMgr *mgr, char *recordStr, int recordLen, char *jsonStr, int jsonStrLen);
+int IMDB_DataStr2Json(IMDB_DataBaseMgr *mgr, char *recordStr, int recordLen, char *jsonStr, uint32_t jsonStrLen);
 
 #endif
 

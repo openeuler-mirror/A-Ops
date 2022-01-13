@@ -1,15 +1,30 @@
+/******************************************************************************
+ * Copyright (c) Huawei Technologies Co., Ltd. 2021. All rights reserved.
+ * iSulad licensed under the Mulan PSL v2.
+ * You can use this software according to the terms and conditions of the Mulan PSL v2.
+ * You may obtain a copy of Mulan PSL v2 at:
+ *     http://license.coscl.org.cn/MulanPSL2
+ * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR
+ * IMPLIED, INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY OR FIT FOR A PARTICULAR
+ * PURPOSE.
+ * See the Mulan PSL v2 for more details.
+ * Author: Hubble_Zhu
+ * Create: 2021-04-12
+ * Description:
+ ******************************************************************************/
 #include <stdint.h>
 #include <string.h>
 #include <stdlib.h>
 #include "kafka.h"
 
-static void dr_msg_cb(rd_kafka_t *rk, const rd_kafka_message_t *rkmessage, void *opaque){
-    if(rkmessage->err) {
+static void dr_msg_cb(rd_kafka_t *rk, const rd_kafka_message_t *rkmessage, void *opaque)
+{
+    if (rkmessage->err) {
         fprintf(stderr, "%% Message delivery failed: %s\n", rd_kafka_err2str(rkmessage->err));
     } else {
         fprintf(stderr, "%% Message delivered (%zd bytes, ""partition %"PRId32")\n",
                         rkmessage->len, rkmessage->partition);
-    } /* rkmessage被librdkafka自动销毁*/
+    } /* rkmessage被librdkafka自动销毁 */
 }
 
 KafkaMgr *KafkaMgrCreate(const char *broker, const char *topic)
@@ -17,7 +32,7 @@ KafkaMgr *KafkaMgrCreate(const char *broker, const char *topic)
     rd_kafka_conf_res_t ret;
     KafkaMgr *mgr = NULL;
     char errstr[MAX_KAFKA_ERRSTR_SIZE];
-    
+
     mgr = (KafkaMgr *)malloc(sizeof(KafkaMgr));
     if (mgr == NULL) {
         printf("malloc memory for egress_kafka_mgr failed.\n");
@@ -51,45 +66,39 @@ KafkaMgr *KafkaMgrCreate(const char *broker, const char *topic)
         rd_kafka_destroy(mgr->rk);
         rd_kafka_conf_destroy(mgr->conf);
         free(mgr);
-        return NULL;    
+        return NULL;
     }
 
     return mgr;
-
 }
 
 void KafkaMgrDestroy(KafkaMgr *mgr)
 {
-    if (mgr == NULL) {
+    if (mgr == NULL)
         return;
-    }
 
-    if (mgr->rkt != NULL) {
+    if (mgr->rkt != NULL)
         rd_kafka_topic_destroy(mgr->rkt);
-    }
-    if (mgr->rk != NULL) {
+
+    if (mgr->rk != NULL)
         rd_kafka_destroy(mgr->rk);
-    }
-    if (mgr->conf != NULL) {
+
+    if (mgr->conf != NULL)
         rd_kafka_conf_destroy(mgr->conf);
-    }
 
     free(mgr);
     return;
-
 }
 
-int KafkaMsgProduce(KafkaMgr *mgr, const char *msg, const uint32_t msgLen)
+int KafkaMsgProduce(const KafkaMgr *mgr, const char *msg, const uint32_t msgLen)
 {
     int ret = 0;
     ret = rd_kafka_produce(mgr->rkt, RD_KAFKA_PARTITION_UA, RD_KAFKA_MSG_F_COPY, (void *)msg, msgLen, NULL, 0, NULL);
-    if (ret == -1)
-    {
-        printf("Failed to produce msg to topic %s: %s.\n", rd_kafka_topic_name(mgr->rkt), 
+    if (ret == -1) {
+        printf("Failed to produce msg to topic %s: %s.\n", rd_kafka_topic_name(mgr->rkt),
                                                            rd_kafka_err2str(rd_kafka_last_error()));
         return -1;
     }
     return 0;
 }
-
 
