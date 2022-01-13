@@ -7,7 +7,6 @@ kafka:
     topic: gala_gopher
     broker: ["1.1.1.1:9092"]
     group_id: group_id
-    broker:
 
 prometheus:
     base_url: "http://localhost:9090/"

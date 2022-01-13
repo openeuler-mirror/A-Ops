@@ -1,23 +1,23 @@
-from spider.data_process.prometheus_processor import g_prometheus_processor
-from spider.conf.observe_meta import ObserveMetaMgt, g_observe_meta_mgt
+from spider.conf.observe_meta import ObserveMetaMgt
 from spider.controllers.gala_spider import get_observed_entity_list
-from spider.util import conf
-from tests.common import gen_task_entity, gen_tcp_link_entity
+from spider.data_process.prometheus_processor import PrometheusProcessor
+from .common import gen_task_entity, gen_tcp_link_entity, init_spider_config, init_observe_meta_mgt
+
+
+def setup_module():
+    init_spider_config()
+    init_observe_meta_mgt()
 
 
 class TestController:
-    def _mock_context(self, mocker, observe_meta_mgt: ObserveMetaMgt):
-        mocker.patch.object(conf, 'db_agent', 'prometheus')
-
-        mocker.patch.object(g_observe_meta_mgt, 'data_agent', observe_meta_mgt.data_agent)
-        mocker.patch.object(g_observe_meta_mgt, 'observe_meta_map', observe_meta_mgt.observe_meta_map)
-        mocker.patch.object(g_observe_meta_mgt, 'relation_meta_set', observe_meta_mgt.relation_meta_set)
+    def setup_class(self):
+        self.prometheus_processor = PrometheusProcessor()
 
     def _mock_get_observe_entities(self, mocker, observe_entities):
-        mocker.patch.object(g_prometheus_processor, 'get_observe_entities', return_value=observe_entities)
+        mocker.patch.object(self.prometheus_processor, 'get_observe_entities', return_value=observe_entities)
 
-    def test_get_observed_entity_list(self, mocker, observe_meta_mgt: ObserveMetaMgt):
-        self._mock_context(mocker, observe_meta_mgt)
+    def test_get_observed_entity_list(self, mocker):
+        observe_meta_mgt = ObserveMetaMgt()
 
         self._mock_get_observe_entities(mocker, [])
         resp, code = get_observed_entity_list(0)
@@ -53,5 +53,3 @@ class TestController:
         assert len(task1_resp.attrs) == 5
         assert len(task1_resp.dependingitems) == 1
         assert len(task1_resp.dependeditems) == 2
-
-

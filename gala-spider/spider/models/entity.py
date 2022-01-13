@@ -18,7 +18,9 @@ class Entity(Model):
     Do not edit the class manually.
     """
 
-    def __init__(self, entityid: str=None, type: str=None, name: str=None, level: str=None, dependingitems: List[Dependenceitem]=None, dependeditems: List[Dependenceitem]=None, attrs: List[Attr]=None, anomaly: Anomaly=None):  # noqa: E501
+    def __init__(self, entityid: str=None, type: str=None, name: str=None, level: str=None,
+                 dependingitems: List[Dependenceitem]=None, dependeditems: List[Dependenceitem]=None,
+                 attrs: List[Attr]=None, anomaly: Anomaly=None):  # noqa: E501
         """Entity - a model defined in Swagger
 
         :param entityid: The entityid of this Entity.  # noqa: E501

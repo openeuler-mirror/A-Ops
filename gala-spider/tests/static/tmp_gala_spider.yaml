@@ -1,0 +1,13 @@
+global:
+  data_source: "prometheus"
+  ui_source: "neo4j"
+  observe_conf_path: "tmp_observe.yaml"
+
+prometheus:
+  base_url: "http://localhost:9090/"
+  instant_api: "/api/v1/query"
+  range_api: "/api/v1/query_range"
+  step: 1
+
+spider:
+  port: 5000

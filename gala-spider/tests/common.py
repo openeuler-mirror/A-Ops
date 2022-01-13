@@ -1,7 +1,8 @@
-import copy
+import os
 
+from spider.conf import SpiderConfig
 from spider.collector.data_collector import DataRecord
-from spider.conf.observe_meta import ObserveMeta
+from spider.conf.observe_meta import ObserveMeta, ObserveMetaMgt
 from spider.entity_mgt import ObserveEntityCreator
 from spider.entity_mgt.models import ObserveEntity
 
@@ -126,3 +127,18 @@ def gen_ipvs_link_entity(observe_meta: ObserveMeta, server_ip='0.0.0.0', server_
         'timestamp': kwargs.get('timestamp') or 0,
     }
     return ObserveEntityCreator.create_observe_entity(entity_type, entity_data, observe_meta)
+
+
+def init_spider_config():
+    cur_file_path, _ = os.path.split(os.path.abspath(__file__))
+    spider_config = SpiderConfig()
+    spider_config.load_from_yaml(cur_file_path + "./static/tmp_gala_spider.yaml")
+    return spider_config
+
+
+def init_observe_meta_mgt():
+    cur_file_path, _ = os.path.split(os.path.abspath(__file__))
+    observe_meta_mgt = ObserveMetaMgt()
+    observe_meta_mgt.load_from_yaml(cur_file_path + "./static/tmp_observe.yaml")
+    assert len(observe_meta_mgt.observe_meta_map) > 0
+    return observe_meta_mgt
