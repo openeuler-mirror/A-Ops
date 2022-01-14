@@ -332,7 +332,7 @@ void TestHASH_addRecord()
     CU_ASSERT(ret == 0);
 
     ret = IMDB_RecordAppendKey(another_record, 0, "key");
-    CU_ASSERT(ret == 0);    
+    CU_ASSERT(ret == 0);
 
     HASH_addRecord(records, record);
     CU_ASSERT(HASH_recordCount(records) == 1);
@@ -358,7 +358,7 @@ void TestHASH_deleteRecord()
     CU_ASSERT(ret == 0);
 
     ret = IMDB_RecordAppendKey(another_record, 0, "key2");
-    CU_ASSERT(ret == 0);    
+    CU_ASSERT(ret == 0);
 
     HASH_addRecord(records, record);
     CU_ASSERT(HASH_recordCount(records) == 1);

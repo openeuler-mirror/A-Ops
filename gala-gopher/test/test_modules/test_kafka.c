@@ -14,7 +14,6 @@ void TestKafkaMgrCreate()
     CU_ASSERT(mgr != NULL);
     CU_ASSERT(strcmp(mgr->kafkaBroker, KAFKA_BROKER) == 0);
     CU_ASSERT(strcmp(mgr->kafkaTopic, KAFKA_TOPIC) == 0);
-    // KafkaMgrDestroy(mgr);
 }
 
 void TestKafkaMsgProduce()
@@ -26,7 +25,6 @@ void TestKafkaMsgProduce()
 
     ret = KafkaMsgProduce(mgr, msg, strlen(msg));
     CU_ASSERT(ret == 0);
-    // KafkaMgrDestroy(mgr);
 }
 
 void TestKafkaMain(CU_pSuite suite)

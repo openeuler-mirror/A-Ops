@@ -1,8 +1,22 @@
+/******************************************************************************
+ * Copyright (c) Huawei Technologies Co., Ltd. 2021. All rights reserved.
+ * iSulad licensed under the Mulan PSL v2.
+ * You can use this software according to the terms and conditions of the Mulan PSL v2.
+ * You may obtain a copy of Mulan PSL v2 at:
+ *     http://license.coscl.org.cn/MulanPSL2
+ * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR
+ * IMPLIED, INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY OR FIT FOR A PARTICULAR
+ * PURPOSE.
+ * See the Mulan PSL v2 for more details.
+ * Author: Hubble_Zhu
+ * Create: 2021-04-12
+ * Description:
+ ******************************************************************************/
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
-#include "resource.h"
 #include "base.h"
+#include "resource.h"
 
 #if GALA_GOPHER_INFO("inner func")
 static int ConfigMgrInit(ResourceMgr *resourceMgr);
@@ -27,7 +41,7 @@ static int WebServerInit(ResourceMgr *resourceMgr);
 static void WebServerDeinit(ResourceMgr *resourceMgr);
 #endif
 
-typedef struct tagSubModuleInitor{
+typedef struct tagSubModuleInitor {
     int (*subModuleInitFunc)(ResourceMgr *);
     void (*subModuleDeinitFunc)(ResourceMgr *);
 } SubModuleInitor;
@@ -47,41 +61,39 @@ SubModuleInitor gSubModuleInitorTbl[] = {
     { WebServerInit,        WebServerDeinit }
 };
 
-ResourceMgr *ResourceMgrCreate()
+ResourceMgr *ResourceMgrCreate(void)
 {
     ResourceMgr *mgr = NULL;
     mgr = (ResourceMgr *)malloc(sizeof(ResourceMgr));
-    if (mgr == NULL) {
+    if (mgr == NULL)
         return NULL;
-    }
     memset(mgr, 0, sizeof(ResourceMgr));
     return mgr;
 }
 
 void ResourceMgrDestroy(ResourceMgr *resourceMgr)
 {
-    if (resourceMgr != NULL) {
+    if (resourceMgr != NULL)
         free(resourceMgr);
-    }
+
     if (g_galaConfPath != NULL) {
         free(g_galaConfPath);
+        g_galaConfPath = NULL;
     }
     return;
 }
 
 int ResourceMgrInit(ResourceMgr *resourceMgr)
 {
-    if (resourceMgr == NULL) {
+    if (resourceMgr == NULL)
         return -1;
-    }
 
     int ret = 0;
     uint32_t initTblSize = sizeof(gSubModuleInitorTbl) / sizeof(gSubModuleInitorTbl[0]);
     for (int i = 0; i < initTblSize; i++) {
         ret = gSubModuleInitorTbl[i].subModuleInitFunc(resourceMgr);
-        if (ret != 0) {
+        if (ret != 0)
             return -1;
-        }
     }
 
     return 0;
@@ -89,14 +101,13 @@ int ResourceMgrInit(ResourceMgr *resourceMgr)
 
 void ResourceMgrDeinit(ResourceMgr *resourceMgr)
 {
-    if (resourceMgr == NULL) {
+    if (resourceMgr == NULL)
         return;
-    }
 
     uint32_t initTblSize = sizeof(gSubModuleInitorTbl) / sizeof(gSubModuleInitorTbl[0]);
-    for (int i = 0; i < initTblSize; i++) {
+    for (int i = 0; i < initTblSize; i++)
         gSubModuleInitorTbl[i].subModuleDeinitFunc(resourceMgr);
-    }
+
     return;
 }
 
@@ -156,9 +167,8 @@ static int ProbeMgrInit(ResourceMgr *resourceMgr)
     for (int i = 0; i < configMgr->probesConfig->probesNum; i++) {
         ProbeConfig *_probeConfig = configMgr->probesConfig->probesConfig[i];
         Probe *probe = ProbeMgrGet(probeMgr, _probeConfig->name);
-        if (probe == NULL) {
+        if (probe == NULL)
             continue;
-        }
 
         // refresh probe configuration
         probe->interval = _probeConfig->interval;
@@ -309,37 +319,31 @@ static int IMDBMgrTableLoad(IMDB_Table *table, Measurement *mm)
 {
     int ret = 0;
     IMDB_Record *meta = IMDB_RecordCreate(MAX_IMDB_RECORD_CAPACITY);
-    if (meta == NULL) {
+    if (meta == NULL)
         return -1;
-    }
 
     IMDB_Metric *metric;
     uint32_t keyNum = 0;
     for (int i = 0; i < mm->fieldsNum; i++) {
         metric = IMDB_MetricCreate(mm->fields[i].name, mm->fields[i].description, mm->fields[i].type);
-        if (metric == NULL) {
+        if (metric == NULL)
             goto ERR;
-        }
 
         ret = IMDB_RecordAddMetric(meta, metric);
-        if (ret != 0) {
+        if (ret != 0)
             goto ERR;
-        }
 
-        if (strcmp(mm->fields[i].type, METRIC_TYPE_KEY) == 0) {
+        if (strcmp(mm->fields[i].type, METRIC_TYPE_KEY) == 0)
             keyNum++;
-        }
     }
 
     ret = IMDB_TableSetMeta(table, meta);
-    if (ret != 0) {
+    if (ret != 0)
         goto ERR;
-    }
 
     ret = IMDB_TableSetRecordKeySize(table, keyNum);
-    if (ret != 0) {
+    if (ret != 0)
         goto ERR;
-    }
 
     return 0;
 ERR:
@@ -354,19 +358,16 @@ static int IMDBMgrDatabaseLoad(IMDB_DataBaseMgr *imdbMgr, MeasurementMgr *mmMgr)
     IMDB_Table *table;
     for (int i = 0; i < mmMgr->measurementsNum; i++) {
         table = IMDB_TableCreate(mmMgr->measurements[i]->name, MAX_IMDB_TABLE_CAPACITY);
-        if (table == NULL) {
+        if (table == NULL)
             return -1;
-        }
 
         ret = IMDBMgrTableLoad(table, mmMgr->measurements[i]);
-        if (ret != 0) {
+        if (ret != 0)
             return -1;
-        }
 
         ret = IMDB_DataBaseMgrAddTable(imdbMgr, table);
-        if (ret != 0) {
+        if (ret != 0)
             return -1;
-        }
     }
 
     return 0;

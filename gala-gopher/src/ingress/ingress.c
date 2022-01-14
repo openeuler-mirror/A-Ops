@@ -1,3 +1,17 @@
+/******************************************************************************
+ * Copyright (c) Huawei Technologies Co., Ltd. 2021. All rights reserved.
+ * iSulad licensed under the Mulan PSL v2.
+ * You can use this software according to the terms and conditions of the Mulan PSL v2.
+ * You may obtain a copy of Mulan PSL v2 at:
+ *     http://license.coscl.org.cn/MulanPSL2
+ * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR
+ * IMPLIED, INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY OR FIT FOR A PARTICULAR
+ * PURPOSE.
+ * See the Mulan PSL v2 for more details.
+ * Author: Hubble_Zhu
+ * Create: 2021-04-12
+ * Description:
+ ******************************************************************************/
 #include <sys/epoll.h>
 #include <string.h>
 #include <stdlib.h>
@@ -5,7 +19,7 @@
 #include <unistd.h>
 #include "ingress.h"
 
-IngressMgr *IngressMgrCreate()
+IngressMgr *IngressMgrCreate(void)
 {
     IngressMgr *mgr = NULL;
     mgr = (IngressMgr *)malloc(sizeof(IngressMgr));
@@ -71,7 +85,7 @@ static int IngressInit(IngressMgr *mgr)
     return 0;
 }
 
-static int IngressData2Egress(IngressMgr *mgr, char *dataStr, int dataStrLen)
+static int IngressData2Egress(IngressMgr *mgr, const char *dataStr, int dataStrLen)
 {
     int ret = 0;
 
@@ -114,14 +128,12 @@ static int IngressDataProcesssInput(Fifo *fifo, IngressMgr *mgr)
     }
 
     while (FifoGet(fifo, (void **)&dataStr) == 0) {
-
         // skip string not start with '|'
-        if(strncmp(dataStr, "|", 1) != 0) {
+        if (strncmp(dataStr, "|", 1) != 0) {
             printf("[INGRESS] Get dirty data str: %s\n", dataStr);
             continue;
         }
 
-        //printf("[INGRESS] Get data str: %s\n", dataStr);
         // save data to imdb
         ret = IMDB_DataBaseMgrAddRecord(mgr->imdbMgr, dataStr, strlen(dataStr));
         if (ret != 0) {
@@ -152,7 +164,6 @@ static int IngressDataProcesss(IngressMgr *mgr)
         return -1;
     }
 
-    // printf("[INGRESS] Get epoll event.\n");
     for (int i = 0; i < events_num; i++) {
         fifo = (Fifo *)events[i].data.ptr;
         ret = IngressDataProcesssInput(fifo, mgr);

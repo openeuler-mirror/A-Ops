@@ -1,3 +1,17 @@
+/******************************************************************************
+ * Copyright (c) Huawei Technologies Co., Ltd. 2021. All rights reserved.
+ * iSulad licensed under the Mulan PSL v2.
+ * You can use this software according to the terms and conditions of the Mulan PSL v2.
+ * You may obtain a copy of Mulan PSL v2 at:
+ *     http://license.coscl.org.cn/MulanPSL2
+ * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR
+ * IMPLIED, INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY OR FIT FOR A PARTICULAR
+ * PURPOSE.
+ * See the Mulan PSL v2 for more details.
+ * Author: Hubble_Zhu
+ * Create: 2021-04-12
+ * Description:
+ ******************************************************************************/
 #include <stdio.h>
 #include <stdint.h>
 #include <stdlib.h>
@@ -8,29 +22,28 @@
 #include "meta.h"
 
 #if GALA_GOPHER_INFO("inner func")
-Measurement *MeasurementCreate();
-void MeasurementDestroy(Measurement *mm);
-int MeasurementMgrAdd(MeasurementMgr *mgr, Measurement *measurement);
-Measurement *MeasurementMgrGet(MeasurementMgr *mgr, const char *name);
+static Measurement *MeasurementCreate(void);
+static void MeasurementDestroy(Measurement *mm);
+static int MeasurementMgrAdd(MeasurementMgr *mgr, Measurement *measurement);
+static Measurement *MeasurementMgrGet(MeasurementMgr *mgr, const char *name);
 #endif
 
-Measurement *MeasurementCreate()
+static Measurement *MeasurementCreate(void)
 {
     Measurement *mm = NULL;
     mm = (Measurement *)malloc(sizeof(Measurement));
-    if (mm == NULL) {
+    if (mm == NULL)
         return NULL;
-    }
 
     memset(mm, 0, sizeof(Measurement));
     return mm;
 }
 
-void MeasurementDestroy(Measurement *mm)
+static void MeasurementDestroy(Measurement *mm)
 {
-    if (mm == NULL) {
+    if (mm == NULL)
         return;
-    }
+
     free(mm);
     return;
 }
@@ -57,14 +70,12 @@ MeasurementMgr *MeasurementMgrCreate(uint32_t size)
 
 void MeasurementMgrDestroy(MeasurementMgr *mgr)
 {
-    if (mgr == NULL) {
+    if (mgr == NULL)
         return;
-    }
 
     for (int i = 0; i < mgr->measurementsNum; i++) {
-        if (mgr->measurements[i] != NULL) {
+        if (mgr->measurements[i] != NULL)
             MeasurementDestroy(mgr->measurements[i]);
-        }
     }
 
     free(mgr->measurements);
@@ -72,13 +83,12 @@ void MeasurementMgrDestroy(MeasurementMgr *mgr)
     return;
 }
 
-int MeasurementMgrAdd(MeasurementMgr *mgr, Measurement *measurement)
+static int MeasurementMgrAdd(MeasurementMgr *mgr, Measurement *measurement)
 {
     Measurement *mm = NULL;
     mm = MeasurementMgrGet(mgr, measurement->name);
-    if (mm != NULL) {
+    if (mm != NULL)
         return -1;
-    }
 
     if (mgr->measurementsNum == mgr->size) {
         return -1;
@@ -88,12 +98,11 @@ int MeasurementMgrAdd(MeasurementMgr *mgr, Measurement *measurement)
     return 0;
 }
 
-Measurement *MeasurementMgrGet(MeasurementMgr *mgr, const char *name)
+static Measurement *MeasurementMgrGet(MeasurementMgr *mgr, const char *name)
 {
     for (int i = 0; i < mgr->measurementsNum; i++) {
-        if (strcmp(mgr->measurements[i]->name, name) == 0) {
+        if (strcmp(mgr->measurements[i]->name, name) == 0)
             return mgr->measurements[i];
-        }
     }
 
     return NULL;
@@ -152,9 +161,8 @@ static int MeasurementLoad(Measurement *mm, config_setting_t *mmConfig)
         config_setting_t *fieldConfig = config_setting_get_elem(fields, i);
 
         ret = FieldLoad(&mm->fields[i], fieldConfig);
-        if (ret != 0) {
+        if (ret != 0)
             printf("[META] load measurement field failed.\n");
-        }
 
         mm->fieldsNum++;
     }
@@ -218,8 +226,7 @@ int MeasurementMgrLoadSingleMeta(MeasurementMgr *mgr, const char *metaPath)
     return 0;
 }
 
-
-int MeasurementMgrLoad(MeasurementMgr *mgr, const char *metaDir)
+int MeasurementMgrLoad(const MeasurementMgr *mgr, const char *metaDir)
 {
     int ret = 0;
     DIR *d = NULL;
@@ -234,13 +241,13 @@ int MeasurementMgrLoad(MeasurementMgr *mgr, const char *metaDir)
     struct dirent *file = readdir(d);
     while (file != NULL) {
         // skip current dir, parent dir and hidden files
-        if(strncmp(file->d_name, ".", 1) == 0) {
+        if (strncmp(file->d_name, ".", 1) == 0) {
             file = readdir(d);
             continue;
         }
 
         memset(metaPath, 0, sizeof(metaPath));
-        snprintf(metaPath, MAX_META_PATH_LEN - 1, "%s/%s", metaDir, file->d_name);
+        (void)snprintf(metaPath, MAX_META_PATH_LEN - 1, "%s/%s", metaDir, file->d_name);
         ret = MeasurementMgrLoadSingleMeta(mgr, metaPath);
         if (ret != 0) {
             printf("[META] load single meta file failed. meta file: %s\n", metaPath);
@@ -254,5 +261,4 @@ int MeasurementMgrLoad(MeasurementMgr *mgr, const char *metaDir)
     closedir(d);
     return 0;
 }
-
 

@@ -1,3 +1,17 @@
+/******************************************************************************
+ * Copyright (c) Huawei Technologies Co., Ltd. 2021. All rights reserved.
+ * iSulad licensed under the Mulan PSL v2.
+ * You can use this software according to the terms and conditions of the Mulan PSL v2.
+ * You may obtain a copy of Mulan PSL v2 at:
+ *     http://license.coscl.org.cn/MulanPSL2
+ * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR
+ * IMPLIED, INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY OR FIT FOR A PARTICULAR
+ * PURPOSE.
+ * See the Mulan PSL v2 for more details.
+ * Author: Hubble_Zhu
+ * Create: 2021-04-12
+ * Description:
+ ******************************************************************************/
 #include <stdio.h>
 #include <stdint.h>
 #include <stdlib.h>
@@ -70,7 +84,7 @@ uint32_t FifoPut(Fifo *fifo, void *element)
     len2 = FifoMin(len, fifo->size - (fifo->in & (fifo->size - 1)));
     memcpy(fifo->buffer + (fifo->in & (fifo->size - 1)), &element, sizeof(void *) * len2);
     memcpy(fifo->buffer, &element, sizeof(void *) * (len - len2));
-    
+
     __sync_synchronize();
 
     fifo->in += len;
@@ -89,14 +103,14 @@ uint32_t FifoGet(Fifo *fifo, void **elements)
     len2 = FifoMin(len, fifo->size - (fifo->out & (fifo->size - 1)));
     memcpy(elements, fifo->buffer + (fifo->out & (fifo->size - 1)), sizeof(void *) * len2);
     memcpy(elements, fifo->buffer, sizeof(void *) * (len - len2));
-    
+
     __sync_synchronize();
 
     fifo->out += len;
-    return len == 0 ? -1 : 0;    
+    return len == 0 ? -1 : 0;
 }
 
-FifoMgr *FifoMgrCreate(int size)
+FifoMgr *FifoMgrCreate(uint32_t size)
 {
     FifoMgr *mgr = NULL;
     mgr = (FifoMgr *)malloc(sizeof(FifoMgr));
@@ -124,7 +138,7 @@ void FifoMgrDestroy(FifoMgr *mgr)
     if (mgr->fifos != NULL) {
         free(mgr->fifos);
     }
-    
+
     free(mgr);
     return;
 }

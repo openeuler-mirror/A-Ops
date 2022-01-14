@@ -1,3 +1,17 @@
+/******************************************************************************
+ * Copyright (c) Huawei Technologies Co., Ltd. 2021. All rights reserved.
+ * iSulad licensed under the Mulan PSL v2.
+ * You can use this software according to the terms and conditions of the Mulan PSL v2.
+ * You may obtain a copy of Mulan PSL v2 at:
+ *     http://license.coscl.org.cn/MulanPSL2
+ * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR
+ * IMPLIED, INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY OR FIT FOR A PARTICULAR
+ * PURPOSE.
+ * See the Mulan PSL v2 for more details.
+ * Author: Hubble_Zhu
+ * Create: 2021-04-12
+ * Description:
+ ******************************************************************************/
 #include <string.h>
 #include <stdlib.h>
 #include <stdio.h>
@@ -5,7 +19,7 @@
 
 #include "config.h"
 
-ConfigMgr *ConfigMgrCreate()
+ConfigMgr *ConfigMgrCreate(void)
 {
     ConfigMgr *mgr = NULL;
     mgr = (ConfigMgr *)malloc(sizeof(ConfigMgr));
@@ -133,7 +147,7 @@ static int ConfigMgrLoadIngressConfig(void *config, config_setting_t *settings)
     IngressConfig *ingressConfig = (IngressConfig *)config;
     uint32_t ret = 0;
 
-    int intVal = 0;
+    uint32_t intVal = 0;
     ret = config_setting_lookup_int(settings, "interval", &intVal);
     if (ret == 0) {
         printf("[CONFIG] load config for ingress interval failed.\n");
@@ -149,7 +163,7 @@ static int ConfigMgrLoadEgressConfig(void *config, config_setting_t *settings)
     EgressConfig *egressConfig = (EgressConfig *)config;
     uint32_t ret = 0;
 
-    int intVal = 0;
+    uint32_t intVal = 0;
     ret = config_setting_lookup_int(settings, "interval", &intVal);
     if (ret == 0) {
         printf("[CONFIG] load config for egress interval failed.\n");
@@ -198,7 +212,6 @@ static int ConfigMgrLoadKafkaConfig(void *config, config_setting_t *settings)
         kafkaConfig->kafkaSwitch = KAFKA_SWITCH_OFF;
     }
     return 0;
-
 }
 
 static int ConfigMgrLoadProbesConfig(void *config, config_setting_t *settings)
@@ -207,7 +220,7 @@ static int ConfigMgrLoadProbesConfig(void *config, config_setting_t *settings)
     uint32_t ret = 0;
     int count = 0;
     const char *strVal = NULL;
-    int intVal = 0;
+    uint32_t intVal = 0;
 
     count = config_setting_length(settings);
     for (int i = 0; i < count; i++) {
@@ -252,7 +265,6 @@ static int ConfigMgrLoadProbesConfig(void *config, config_setting_t *settings)
             return -1;
         }
         _probeConfig->interval = intVal;
-
     }
 
     return 0;
@@ -342,7 +354,7 @@ static int ConfigMgrLoadIMDBConfig(void *config, config_setting_t *settings)
 {
     IMDBConfig *imdbConfig = (IMDBConfig *)config;
     uint32_t ret = 0;
-    int intVal = 0;
+    uint32_t intVal = 0;
 
     ret = config_setting_lookup_int(settings, "max_tables_num", &intVal);
     if (ret == 0) {
@@ -373,7 +385,6 @@ static int ConfigMgrLoadIMDBConfig(void *config, config_setting_t *settings)
     }
 
     return 0;
-
 }
 
 static int ConfigMgrLoadWebServerConfig(void *config, config_setting_t *settings)
@@ -400,7 +411,7 @@ typedef struct {
     ConfigLoadFunc func;
 } ConfigLoadHandle;
 
-int ConfigMgrLoad(ConfigMgr *mgr, const char *confPath)
+int ConfigMgrLoad(const ConfigMgr *mgr, const char *confPath)
 {
     ConfigLoadHandle configLoadHandles[] = {
         { (void *)mgr->globalConfig, "global", ConfigMgrLoadGlobalConfig },

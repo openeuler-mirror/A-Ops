@@ -1,3 +1,17 @@
+/******************************************************************************
+ * Copyright (c) Huawei Technologies Co., Ltd. 2021. All rights reserved.
+ * iSulad licensed under the Mulan PSL v2.
+ * You can use this software according to the terms and conditions of the Mulan PSL v2.
+ * You may obtain a copy of Mulan PSL v2 at:
+ *     http://license.coscl.org.cn/MulanPSL2
+ * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR
+ * IMPLIED, INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY OR FIT FOR A PARTICULAR
+ * PURPOSE.
+ * See the Mulan PSL v2 for more details.
+ * Author: Hubble_Zhu
+ * Create: 2021-04-12
+ * Description:
+ ******************************************************************************/
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
@@ -5,13 +19,12 @@
 
 #include "extend_probe.h"
 
-ExtendProbe *ExtendProbeCreate()
+ExtendProbe *ExtendProbeCreate(void)
 {
     ExtendProbe *probe = NULL;
     probe = (ExtendProbe *)malloc(sizeof(ExtendProbe));
-    if (probe == NULL) {
+    if (probe == NULL)
         return NULL;
-    }
     memset(probe, 0, sizeof(ExtendProbe));
 
     probe->fifo = FifoCreate(MAX_FIFO_SIZE);
@@ -24,13 +37,12 @@ ExtendProbe *ExtendProbeCreate()
 
 void ExtendProbeDestroy(ExtendProbe *probe)
 {
-    if (probe == NULL) {
+    if (probe == NULL)
         return;
-    }
 
-    if (probe->fifo != NULL) {
+    if (probe->fifo != NULL)
         FifoDestroy(probe->fifo);
-    }
+
     free(probe);
     return;
 }
@@ -46,21 +58,18 @@ int RunExtendProbe(ExtendProbe *probe)
     uint32_t index = 0;
 
     char command[MAX_COMMAND_LEN];
-    snprintf(command, MAX_COMMAND_LEN - 1, "%s %s", probe->executeCommand, probe->executeParam);
+    (void)snprintf(command, MAX_COMMAND_LEN - 1, "%s %s", probe->executeCommand, probe->executeParam);
     f = popen(command, "r");
 
-    while (!feof(f) && !ferror(f)) {
-        fgets(buffer, sizeof(buffer), f);
+    while (feof(f) == 0 && ferror(f) == 0) {
+        (void)fgets(buffer, sizeof(buffer), f);
         bufferSize = strlen(buffer);
-
         if (bufferSize && buffer[0] != '|') {
             /* Filtering non metric data */
             continue;
         }
 
-        //printf("[EXTEND PROBE] Get data str: %s\n", buffer);
         for (int i = 0; i < bufferSize; i++) {
-
             if (dataStr == NULL) {
                 dataStr = (char *)malloc(MAX_DATA_STR_LEN);
                 if (dataStr == NULL) {
@@ -92,7 +101,6 @@ int RunExtendProbe(ExtendProbe *probe)
                 index++;
             }
         }
-
     }
 
     pclose(f);
@@ -108,9 +116,8 @@ ExtendProbeMgr *ExtendProbeMgrCreate(uint32_t size)
 {
     ExtendProbeMgr *mgr = NULL;
     mgr = (ExtendProbeMgr *)malloc(sizeof(ExtendProbeMgr));
-    if (mgr == NULL) {
+    if (mgr == NULL)
         return NULL;
-    }
     memset(mgr, 0, sizeof(ExtendProbeMgr));
 
     mgr->probes = (ExtendProbe **)malloc(sizeof(ExtendProbe *) * size);
@@ -126,14 +133,12 @@ ExtendProbeMgr *ExtendProbeMgrCreate(uint32_t size)
 
 void ExtendProbeMgrDestroy(ExtendProbeMgr *mgr)
 {
-    if (mgr == NULL) {
+    if (mgr == NULL)
         return;
-    }
 
     if (mgr->probes != NULL) {
-        for (int i = 0; i < mgr->probesNum; i++) {
+        for (int i = 0; i < mgr->probesNum; i++)
             ExtendProbeDestroy(mgr->probes[i]);
-        }
         free(mgr->probes);
     }
     free(mgr);
@@ -142,9 +147,8 @@ void ExtendProbeMgrDestroy(ExtendProbeMgr *mgr)
 
 int ExtendProbeMgrPut(ExtendProbeMgr *mgr, ExtendProbe *probe)
 {
-    if (mgr->probesNum == mgr->size) {
+    if (mgr->probesNum == mgr->size)
         return -1;
-    }
 
     mgr->probes[mgr->probesNum] = probe;
     mgr->probesNum++;
@@ -154,9 +158,8 @@ int ExtendProbeMgrPut(ExtendProbeMgr *mgr, ExtendProbe *probe)
 ExtendProbe *ExtendProbeMgrGet(ExtendProbeMgr *mgr, const char *probeName)
 {
     for (int i = 0; i < mgr->probesNum; i++) {
-        if (strcmp(mgr->probes[i]->name, probeName) == 0) {
+        if (strcmp(mgr->probes[i]->name, probeName) == 0)
             return mgr->probes[i];
-        }
     }
     return NULL;
 }
