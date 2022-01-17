@@ -17,8 +17,8 @@ Description:
 """
 import json
 
-from aops_database.proxy.proxy import ElasticsearchProxy
-from aops_database.conf.constant import TEMPLATE_INDEX, TASK_INDEX
+from aops_utils.database.proxy import ElasticsearchProxy
+from aops_manager.conf.constant import TEMPLATE_INDEX, TASK_INDEX
 from aops_utils.log.log import LOGGER
 from aops_utils.restful.status import DATABASE_DELETE_ERROR, DATABASE_INSERT_ERROR,\
     DATABASE_QUERY_ERROR, DATA_EXIST, SUCCEED
@@ -67,7 +67,6 @@ class DeployDatabase(ElasticsearchProxy):
             int: status code
         """
         task_list = data.get('task_list')
-
         body = self._general_body(data)
         body["query"]["bool"]["must"].append(
             {"terms": {"task_id": task_list}})

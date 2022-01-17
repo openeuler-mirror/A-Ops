@@ -26,6 +26,7 @@ class GenerateTaskSchema(Schema):
     """
     task_name = fields.String(required=True)
     description = fields.String(required=True)
+    task_id = fields.String(required=False)
     template_name = fields.List(fields.String(), required=True)
 
 

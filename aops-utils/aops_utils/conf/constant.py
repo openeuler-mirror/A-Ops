@@ -13,7 +13,7 @@
 """
 Time:
 Author:
-Description: constant
+Description: config constant
 """
 import os
 
@@ -21,6 +21,20 @@ BASE_CONFIG_PATH = '/etc/aops'
 
 # path of global configuration
 SYSTEM_CONFIG_PATH = os.path.join(BASE_CONFIG_PATH, 'system.ini')
+
+# path of proxy configuration
+MANAGER_CONFIG_PATH = os.path.join(BASE_CONFIG_PATH, 'manager.ini')
+
+HOST_INFO_INDEX = 'host_information'
+TEMPLATE_INDEX = "ansible_templates"
+TASK_INDEX = "ansible_task"
+DATA_HISTORY = "history"
+DATA_MESSAGES = "messages"
+DIAG_REPORT_INDEX = "diag_report"
+DIAG_TREE_INDEX = "diag_tree"
+DIAG_TASK_INDEX = "diag_task"
+CHECK_RESULT_INDEX = "check_result"
+CHECK_RULE_INDEX = "check_rule"
 
 # url format
 URL_FORMAT = "http://%s:%s%s"
@@ -50,7 +64,8 @@ COLLECT_CONFIG = '/manage/config/collect'
 
 USER_LOGIN = "/manage/account/login"
 USER_CERTIFICATE = "/manage/account/certificate"
-CHANGE_PASSSWORD = '/manage/account/change'
+CHANGE_PASSWORD = '/manage/account/change'
+Add_USER = '/manage/account/add'
 
 
 # database route
@@ -99,7 +114,7 @@ DATA_GET_CHECK_RESULT = "/data/check/result/get"
 DATA_GET_CHECK_RESULT_COUNT = "/data/check/result/count"
 
 DATA_USER_LOGIN = "/data/account/login"
-DATA_USER_CHANGEPASSWORD = "/data/acount/change"
+DATA_USER_CHANGE_PASSWORD = "/data/account/change"
 
 # diagnose route
 DIAG_IMPORT_TREE = "/diag/tree/import"

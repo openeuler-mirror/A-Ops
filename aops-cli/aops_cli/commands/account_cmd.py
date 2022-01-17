@@ -16,7 +16,7 @@ Class:AccountCommand
 """
 
 from aops_cli.base_cmd import BaseCommand
-from aops_utils.conf.constant import USER_LOGIN, CHANGE_PASSSWORD
+from aops_utils.conf.constant import USER_LOGIN, CHANGE_PASSWORD
 from aops_utils.restful.helper import make_manager_url
 from aops_utils.cli_utils import cli_request
 
@@ -107,7 +107,7 @@ class AccountCommand(BaseCommand):
         Returns:
             dict: response of the backend
         """
-        manager_url, header = make_manager_url(CHANGE_PASSSWORD)
+        manager_url, header = make_manager_url(CHANGE_PASSWORD)
 
         pyload = {
             "password": params.password

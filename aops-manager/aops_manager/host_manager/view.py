@@ -32,6 +32,7 @@ from aops_utils.restful.status import PARAM_ERROR, SUCCEED, StatusCode
 from aops_utils.restful.response import MyResponse
 from aops_utils.restful.serialize.validate import validate
 from aops_utils.restful.helper import make_datacenter_url
+from aops_utils.restful.resource import BaseResource
 
 
 class AddHost(Resource):

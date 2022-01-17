@@ -23,7 +23,7 @@ from aops_utils.conf.constant import ADD_HOST, DELETE_HOST, GET_HOST_COUNT,\
     QUERY_HOST, QUERY_HOST_DETAIL, ADD_GROUP, DELETE_GROUP, GET_GROUP,\
     GENERATE_TASK, DELETE_TASK, EXECUTE_TASK, GET_TASK,\
     IMPORT_TEMPLATE, DELETE_TEMPLATE, GET_TEMPLATE,\
-    COLLECT_CONFIG, USER_LOGIN, USER_CERTIFICATE, CHANGE_PASSSWORD
+    COLLECT_CONFIG, USER_LOGIN, USER_CERTIFICATE, CHANGE_PASSWORD,Add_USER
 
 URLS = []
 
@@ -31,7 +31,8 @@ SPECIFIC_URLS = {
     "ACCOUNT_URLS": [
         (account_view.Login, USER_LOGIN),
         (account_view.Certificate, USER_CERTIFICATE),
-        (account_view.ChangePassword, CHANGE_PASSSWORD)
+        (account_view.ChangePassword, CHANGE_PASSWORD),
+        (account_view.AddUser, Add_USER),
     ],
     "HOST_URLS": [
         (host_view.AddHost, ADD_HOST),
