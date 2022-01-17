@@ -1,321 +1,230 @@
 <template>
   <page-header-wrapper>
-    <a-card border="false">
+    <a-card :border="false" class="aops-theme">
       <div class="header">
         <h4 v-show="graphIsDoingLayout">图形布局中，请稍等 <a-spin size="small" /></h4>
+        <div class="level-controller">
+          <div
+            :class="`level-controller-btn${level.type === visibleLevel ? ' active' : ''}`"
+            v-for="(level,idx) in levelOrders"
+            :key="idx"
+            @click="changeLevel(level.type)"
+          >
+            {{ level.text }}
+          </div>
+          <div><a-icon type="switcher" :rotate="90"/> 层级</div>
+        </div>
       </div>
       <a-spin :spinning="dataLoading" size="large">
-        <div id="graph-container" class="container"></div>
+        <div v-for="(level,idx) in levelOrders" :key="idx">
+          <node-graph-container
+            v-show="level.type === visibleLevel"
+            :isShow="level.type === visibleLevel"
+            :containerId="`graph-container-${level.type}`"
+            :entitiesData="{
+              nodes: entitiesListByLevel[level.type],
+              edges: edgesListByLevel[level.type]
+            }"
+            :dataReady="dataReady"
+            :selectedEntityId="selectedNodeId"
+            :linkMap="edgesMapByLevel[level.type]"
+            @nodeClicked="nodeClicked"
+            @addResizeFunction="addResizeFunction"
+            @showVerticalMap="showVerticalMap"
+          />
+        </div>
       </a-spin>
     </a-card>
+    <vertical-map-drawer
+      :selectedNodeId="selectedEntityId"
+      :treeData="verticalTreeData"
+      :visible="verticalDrawerVisible"
+      @close="handleVerticalDrawerClose"
+      @treeNodeClicked="treeNodeClicked"
+    />
   </page-header-wrapper>
 </template>
 
 <script>
-import G6 from '@antv/g6'
 import { PageHeaderWrapper } from '@ant-design-vue/pro-layout'
+// 层级节点组件
+import NodeGraphContainer from './components/NodeGraphContainer'
+// 垂直层级抽屉组件
+import VerticalMapDrawer from './components/VerticalMapDrawer'
 
 import { getTopoData } from '@/api/topo'
+// 测试时，打开一下测试数据注释
+// import { testData } from '@/mock/topoTestJson'
 
-const normalLinkColor = '#eee'
-const nginxLinkColor = '#00f'
+import { levelOrders, relationTypes } from './config.js'
+import { getParentId, gerChildrenIds, getRelatedEdges, getRoot, getTreeData } from './utils'
 
 export default {
   name: 'NetworkTopoDiagram',
   components: {
-    PageHeaderWrapper
+    PageHeaderWrapper,
+    NodeGraphContainer,
+    VerticalMapDrawer
   },
   data () {
     return {
-      nodes: [],
-      edges: [],
-      combos: [],
-      graph: {},
-      nodePosition: [],
+      levelOrders,
+      // 当前展示的层级
+      visibleLevel: 'PROCESS',
+
+      graphData: {},
       dataLoading: false,
-      graphIsDoingLayout: false
+      graphIsDoingLayout: false,
+      dataReady: false,
+
+      // hashMap for all entities
+      nodeMap: {},
+      edgeMap: {},
+      // enities list and map in each level
+      entitiesMapByLevel: {},
+      entitiesListByLevel: {},
+      edgesMapByLevel: {},
+      edgesListByLevel: {},
+
+      // set id when change level by click pannel item
+      selectedEntityId: '',
+      // resize events
+      resizeFuncs: [],
+
+      // verticalDataDisplay
+      verticalDrawerVisible: false,
+      verticalTreeData: {},
+      selectedNodeId: null
     }
   },
   methods: {
+    // 准备数据
     setGraphData (dataList) {
-      this.nodes = []
-      this.edges = []
-      this.combos = []
       const _this = this
+      // put entity data to nodeMap and entitiesListByLevel/ entitiesMapByLevel
       dataList.forEach(function (entity) {
-        // set nodes
-        if (entity.type === 'PROCESS') {
-          const tempNode = entity
-          tempNode.id = entity.entityid
-          tempNode.label = entity.name
-          // get combo info
-          const parentInfo = entity.dependingitems.runOns || {}
-          const comboId = parentInfo.id
-          if (comboId) {
-            if (!_this.combos.filter(item => item.id === comboId)[0]) {
-            _this.combos.push({
-              id: comboId,
-              label: `${parentInfo.type}: ${comboId}`
-              // collapsed: true
-            })
-          }
-            tempNode.comboId = comboId
-            tempNode.cluster = comboId
-          }
-          _this.nodes.push(tempNode)
-        } else {
-          // set edges
-          const { type, ...tempEdge } = entity
-          tempEdge.link_type = type
+        if (!entity.entityid) {
+          return
+        }
+        const tempNode = entity
+        // id和label是绘图时需要使用的
+        tempNode.id = entity.entityid
+        tempNode.label = entity.name
+        _this.nodeMap[entity.entityid] = tempNode
 
-          if (entity.type === 'NGINX-LINK') {
-            const leftEdge = {
-              ...tempEdge,
-              id: `${entity.entityid}_${entity.dependingitems.runOns.id}_${entity.dependingitems.calls.id}_left`,
-              source: entity.dependeditems.calls.id,
-              target: entity.dependingitems.runOns.id,
-              siblingId: entity.entityid,
-              style: { stroke: normalLinkColor }
-            }
-            const rightEdge = {
-              ...tempEdge,
-              id: `${entity.entityid}_${entity.dependingitems.runOns.id}_${entity.dependingitems.calls.id}_right`,
-              source: entity.dependingitems.runOns.id,
-              target: entity.dependingitems.calls.id,
-              siblingId: entity.entityid,
-              style: { stroke: normalLinkColor }
-            }
-            _this.edges.push(rightEdge)
-            _this.edges.push(leftEdge)
-          } else {
-            tempEdge.source = entity.dependeditems.calls.id
-            tempEdge.target = entity.dependingitems.calls.id
-            tempEdge.style = { stroke: normalLinkColor }
-            _this.edges.push(tempEdge)
+        const eLevel = entity.level
+        if (eLevel) {
+          if (!_this.entitiesListByLevel[eLevel]) {
+            _this.entitiesListByLevel[eLevel] = []
+            _this.entitiesMapByLevel[eLevel] = {}
           }
+
+          _this.entitiesListByLevel[eLevel].push(tempNode)
+          _this.entitiesMapByLevel[eLevel][tempNode.id] = tempNode
         }
       })
-      G6.Util.processParallelEdges(this.edges)
+      // deal data in order by level
+      levelOrders.forEach(function (levelInfo) {
+        _this.entitiesListByLevel[levelInfo.type].forEach(function (entity) {
+          // set parent and children of each entity
+          const parentId = getParentId(entity)
+          if (parentId) {
+            entity.parentId = parentId
+          }
+          const childrenIds = gerChildrenIds(entity)
+          if (childrenIds.length > 0) {
+            entity.children = []
+            childrenIds.forEach(function (childId) {
+              _this.nodeMap[childId] && entity.children.push(_this.nodeMap[childId])
+            })
+          }
+
+          // get edge on each level
+          const relatedEdgeList = getRelatedEdges(entity)
+          if (!_this.edgesListByLevel[levelInfo.type]) {
+            _this.edgesListByLevel[levelInfo.type] = []
+            _this.edgesMapByLevel[levelInfo.type] = {}
+          }
+          entity.startOfLinks = []
+          entity.endOfLinks = []
+          relatedEdgeList.forEach(function (edgeInfo) {
+            // set related edge id to entity
+            if (edgeInfo.source === entity.entityid) {
+              entity.startOfLinks.push(edgeInfo.id)
+            } else {
+              entity.endOfLinks.push(edgeInfo.id)
+            }
+            // add edge info to edgeMap and edgesListByLevel/edgesMapByLevel
+            if (_this.edgeMap[edgeInfo.id]) return
+            // if the type of link is 'peer', then only put one direction of link in graph
+            if (edgeInfo.relation_id === relationTypes.peer) {
+              if (_this.edgeMap[`peer$${edgeInfo.target}$${edgeInfo.source}`]) return
+            }
+            _this.edgeMap[edgeInfo.id] = edgeInfo
+            _this.edgesListByLevel[levelInfo.type].push(edgeInfo)
+            _this.edgesMapByLevel[levelInfo.type][edgeInfo.id] = edgeInfo
+          })
+        })
+      })
+      this.dataReady = true
     },
     getGraphDataFromRemote () {
       const _this = this
       this.dataLoading = true
+      // 测试时，打开下方注释。
+      // _this.setGraphData(testData.entities)
       getTopoData().then(res => {
         _this.setGraphData(res.entities || [])
-        _this.initialGraph()
       }).catch(err => {
-        if (err.response.data && err.response.data.status === 500) {
+        if (err.response && err.response.data && err.response.data.status === 500) {
           _this.$message.error('服务器错误，请稍后再试')
         }
+        console.warn(err)
         _this.$message.error(err.response.data.msg || err.response.data.title || '获取架构数据失败，请稍后再试')
       }).finally(() => {
         _this.dataLoading = false
       })
     },
-    updateGraphDatafromRemote () {
-      const _this = this
-      getTopoData().then(res => {
-        _this.setGraphData(res.entities || [])
-        const data = {
-          nodes: _this.nodes,
-          edges: _this.edges,
-          combos: _this.combos
-        }
-        _this.graph.changeData(data)
-      }).catch(err => {
-        _this.$message.error(err.response.data.msg)
-      })
+    addResizeFunction (func) {
+      this.resizeFuncs.push(func)
     },
-    saveNodePosition () {
-      this.nodePosition = []
-      const nodes = this.graph.getNodes()
-      nodes.forEach(node => {
-        const model = node.getModel()
-        this.nodePosition.push({
-          id: model.id,
-          x: model.x,
-          y: model.y
-        })
-      })
-    },
-    updateNodeByPosition (nodes) {
-      const TempNodeList = nodes.map(node => {
-        const tempNode = Object.assign({}, node)
-        const matchedPos = this.nodePosition.filter(nodeP => nodeP.id === node.id)[0]
-        if (matchedPos) {
-          tempNode.x = matchedPos.x
-          tempNode.y = matchedPos.y
-        }
-        return tempNode
-      })
-      this.nodes = TempNodeList
-    },
-    onLayoutEnd () {
-      this.graphIsDoingLayout = false
-      this.graph.fitView()
-    },
-    initialGraph () {
-      const _this = this
-      const container = document.getElementById('graph-container')
-      const width = container.scrollWidth
-      const height = (container.scrollHeight || 500) - 20
-
-      const tooltip = new G6.Tooltip({
-        offsetX: 10,
-        offsetY: 10,
-        // the types of items that allow the tooltip show up
-        // 允许出现 tooltip 的 item 类型
-        itemTypes: ['node', 'edge'],
-        // custom the tooltip's content
-        // 自定义 tooltip 内容
-        getContent: (e) => {
-          const model = e.item.getModel()
-          if (model.isComboEdge) {
-            return `link from ${model.source} to ${model.target}`
-          }
-          const outDiv = document.createElement('div')
-          outDiv.style.width = 'fit-content'
-          // outDiv.style.padding = '0px 0px 20px 0px';
-          let innerHTML = `
-            <h4>${model.type}:${model.name}</h4>
-            <ul>`
-          model.attrs && model.attrs.forEach(attr => {
-            innerHTML += `<li>${attr.key}: ${attr.value}</li>`
-          })
-          innerHTML += `</ul>`
-          outDiv.innerHTML = innerHTML
-          return outDiv
-        }
-      })
-      this.graph = new G6.Graph({
-        container: container,
-        width: width,
-        height: height,
-        plugins: [tooltip],
-        layout: {
-          type: 'force',
-          linkDistance: 50,
-          nodeStrength: -10,
-          nodeSpacing: 10,
-          clustering: true,
-          clusterNodeStrength: -5,
-          clusterEdgeDistance: 200,
-          clusterNodeSize: 50,
-          clusterFociStrength: 1.2,
-          edgeStrength: 0.1,
-          preventOverlap: true,
-          alphaMin: 0.03,
-          onLayoutEnd: this.onLayoutEnd
-        },
-        defaultNode: {
-          size: 20,
-          style: {
-            fill: 'steelblue',
-            stroke: '#666',
-            lineWidth: 1
-          },
-          labelCfg: {
-            style: {
-              fill: '#000'
-            }
-          }
-        },
-        defaultEdge: {
-          style: {
-            endArrow: true
-          }
-        },
-        defaultCombo: {
-          labelCfg: {
-          position: 'top'
-        }
-      },
-        modes: {
-          default: ['drag-canvas', 'zoom-canvas', 'drag-combo',
-            {
-              type: 'drag-node',
-              onlyChangeComboSize: true
-            },
-            {
-              type: 'collapse-expand-combo',
-              trigger: 'click',
-              relayout: false // 收缩展开后，不重新布局
-            }
-          ]
-        },
-        nodeStateStyles: {
-          hover: {
-            fill: 'lightsteelblue'
-          },
-          click: {
-            stroke: '#000',
-            lineWidth: 3
-          }
-        },
-        edgeStateStyles: {
-          click: {
-            stroke: 'steelblue'
-          }
-        }
-      })
-
-      this.graph.on('edge:mouseenter', function (evt) {
-        const edge = evt.item
-        const model = edge.getModel()
-        if (model.link_type !== 'NGINX-LINK') {
-          return
-        }
-        const siblingId = model.siblingId
-        const siblingEdgeList = _this.graph.findAll('edge', edge => {
-           return edge.get('model').siblingId === siblingId
-           })
-        siblingEdgeList.forEach(sibling => {
-          _this.graph.updateItem(sibling, {
-            style: {
-                stroke: nginxLinkColor
-              }
-          })
-        })
-      })
-      this.graph.on('edge:mouseleave', function (evt) {
-        const edge = evt.item
-        const model = edge.getModel()
-        if (model.link_type !== 'NGINX-LINK') {
-          return
-        }
-        const siblingId = model.siblingId
-        const siblingEdgeList = _this.graph.findAll('edge', edge => {
-           return edge.get('model').siblingId === siblingId
-           })
-        siblingEdgeList.forEach(sibling => {
-          _this.graph.updateItem(sibling, {
-            style: {
-                stroke: normalLinkColor
-              }
-          })
-        })
-      })
-
-      this.graph.data({
-        nodes: this.nodes,
-        edges: this.edges,
-        combos: this.combos
-      })
-
-      this.graphIsDoingLayout = true
-      this.graph.render()
-
+    setResizeFunciton () {
       if (typeof window !== 'undefined') {
+        const _this = this
         window.onresize = () => {
-          if (!_this.graph || _this.graph.get('destroyed')) return
-          if (!container || !container.scrollWidth || !container.scrollHeight) return
-          _this.graph.changeSize(container.scrollWidth, container.scrollHeight)
+          _this.resizeFuncs.forEach(funcs => {
+            funcs()
+          })
         }
       }
+    },
+    changeLevel (level) {
+      this.visibleLevel = level
+    },
+    nodeClicked (entityInfo) {
+    },
+    showVerticalMap (nodeId) {
+      const root = getRoot(this.nodeMap[nodeId], this.nodeMap)
+      this.selectedEntityId = nodeId
+      this.verticalTreeData = getTreeData(root)
+      this.verticalDrawerVisible = true
+    },
+    // verticalDrawerControl
+    handleVerticalDrawerClose () {
+      this.verticalDrawerVisible = false
+    },
+    treeNodeClicked (nodeId) {
+      if (!this.nodeMap[nodeId]) {
+        return
+      }
+      this.selectedNodeId = nodeId
+      this.verticalDrawerVisible = false
+      this.changeLevel(this.nodeMap[nodeId].level)
     }
   },
   mounted: function () {
     this.getGraphDataFromRemote()
+    this.setResizeFunciton()
   }
 }
 </script>
@@ -337,5 +246,32 @@ export default {
   }
   .container {
     min-height: 500px;
+  }
+  .level-control-pannel {
+    position: absolute;
+    top: 20px;
+    right: 20px;
+  }
+
+  .level-controller {
+    z-index: 99;
+    position: absolute;
+    left: 20px;
+    right: 20px;
+    width: 50px;
+    text-align: center;
+    background: #fff;
+    display: flex;
+    flex-direction: column-reverse;
+    &-btn {
+      cursor: pointer;
+      margin-bottom:4px;
+      &:hover {
+        font-weight: bold;
+      }
+      &.active {
+        color: #3265F2;
+      }
+    }
   }
 </style>
