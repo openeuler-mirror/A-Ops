@@ -124,6 +124,11 @@ measurements:
                 description: "ofo_count",
                 type: "Unknown",
                 name: "ofo_count",
+            },
+            {
+                description: "tmout_count",
+                type: "counter",
+                name: "tmout_count",
             }
         )
     }

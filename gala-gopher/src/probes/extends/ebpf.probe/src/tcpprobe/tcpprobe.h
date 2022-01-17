@@ -82,6 +82,7 @@ struct metric_data {
     __u32 md5_hash_drops;
     __u32 filter_drops;
     __u32 ofo_count;
+    __u32 tmout;
     char role;
 };
 
@@ -126,6 +127,7 @@ struct link_data {
     __u32 md5_hash_drops;   // FROM tcp_v4_inbound_md5_hash event
     __u32 filter_drops;     // FROM tcp_filter event
     __u32 ofo_count;        // FROM tcp_data_queue_ofo event
+    __u32 tmout;            // FROM tcp_write_err event
 };
 
 #define TCPPROBE_UPDATE_STATS(data, sk, new_state) \
@@ -148,12 +150,14 @@ struct link_data {
 #define __TCPPROBE_INC_EVT_MD5_DROPS(data) __sync_fetch_and_add(&((data).md5_hash_drops), 1)
 #define __TCPPROBE_INC_EVT_FILTER_DROPS(data) __sync_fetch_and_add(&((data).filter_drops), 1)
 #define __TCPPROBE_INC_EVT_OFO(data) __sync_fetch_and_add(&((data).ofo_count), 1)
+#define __TCPPROBE_INC_EVT_TMOUT(data) __sync_fetch_and_add(&((data).tmout), 1)
 
 enum TCPPROBE_EVT_E {
     TCPPROBE_EVT_BACKLOG,
     TCPPROBE_EVT_MD5,
     TCPPROBE_EVT_FILTER,
-    TCPPROBE_EVT_OFO
+    TCPPROBE_EVT_OFO,
+    TCPPROBE_EVT_TMOUT
 };
 
 #define TCPPROBE_INC_EVT(type, data) \
@@ -171,6 +175,9 @@ enum TCPPROBE_EVT_E {
                 break; \
             case TCPPROBE_EVT_OFO: \
                 __TCPPROBE_INC_EVT_OFO(data); \
+                break; \
+            case TCPPROBE_EVT_TMOUT: \
+                __TCPPROBE_INC_EVT_TMOUT(data); \
                 break; \
         } \
     }while (0)
