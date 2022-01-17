@@ -353,6 +353,13 @@ KPROBE_RET(tcp_filter, pt_regs)
     }
 }
 
+KPROBE(tcp_write_err, pt_regs)
+{
+    const struct sock *sk = (const struct sock *)PT_REGS_PARM1(ctx);
+
+    update_link_event(sk, TCPPROBE_EVT_TMOUT);
+}
+
 /*
 KPROBE(tcp_data_queue_ofo, pt_regs)
 {
