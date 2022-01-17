@@ -360,6 +360,18 @@ KPROBE(tcp_write_err, pt_regs)
     update_link_event(sk, TCPPROBE_EVT_TMOUT);
 }
 
+KRAWTRACE(sock_exceed_buf_limit, bpf_raw_tracepoint_args)
+{
+    const struct sock *sk = (const struct sock*)ctx->args[0];
+    update_link_event(sk, TCPPROBE_EVT_SNDBUF_LIMIT);
+}
+
+KRAWTRACE(sock_rcvqueue_full, bpf_raw_tracepoint_args)
+{
+    const struct sock *sk = (const struct sock*)ctx->args[0];
+    update_link_event(sk, TCPPROBE_EVT_RCVQUE_FULL);
+}
+
 /*
 KPROBE(tcp_data_queue_ofo, pt_regs)
 {
