@@ -129,6 +129,16 @@ measurements:
                 description: "tmout_count",
                 type: "counter",
                 name: "tmout_count",
+            },
+            {
+                description: "rcv_que_full",
+                type: "counter",
+                name: "rcv_que_full_count",
+            },
+            {
+                description: "snd_buf_limit",
+                type: "counter",
+                name: "snd_buf_limit_count",
             }
         )
     }
