@@ -65,7 +65,7 @@ COLLECT_CONFIG = '/manage/config/collect'
 USER_LOGIN = "/manage/account/login"
 USER_CERTIFICATE = "/manage/account/certificate"
 CHANGE_PASSWORD = '/manage/account/change'
-Add_USER = '/manage/account/add'
+ADD_USER = '/manage/account/add'
 
 
 # database route

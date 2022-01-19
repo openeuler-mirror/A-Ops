@@ -13,22 +13,19 @@
 """
 Time: 2021-12-22 10:37:56
 Author: peixiaochao
-Description: 
+Description:
 """
 import sqlalchemy
 from werkzeug.security import generate_password_hash, check_password_hash
 
-from aops_manager.account_manager.key import HostKey
 from aops_utils.log.log import LOGGER
 from aops_utils.restful.status import DATABASE_INSERT_ERROR, DATABASE_QUERY_ERROR, \
     LOGIN_ERROR, REPEAT_PASSWORD, SUCCEED
-from aops_manager.function.verify.acount import CertificateSchema
-from aops_utils.restful.response import MyResponse
 from aops_utils.database.proxy import MysqlProxy
 from aops_utils.database.table import User
 
 
-class UserDatabase(MysqlProxy):
+class UserProxy(MysqlProxy):
     """
     User related table operation
     """
@@ -139,27 +136,3 @@ class UserDatabase(MysqlProxy):
             LOGGER.error(error)
             LOGGER.error("change password fail")
             return DATABASE_QUERY_ERROR
-
-    def certificate(self, data):
-        """
-        certificate user token
-        Args:
-            data(dict): parameter, e.g.
-                {
-                    "username": "xxx",
-                    "password": "xxxxx",
-                    "token": "xxxx",
-                }
-
-        Returns:
-
-        """
-        access_token = data.get("token")
-        verify_res = MyResponse.verify_all(data, CertificateSchema, access_token)
-        if verify_res == SUCCEED:
-            LOGGER.info("certificate account succeed!")
-            HostKey.update(access_token, data['key'])
-            return verify_res
-
-        LOGGER.info("fail certificate account!")
-        return verify_res

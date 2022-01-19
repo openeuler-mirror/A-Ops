@@ -30,7 +30,9 @@ The intelligent ops toolkit for openEuler
 %package -n aops-utils
 Summary:    utils for A-Ops
 Requires:   python3-concurrent-log-handler python3-xmltodict python3-pyyaml python3-marshmallow >= 3.13.0
-Requires:   python3-requests python3-xlrd python3-prettytable python3-pygments
+Requires:   python3-requests python3-xlrd python3-prettytable python3-pygments python3-sqlalchemy
+Requires:   python3-elasticsearch >= 7 python3-prometheus-api-client python3-urllib3 python3-werkzeug
+Requires:   python3-flask python3-flask-restful
 
 %description -n aops-utils
 utils for A-Ops
@@ -49,7 +51,7 @@ host group management, task and template management of ansible.
 Summary:    manager of A-ops
 Requires:   aops-utils = %{version}-%{release} ansible >= 2.9.0
 Requires:   python3-pyyaml python3-marshmallow >= 3.13.0 python3-flask python3-flask-restful
-Requires:   python3-requests sshpass python3-uWSGI
+Requires:   python3-requests sshpass python3-uWSGI python3-sqlalchemy python3-werkzeug
 
 %description -n aops-manager
 manager of A-ops, support software deployment and installation, account management, host management,

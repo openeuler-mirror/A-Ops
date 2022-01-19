@@ -46,4 +46,3 @@ class CertificateSchema(Schema):
     validators for parameter of /manage/account/certificate
     """
     key = fields.String(required=True, validate=lambda s: len(s) > 0)
-    token = fields.String(required=True, validate=lambda s: len(s) > 0)

@@ -15,13 +15,20 @@ Time:
 Author:
 Description: Restful APIs for user
 """
-from aops_utils.database.helper import SESSION
-from aops_manager.account_manager.database.proxy.account import UserDatabase
-from aops_utils.restful.resource import BaseResource
-from aops_manager.function.verify.acount import LoginSchema, ChangePasswordSchema, CertificateSchema, AddUserSchema
+import secrets
+from flask import jsonify
+
+from aops_utils.restful.response import BaseResponse
+from aops_utils.restful.status import SUCCEED, CHANGE_PASSWORD
+from aops_utils.database.helper import operate
+from aops_manager.database import SESSION
+from aops_manager.database.proxy.account import UserProxy
+from aops_manager.account_manager.key import HostKey
+from aops_manager.function.verify.acount import LoginSchema,\
+    ChangePasswordSchema, CertificateSchema, AddUserSchema
 
 
-class AddUser(BaseResource):
+class AddUser(BaseResponse):
     """
     Interface for register user.
     Restful API: post
@@ -32,36 +39,49 @@ class AddUser(BaseResource):
         Add user
 
         Args:
-            username(str)
-            password(str)
+            username (str)
+            password (str)
 
         Returns:
             dict: response body
         """
-        return self.restful_result('add_user', UserDatabase(), AddUserSchema, SESSION)
+        return jsonify(self.handle_request_db(AddUserSchema,
+                                              UserProxy(),
+                                              'add_user',
+                                              SESSION,
+                                              False))
 
 
-class Login(BaseResource):
+class Login(BaseResponse):
     """
     Interface for user login.
     Restful API: post
     """
+    @staticmethod
+    def _handle(args):
+        result = {}
+        status_code = operate(UserProxy(), args, 'login', SESSION)
+        if status_code in (SUCCEED, CHANGE_PASSWORD):
+            # generate access token
+            access_token = secrets.token_hex(16)
+            result['access_token'] = access_token
+        return status_code, result
 
     def post(self):
         """
         User login
 
         Args:
-            username(str)
-            password(str)
+            username (str)
+            password (str)
 
         Returns:
             dict: response body
         """
-        return self.restful_result('login', UserDatabase(), LoginSchema, SESSION)
+        return jsonify(self.handle_request(LoginSchema, self, debug=False))
 
 
-class ChangePassword(BaseResource):
+class ChangePassword(BaseResponse):
     """
     Interface for user change password.
     Restful API: post
@@ -72,30 +92,47 @@ class ChangePassword(BaseResource):
         Change password
 
         Args:
-            username(str)
-            password(str)
+            password (str): new password
 
         Returns:
             dict: response body
         """
-        return self.restful_result('change_password', UserDatabase(), ChangePasswordSchema, SESSION)
+        return jsonify(self.handle_request_db(ChangePasswordSchema,
+                                              UserProxy(),
+                                              'change_password',
+                                              SESSION,
+                                              False))
 
 
-class Certificate(BaseResource):
+class Certificate(BaseResponse):
     """
     Interface for user certificate.
     Restful API: post
     """
+    @staticmethod
+    def _handle(args):
+        """
+        Handle function
+
+        Args:
+            args (dict)
+
+        Returns:
+            int: status code
+        """
+        # save key
+        HostKey.update(args['username'], args['key'])
+
+        return SUCCEED
 
     def post(self):
         """
         Certificate  user
 
         Args:
-            username(str)
-            password(str)
+            key (strs)
 
         Returns:
             dict: response body
         """
-        return self.restful_result('certificate', UserDatabase(), CertificateSchema, SESSION)
+        return jsonify(self.handle_request(CertificateSchema, self, debug=False))

@@ -18,13 +18,13 @@ Description:
 import json
 
 from aops_utils.database.proxy import ElasticsearchProxy
-from aops_manager.conf.constant import TEMPLATE_INDEX, TASK_INDEX
 from aops_utils.log.log import LOGGER
 from aops_utils.restful.status import DATABASE_DELETE_ERROR, DATABASE_INSERT_ERROR,\
     DATABASE_QUERY_ERROR, DATA_EXIST, SUCCEED
+from aops_manager.conf.constant import TEMPLATE_INDEX, TASK_INDEX
 
 
-class DeployDatabase(ElasticsearchProxy):
+class DeployProxy(ElasticsearchProxy):
     """
     Database operation for deploy
     """
