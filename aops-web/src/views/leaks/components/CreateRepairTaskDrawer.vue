@@ -62,7 +62,7 @@
             >
               <a-select-option
                 v-for="repo in repoList"
-                :value="repo.repo_id"
+                :value="repo.repo_name"
                 :key="repo.repo_id"
               >
                 {{ repo.repo_name }}
@@ -458,8 +458,7 @@ export default {
                     return {
                       host_id: host.host_id,
                       host_name: host.host_name,
-                      host_ip: host.host_ip,
-                      repo_id: values.repo
+                      host_ip: host.host_ip
                     }
                   })
                 }
@@ -488,7 +487,7 @@ export default {
       handleExcuteASAP (taskId, data) {
         const _this = this
         executeTask({
-          taskList: [taskId]
+          task_id: taskId
         }).then(function (res) {
           let text = ''
           switch (data.type) {

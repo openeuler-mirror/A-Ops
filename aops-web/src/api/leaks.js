@@ -36,7 +36,8 @@ const api = {
     getHostUnderRepoTask: '/vulnerability/task/repo/info/get',
     getRepoTaskResult: '/vulnerability/task/repo/result/get',
     getPlaybook: '/vulnerability/task/playbook/get',
-    getRepoTemplate: '/vulnerability/repo/template/get'
+    getRepoTemplate: '/vulnerability/repo/template/get',
+    upload: '/vulnerability/cve/advisory/upload'
 };
 
 const sorterMap = {
@@ -45,6 +46,15 @@ const sorterMap = {
 };
 
 export default api;
+
+export function upload(file) {
+    return request({
+        url: api.upload,
+        method: 'post',
+        data: file,
+        headers: {'Content-Type': 'application/json;charset=utf-8'}
+    });
+}
 
 export function getCveOverview(parameter) {
     return request({
@@ -58,7 +68,7 @@ export function getCveList({tableInfo, ...parameter}) {
         url: api.getCveList,
         method: 'post',
         data: {
-            sort: tableInfo.sorter.field,
+            sort: sorterMap[tableInfo.sorter.order] ? tableInfo.sorter.field : undefined,
             direction: sorterMap[tableInfo.sorter.order],
             filter: {
                 cve_id: tableInfo.filters.cveId,
@@ -136,7 +146,7 @@ export function getHostLeakList({tableInfo, ...parameter}) {
             direction: sorterMap[tableInfo.sorter.order],
             filter: {
                 host_name: tableInfo.filters.hostName,
-                host_group_name: tableInfo.filters.host_group,
+                host_group: tableInfo.filters.host_group,
                 repo: tableInfo.filters.repo
             },
             page: tableInfo.pagination.current,
@@ -221,7 +231,7 @@ export function getRepoList(repoIdList = []) {
         url: api.getRepo,
         method: 'post',
         data: {
-            repo_id_list: repoIdList
+            repo_name_list: repoIdList
         }
     });
 }
@@ -244,7 +254,7 @@ export function executeTask(parameters) {
         url: api.executeTask,
         method: 'post',
         data: {
-            task_list: parameters.taskList
+            task_id: parameters.task_id
         }
     });
 }
@@ -254,6 +264,7 @@ export function generateRepoTask(parameters) {
         url: api.generateRepoTask,
         method: 'post',
         data: {
+            repo_name: parameters.repo,
             task_name: parameters.task_name,
             description: parameters.task_desc,
             info: parameters.info || []

@@ -34,17 +34,17 @@ export const statusMap = {
 };
 
 export const severityMap = {
-    critical: '严重',
-    high: '高风险',
-    medium: '中风险',
-    low: '低风险',
-    unknown: '未知'
+    Critical: '严重',
+    High: '高风险',
+    Medium: '中风险',
+    Low: '低风险',
+    Unknown: '未知'
 };
 
 export const severityColorMap = {
-    critical: '#f62f2f',
-    high: '#fda72c',
-    medium: '#fde92c',
-    low: '#3bd065',
-    unknown: '#ccc'
+    Critical: '#f62f2f',
+    High: '#fda72c',
+    Medium: '#fde92c',
+    Low: '#3bd065',
+    Unknown: '#ccc'
 };
