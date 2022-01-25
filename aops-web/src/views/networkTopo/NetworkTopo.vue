@@ -10,9 +10,9 @@
             :key="idx"
             @click="changeLevel(level.type)"
           >
-            {{ level.text }}
+            <img :src="level.src" alt="" style="width:18px;vertical-align:middle;"><span style="margin-left:5px;">{{ level.text }}</span>
           </div>
-          <div><a-icon type="switcher" :rotate="90"/> 层级</div>
+          <div><a-icon type="switcher" :rotate="90" style="margin-bottom:15px;" /> 层级</div>
         </div>
       </div>
       <a-spin :spinning="dataLoading" size="large">
@@ -94,7 +94,9 @@ export default {
       // verticalDataDisplay
       verticalDrawerVisible: false,
       verticalTreeData: {},
-      selectedNodeId: null
+      selectedNodeId: null,
+
+      iconsrc: ''
     }
   },
   methods: {
@@ -109,7 +111,29 @@ export default {
         const tempNode = entity
         // id和label是绘图时需要使用的
         tempNode.id = entity.entityid
-        tempNode.label = entity.name
+        // tempNode.label = entity.name
+        tempNode._label = entity.name
+        tempNode.label = undefined
+        tempNode.type = entity.type
+        if (tempNode.type === 'host') {
+          _this.iconsrc = '/主机.png'
+        } else if (tempNode.type === 'container') {
+          _this.iconsrc = '/容器.png'
+        } else if (tempNode.type === 'task') {
+          _this.iconsrc = '/进程.png'
+        } else if (tempNode.type === 'tcp_link') {
+          _this.iconsrc = '/TCP连接.png'
+        } else if (tempNode.type === 'ipvs_link') {
+          _this.iconsrc = '/IPVS连接.png'
+        }
+        // tempNode._type = entity.type
+        tempNode.icon = {
+          show: true,
+          img: _this.iconsrc,
+          width: 40,
+          height: 40
+        }
+        // tempNode.type = undefined
         _this.nodeMap[entity.entityid] = tempNode
 
         const eLevel = entity.level
@@ -230,16 +254,6 @@ export default {
 </script>
 
 <style lang="less" scoped>
-  .g6-tooltip {
-      border: 1px solid #e2e2e2;
-      border-radius: 4px;
-      font-size: 12px;
-      color: #545454;
-      background-color: rgba(255, 255, 255, 0.9);
-      padding: 10px 8px;
-      box-shadow: rgb(174, 174, 174) 0px 0px 10px;
-    }
-
   .header {
     height: 24px;
     line-height: 24px;
@@ -258,13 +272,14 @@ export default {
     position: absolute;
     left: 20px;
     right: 20px;
-    width: 50px;
+    width: 100px;
     text-align: center;
     background: #fff;
     display: flex;
     flex-direction: column-reverse;
     &-btn {
       cursor: pointer;
+      height: 30px;
       margin-bottom:4px;
       &:hover {
         font-weight: bold;

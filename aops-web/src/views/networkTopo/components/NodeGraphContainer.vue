@@ -51,9 +51,9 @@ export default {
       selectedLinkCache: [],
       selectedRemoteNodesCache: [],
       toggleNodeCache: null,
-
-      initailized: false,
-      addSizeEvents: false
+      initailized: false, // 是否经过初始化了数据的变量
+      addSizeEvents: false,
+      btnfit: false // 是否开启了
     }
   },
   props: {
@@ -130,7 +130,8 @@ export default {
   methods: {
     onLayoutEnd () {
       this.graphIsDoingLayout = false
-      this.graph.fitView()
+      // 讲画布中的节点与画布进行自适应占满画布
+      // this.graph.fitView()
       // add default state to avoid edge state bug
       this.graph.getEdges().forEach(edge => {
         this.graph.setItemState(edge, 'defaultState', true)
@@ -230,6 +231,20 @@ export default {
       }
     },
     initialGraph () {
+      const tooltip = new G6.Tooltip({
+        itemTypes: ['node'],
+        getContent(e) {
+           const outDiv = document.createElement('div');
+           outDiv.style.width = 'fit-content';
+           outDiv.innerHTML = `
+             <h4>节点名称: ${e.item.getModel().name}</h4>
+             <li>属性名: ${e.item.getModel().attrs[0].key}</li>
+             <li>属性值: ${e.item.getModel().attrs[0].value}</li>
+             <li>属性类型: ${e.item.getModel().attrs[0].vtype}</li>`
+           return outDiv
+        }
+      })
+
       const _this = this
       const container = document.getElementById(this.containerId)
       const width = container.clientWidth
@@ -249,6 +264,7 @@ export default {
           onLayoutEnd: this.onLayoutEnd
         },
         defaultNode: {
+          // type: 'diamond',
           size: 80,
           style: {
             fill: colorSets[0].mainFill,
@@ -270,6 +286,7 @@ export default {
             cursor: 'pointer'
           }
         },
+        fitView: this.btnfit,
         modes: {
           default: ['drag-canvas', 'zoom-canvas',
             {
@@ -278,6 +295,7 @@ export default {
             }
           ]
         },
+        plugins: [tooltip],
         nodeStateStyles: {
           hoverFocus: {
             fill: colorSets[2].activeFill,
@@ -432,21 +450,12 @@ export default {
 </script>
 
 <style lang="less" scoped>
-  .g6-tooltip {
-      border: 1px solid #e2e2e2;
-      border-radius: 4px;
-      font-size: 12px;
-      color: #545454;
-      background-color: rgba(255, 255, 255, 0.9);
-      padding: 10px 8px;
-      box-shadow: rgb(174, 174, 174) 0px 0px 10px;
-    }
-
   .header {
     height: 24px;
     line-height: 24px;
   }
   .container {
     min-height: 500px;
+    // background-color: burlywood;
   }
 </style>

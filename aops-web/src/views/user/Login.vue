@@ -10,6 +10,7 @@
       <a-tabs
         :activeKey="customActiveKey"
         :tabBarStyle="{ textAlign: 'center', borderBottom: 'unset' }"
+        @change="handleTabClick"
       >
         <a-tab-pane key="tab1" :tab="$t('user.login.tab-login-credentials')">
           <a-alert v-if="isLoginError" type="error" showIcon style="margin-bottom: 24px;" :message="$t('user.login.message-invalid-credentials')" />
@@ -40,10 +41,41 @@
             </a-input-password>
           </a-form-item>
         </a-tab-pane>
+
+        <a-tab-pane key="tab2" :tab="$t('user.login.gitee-login-credentials')">
+          <a-alert v-if="isLoginError" type="error" showIcon style="margin-bottom: 24px;" :message="$t('user.login.message-invalid-credentials')" />
+          <a-form-item>
+            <a-input
+              size="large"
+              type="text"
+              :placeholder="$t('user.giteelogin.username.placeholder')"
+              v-decorator="[
+                'username',
+                {rules: [{ required: true, message: $t('user.giteeName.required') }, { validator: handleUsernameOrEmail }], validateTrigger: 'change'}
+              ]"
+            >
+              <a-icon slot="prefix" type="user" :style="{ color: 'rgba(0,0,0,.25)' }"/>
+            </a-input>
+          </a-form-item>
+
+          <a-form-item>
+            <a-input-password
+              size="large"
+              :placeholder="$t('user.login.password.placeholder')"
+              v-decorator="[
+                'password',
+                {rules: [{ required: true, message: $t('user.password.required') }], validateTrigger: 'blur'}
+              ]"
+            >
+              <a-icon slot="prefix" type="lock" :style="{ color: 'rgba(0,0,0,.25)' }"/>
+            </a-input-password>
+          </a-form-item>
+        </a-tab-pane>
       </a-tabs>
 
       <a-form-item style="margin-top:24px">
         <a-button
+          v-if="customActiveKey === 'tab1'"
           size="large"
           type="primary"
           htmlType="submit"
@@ -51,6 +83,15 @@
           :loading="state.loginBtn"
           :disabled="state.loginBtn"
         >{{ $t('user.login.login') }}</a-button>
+
+        <a-button
+          v-if="customActiveKey === 'tab2'"
+          size="large"
+          htmlType="submit"
+          class="gitee-login-button"
+          :loading="state.loginBtn"
+          :disabled="state.loginBtn"
+        >{{ $t('user.login.gitee-login') }}</a-button>
       </a-form-item>
     </a-form>
   </div>
@@ -180,6 +221,16 @@ export default {
     font-size: 16px;
     height: 40px;
     width: 100%;
+  }
+
+  .gitee-login-button{
+    padding: 0 15px;
+    font-size: 16px;
+    height: 40px;
+    width: 100%;
+    background: #66ffcc;
+    border-color: #66ffcc;
+    color: #fff;
   }
 
   .user-login-other {

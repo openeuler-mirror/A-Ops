@@ -172,14 +172,14 @@ export default {
           dataIndex: 'host_group',
           key: 'host_group',
           title: '主机组',
-          filteredValue: filters.host_group || null,
+          filteredValue: filters.host_group || [],
           filters: this.hostGroupList
         },
         {
           dataIndex: 'repo',
           key: 'repo',
           title: 'CVE REPO',
-          filteredValue: filters.repo || null,
+          filteredValue: filters.repo || [],
           filters: this.repoList
         },
         {

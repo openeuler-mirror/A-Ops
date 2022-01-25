@@ -101,13 +101,17 @@ export default {
     initializingTree () {
       const tooltip = new G6.Tooltip({
         itemTypes: ['node'],
-        getContent: (e) => {
-          const model = e.item.getModel()
-          return model.description || ''
-        },
-        shouldBegin: (e) => {
-          const model = e.item.getModel()
-          return !!model.description
+        getContent(e) {
+           const outDiv = document.createElement('div');
+           const msd = e.item.getModel()
+           console.log(msd);
+           outDiv.style.width = 'fit-content';
+           outDiv.innerHTML = `
+             <h4>节点名称: ${e.item.getModel().name}</h4>
+             <li>属性名: ${e.item.getModel().attrs[0].key}</li>
+             <li>属性值: ${e.item.getModel().attrs[0].value}</li>
+             <li>属性类型: ${e.item.getModel().attrs[0].vtype}</li>`
+           return outDiv
         }
       })
 
@@ -127,6 +131,7 @@ export default {
           ]
         },
         defaultNode: {
+          // type: 'diamond',
           size: 65,
           anchorPoints: [
             [0, 0.5],

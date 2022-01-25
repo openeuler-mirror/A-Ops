@@ -164,7 +164,25 @@ export function getRoot(entity, nodeMap) {
 export function getTreeData(rawTreeData) {
     const tempNode = {
         id: rawTreeData.id,
-        label: rawTreeData.label
+        name: rawTreeData.name,
+        label: undefined,
+        type: rawTreeData.type,
+        icon: {
+            show: true,
+            img:
+               rawTreeData.type === 'host'
+               ? '/主机.png'
+               : rawTreeData.type === 'container'
+               ? '/容器.png'
+               : rawTreeData.type === 'task'
+               ? '/进程.png'
+               : rawTreeData.type === 'tcp_link'
+               ? '/TCP连接.png'
+               : '/IPVS连接.png',
+            width: 40,
+            height: 40
+        },
+        attrs: rawTreeData.attrs
     };
     if (rawTreeData.children) {
         tempNode.children = rawTreeData.children.map(child => {

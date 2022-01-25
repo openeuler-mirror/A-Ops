@@ -3,11 +3,11 @@
  */
 
 export const levelOrders = [
-    {type: 'HOST', text: '主机'},
-    {type: 'CONTAINER', text: '容器'},
-    {type: 'PROCESS', text: '进程', show: true},
-    {type: 'RPC', text: 'RPC'},
-    {type: 'LB', text: 'LB'}
+    {type: 'HOST', text: '主机', src: '/主机.png'},
+    {type: 'CONTAINER', text: '容器', src: '/容器.png'},
+    {type: 'PROCESS', text: '进程', show: true, src: '/进程.png'},
+    {type: 'RPC', text: 'RPC', src: '/TCP连接.png'},
+    {type: 'LB', text: 'LB', src: '/IPVS连接.png'}
 ];
 
 export const relationTypes = {

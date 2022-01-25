@@ -24,6 +24,10 @@
               @statusUpdated="handleStatusUpdated"
             />
           </a-col>
+          <a-col>
+            <!-- <a-button @click="upLoadFileVisible = true" type="primary">上传文件</a-button> -->
+            <upload-file @addSuccess="handleUploadSuccess" />
+          </a-col>
           <a-col v-if="selectedRowKeys.length === 0">
             <create-repair-task-drawer
               text="生成修复任务"
@@ -84,6 +88,7 @@ import { getSelectedRow } from '../utils/getSelectedRow'
 import { getCveList } from '@/api/leaks'
 
 import { statusList, statusMap, severityMap } from '../config'
+import UploadFile from './UploadFile.vue'
 
 const defaultPagination = {
   current: 1,
@@ -97,7 +102,8 @@ export default {
   name: 'CVEsTable',
   components: {
     CreateRepairTaskDrawer,
-    StatusChangeModal
+    StatusChangeModal,
+    UploadFile
   },
   props: {
     // 判断表格是自己发起请求获取数据还是，触发事件通过父组件获取列表数据
@@ -163,23 +169,23 @@ export default {
           filters: [
             {
               text: '严重',
-              value: 'critical'
+              value: 'Critical'
             },
             {
               text: '高风险',
-              value: 'high'
+              value: 'High'
             },
             {
               text: '中风险',
-              value: 'medium'
+              value: 'Medium'
             },
             {
               text: '低风险',
-              value: 'low'
+              value: 'Low'
             },
             {
               text: '未知',
-              value: 'unknown'
+              value: 'Unknown'
             }
           ]
         },
@@ -190,8 +196,8 @@ export default {
           sorter: true
         },
         {
-          dataIndex: 'hosts_num',
-          key: 'hosts_num',
+          dataIndex: 'host_num',
+          key: 'host_num',
           title: '主机',
           sorter: true
         },
@@ -231,23 +237,23 @@ export default {
           filters: [
             {
               text: '严重',
-              value: 'critical'
+              value: 'Critical'
             },
             {
               text: '高风险',
-              value: 'high'
+              value: 'High'
             },
             {
               text: '中风险',
-              value: 'medium'
+              value: 'Medium'
             },
             {
               text: '低风险',
-              value: 'low'
+              value: 'Low'
             },
             {
               text: '未知',
-              value: 'unknown'
+              value: 'Unknown'
             }
           ]
         },
@@ -292,7 +298,9 @@ export default {
       selectedRowsAll: [],
       // standalone模式下获取全量cve数据
       cveAllList: [],
-      cveAllIsLoading: false
+      cveAllIsLoading: false,
+      // 控制上传弹框显隐
+      upLoadFileVisible: false
     }
   },
   methods: {
@@ -419,6 +427,12 @@ export default {
       } else {
         this.$emit('statusUpdated')
       }
+    },
+    uploadfile() {
+      console.log(1);
+    },
+    handleUploadSuccess() {
+      console.log(1);
     }
   },
   mounted () {
