@@ -23,8 +23,11 @@
                   <a-descriptions-item label="主机地址">
                     {{ resultItem.host_ip }}
                   </a-descriptions-item>
-                  <a-descriptions-item label="状态">
-                    {{ statusTextMap[resultItem.status] }}
+                  <a-descriptions-item label="状态" v-if="resultData.task_type === 'cve'">
+                    {{ cveStatusTextMap[resultItem.status] }}
+                  </a-descriptions-item>
+                  <a-descriptions-item label="状态" v-if="resultData.task_type === 'repo'">
+                    {{ repoStatusTextMap[resultItem.status] }}
                   </a-descriptions-item>
                   <a-descriptions-item label="REPO" v-if="taskType === 'repo'">
                     {{ resultItem.repo }}
@@ -85,9 +88,17 @@ import { getCveTaskResult, getRepoTaskResult } from '@/api/leaks'
 
 import { dateFormat } from '@/views/utils/Utils'
 
-const statusTextMap = {
+const cveStatusTextMap = {
   'succeed': '修复成功',
   'fail': '修复失败',
+  'running': '运行中',
+  'on standby': '等待',
+  'set': '已设置'
+}
+
+const repoStatusTextMap = {
+  'succeed': '设置成功',
+  'fail': '设置失败',
   'running': '运行中',
   'on standby': '等待',
   'set': '已设置'
@@ -143,8 +154,8 @@ export default {
       taskType: this.$route.params.taskType,
       resultLoading: false,
       resultData: {},
-
-      statusTextMap,
+      repoStatusTextMap,
+      cveStatusTextMap,
       statusValueMap,
       statusResultTextMap,
       statusResultValueMap

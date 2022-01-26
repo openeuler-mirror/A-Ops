@@ -159,7 +159,7 @@ export default {
         okText: '删除',
         onOk: function () {
           return deleteRepo({
-            repoIdList: [repo.repo_id]
+            repoNameList: [repo.repo.name]
           }).then(function (res) {
             _this.$message.success(res.msg)
             _this.getRepoList()

@@ -92,8 +92,8 @@ import UploadFile from './UploadFile.vue'
 
 const defaultPagination = {
   current: 1,
-  pageSize: 5,
-  total: 5,
+  pageSize: 10,
+  total: 10,
   showSizeChanger: true,
   showQuickJumper: true
 }
@@ -429,10 +429,8 @@ export default {
       }
     },
     uploadfile() {
-      console.log(1);
     },
     handleUploadSuccess() {
-      console.log(1);
     }
   },
   mounted () {

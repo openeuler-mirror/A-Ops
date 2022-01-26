@@ -491,9 +491,7 @@ export default {
         icon: () => <a-icon type="exclamation-circle" />,
         okText: '执行',
         onOk: function () {
-          return executeTask({
-            taskList: [_this.taskId]
-          }).then(function (res) {
+          return executeTask(_this.taskId).then(function (res) {
             _this.$message.success(res.msg)
             // 执行任务成功后刷新
             _this.getInitalData()

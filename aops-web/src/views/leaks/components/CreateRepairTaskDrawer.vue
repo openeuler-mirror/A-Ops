@@ -486,9 +486,7 @@ export default {
       // 立即执行任务
       handleExcuteASAP (taskId, data) {
         const _this = this
-        executeTask({
-          task_id: taskId
-        }).then(function (res) {
+        executeTask(taskId).then(function (res) {
           let text = ''
           switch (data.type) {
             case 'cve':
