@@ -18,6 +18,12 @@ struct bpf_map_def SEC("maps") task_map = {
     .max_entries = TASK_MAP_ENTRY_SIZE,
 };
 
+struct bpf_map_def SEC("maps") task_exit_event = {
+    .type = BPF_MAP_TYPE_PERF_EVENT_ARRAY,
+    .key_size = sizeof(int),
+    .value_size = sizeof(int),
+};
+
 KRAWTRACE(sched_process_fork, bpf_raw_tracepoint_args)
 {
     struct task_key parent_key = {0};
@@ -48,5 +54,9 @@ KRAWTRACE(sched_process_exit, bpf_raw_tracepoint_args)
 
     tkey.tgid = _(task->tgid);
     tkey.pid = _(task->pid);
-    bpf_map_delete_elem(&task_map, &tkey);
+    if (bpf_map_delete_elem(&task_map, &tkey) == 0) {
+        if (tkey.tgid == tkey.pid) {
+            bpf_perf_event_output(ctx, &task_exit_event, 0, &tkey.tgid, sizeof(tkey.tgid));
+        }
+    }
 }

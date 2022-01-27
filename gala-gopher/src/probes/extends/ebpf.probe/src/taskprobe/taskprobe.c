@@ -8,6 +8,7 @@
 #include <unistd.h>
 #include <string.h>
 #include <sys/resource.h>
+#include <bpf/bpf.h>
 
 #ifdef BPF_PROG_KERN
 #undef BPF_PROG_KERN
@@ -75,9 +76,24 @@ int main(int argc, char **argv)
 
     LOAD(taskprobe);
 
+    remove(TASK_EXIT_MAP_FILE_PATH);
+    ret = bpf_obj_pin(GET_MAP_FD(task_exit_event), TASK_EXIT_MAP_FILE_PATH);
+    if (ret != 0) {
+        fprintf(stderr, "Failed to pin exit task map: %d\n", errno);
+        goto err;
+    }
+    printf("Exit task map pin success.\n");
+
     while (!stop) {
         task_probe_pull_probe_data(bpf_map__fd(skel->maps.task_map));
         sleep(tp_params.period);
+    }
+
+    ret = remove(TASK_EXIT_MAP_FILE_PATH);
+    if (!ret) {
+        printf("Pinned file:(%s) of task exit map removed.\n", TASK_EXIT_MAP_FILE_PATH);
+    } else {
+        fprintf(stderr, "Failed to remove pinned file:(%s) of task exit map.", TASK_EXIT_MAP_FILE_PATH);
     }
 
 err:
