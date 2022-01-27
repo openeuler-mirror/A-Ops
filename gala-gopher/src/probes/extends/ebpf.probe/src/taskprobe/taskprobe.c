@@ -76,24 +76,24 @@ int main(int argc, char **argv)
 
     LOAD(taskprobe);
 
-    remove(TASK_MAP_FILE_PATH);
-    ret = bpf_obj_pin(GET_MAP_FD(task_map), TASK_MAP_FILE_PATH);
+    remove(TASK_EXIT_MAP_FILE_PATH);
+    ret = bpf_obj_pin(GET_MAP_FD(task_exit_event), TASK_EXIT_MAP_FILE_PATH);
     if (ret != 0) {
-        fprintf(stderr, "Failed to pin task map: %d\n", errno);
+        fprintf(stderr, "Failed to pin exit task map: %d\n", errno);
         goto err;
     }
-    printf("Task map pin success.\n");
+    printf("Exit task map pin success.\n");
 
     while (!stop) {
         task_probe_pull_probe_data(bpf_map__fd(skel->maps.task_map));
         sleep(tp_params.period);
     }
 
-    ret = remove(TASK_MAP_FILE_PATH);
+    ret = remove(TASK_EXIT_MAP_FILE_PATH);
     if (!ret) {
-        printf("Pinned file:(%s) of task map removed.\n", TASK_MAP_FILE_PATH);
+        printf("Pinned file:(%s) of task exit map removed.\n", TASK_EXIT_MAP_FILE_PATH);
     } else {
-        fprintf(stderr, "Failed to remove pinned file:(%s) of task map.", TASK_MAP_FILE_PATH);
+        fprintf(stderr, "Failed to remove pinned file:(%s) of task exit map.", TASK_EXIT_MAP_FILE_PATH);
     }
 
 err:

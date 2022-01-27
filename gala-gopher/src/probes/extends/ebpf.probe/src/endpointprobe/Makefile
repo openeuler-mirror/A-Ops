@@ -23,7 +23,7 @@ deps: $(DEPS)
 
 app: $(APP)
 %: %.c $(UTIL_SRC)
-	$(CC) $(CFLAGS) $(INCLUDES) $^ -lbpf -lelf -lz -o $@
+	$(CC) $(CFLAGS) $(INCLUDES) $^ -lbpf -lelf -lpthread -lz -o $@
 
 clean:
 	rm -rf $(DEPS)
