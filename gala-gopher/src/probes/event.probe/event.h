@@ -1,5 +1,18 @@
-#ifndef __EVENTPROBE__H
-#define __EVENTPROBE__H
+ /*
+  * Copyright (c) Huawei Technologies Co., Ltd. 2021-2022. All rights reserved.
+  * iSulad licensed under the Mulan PSL v2.
+  * You can use this software according to the terms and conditions of the Mulan PSL v2.
+  * You may obtain a copy of Mulan PSL v2 at:
+  *     http://license.coscl.org.cn/MulanPSL2
+  * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR
+  * IMPLIED, INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY OR FIT FOR A PARTICULAR
+  * PURPOSE.
+  * See the Mulan PSL v2 for more details.
+  * Author: D.Wang
+  * Description: event.h
+  */
+#ifndef EVENTPROBE__H
+#define EVENTPROBE__H
 
 #include <linux/types.h>
 
@@ -13,9 +26,9 @@
 struct event_data {
     __u64 timestamp;  // UNIX Epoch time in seconds since 00:00:00 UTC on 1 January 1970.
     char level[16];   // Event level: "INFO"|"WARN"|"ERROR"|"FATAL".
-    char body[MAX_DATA_STR_LEN]; 
+    char body[MAX_DATA_STR_LEN];
 };
 
-void print_event_output(struct event_data *event);
+void PrintEventOutput(const struct event_data *event);
 
 #endif
