@@ -65,7 +65,7 @@ struct event_data {
     char body[MAX_DATA_STR_LEN]; 
 };
 
-void print_event_output(struct event_data *event);
+void PrintEventOutput(const struct event_data *event);
 ```
 ### 2.2 Event使能开关
 gala-gopher.conf，启动后默认输出系统messages异常结束进程的日志
