@@ -1,3 +1,16 @@
+ /*
+  * Copyright (c) Huawei Technologies Co., Ltd. 2021-2022. All rights reserved.
+  * iSulad licensed under the Mulan PSL v2.
+  * You can use this software according to the terms and conditions of the Mulan PSL v2.
+  * You may obtain a copy of Mulan PSL v2 at:
+  *     http://license.coscl.org.cn/MulanPSL2
+  * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR
+  * IMPLIED, INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY OR FIT FOR A PARTICULAR
+  * PURPOSE.
+  * See the Mulan PSL v2 for more details.
+  * Author: D.Wang
+  * Description: event infomation egress probe
+  */
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -12,100 +25,96 @@
 #define LEN_BUF	  64
 #define LEN_CMD	  128
 #define LEN_LINE  1024
+#define TIME_INTERVAL 1000
 
-static int g_lastLogLineNum = 0;
+static int g_nextLineNum = 0;
 
-void print_event_output(struct event_data *event){
-    char timestamp[LEN_BUF] = {0};
-    sprintf(timestamp, "%llu", event->timestamp);  
-
-    fprintf(stdout, "|%s|%s|%s|%s|\n",
-        "event",
-        timestamp,
-        event->level, 
-        event->body
-    );
-    // fflush(stdout);
-}
-
-static int get_file_line_num(const char * filename)
+void PrintEventOutput(const struct event_data *event)
 {
-   int ret = 0; 
-   FILE *f = NULL;
-   char count[LEN_BUF];
-   char cmd[LEN_CMD] = {0};
+    char timestamp[LEN_BUF] = {0};
+    sprintf(timestamp, "%llu", event->timestamp);
 
-   sprintf(cmd, CMD_FILE_LINE_NUM, LOG_MESSAGES);
-
-   f = popen(cmd, "r");
-   if (f == NULL) {
-       return -1;
-   }
-
-   if (!feof(f)) {
-       fgets(count, LEN_BUF, f);
-   }
-
-   ret = atoi(count);
-
-   (void)pclose(f);
-
-   return ret;
+    fprintf(stdout, "|%s|%s|%s|%s|\n", "event", timestamp, event->level, event->body);
 }
 
-static void make_event(char * log){
+static int GetFileLineNum(const char * filename)
+{
+    int ret;
+    FILE *f = NULL;
+    char count[LEN_BUF];
+    char cmd[LEN_CMD] = {0};
+
+    sprintf(cmd, CMD_FILE_LINE_NUM, LOG_MESSAGES);
+
+    f = popen(cmd, "r");
+    if (f == NULL) {
+        return -1;
+    }
+
+    if (!feof(f)) {
+        fgets(count, LEN_BUF, f);
+    }
+
+    ret = atoi(count);
+
+    (void)pclose(f);
+
+    return ret;
+}
+
+static void MakeEvent(const char * log)
+{
     struct event_data event = {0};
     
     time_t now;
     time(&now);
-    event.timestamp = now*1000*1000*1000;
+    event.timestamp = now*TIME_INTERVAL*TIME_INTERVAL*TIME_INTERVAL;
 
     strcpy(event.body, log);
     strcpy(event.level, EVENT_LEVEL_ERROR);
-    print_event_output(&event);
+    PrintEventOutput(&event);
 }
 
-static int filter_log_event()
+static int FilterLogEvent(void)
 {
     FILE *f = NULL;
     char line[LEN_LINE];
     char cmd[LEN_CMD] = {0};
     
-    int lineNum = get_file_line_num(LOG_MESSAGES);
+    int lineNum = GetFileLineNum(LOG_MESSAGES);
     if (lineNum < 1) {
        return -1;
     }
     
-    // init g_lastLogLineNum, from current file bottom line
-    if (g_lastLogLineNum == 0){
-        g_lastLogLineNum = lineNum;
+    // init g_next_line_num, from current file bottom line
+    if (g_nextLineNum == 0) {
+        g_nextLineNum = lineNum;
     }
-    if (g_lastLogLineNum - lineNum == 1) {    // file line readed
+    if (g_nextLineNum - lineNum == 1) {    // file line readed
         return 0;
-    }else if(g_lastLogLineNum - lineNum > 1){ // log file rewrite from beginning
-        g_lastLogLineNum = 1;
+    } else if (g_nextLineNum - lineNum > 1) { // log file rewrite from beginning
+        g_nextLineNum = 1;
     }
 
-    sprintf(cmd, CMD_EVENT_CODE_ABNORMAL, g_lastLogLineNum, lineNum, LOG_MESSAGES);
-    // printf("EVENT.PROBE: event code abnormal is : %s\n", cmd); 
+    sprintf(cmd, CMD_EVENT_CODE_ABNORMAL, g_nextLineNum, lineNum, LOG_MESSAGES);
 
     f = popen(cmd, "r");
     if (f == NULL) {
-        return -1; 
+        return -1;
     }
 
     while (!feof(f)) {
         fgets(line, LEN_LINE, f);
         if (strlen(line) > 0) {
-            if (line[strlen(line)-1] == '\n'){
+            if (line[strlen(line)-1] == '\n') {
                 line[strlen(line)-1] = '\0'; 
             }
-            make_event(line);
-            sprintf(line, ""); 
+            MakeEvent(line);
+            sprintf(line, "");
         }
     }
 
-    g_lastLogLineNum = lineNum + 1;
+    g_nextLineNum = lineNum + 1;
 
     (void)pclose(f); 
 
@@ -114,7 +123,7 @@ static int filter_log_event()
 
 int main(int argc, char **argv)
 {
-    int ret = filter_log_event();
+    int ret = FilterLogEvent();
     if (ret != 0) {
         return -1;
     }
