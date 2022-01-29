@@ -1,7 +1,17 @@
-/*
- * Copyright (c) Huawei Technologies Co., Ltd. 2020-2020. All rights reserved.
+/******************************************************************************
+ * Copyright (c) Huawei Technologies Co., Ltd. 2021. All rights reserved.
+ * gala-gopher licensed under the Mulan PSL v2.
+ * You can use this software according to the terms and conditions of the Mulan PSL v2.
+ * You may obtain a copy of Mulan PSL v2 at:
+ *     http://license.coscl.org.cn/MulanPSL2
+ * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR
+ * IMPLIED, INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY OR FIT FOR A PARTICULAR
+ * PURPOSE.
+ * See the Mulan PSL v2 for more details.
+ * Author: dowzyx
+ * Create: 2021-12-04
  * Description: container_probe user prog
- */
+ ******************************************************************************/
 #include <errno.h>
 #include <signal.h>
 #include <stdio.h>
@@ -16,10 +26,10 @@
 #endif
 
 #include "bpf.h"
-#include "containerd_probe.skel.h"
-#include "containerd_probe.h"
 #include "args.h"
 #include "container.h"
+#include "containerd_probe.skel.h"
+#include "containerd_probe.h"
 
 #define METRIC_NAME_RUNC_TRACE    "container_data"
 #define CONTAINERS_MAP_FILE_PATH  "/sys/fs/bpf/probe/containers"
@@ -101,7 +111,7 @@ static void print_container_metric(int fd)
             k = nk;
         }
     }
-    fflush(stdout);
+    (void)fflush(stdout);
     return;
 }
 
@@ -135,9 +145,9 @@ int main(int argc, char **argv)
     int attach_flag = 0;
 
     err = args_parse(argc, argv, "t:p:", &params);
-    if (err != 0) {
+    if (err != 0)
         return -1;
-    }
+
     printf("arg parse interval time:%us  elf's path:%s\n", params.period, params.elf_path);
     /* Cleaner handling of Ctrl-C */
     signal(SIGINT, sig_handler);
@@ -150,9 +160,9 @@ int main(int argc, char **argv)
     bpf_update_containerd_symaddrs(GET_MAP_FD(containerd_symaddrs_map));
     /* Find elf's abs_path */
     ELF_REAL_PATH(containerd, params.elf_path, NULL, elf, elf_num);
-    if (elf_num <= 0) {
+    if (elf_num <= 0)
         return -1;
-    }
+
     /* Attach tracepoint handler for each elf_path */
     for (int i = 0; i < elf_num; i++) {
         int ret = 0;
@@ -167,13 +177,13 @@ int main(int argc, char **argv)
         attach_flag = 1;
     }
     free_exec_path_buf(elf, elf_num);
-    if (!attach_flag) {
+    if (attach_flag == 0) {
         goto err;
     }
 
     int pinned = bpf_obj_pin(GET_MAP_FD(containers_map), CONTAINERS_MAP_FILE_PATH);
     if (pinned < 0) {
-        printf("Failed to pin containers_map to the file system: %d (%d)\n", pinned, errno);
+        printf("Failed to pin containers_map to the file system: %d, err: %d\n", pinned, errno);
         goto err;
     }
     while (!g_stop) {
@@ -184,9 +194,8 @@ err:
     /* Clean up */
     UNLOAD(containerd_probe);
     if (access(CONTAINERS_MAP_FILE_PATH, F_OK) == 0) {
-        if (remove(CONTAINERS_MAP_FILE_PATH) < 0) {
+        if (remove(CONTAINERS_MAP_FILE_PATH) < 0)
             printf("Delete the pinned file:%s failed!\n", CONTAINERS_MAP_FILE_PATH);
-        }
     }
     return -err;
 }

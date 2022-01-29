@@ -1,6 +1,17 @@
-/*
- * Copyright (c) Huawei Technologies Co., Ltd. 2020-2020. All rights reserved.
- */
+/******************************************************************************
+ * Copyright (c) Huawei Technologies Co., Ltd. 2021. All rights reserved.
+ * gala-gopher licensed under the Mulan PSL v2.
+ * You can use this software according to the terms and conditions of the Mulan PSL v2.
+ * You may obtain a copy of Mulan PSL v2 at:
+ *     http://license.coscl.org.cn/MulanPSL2
+ * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR
+ * IMPLIED, INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY OR FIT FOR A PARTICULAR
+ * PURPOSE.
+ * See the Mulan PSL v2 for more details.
+ * Author: sky
+ * Create: 2021-05-22
+ * Description: lib module
+ ******************************************************************************/
 #include <stdio.h>
 #include <stdlib.h>
 #include <getopt.h>
@@ -14,17 +25,17 @@
 #define BUF_TMP_LEN 256
 
 #if BPF_UTIL_DESC("util funcs")
-char *get_cur_time()
+char *get_cur_time(void)
 {
     /* return time str, ex: 2021/5/17 19:56:03 */
     static char tm[TM_STR_LEN] = {0};
     struct tm *tmp_ptr = NULL;
     time_t t;
 
-    time(&t);
+    (void)time(&t);
 
     tmp_ptr = localtime(&t);
-    snprintf(tm,
+    (void)snprintf(tm,
         TM_STR_LEN,
         "%d/%d/%d %02d:%02d:%02d",
         (1900 + tmp_ptr->tm_year),
@@ -42,7 +53,7 @@ void ip6_str(unsigned char *ip6, unsigned char *ip_str, unsigned int ip_str_size
     int i, j;
     char str[48];
     /* 1. format ipv6 address */
-    snprintf((char *)str, ip_str_size, NIP6_FMT, NIP6(addr));
+    (void)snprintf((char *)str, ip_str_size, NIP6_FMT, NIP6(addr));
     /* 2. compress */
     for (i = 0, j = 0; str[j] != '\0'; i++, j++) {
         if (str[j] == '0' && (j == 0 || ip_str[i - 1] == ':')) {  // the first 0
@@ -67,7 +78,7 @@ void ip_str(unsigned int family, unsigned char *ip, unsigned char *ip_str, unsig
         return;
     }
 
-    snprintf((char *)ip_str, ip_str_size, "%u.%u.%u.%u", ip[0], ip[1], ip[2], ip[3]);
+    (void)snprintf((char *)ip_str, ip_str_size, "%u.%u.%u.%u", ip[0], ip[1], ip[2], ip[3]);
     return;
 }
 #endif

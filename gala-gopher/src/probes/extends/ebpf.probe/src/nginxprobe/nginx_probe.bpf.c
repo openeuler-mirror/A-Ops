@@ -1,7 +1,17 @@
-/*
- * Copyright (c) Huawei Technologies Co., Ltd. 2020-2020. All rights reserved.
+/******************************************************************************
+ * Copyright (c) Huawei Technologies Co., Ltd. 2021. All rights reserved.
+ * gala-gopher licensed under the Mulan PSL v2.
+ * You can use this software according to the terms and conditions of the Mulan PSL v2.
+ * You may obtain a copy of Mulan PSL v2 at:
+ *     http://license.coscl.org.cn/MulanPSL2
+ * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR
+ * IMPLIED, INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY OR FIT FOR A PARTICULAR
+ * PURPOSE.
+ * See the Mulan PSL v2 for more details.
+ * Author: sky
+ * Create: 2021-06-21
  * Description: nginx_probe bpf prog
- */
+ ******************************************************************************/
 #ifdef BPF_PROG_KERN
 #undef BPF_PROG_KERN
 #endif
@@ -12,9 +22,9 @@
 char LICENSE[] SEC("license") = "GPL";
 /* 4 LB
     ngx_stream_proxy_connect
-    uprobe: 获取client sock addr
+    uprobe: obtain client sock addr
         ngx_stream_session_t->connection->sockaddr
-    uretprobe: 获取 server sock addr 并关联client
+    uretprobe: obtain server sock addr 并关联client
 
  */
 
@@ -34,7 +44,7 @@ struct bpf_map_def SEC("maps") hs = {
     .max_entries = HASH_ITEM_CNTS,
 };
 
-static void bpf_copy_ip_addr(struct sockaddr *addr, struct ip_addr *ip)
+static void bpf_copy_ip_addr(const struct sockaddr *addr, struct ip_addr *ip)
 {
     ip->family = _(addr->sa_family);
     if (ip->family == AF_INET) {
@@ -55,24 +65,20 @@ static UPROBE(ngx_http_upstream_handler, pt_regs)
     struct ngx_event_s *evt = (struct ngx_event_s *)PT_REGS_PARM1(ctx);
 
     struct ngx_connection_s *c = (struct ngx_connection_s *)_(evt->data);
-    if (c == (void *)0) {
+    if (c == (void *)0)
         return;
-    }
 
     struct ngx_http_request_s *r = (struct ngx_http_request_s *)_(c->data);
-    if (r == (void *)0) {
+    if (r == (void *)0)
         return;
-    }
 
     struct ngx_http_upstream_s *u = (struct ngx_http_upstream_s *)_(r->upstream);
-    if (u == (void *)0) {
+    if (u == (void *)0)
         return;
-    }
 
     c = (struct ngx_connection_s *)_(r->connection);
-    if (c == (void *)0) {
+    if (c == (void *)0)
         return;
-    }
 
     struct ngx_metric metric = {0};
 
@@ -85,15 +91,14 @@ static UPROBE(ngx_http_upstream_handler, pt_regs)
 
     ngx_str_t *p_name;
     bpf_probe_read_user(&p_name, sizeof(void **), &(u->peer.name));
-    if (p_name == (void *)0) {
+    if (p_name == (void *)0)
         return;
-    }
 
     unsigned char *dt;
     bpf_probe_read_user(&dt, sizeof(void **), &(p_name->data));
-    if (dt == (void *)0) {
+    if (dt == (void *)0)
         return;
-    }
+
     bpf_probe_read_user_str(metric.dst_ip_str, INET6_ADDRSTRLEN, dt);
 
     bpf_map_update_elem(&hs, &(metric.src_ip), &metric, BPF_ANY);
@@ -173,9 +178,8 @@ UPROBE(ngx_close_connection, pt_regs)
     client_addr = _(conn->sockaddr);
     bpf_copy_ip_addr(client_addr, &src_ip);
     metric = (struct ngx_metric *)bpf_map_lookup_elem(&hs, &src_ip);
-    if (metric == (void *)0) {
+    if (metric == (void *)0)
         return;
-    }
 
     metric->is_finish = 1;
     bpf_map_update_elem(&hs, &src_ip, metric, BPF_ANY);

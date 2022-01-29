@@ -1,7 +1,17 @@
-/*
- * Copyright (c) Huawei Technologies Co., Ltd. 2020-2020. All rights reserved.
+/******************************************************************************
+ * Copyright (c) Huawei Technologies Co., Ltd. 2021. All rights reserved.
+ * gala-gopher licensed under the Mulan PSL v2.
+ * You can use this software according to the terms and conditions of the Mulan PSL v2.
+ * You may obtain a copy of Mulan PSL v2 at:
+ *     http://license.coscl.org.cn/MulanPSL2
+ * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR
+ * IMPLIED, INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY OR FIT FOR A PARTICULAR
+ * PURPOSE.
+ * See the Mulan PSL v2 for more details.
+ * Author: dowzyx
+ * Create: 2021-05-24
  * Description: ipvs_probe user prog
- */
+ ******************************************************************************/
 #include <errno.h>
 #include <signal.h>
 #include <stdio.h>
@@ -22,7 +32,6 @@
 #include "trace_lvs.h"
 
 #define METRIC_NAME_LVS_LINK "ipvs_link"
-
 
 static volatile sig_atomic_t stop;
 static struct probe_params params = {.period = DEFAULT_PERIOD};
@@ -53,13 +62,13 @@ static void ippro_to_str(unsigned short protocol, unsigned char *type_str)
     return;
 }
 
-void update_ipvs_collect_data(struct collect_value *dd)
+static void update_ipvs_collect_data(struct collect_value *dd)
 {
     dd->link_count++;
     return;
 }
 
-void update_ipvs_collect_map(const struct link_key *k, unsigned short protocol, const struct ip *laddr, int map_fd)
+static void update_ipvs_collect_map(const struct link_key *k, unsigned short protocol, const struct ip *laddr, int map_fd)
 {
     struct collect_key      key = {0};
     struct collect_value    val = {0};
@@ -124,7 +133,7 @@ static void pull_probe_data(int fd, int collect_fd)
     }
 }
 
-void print_ipvs_collect(int map_fd)
+static void print_ipvs_collect(int map_fd)
 {
     int ret = 0;
     struct collect_key  key = {0};
@@ -167,7 +176,7 @@ void print_ipvs_collect(int map_fd)
         }
         bpf_map_delete_elem(map_fd, &next_key);
     }
-    fflush(stdout);
+    (void)fflush(stdout);
     return;
 }
 
@@ -177,9 +186,9 @@ int main(int argc, char **argv)
     int err = -1;
 
     err = args_parse(argc, argv, "t:", &params);
-    if (err != 0) {
+    if (err != 0)
         return -1;
-    }
+
     printf("arg parse interval time:%us\n", params.period);
 
     LOAD(trace_lvs);
@@ -191,7 +200,8 @@ int main(int argc, char **argv)
 
     /* create collect hash map */
     collect_map_fd =
-        bpf_create_map(BPF_MAP_TYPE_HASH, sizeof(struct collect_key), sizeof(struct collect_value), IPVS_MAX_ENTRIES, 0);
+        bpf_create_map(BPF_MAP_TYPE_HASH, sizeof(struct collect_key),
+                        sizeof(struct collect_value), IPVS_MAX_ENTRIES, 0);
     if (collect_map_fd < 0) {
         fprintf(stderr, "bpf_create_map collect map fd failed.\n");
         goto err;
@@ -199,7 +209,7 @@ int main(int argc, char **argv)
 
     printf("Successfully started! \n");
 
-    while (!stop) {
+    while (stop == 0) {
         pull_probe_data(GET_MAP_FD(lvs_link_map), collect_map_fd);
         print_ipvs_collect(collect_map_fd);
         sleep(params.period);

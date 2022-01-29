@@ -1,7 +1,17 @@
-/*
- * Copyright (c) Huawei Technologies Co., Ltd. 2020-2020. All rights reserved.
- */
-
+/******************************************************************************
+ * Copyright (c) Huawei Technologies Co., Ltd. 2021. All rights reserved.
+ * gala-gopher licensed under the Mulan PSL v2.
+ * You can use this software according to the terms and conditions of the Mulan PSL v2.
+ * You may obtain a copy of Mulan PSL v2 at:
+ *     http://license.coscl.org.cn/MulanPSL2
+ * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR
+ * IMPLIED, INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY OR FIT FOR A PARTICULAR
+ * PURPOSE.
+ * See the Mulan PSL v2 for more details.
+ * Author: Mr.lu
+ * Create: 2021-09-17
+ * Description: tcp module
+ ******************************************************************************/
 #include <stdio.h>
 #include <stdlib.h>
 #include <ctype.h>
@@ -42,11 +52,10 @@
 
 static char __is_digit_str(const char *s)
 {
-    int len = strlen(s);
+    int len = (int)strlen(s);
     for (int i = 0; i < len; i++) {
-        if (!(isdigit(s[i]))) {
+        if (!(isdigit(s[i])))
             return 0;
-        }
     }
     return 1;
 }
@@ -56,9 +65,9 @@ static int __get_next_str_offset(const char *s, const char* target)
     char *p;
 
     p = strstr(s, target);
-    if ((p != NULL) && (p > s)) {
+    if ((p != NULL) && (p > s))
         return p - s;
-    }
+
     return -1;
 }
 
@@ -68,18 +77,16 @@ static int __get_sub_str(const char *s, const char* start, const char *end,
     const char *p2, *p1;
     int len;
 
-    if (s == NULL) {
+    if (s == NULL)
         return -1;
-    }
 
     // Point to end, if no terminator is specified
     if (end == NULL) {
         p2 = s + strlen(s);
     } else {
         p2 = strstr(s, end);
-        if (p2 == NULL) {
+        if (p2 == NULL)
             return -1;
-        }
     }
 
     // Point to start, if no start character is specified
@@ -87,16 +94,16 @@ static int __get_sub_str(const char *s, const char* start, const char *end,
         p1 = s;
     } else {
         p1 = strstr(s, start);
-        if (p1 == NULL) {
+        if (p1 == NULL)
             return -1;
-        }
+
         p1 += strlen(start);
     }
 
     len = p2 - p1;
-    if ((len <= 0) || (len >= buf_len)) {
+    if ((len <= 0) || (len >= buf_len))
         return -1;
-    }
+
     (void)memcpy(sub_str_buf, p1, len);
     sub_str_buf[len] = 0;
     return 0;
@@ -110,22 +117,18 @@ static int __erase_square_brackets(const char* s, char *buf, unsigned int buf_le
 
     p1 = strchr(s, '[');
     p2 = strchr(s, ']');
-    if ((p1 == NULL) || (p2 == NULL)) {
+    if ((p1 == NULL) || (p2 == NULL))
         return -1;
-    }
 
-    if (p2 <= p1) {
+    if (p2 <= p1)
         return -1;
-    }
 
-    if (__get_sub_str(s, "[", "]", tmp, LEN_BUF) < 0) {
+    if (__get_sub_str(s, "[", "]", tmp, LEN_BUF) < 0)
         return -1;
-    }
 
-    len = strlen(tmp);
-    if (len >= buf_len) {
+    len = (int)strlen(tmp);
+    if (len >= buf_len)
         return -1;
-    }
 
     (void)memcpy(buf, tmp, len);
     buf[len] = 0;
@@ -144,15 +147,14 @@ static int __get_estab_addr(const char *s, struct ip_addr* ip_addr,
     char port_str[PORT_LEN];
 
     p = strrchr(addr_buf, ':');
-    if (p == NULL) {
+    if (p == NULL)
         goto err;
-    }
 
-    local_len = strlen(addr_buf);
+    local_len = (int)strlen(addr_buf);
     ip_len = p - addr_buf;
-    if ((ip_len >= local_len) || (ip_len <= 0)) {
+    if ((ip_len >= local_len) || (ip_len <= 0))
         goto err;
-    }
+
     (void)memcpy(ip_addr->ip, addr_buf, ip_len);
     ip_addr->ip[ip_len] = 0;
 
@@ -163,15 +165,13 @@ static int __get_estab_addr(const char *s, struct ip_addr* ip_addr,
     }
 
     port_len = local_len - ip_len - 1;
-    if ((port_len <= 0) || (port_len >= PORT_LEN)) {
+    if ((port_len <= 0) || (port_len >= PORT_LEN))
         goto err;
-    }
 
     (void)memcpy(port_str, p + 1, port_len);
     port_str[port_len] = 0;
-    if (!__is_digit_str((const char *)port_str)) {
+    if (__is_digit_str((const char *)port_str) == 0)
         goto err;
-    }
 
     ip_addr->port = (unsigned int)atoi(port_str);
     return 0;
@@ -190,9 +190,8 @@ static struct tcp_estab_comm* __get_estab_comm(const char *start, unsigned int l
     const char *s = tmp;
     struct tcp_estab_comm *te_comm;
 
-    if ((start == NULL) || (len >= LEN_BUF)) {
+    if ((start == NULL) || (len >= LEN_BUF))
         return NULL;
-    }
 
     (void)memcpy(tmp, start, len);
     tmp[len] = 0;
@@ -201,9 +200,8 @@ static struct tcp_estab_comm* __get_estab_comm(const char *start, unsigned int l
     ret |= __get_sub_str(s, "pid=", ",fd", pid_s, PID_LEN);
     ret |= __get_sub_str(s, ",fd=", ")", fd_s, FID_LEN);
     if (ret < 0 || !__is_digit_str((const char *)pid_s)
-           || !__is_digit_str((const char *)fd_s)) {
+           || !__is_digit_str((const char *)fd_s))
         return NULL;
-    }
 
     te_comm = (struct tcp_estab_comm *)malloc(sizeof(struct tcp_estab_comm));
     te_comm->comm[0] = 0;
@@ -215,18 +213,18 @@ static struct tcp_estab_comm* __get_estab_comm(const char *start, unsigned int l
 
 static int __add_estab_comm(struct tcp_estab* te, const struct tcp_estab_comm *te_comm)
 {
-    if (te->te_comm_num >= TCP_ESTAB_COMM_MAX) {
+    if (te->te_comm_num >= TCP_ESTAB_COMM_MAX)
         return -1;
-    }
+
     te->te_comm[te->te_comm_num++] = te_comm;
     return 0;
 }
 
 static int __add_estab(struct tcp_estabs* tes, struct tcp_estab* te)
 {
-    if (tes->te_num >= TCP_ESTAB_MAX) {
+    if (tes->te_num >= TCP_ESTAB_MAX)
         return -1;
-    }
+
     tes->te[tes->te_num++] = te;
     return 0;
 }
@@ -236,9 +234,9 @@ static struct tcp_estab* __new_estab()
     struct tcp_estab* te;
 
     te = (struct tcp_estab *)malloc(sizeof(struct tcp_estab));
-    if (te == NULL) {
+    if (te == NULL)
         return NULL;
-    }
+
     (void)memset(te, 0, sizeof(struct tcp_estab));
     return te;
 }
@@ -246,9 +244,8 @@ static struct tcp_estab* __new_estab()
 static void __free_estab(struct tcp_estab** pte)
 {
     struct tcp_estab* te = *pte;
-    if (te == NULL) {
+    if (te == NULL)
         return;
-    }
 
     for (int i = 0; i < te->te_comm_num; i++) {
         if (te->te_comm[i]) {
@@ -266,9 +263,9 @@ static struct tcp_estabs* __new_estabs()
     struct tcp_estabs* tes;
 
     tes = (struct tcp_estabs *)malloc(sizeof(struct tcp_estabs));
-    if (tes == NULL) {
+    if (tes == NULL)
         return NULL;
-    }
+
     (void)memset(tes, 0, sizeof(struct tcp_estabs));
     return tes;
 }
@@ -276,14 +273,12 @@ static struct tcp_estabs* __new_estabs()
 static void __free_estabs(struct tcp_estabs** ptes)
 {
     struct tcp_estabs* tes = *ptes;
-    if (tes == NULL) {
+    if (tes == NULL)
         return;
-    }
 
     for (int i = 0; i < tes->te_num; i++) {
-        if (tes->te[i]) {
+        if (tes->te[i])
             __free_estab(&(tes->te[i]));
-        }
     }
     (void)free(tes);
     *ptes = NULL;
@@ -307,42 +302,39 @@ static int __get_estab(const char *s, struct tcp_estab* te)
     addr_str[0] = 0;
     ret = __get_sub_str(s, NULL, "|", addr_str, IP_LEN);
     ret |= __get_estab_addr(s, &(te->local), addr_str);
-    if (ret < 0) {
+    if (ret < 0)
         goto err;
-    }
 
     // get establish tcp remote address and port
     addr_str[0] = 0;
     ret = __get_sub_str(s, "|", "@", addr_str, IP_LEN);
     ret |= __get_estab_addr(s, &(te->remote), addr_str);
-    if (ret < 0) {
+    if (ret < 0)
         goto err;
-    }
 
     // get all comm, pid, fd of establish tcp
     ret = __get_sub_str(s, "@users:(", NULL, comms_str, LEN_BUF);
-    if (ret < 0) {
+    if (ret < 0)
         goto err;
-    }
+
     comms_str[strlen(comms_str) - 1] = 0; // Delete last character ')'
 
     // one by one
     start = comms_str;
     end = start + strlen(comms_str);
     do {
-        if (start >= end) {
+        if (start >= end)
             break;
-        }
+
         offset = __get_next_str_offset((const char *)start, ",(");
-        if (offset < 0) {
+        if (offset < 0)
             break;
-        }
+
         // get one comm, pid, fd of establish tcp
         te_comm = __get_estab_comm((const char*)start, offset);
         if (te_comm != NULL) {
-            if (__add_estab_comm(te, te_comm) < 0) {
+            if (__add_estab_comm(te, te_comm) < 0)
                (void)free(te_comm);
-            }
         }
         start += offset + 1;
     } while (1);
@@ -350,9 +342,8 @@ static int __get_estab(const char *s, struct tcp_estab* te)
     // get last(or only one) comm, pid, fd of establish tcp
     te_comm = __get_estab_comm((const char*)start, strlen(start));
     if (te_comm != NULL) {
-        if (__add_estab_comm(te, te_comm) < 0) {
+        if (__add_estab_comm(te, te_comm) < 0)
             (void)free(te_comm);
-        }
     }
 
     return 0;
@@ -370,28 +361,25 @@ static int __get_estabs(struct tcp_estabs* tes)
     int ret;
 
     f = popen(command, "r");
-    if (f == NULL) {
+    if (f == NULL)
         return -1;
-    }
 
     while (!feof(f)) {
         (void)memset(line, 0, LEN_BUF);
-        if (fgets(line, LEN_BUF, f) == NULL) {
+        if (fgets(line, LEN_BUF, f) == NULL)
             break;
-        }
 
         te = __new_estab();
-        if (te == NULL) {
+        if (te == NULL)
             break;
-        }
+
         ret = __get_estab((const char *)line, te);
-        if (ret < 0) {
+        if (ret < 0)
             __free_estab(&te);
-        }
+
         ret = __add_estab(tes, te);
-        if (ret < 0) {
+        if (ret < 0)
             __free_estab(&te);
-        }
     }
     (void)pclose(f);
     return 0;
@@ -410,24 +398,21 @@ static int __get_listen_port(const char *s, unsigned int *port)
 
     if (strstr(s, "]:")) {
         ret = __get_sub_str(s, "]:", "users:", port_str, PORT_LEN);
-        if (ret < 0) {
+        if (ret < 0)
             return -1;
-        }
     } else {
         ret = __get_sub_str(s, ":", "users:", port_str, PORT_LEN);
-        if (ret < 0) {
+        if (ret < 0)
             return -1;
-        }
     }
 
-    if (!__is_digit_str((const char *)port_str)) {
+    if (__is_digit_str((const char *)port_str) == 0)
         return -1;
-    }
 
     port_num = (unsigned int)atoi(port_str);
-    if (port_num >= PORT_MAX_NUM) {
+    if (port_num >= PORT_MAX_NUM)
         return -1;
-    }
+
     *port = port_num;
     return 0;
 }
@@ -453,13 +438,12 @@ static int __get_listen_pid(const char *s, unsigned int *pid)
     char pid_str[PID_LEN];
 
     ret = __get_sub_str(s, "pid=", ",fd=", pid_str, PID_LEN);
-    if (ret < 0) {
+    if (ret < 0)
         return -1;
-    }
 
-    if (!__is_digit_str((const char *)pid_str)) {
+    if (__is_digit_str((const char *)pid_str) == 0)
         return -1;
-    }
+
     *pid = (unsigned int)atoi(pid_str);
     return 0;
 }
@@ -472,37 +456,34 @@ static struct tcp_listen_port* __new_tlp(const char *s)
     struct tcp_listen_port* tlp;
 
     ret = __get_listen_port(s, &port);
-    if (ret < 0) {
+    if (ret < 0)
         return NULL;
-    }
 
     ret = __get_listen_comm(s, comm, COMM_LEN);
-    if (ret < 0) {
+    if (ret < 0)
         return NULL;
-    }
 
     ret = __get_listen_pid(s, &pid);
-    if (ret < 0) {
+    if (ret < 0)
         return NULL;
-    }
 
     tlp = (struct tcp_listen_port *)malloc(sizeof(struct tcp_listen_port));
-    if (tlp == NULL) {
+    if (tlp == NULL)
         return NULL;
-    }
+
     tlp->pid = pid;
     tlp->port = port;
     memcpy(tlp->comm, comm, COMM_LEN);
     return tlp;
 }
 
-static struct tcp_listen_ports* __new_tlps()
+static struct tcp_listen_ports* __new_tlps(void)
 {
     struct tcp_listen_ports *tlps;
     tlps = (struct tcp_listen_ports *)malloc(sizeof(struct tcp_listen_ports));
-    if (tlps == NULL) {
+    if (tlps == NULL)
         return NULL;
-    }
+
     memset(tlps, 0, sizeof(struct tcp_listen_ports));
     return tlps;
 }
@@ -526,13 +507,11 @@ static void __free_tlps(struct tcp_listen_ports** ptlps)
 static int __add_tlp(struct tcp_listen_ports* tlps, const struct tcp_listen_port* tlp)
 {
     // Already judge legal of 'tlp->port' in function __get_listen_port
-    if (tlps->tlp_hash[tlp->port] == 1) {
+    if (tlps->tlp_hash[tlp->port] == 1)
         return -1;
-    }
 
-    if (tlps->tlp_num >= LTP_MAX_NUM) {
+    if (tlps->tlp_num >= LTP_MAX_NUM)
         return -1;
-    }
 
     tlps->tlp_hash[tlp->port] = 1;
     tlps->tlp[tlps->tlp_num] = tlp;
@@ -549,25 +528,21 @@ static int __get_tlps(struct tcp_listen_ports* tlps)
     int ret;
 
     f = popen(command, "r");
-    if (f == NULL) {
+    if (f == NULL)
         return -1;
-    }
 
-    while (!feof(f)) {
+    while (feof(f) == 0) {
         (void)memset(line, 0, LEN_BUF);
-        if (fgets(line, LEN_BUF, f) == NULL) {
+        if (fgets(line, LEN_BUF, f) == NULL)
             break;
-        }
 
         tlp = __new_tlp((const char *)line);
-        if (tlp == NULL) {
+        if (tlp == NULL)
             continue;
-        }
 
         ret = __add_tlp(tlps, tlp);
-        if (ret < 0) {
+        if (ret < 0)
             (void)free(tlp);
-        }
     }
     (void)pclose(f);
     return 0;
@@ -575,21 +550,21 @@ static int __get_tlps(struct tcp_listen_ports* tlps)
 
 char is_listen_port(unsigned int port, struct tcp_listen_ports* tlps)
 {
-    if (port >= PORT_MAX_NUM) {
+    if (port >= PORT_MAX_NUM)
         return 0;
-    }
+
     return (tlps->tlp_hash[port] == 0) ? 0 : 1;
 }
 
-struct tcp_listen_ports* get_listen_ports()
+struct tcp_listen_ports* get_listen_ports(void)
 {
     struct tcp_listen_ports* tlps;
     int ret;
 
     tlps = __new_tlps();
-    if (tlps == NULL) {
+    if (tlps == NULL)
         return NULL;
-    }
+
     ret = __get_tlps(tlps);
     if (ret < 0) {
         __free_tlps(&tlps);
@@ -609,9 +584,9 @@ struct tcp_estabs* get_estab_tcps(struct tcp_listen_ports* tlps)
     int ret;
 
     tes = __new_estabs();
-    if (tes == NULL) {
+    if (tes == NULL)
         return NULL;
-    }
+
     ret = __get_estabs(tes);
     if (ret < 0) {
         __free_estabs(&tes);
@@ -619,9 +594,8 @@ struct tcp_estabs* get_estab_tcps(struct tcp_listen_ports* tlps)
     }
 
     for (int i = 0; i < tes->te_num; i++) {
-        if (is_listen_port(tes->te[i]->local.port, tlps)) {
+        if (is_listen_port(tes->te[i]->local.port, tlps))
             tes->te[i]->is_client = 0;
-        }
         tes->te[i]->is_client = 1;
     }
     return tes;
@@ -635,9 +609,9 @@ void free_estab_tcps(struct tcp_estabs** ptes)
 
 static int __add_tcp_endpoint(struct tcp_endpoints *teps, const struct tcp_endpoint *tep)
 {
-    if (teps->tep_num >= TCP_ENDPOINT_MAX) {
+    if (teps->tep_num >= TCP_ENDPOINT_MAX)
         return -1;
-    }
+
     teps->tep[teps->tep_num++] = tep;
     return 0;
 }
@@ -657,9 +631,9 @@ static void __free_tcp_endpoints(struct tcp_endpoints** pteps)
     int i;
     struct tcp_endpoints* teps = *pteps;
 
-    if (teps == NULL) {
+    if (teps == NULL)
         return;
-    }
+
     for (i = 0; i <teps->tep_num; i++) {
         if (teps->tep[i]) {
             (void)free(teps->tep[i]);
@@ -673,14 +647,14 @@ static void __free_tcp_endpoints(struct tcp_endpoints** pteps)
 
 
 static struct tcp_endpoint* __new_tcp_endpoint(enum endpoint_type ep_type, unsigned int port,
-                                                     int ipv4, char *ip, unsigned int pid)
+                                                     int ipv4, const char *ip, unsigned int pid)
 {
     struct tcp_endpoint* tep;
 
     tep = (struct tcp_endpoint*)malloc(sizeof(struct tcp_endpoint));
-    if (tep == NULL) {
+    if (tep == NULL)
         return NULL;
-    }
+
     (void)memset(tep, 0, sizeof(struct tcp_endpoint));
 
     tep->pid = pid;
@@ -693,7 +667,7 @@ static struct tcp_endpoint* __new_tcp_endpoint(enum endpoint_type ep_type, unsig
 
     if (ep_type == EP_TYPE_IP) {
         tep->ep_type = EP_TYPE_IP;
-        if (ipv4) {
+        if (ipv4 == 1) {
             tep->ep_addr_type = EP_ADDR_IPV4;
             (void)inet_pton(AF_INET, ip, (void *)&tep->addr.in_addr);
         } else {
@@ -705,7 +679,7 @@ static struct tcp_endpoint* __new_tcp_endpoint(enum endpoint_type ep_type, unsig
 
     if (ep_type == EP_TYPE_IP_PORT) {
         tep->ep_type = EP_TYPE_IP_PORT;
-        if (ipv4) {
+        if (ipv4 == 1) {
             tep->ep_addr_type = EP_ADDR_IPV4;
             (void)inet_pton(AF_INET, ip, (void *)&tep->addr.in_addr);
         } else {
@@ -728,16 +702,14 @@ struct tcp_endpoints *get_tcp_endpoints(struct tcp_listen_ports* tlps, struct tc
     struct tcp_endpoints* teps;
 
     teps = __new_tcp_endpoints();
-    if (teps == NULL) {
+    if (teps == NULL)
         return NULL;
-    }
 
     for (i = 0; i < tlps->tlp_num; i++) {
         tep = __new_tcp_endpoint(EP_TYPE_LISTEN, tlps->tlp[i]->port, 0, NULL, tlps->tlp[i]->pid);
         if (tep) {
-            if (__add_tcp_endpoint(teps, tep) < 0) {
+            if (__add_tcp_endpoint(teps, tep) < 0)
                 (void)free(tep);
-            }
         }
     }
 
@@ -753,9 +725,8 @@ struct tcp_endpoints *get_tcp_endpoints(struct tcp_listen_ports* tlps, struct tc
                                   tes->te[i]->local.ip, tes->te[i]->te_comm[j]->pid);
             }
             if (tep) {
-                if (__add_tcp_endpoint(teps, tep) < 0) {
+                if (__add_tcp_endpoint(teps, tep) < 0)
                     (void)free(tep);
-                }
             }
         }
     }

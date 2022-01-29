@@ -1,6 +1,17 @@
-/*
- * Copyright (c) Huawei Technologies Co., Ltd. 2020-2020. All rights reserved.
- */
+/******************************************************************************
+ * Copyright (c) Huawei Technologies Co., Ltd. 2021. All rights reserved.
+ * gala-gopher licensed under the Mulan PSL v2.
+ * You can use this software according to the terms and conditions of the Mulan PSL v2.
+ * You may obtain a copy of Mulan PSL v2 at:
+ *     http://license.coscl.org.cn/MulanPSL2
+ * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR
+ * IMPLIED, INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY OR FIT FOR A PARTICULAR
+ * PURPOSE.
+ * See the Mulan PSL v2 for more details.
+ * Author: Mr.lu
+ * Create: 2021-07-26
+ * Description: container header file
+ ******************************************************************************/
 #ifndef __CONTAINER_H__
 #define __CONTAINER_H__
 
@@ -8,6 +19,7 @@
 #define POD_NAME_LEN        64
 #define COMM_LEN            64
 #define COER_NUM            16
+#define TEN                 10
 
 struct cgroup_metric {
     char *memory_usage_in_bytes;
@@ -34,7 +46,7 @@ typedef struct container_tbl_s {
     container_info *cs;
 } container_tbl;
 
-container_tbl* get_all_container();
+container_tbl* get_all_container(void);
 const char* get_container_id_by_pid(container_tbl* cstbl, unsigned int pid);
 void free_container_tbl(container_tbl **pcstbl);
 int get_container_merged_path(const char *container_id, char *path, unsigned int len);

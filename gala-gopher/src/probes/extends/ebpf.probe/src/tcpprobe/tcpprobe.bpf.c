@@ -1,7 +1,17 @@
-/*
- * Copyright (c) Huawei Technologies Co., Ltd. 2020-2020. All rights reserved.
+/******************************************************************************
+ * Copyright (c) Huawei Technologies Co., Ltd. 2021. All rights reserved.
+ * gala-gopher licensed under the Mulan PSL v2.
+ * You can use this software according to the terms and conditions of the Mulan PSL v2.
+ * You may obtain a copy of Mulan PSL v2 at:
+ *     http://license.coscl.org.cn/MulanPSL2
+ * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR
+ * IMPLIED, INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY OR FIT FOR A PARTICULAR
+ * PURPOSE.
+ * See the Mulan PSL v2 for more details.
+ * Author: sky
+ * Create: 2021-05-22
  * Description: tcp_probe bpf prog
- */
+ ******************************************************************************/
 #ifdef BPF_PROG_USER
 #undef BPF_PROG_USER
 #endif
@@ -138,7 +148,7 @@ static void bpf_add_link(const struct sock *sk, int role)
         (proc.comm[3] == '\0' || (proc.comm[3] == 'd' && proc.comm[4] == '\0')))
         return;
 
-    proc.pid = bpf_get_current_pid_tgid() >> 32;
+    proc.pid = bpf_get_current_pid_tgid() >> INT_LEN;
     proc.ts = bpf_ktime_get_ns();
     proc.role = role;
 
@@ -180,14 +190,12 @@ static struct sock *bpf_get_sock_from_fd(int fd)
 
 static void bpf_add_each_long_link(int fd, int role)
 {
-    if (fd == 0) {
+    if (fd == 0)
         return;
-    }
 
     struct sock *sk = bpf_get_sock_from_fd(fd);
-    if (sk) {
+    if (sk)
         bpf_add_link(sk, role);
-    }
 
     return;
 }
@@ -195,9 +203,8 @@ static void bpf_add_each_long_link(int fd, int role)
 static void bpf_add_long_link(u32 pid)
 {
     struct long_link_info *l = bpf_map_lookup_elem(&long_link_map, &pid);
-    if (!l) {
+    if (!l)
         return;
-    }
 
     bpf_add_each_long_link(l->fds[0], l->fd_role[0]);
     bpf_add_each_long_link(l->fds[1], l->fd_role[1]);
@@ -246,9 +253,8 @@ KPROBE(tcp_set_state, pt_regs)
         return;
     }
 
-    if (new_state != TCP_CLOSE) {
+    if (new_state != TCP_CLOSE)
         return;
-    }
 
     /* 2 update link stats */
     __update_link_stats(sk, new_state);
@@ -262,9 +268,8 @@ static inline int bpf_get_sk_role(const struct sock *sk)
 {
     unsigned short sk_src_port = _(sk->sk_num);
     unsigned short *port = bpf_map_lookup_elem(&listen_port_map, &sk_src_port);
-    if (port) {
+    if (port)
         return LINK_ROLE_SERVER;
-    }
 
     return LINK_ROLE_CLIENT;
 }
@@ -322,9 +327,8 @@ KPROBE_RET(tcp_add_backlog, pt_regs)
 
     PROBE_GET_PARMS(tcp_add_backlog, ctx, val);
     sk = (struct sock *)PROBE_PARM1(val);
-    if (discard) {
+    if (discard)
         update_link_event(sk, TCPPROBE_EVT_BACKLOG);
-    }
 }
 
 KPROBE_RET(tcp_v4_inbound_md5_hash, pt_regs)
@@ -335,9 +339,8 @@ KPROBE_RET(tcp_v4_inbound_md5_hash, pt_regs)
 
     PROBE_GET_PARMS(tcp_v4_inbound_md5_hash, ctx, val);
     sk = (struct sock *)PROBE_PARM1(val);
-    if (discard) {
+    if (discard)
         update_link_event(sk, TCPPROBE_EVT_MD5);
-    }
 }
 
 KPROBE_RET(tcp_filter, pt_regs)
@@ -348,9 +351,8 @@ KPROBE_RET(tcp_filter, pt_regs)
 
     PROBE_GET_PARMS(tcp_filter, ctx, val);
     sk = (struct sock *)PROBE_PARM1(val);
-    if (discard) {
+    if (discard)
         update_link_event(sk, TCPPROBE_EVT_FILTER);
-    }
 }
 
 KPROBE(tcp_write_err, pt_regs)

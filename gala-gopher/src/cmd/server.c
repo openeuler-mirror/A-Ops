@@ -1,3 +1,17 @@
+/******************************************************************************
+ * Copyright (c) Huawei Technologies Co., Ltd. 2021. All rights reserved.
+ * gala-gopher licensed under the Mulan PSL v2.
+ * You can use this software according to the terms and conditions of the Mulan PSL v2.
+ * You may obtain a copy of Mulan PSL v2 at:
+ *     http://license.coscl.org.cn/MulanPSL2
+ * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR
+ * IMPLIED, INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY OR FIT FOR A PARTICULAR
+ * PURPOSE.
+ * See the Mulan PSL v2 for more details.
+ * Author: njlzk
+ * Create: 2021-10-12
+ * Description: provide gala-gopher cmd
+ ******************************************************************************/
 #include <stdio.h>
 #include <sys/socket.h>
 #include <sys/types.h>
@@ -23,42 +37,36 @@ static int SetRunDir(void)
     return ret;
 }
 
-
 static int CmdServerCreate(const char *path, int *fd)
 {
     int ret;
     int server_fd;
     struct sockaddr_un addr;
 
-    //1、断开之前的socker文件
-    if (access(path, 0) == 0){
+    if (access(path, 0) == 0) {
         ret = unlink(path);
         if (ret < 0) {
-            printf("Error: unlink %s failed. %s(%d)\n", path, strerror(errno) ,errno);
+            printf("Error: unlink %s failed. %s\n", path, strerror(errno));
             return GOPHER_ERR;
         }
     }
-    
-    //2、创建socket
+
     server_fd = socket(AF_UNIX, SOCK_STREAM, 0);
     if (server_fd < 0) {
         printf("Error: create socket failed.\n");
         return GOPHER_ERR;
     }
 
-    //3、命名socket
     memset(&addr, 0, sizeof(struct sockaddr_un));
     addr.sun_family = AF_UNIX;
-    strncpy(addr.sun_path, path, strlen(path)+1);
+    strncpy(addr.sun_path, path, strlen(path) + 1);
 
-    //4、与本地文件绑定
     ret = bind(server_fd, (const struct sockaddr *)&addr, sizeof(struct sockaddr_un));
     if (ret < 0) {
         printf("Error: bind unix socket failed on %s. ret=%d\n", path, ret);
         goto ERROR;
     }
 
-    //5、监听
     ret = listen(server_fd, GALA_GOPHER_LISTEN_LEN);
     if (ret < 0) {
         printf("Error: listen unix socket failed on %s. ret=%d\n", GALA_GOPHER_CMD_SOCK_PATH_NAME, ret);
@@ -78,7 +86,7 @@ static int getRequest(int fd, char *buf, int len)
 {
     ssize_t ret;
 
-    ret = read(fd, buf, len);
+    ret = (ssize_t)read(fd, buf, len);
     if (ret <= 0) {
         printf("Error: read msg from fd[%d] failed. %s(%d).\n", fd, strerror(errno), errno);
         return GOPHER_ERR;
@@ -93,7 +101,7 @@ static int GetConfig(struct GopherCmdRequest *rcvRequest, char *buf)
     int ret = 0;
 
     if (strcmp(rcvRequest->cmdKey, GOPHER_CMD_KEY1) == 0) {
-        if (strcmp(rcvRequest->cmdValue, GOPHER_CMD_KEY1_VALUE1) == 0){
+        if (strcmp(rcvRequest->cmdValue, GOPHER_CMD_KEY1_VALUE1) == 0) {
             memcpy(buf, g_galaConfPath, strlen(g_galaConfPath));
         } else {
             ret = -1;
@@ -129,7 +137,7 @@ static int SendResult(int fd, char *buf, int len)
 
     ret = write(fd, buf, len);
     if (ret < 0) {
-        printf("write msg to fd %d failed. %s(%d).\n", fd, strerror(errno) ,errno);
+        printf("write msg to fd %d failed. %s.\n", fd, strerror(errno));
         return GOPHER_ERR;
     }
 
@@ -137,7 +145,8 @@ static int SendResult(int fd, char *buf, int len)
 }
 
 
-void CmdServer(void *arg){
+void CmdServer(void *arg)
+{
     int ret = 0;
     int server_fd;
     int client_fd;
@@ -160,14 +169,14 @@ void CmdServer(void *arg){
         goto ERROR2;
     }
 
-    char *result;  
+    char *result;
     result = (char *)malloc(RESULT_INFO_LEN_MAX);
     if (result == NULL) {
         printf("Error: result malloc failed.\n");
         goto ERROR1;
     }
 
-    while(1){
+    while(1) {
         memset(result, 0, RESULT_INFO_LEN_MAX);
 
         client_fd = accept(server_fd, (struct sockaddr*)&client_addr, &client_addr_len);
@@ -187,7 +196,7 @@ void CmdServer(void *arg){
             }
         }
 
-        ret = SendResult(client_fd, result, strlen(result)+1);
+        ret = SendResult(client_fd, result, strlen(result) + 1);
         if (ret < 0) {
             printf("Error: SendResult failed.\n");
             goto ERROR1;
@@ -205,7 +214,3 @@ ERROR2:
     return;
     }
 }
-
-
-
-

@@ -578,7 +578,7 @@ static int IMDB_Prometheus_BuildLabel(const IMDB_DataBaseMgr *mgr, IMDB_Record *
         if (ret < 0)
             goto ERR;
 
-        curMaxLen -= ret;
+        curMaxLen -= (uint32_t)ret;
     }
 
 ERR:
@@ -607,7 +607,7 @@ static int IMDB_Record2String(IMDB_DataBaseMgr *mgr, IMDB_Record *record, char *
             return -1;
 
         curBuffer += ret;
-        curMaxLen -= ret;
+        curMaxLen -= (uint32_t)ret;
         total += ret;
     }
 
@@ -669,7 +669,7 @@ int IMDB_DataBaseMgrData2String(IMDB_DataBaseMgr *mgr, char *buffer, uint32_t ma
             goto ERR;
 
         cursor += ret;
-        curMaxLen -= ret;
+        curMaxLen -= (uint32_t)ret;
     }
 
     pthread_rwlock_unlock(&mgr->rwlock);
@@ -696,32 +696,32 @@ static int IMDB_Record2Json(const IMDB_DataBaseMgr *mgr, const IMDB_Table *table
     if (ret < 0)
         return -1;
     json_cursor += ret;
-    maxLen -= ret;
+    maxLen -= (uint32_t)ret;
 
     ret = snprintf(json_cursor, maxLen, ", \"machine_id\": \"%s\"", mgr->nodeInfo.machineId);
     if (ret < 0)
         return -1;
     json_cursor += ret;
-    maxLen -= ret;
+    maxLen -= (uint32_t)ret;
 
     ret = snprintf(json_cursor, maxLen, ", \"hostname\": \"%s\"", mgr->nodeInfo.hostName);
     if (ret < 0)
         return -1;
     json_cursor += ret;
-    maxLen -= ret;
+    maxLen -= (uint32_t)ret;
 
     ret = snprintf(json_cursor, maxLen, ", \"table_name\": \"%s\"", table->name);
     if (ret < 0)
         return -1;
     json_cursor += ret;
-    maxLen -= ret;
+    maxLen -= (uint32_t)ret;
 
     for (int i = 0; i < record->metricsNum; i++) {
         ret = snprintf(json_cursor, maxLen, ", \"%s\": \"%s\"", record->metrics[i]->name, record->metrics[i]->val);
         if (ret < 0)
             return -1;
         json_cursor += ret;
-        maxLen -= ret;
+        maxLen -= (uint32_t)ret;
     }
 
     ret = snprintf(json_cursor, maxLen, "}");
@@ -729,7 +729,7 @@ static int IMDB_Record2Json(const IMDB_DataBaseMgr *mgr, const IMDB_Table *table
         return -1;
     }
     json_cursor += ret;
-    maxLen -= ret;
+    maxLen -= (uint32_t)ret;
 
     return 0;
 }
@@ -750,7 +750,7 @@ static int IMDB_RecordEvent2Json(const IMDB_DataBaseMgr *mgr, IMDB_Table *table,
         return -1;
 
     json_cursor += ret;
-    maxLen -= ret;
+    maxLen -= (uint32_t)ret;
 
     for (int i = 0; i < record->metricsNum; i++) {
         strcpy(name, record->metrics[i]->name);
@@ -763,19 +763,19 @@ static int IMDB_RecordEvent2Json(const IMDB_DataBaseMgr *mgr, IMDB_Table *table,
             if (ret < 0)
                 return -1;
             json_cursor += ret;
-            maxLen -= ret;
+            maxLen -= (uint32_t)ret;
 
             ret = snprintf(json_cursor, maxLen, "\"%s\": \"%s\"", name, value);
             if (ret < 0)
                 return -1;
             json_cursor += ret;
-            maxLen -= ret;
+            maxLen -= (uint32_t)ret;
         } else {
             ret = snprintf(json_cursor, maxLen, "\"%s\": \"%s\", ", name, value);
             if (ret < 0)
                 return -1;
             json_cursor += ret;
-            maxLen -= ret;
+            maxLen -= (uint32_t)ret;
         }
     }
 
@@ -784,7 +784,7 @@ static int IMDB_RecordEvent2Json(const IMDB_DataBaseMgr *mgr, IMDB_Table *table,
         return -1;
 
     json_cursor += ret;
-    maxLen -= ret;
+    maxLen -= (uint32_t)ret;
 
     return 0;
 }
@@ -923,6 +923,6 @@ void HASH_deleteAndFreeRecords(const IMDB_Record **records)
 uint32_t HASH_recordCount(const IMDB_Record **records)
 {
     uint32_t num = 0;
-    num = HASH_COUNT(*records);
+    num = (uint32_t)HASH_COUNT(*records);
     return num;
 }

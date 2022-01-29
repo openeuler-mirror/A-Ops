@@ -1,6 +1,17 @@
-/*
- * Copyright (c) Huawei Technologies Co., Ltd. 2020-2020. All rights reserved.
- */
+/******************************************************************************
+ * Copyright (c) Huawei Technologies Co., Ltd. 2021. All rights reserved.
+ * gala-gopher licensed under the Mulan PSL v2.
+ * You can use this software according to the terms and conditions of the Mulan PSL v2.
+ * You may obtain a copy of Mulan PSL v2 at:
+ *     http://license.coscl.org.cn/MulanPSL2
+ * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR
+ * IMPLIED, INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY OR FIT FOR A PARTICULAR
+ * PURPOSE.
+ * See the Mulan PSL v2 for more details.
+ * Author: dowzyx
+ * Create: 2021-12-08
+ * Description: elf parse
+ ******************************************************************************/
 #include <stdio.h>
 #include <stdlib.h>
 #include <ctype.h>
@@ -48,9 +59,8 @@ static int __do_get_glibc_path_host(char *path, unsigned int len)
     line[0] = 0;
 
     f = popen(COMMAND_GLIBC_PATH, "r");
-    if (f == NULL) {
+    if (f == NULL)
         return -1;
-    }
 
     if (fgets(line, LEN_BUF, f) == NULL) {
         (void)pclose(f);
@@ -79,29 +89,25 @@ static int __do_get_glibc_path_container(const char *container_id, char *path, u
     glibc_abs_path[0] = 0;
 
     ret = get_container_merged_path(container_id, container_abs_path, PATH_LEN);
-    if (ret < 0) {
+    if (ret < 0)
         return ret;
-    }
 
     ret = exec_container_command(container_id, COMMAND_GLIBC_PATH, glibc_path, PATH_LEN);
-    if (ret < 0) {
+    if (ret < 0)
         return ret;
-    }
 
     (void)snprintf(glibc_abs_path, PATH_LEN, "%s/%s", container_abs_path, glibc_path);
     ret = __get_link_path((const char *)glibc_abs_path, path, len);
-    if (ret < 0) {
+    if (ret < 0)
         return -1;
-    }
 
     return 0;
 }
 
 int get_glibc_path(const char *container_id, char *path, unsigned int len)
 {
-    if (container_id == NULL || container_id[0] == 0) {
+    if (container_id == NULL || container_id[0] == 0)
         return __do_get_glibc_path_host(path, len);
-    }
 
     return __do_get_glibc_path_container(container_id, path, len);
 }
@@ -112,12 +118,12 @@ static bool __is_exec_file(const char *abs_path)
 {
     struct stat st;
 
-    if (stat(abs_path, &st) < 0) {
+    if (stat(abs_path, &st) < 0)
         return false;
-    }
-    if (st.st_mode & S_IEXEC) {
+
+    if (st.st_mode & S_IEXEC)
         return true;
-    }
+
     return false;
 }
 
@@ -127,9 +133,8 @@ static int __do_get_path_from_host(const char *binary_file, char **res_buf, int 
     char *p = NULL;
     char *syspath_ptr = getenv("PATH");
 
-    if (syspath_ptr == NULL) {
+    if (syspath_ptr == NULL)
         (void)snprintf(syspath_ptr, strlen(DEFAULT_PATH_LIST), "%s", DEFAULT_PATH_LIST);
-    }
 
     p = strtok(syspath_ptr, ":");
     while (p != NULL) {
@@ -170,9 +175,8 @@ static int __do_get_path_from_container(const char *binary_file, const char *con
         return ret;
     }
 
-    if (syspath[0] == 0) {
+    if (syspath[0] == 0)
         (void)snprintf((void *)syspath, strlen(DEFAULT_PATH_LIST), "%s", DEFAULT_PATH_LIST);
-    }
 
     p = strtok((void *)syspath, ":");
     while (p != NULL) {
@@ -253,9 +257,8 @@ static int _find_sym(const char *sym_name, uint64_t addr, uint64_t len, void *pa
 static int openelf(const char *path, Elf **elf_out, int *fd_out)
 {
     *fd_out = open(path, O_RDONLY);
-    if (*fd_out < 0) {
+    if (*fd_out < 0)
         return -1;
-    }
 
     if (elf_version(EV_CURRENT) == EV_NONE) {
         close(*fd_out);
@@ -278,17 +281,16 @@ static int __elf_get_type(const char *path)
     int fd = -1;
     void* res = NULL;
 
-    if (openelf(path, &e, &fd) < 0) {
+    if (openelf(path, &e, &fd) < 0)
         return -1;
-    }
 
     res = (void*)gelf_getehdr(e, &hdr);
     elf_end(e);
     close(fd);
 
-    if (res == NULL) {
+    if (res == NULL)
         return -1;
-    }
+
     return hdr.e_type;
 }
 
@@ -300,22 +302,20 @@ static int __elf_foreach_load_section(const char *path, void *payload)
     size_t nhdrs = 0;
     struct load_info *load = (struct load_info *)payload;
 
-    if (openelf(path, &e, &fd) < 0) {
+    if (openelf(path, &e, &fd) < 0)
         goto exit;
-    }
 
-    if (elf_getphdrnum(e, &nhdrs) != 0) {
+    if (elf_getphdrnum(e, &nhdrs) != 0)
         goto exit;
-    }
 
     GElf_Phdr header;
     for (int i = 0; i < nhdrs; i++) {
-        if (!gelf_getphdr(e, i, &header)) {
+        if (!gelf_getphdr(e, i, &header))
             continue;
-        }
-        if (header.p_type != PT_LOAD || !(header.p_flags & PF_X)) {
+
+        if (header.p_type != PT_LOAD || !(header.p_flags & PF_X))
             continue;
-        }
+
         load->binary_vaddr  = header.p_vaddr;
         load->binary_offset = header.p_offset;
         load->binary_memsz  = header.p_memsz;
@@ -324,12 +324,12 @@ static int __elf_foreach_load_section(const char *path, void *payload)
     err = 0;
 
 exit:
-    if (e != NULL) {
+    if (e != NULL)
         elf_end(e);
-    }
-    if (fd >= 0) {
+
+    if (fd >= 0)
         close(fd);
-    }
+
     return err;
 }
 
@@ -338,40 +338,34 @@ static int __list_in_scn(Elf *e, Elf_Scn *section, size_t stridx, size_t symsize
 {
     Elf_Data *data = NULL;
 
-    if (symsize == 0) {
+    if (symsize == 0)
         return -1;
-    }
 
     while ((data = elf_getdata(section, data)) != 0) {
         size_t symcount = data->d_size / symsize;
 
-        if (data->d_size % symsize) {
+        if (data->d_size % symsize)
             return -1;
-        }
 
         for (int i = 0; i < symcount; ++i) {
             GElf_Sym sym;
             const char *name = NULL;
             size_t name_len = 0;
 
-            if (!gelf_getsym(data, (int)i, &sym)) {
+            if (!gelf_getsym(data, (int)i, &sym))
                 continue;
-            }
 
             name = elf_strptr(e, stridx, sym.st_name);
-            if (name == NULL || name[0] == 0) {
+            if (name == NULL || name[0] == 0)
                 continue;
-            }
 
             name_len = strlen(name);
-            if (sym.st_value == 0) {
+            if (sym.st_value == 0)
                 continue;
-            }
 
             uint32_t st_type = ELF_ST_TYPE(sym.st_info);
-            if (!(option->use_symbol_type & (1 << st_type))) {
+            if (!(option->use_symbol_type & (1 << st_type)))
                 continue;
-            }
 
             int ret = -1;
             if (option->lazy_symbolize) {
@@ -380,9 +374,8 @@ static int __list_in_scn(Elf *e, Elf_Scn *section, size_t stridx, size_t symsize
             } else {
                 ret = callback(name, sym.st_value, sym.st_size, payload);
             }
-            if (ret < 0) {
+            if (ret < 0)
                 return 1;      // signal termination to caller
-            }
         }
     }
     return 0;
@@ -395,23 +388,20 @@ static int __listsymbols(Elf *e, elf_symcb callback, elf_symcb_lazy callback_laz
 
     while ((section = elf_nextscn(e, section)) != 0) {
         GElf_Shdr header;
-        if (!gelf_getshdr(section, &header)) {
+        if (!gelf_getshdr(section, &header))
             continue;
-        }
         /* SHT_SYMTAB -  2 - [Symbol table] */
         /* SHT_DYNSYM - 11 - [Dynamic linker symbol table] */
-        if (header.sh_type != SHT_SYMTAB && header.sh_type != SHT_DYNSYM) {
+        if (header.sh_type != SHT_SYMTAB && header.sh_type != SHT_DYNSYM)
             continue;
-        }
 
         int rc = __list_in_scn(e, section, header.sh_link, header.sh_entsize,
                                 option, callback, callback_lazy, payload, debugfile);
-        if (rc == 1) {
+        if (rc == 1)
             break;      // callback signaled termination
-        }
-        if (rc < 0) {
+
+        if (rc < 0)
             return rc;
-        }
     }
 
     return 0;
@@ -425,14 +415,12 @@ static int __foreach_sym_core(const char *path, elf_symcb callback, elf_symcb_la
     int res = -1;
 
     res = openelf(path, &e, &fd);
-    if (option == NULL || res < 0) {
+    if (option == NULL || res < 0)
         return -1;
-    }
 
     if (option->use_debug_file && debugfile == NOT_DEBUG_FILE) {
-        if (path != NULL) {
+        if (path != NULL)
             __foreach_sym_core(path, callback, callback_lazy, option, payload, IS_DEBUG_FILE);
-        }
     }
 
     res = __listsymbols(e, callback, callback_lazy, payload, option, debugfile);
@@ -474,9 +462,8 @@ int resolve_symbol_infos(const char *bin_path, const char *sym_name,
         return -1;
     }
 
-    if (option == NULL) {
+    if (option == NULL)
         option = &default_option;
-    }
     /* 1. sym_name's infos from section symtab or dynsym */
     sym.module = strdup(bin_path);
     sym.name = strdup(sym_name);

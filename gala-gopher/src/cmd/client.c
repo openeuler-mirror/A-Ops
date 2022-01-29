@@ -1,3 +1,17 @@
+/******************************************************************************
+ * Copyright (c) Huawei Technologies Co., Ltd. 2021. All rights reserved.
+ * gala-gopher licensed under the Mulan PSL v2.
+ * You can use this software according to the terms and conditions of the Mulan PSL v2.
+ * You may obtain a copy of Mulan PSL v2 at:
+ *     http://license.coscl.org.cn/MulanPSL2
+ * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR
+ * IMPLIED, INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY OR FIT FOR A PARTICULAR
+ * PURPOSE.
+ * See the Mulan PSL v2 for more details.
+ * Author: njlzk
+ * Create: 2021-10-12
+ * Description: provide gala-gopher cmd
+ ******************************************************************************/
 #include <stdio.h>
 #include <sys/socket.h>
 #include <sys/types.h>
@@ -18,10 +32,11 @@ static void ShowUsage(void)
     );
 }
 
-static int CheckShowItem(char *showItem) {
+static int CheckShowItem(char *showItem)
+{
     int ret = -1;
 
-    for(int i = 0; i < sizeof(g_cmdShowItemTbl)/sizeof(g_cmdShowItemTbl[0]); i++) {
+    for(int i = 0; i < sizeof(g_cmdShowItemTbl) / sizeof(g_cmdShowItemTbl[0]); i++) {
         if (strcmp(showItem, g_cmdShowItemTbl[i]) != 0) {
             continue;
         } else {
@@ -48,7 +63,7 @@ static int CmdRequestParse(int argc, char *argv[], struct GopherCmdRequest *cmdR
 
     if ((argc < GOPHER_CMD_LINE_MIN) \
             || (argc > GOPHER_CMD_LINE_MAX) \
-            || ((argc == GOPHER_CMD_LINE_MIN) && (strcmp(argv[1], "-h") != 0) && (strcmp(argv[1], "--help") != 0))){
+            || ((argc == GOPHER_CMD_LINE_MIN) && (strcmp(argv[1], "-h") != 0) && (strcmp(argv[1], "--help") != 0))) {
         printf("The command you entered is incorrect.\n");
         return GOPHER_ERR;
     }
@@ -63,7 +78,6 @@ static int CmdRequestParse(int argc, char *argv[], struct GopherCmdRequest *cmdR
         switch (cmd) {
             case 'h':
                 return GOPHER_ERR;
-
             case 's':
                 cmdRequest->cmdType = GOPHER_GET_CONFIG_PATH;
                 memcpy(cmdRequest->cmdKey, GOPHER_CMD_KEY1, strlen(GOPHER_CMD_KEY1));
@@ -73,8 +87,6 @@ static int CmdRequestParse(int argc, char *argv[], struct GopherCmdRequest *cmdR
                 } else {
                     return GOPHER_ERR;
                 }
-
-
             default:
                 return GOPHER_ERR;
         }
@@ -83,29 +95,28 @@ static int CmdRequestParse(int argc, char *argv[], struct GopherCmdRequest *cmdR
     return GOPHER_OK;
 }
 
-
 static int ConnectToGopher(const char *path, int* fd)
 {
     int ret;
     int client_fd;
     struct sockaddr_un addr;
 
-    //1、创建socket
+    // 1. new socket
     client_fd = socket(AF_UNIX, SOCK_STREAM, 0);
     if (client_fd < 0) {
         printf("create socket failed.\n");
         return GOPHER_ERR;
     }
 
-    //2、命名
+    // 2. addr path
     (void)memset(&addr, 0, sizeof(struct sockaddr_un));
     addr.sun_family = AF_UNIX;
     strncpy(addr.sun_path, path, strlen(path) + 1);
 
-    //3、与server建立链接
+    // 3. connect with server
     ret = connect(client_fd, (const struct sockaddr *)&addr, sizeof(struct sockaddr_un));
     if (ret < 0) {
-        printf("connect to gala-gopher failed. %s(%d)\n", strerror(errno), errno);
+        printf("connect to gala-gopher failed. %s\n", strerror(errno));
         return GOPHER_ERR;
     }
 
@@ -114,12 +125,11 @@ static int ConnectToGopher(const char *path, int* fd)
     return 0;
 }
 
-
 static int SendRequest(int fd, char *buf, int len)
 {
     ssize_t ret;
 
-    ret = write(fd, buf, len);
+    ret = (ssize_t)write(fd, buf, len);
     if (ret <= 0) {
         printf("write msg to fd %d failed, errno %d.\n", fd, errno);
         return GOPHER_ERR;
@@ -131,8 +141,8 @@ static int SendRequest(int fd, char *buf, int len)
 
 static int GetResult(int fd, char *buf, int len)
 {
-    ssize_t ret; 
-    ret = read(fd, buf, len);
+    ssize_t ret;
+    ret = (ssize_t)read(fd, buf, len);
     if (ret <= 0) {
         printf("read msg from server failed, errno %d.\n", errno);
         return GOPHER_ERR;
@@ -150,7 +160,7 @@ int main(int argc, char *argv[])
     struct GopherCmdRequest *cmdRequest;
 
     cmdRequest = (struct GopherCmdRequest *)malloc(sizeof(struct GopherCmdRequest));
-    if (cmdRequest == NULL){
+    if (cmdRequest == NULL) {
         printf("Error: cmdRequest malloc failed!\n");
         goto END2;
     }
@@ -162,7 +172,7 @@ int main(int argc, char *argv[])
 
     ret = ConnectToGopher(GALA_GOPHER_CMD_SOCK_PATH_NAME, &client_fd);
     if (ret < 0) {
-        goto END1;
+        return 0;
     }
 
     ret = SendRequest(client_fd, (char *)cmdRequest, sizeof(struct GopherCmdRequest));
@@ -170,12 +180,12 @@ int main(int argc, char *argv[])
         goto END1;
     }
     
-    resultInfo = (char *)malloc(RESULT_INFO_LEN_MAX+1);
+    resultInfo = (char *)malloc(RESULT_INFO_LEN_MAX + 1);
     if (resultInfo == NULL){
         printf("Error: cmdRequest malloc failed!\n");
         goto END1;
     }
-    memset(resultInfo, 0, RESULT_INFO_LEN_MAX+1);
+    memset(resultInfo, 0, RESULT_INFO_LEN_MAX + 1);
     ret = GetResult(client_fd, resultInfo, RESULT_INFO_LEN_MAX);
     if (ret < 0) {
         goto END1;
@@ -195,5 +205,3 @@ END2:
     }
     return 0;
 }
-
-

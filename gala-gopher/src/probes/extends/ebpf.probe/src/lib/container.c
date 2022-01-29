@@ -1,6 +1,17 @@
-/*
- * Copyright (c) Huawei Technologies Co., Ltd. 2020-2020. All rights reserved.
- */
+/******************************************************************************
+ * Copyright (c) Huawei Technologies Co., Ltd. 2021. All rights reserved.
+ * gala-gopher licensed under the Mulan PSL v2.
+ * You can use this software according to the terms and conditions of the Mulan PSL v2.
+ * You may obtain a copy of Mulan PSL v2 at:
+ *     http://license.coscl.org.cn/MulanPSL2
+ * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR
+ * IMPLIED, INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY OR FIT FOR A PARTICULAR
+ * PURPOSE.
+ * See the Mulan PSL v2 for more details.
+ * Author: Mr.lu
+ * Create: 2021-07-26
+ * Description: container module
+ ******************************************************************************/
 #include <stdio.h>
 #include <stdlib.h>
 #include <bpf/libbpf.h>
@@ -48,17 +59,16 @@ bool __is_install_rpm(const char* command)
 
     is_installed = false;
     f = popen(command, "r");
-    if (f == NULL) {
+    if (f == NULL)
         return false;
-    }
-    (void)memset(line, 0, LEN_BUF);
-    if (fgets(line, LEN_BUF, f) == NULL) {
-        goto out;
-    }
 
-    if (strstr(line, ERR_MSG2) != NULL) {
+    (void)memset(line, 0, LEN_BUF);
+    if (fgets(line, LEN_BUF, f) == NULL)
         goto out;
-    }
+
+    if (strstr(line, ERR_MSG2) != NULL)
+        goto out;
+
     is_installed = true;
 out:
     (void)pclose(f);
@@ -73,15 +83,13 @@ bool __is_service_running(const char* service)
 
     is_running = false;
     f = popen(service, "r");
-    if (f == NULL) {
+    if (f == NULL)
         return false;
-    }
 
     while (!feof(f)) {
         (void)memset(line, 0, LEN_BUF);
-        if (fgets(line, LEN_BUF, f) == NULL) {
+        if (fgets(line, LEN_BUF, f) == NULL)
             goto out;
-        }
 
         if (strstr(line, RUNNING) != NULL) {
             is_running = true;
@@ -96,19 +104,17 @@ out:
 
 bool __is_dockerd()
 {
-    if (__is_install_rpm("/usr/bin/rpm -ql docker-engine")) {
+    if (__is_install_rpm("/usr/bin/rpm -ql docker-engine"))
         return __is_service_running("/usr/bin/systemctl status docker");
-    }
 }
 
 bool __is_isulad()
 {
-    if (__is_install_rpm("/usr/bin/rpm -ql iSulad")) {
+    if (__is_install_rpm("/usr/bin/rpm -ql iSulad"))
         return __is_service_running("/usr/bin/systemctl service iSulad");
-    }
 }
 
-int __get_container_count(const char *command_s)
+static int __get_container_count(const char *command_s)
 {
     int container_num;
     char line[LEN_BUF];
@@ -119,19 +125,16 @@ int __get_container_count(const char *command_s)
     (void)memset(command, 0, COMMAND_LEN);
     (void)snprintf(command, COMMAND_LEN, "%s %s", command_s, DOCKER_PS_COMMAND);
     f = popen(command, "r");
-    if (f == NULL) {
+    if (f == NULL)
         return 0;
-    }
 
-    while (!feof(f)) {
+    while (feof(f) == 0) {
         (void)memset(line, 0, LEN_BUF);
-        if (fgets(line, LEN_BUF, f) == NULL) {
+        if (fgets(line, LEN_BUF, f) == NULL)
             goto out;
-        }
 
-        if (strstr(line, ERR_MSG) != NULL) {
+        if (strstr(line, ERR_MSG) != NULL)
             goto out;
-        }
 
         container_num++;
     }
@@ -141,7 +144,7 @@ out:
     return container_num;
 }
 
-int __get_containers_id(container_tbl* cstbl, const char *command_s)
+static int __get_containers_id(container_tbl* cstbl, const char *command_s)
 {
     char line[LEN_BUF];
     FILE *f = NULL;
@@ -154,9 +157,8 @@ int __get_containers_id(container_tbl* cstbl, const char *command_s)
     (void)memset(command, 0, COMMAND_LEN);
     (void)snprintf(command, COMMAND_LEN, "%s %s", command_s, DOCKER_PS_COMMAND);
     f = popen(command, "r");
-    if (f == NULL) {
+    if (f == NULL)
         return -1;
-    }
 
     ret = 0;
     while (!feof(f) && index < cstbl->num) {
@@ -176,7 +178,7 @@ out:
     return ret;
 }
 
-int __get_containers_pid(container_tbl* cstbl, const char *command_s)
+static int __get_containers_pid(container_tbl* cstbl, const char *command_s)
 {
     char line[LEN_BUF];
     char command[COMMAND_LEN];
@@ -192,9 +194,9 @@ int __get_containers_pid(container_tbl* cstbl, const char *command_s)
                 command_s, p->container, DOCKER_PID_COMMAND);
         f = NULL;
         f = popen(command, "r");
-        if (f == NULL) {
+        if (f == NULL)
             continue;
-        }
+
         (void)memset(line, 0, LEN_BUF);
         if (fgets(line, LEN_BUF, f) == NULL) {
             (void)pclose(f);
@@ -208,7 +210,7 @@ int __get_containers_pid(container_tbl* cstbl, const char *command_s)
     return 0;
 }
 
-int __get_containers_comm(container_tbl* cstbl, const char *command_s)
+static int __get_containers_comm(container_tbl* cstbl, const char *command_s)
 {
     char line[LEN_BUF];
     char command[COMMAND_LEN];
@@ -224,9 +226,9 @@ int __get_containers_comm(container_tbl* cstbl, const char *command_s)
         (void)snprintf(command, COMMAND_LEN, DOCKER_COMM_COMMAND, p->pid);
         f = NULL;
         f = popen(command, "r");
-        if (f == NULL) {
+        if (f == NULL)
             continue;
-        }
+
         (void)memset(line, 0, LEN_BUF);
         if (fgets(line, LEN_BUF, f) == NULL) {
             (void)pclose(f);
@@ -240,7 +242,7 @@ int __get_containers_comm(container_tbl* cstbl, const char *command_s)
     return 0;
 }
 
-int __get_containers_pod(container_tbl* cstbl, const char *command_s)
+static int __get_containers_pod(container_tbl* cstbl, const char *command_s)
 {
     char line[LEN_BUF];
     char command[COMMAND_LEN];
@@ -257,9 +259,9 @@ int __get_containers_pod(container_tbl* cstbl, const char *command_s)
                     command_s, p->container, DOCKER_POD_COMMAND);
         f = NULL;
         f = popen(command, "r");
-        if (f == NULL) {
+        if (f == NULL)
             continue;
-        }
+
         (void)memset(line, 0, LEN_BUF);
         if (fgets(line, LEN_BUF, f) == NULL) {
             (void)pclose(f);
@@ -273,7 +275,7 @@ int __get_containers_pod(container_tbl* cstbl, const char *command_s)
     return 0;
 }
 
-unsigned int __get_pid_namespace(unsigned int pid, const char *namespace)
+static unsigned int __get_pid_namespace(unsigned int pid, const char *namespace)
 {
     char line[LEN_BUF];
     char command[COMMAND_LEN];
@@ -282,9 +284,9 @@ unsigned int __get_pid_namespace(unsigned int pid, const char *namespace)
     (void)memset(command, 0, COMMAND_LEN);
     (void)snprintf(command, COMMAND_LEN, namespace, pid);
     f = popen(command, "r");
-    if (f == NULL) {
+    if (f == NULL)
         return -1;
-    }
+
     (void)memset(line, 0, LEN_BUF);
     if (fgets(line, LEN_BUF, f) == NULL) {
         (void)pclose(f);
@@ -292,10 +294,10 @@ unsigned int __get_pid_namespace(unsigned int pid, const char *namespace)
     }
     (void)pclose(f);
     __SPLIT_NEWLINE_SYMBOL(line);
-    return (unsigned int)strtoul((const char *)line, NULL, 10);
+    return (unsigned int)strtoul((const char *)line, NULL, TEN);
 }
 
-int __get_containers_netns(container_tbl* cstbl, const char *command_s)
+static int __get_containers_netns(container_tbl* cstbl, const char *command_s)
 {
     int index;
     unsigned int netns;
@@ -306,15 +308,15 @@ int __get_containers_netns(container_tbl* cstbl, const char *command_s)
     (void)command_s;
     for (index = 0; index < cstbl->num; index++) {
         netns = __get_pid_namespace(p->pid, DOCKER_NETNS_COMMAND);
-        if (netns > 0) {
+        if (netns > 0)
             p->netns = netns;
-        }
+
         p++;
     }
     return 0;
 }
 
-int __get_containers_mntns(container_tbl* cstbl, const char *command_s)
+static int __get_containers_mntns(container_tbl* cstbl, const char *command_s)
 {
     int index;
     unsigned int mntns;
@@ -325,15 +327,15 @@ int __get_containers_mntns(container_tbl* cstbl, const char *command_s)
     (void)command_s;
     for (index = 0; index < cstbl->num; index++) {
         mntns = __get_pid_namespace(p->pid, DOCKER_MNTNS_COMMAND);
-        if (mntns > 0) {
+        if (mntns > 0)
             p->mntns = mntns;
-        }
+
         p++;
     }
     return 0;
 }
 
-int __get_containers_cgroup(container_tbl* cstbl, const char *command_s)
+static int __get_containers_cgroup(container_tbl* cstbl, const char *command_s)
 {
     int index;
     unsigned int cgroup;
@@ -344,15 +346,15 @@ int __get_containers_cgroup(container_tbl* cstbl, const char *command_s)
     (void)command_s;
     for (index = 0; index < cstbl->num; index++) {
         cgroup = __get_pid_namespace(p->pid, DOCKER_CGP_COMMAND);
-        if (cgroup > 0) {
+        if (cgroup > 0)
             p->cgroup = cgroup;
-        }
+
         p++;
     }
     return 0;
 }
 
-container_tbl* __get_all_container(const char *command_s)
+static container_tbl* __get_all_container(const char *command_s)
 {
     int container_num;
     size_t size;
@@ -360,15 +362,13 @@ container_tbl* __get_all_container(const char *command_s)
 
     cstbl = NULL;
     container_num = __get_container_count(command_s);
-    if (container_num <= 0) {
+    if (container_num <= 0)
         goto out;
-    }
 
     size = sizeof(container_tbl) + container_num * sizeof(container_info);
     cstbl = (container_tbl *)malloc(size);
-    if (cstbl == NULL) {
+    if (cstbl == NULL)
         goto out;
-    }
 
     cstbl->num = container_num;
     cstbl->cs = (container_info *)(cstbl + 1);
@@ -388,20 +388,19 @@ out:
     return cstbl;
 }
 
-container_tbl* get_all_container()
+container_tbl* get_all_container(void)
 {
     bool is_docker, is_isula;
 
     is_docker = __is_dockerd();
     is_isula = __is_isulad();
 
-    if (is_docker) {
+    if (is_docker)
         return __get_all_container(DOCKER);
-    }
 
-    if (is_isula) {
+    if (is_isula)
         return __get_all_container(ISULAD);
-    }
+
     return 0;
 }
 
@@ -416,15 +415,15 @@ const char* get_container_id_by_pid(container_tbl* cstbl, unsigned int pid)
     netns = __get_pid_namespace(pid, DOCKER_NETNS_COMMAND);
 
     for (i = 0; i < cstbl->num; i++) {
-        if ((mntns > 0) && (p->mntns == (unsigned int)mntns)) {
+        if ((mntns > 0) && (p->mntns == (unsigned int)mntns))
             return (const char*)p->container;
-        }
-        if ((cgroup > 0) && (p->cgroup == (unsigned int)cgroup)) {
+
+        if ((cgroup > 0) && (p->cgroup == (unsigned int)cgroup))
             return (const char*)p->container;
-        }
-        if ((netns > 0) && (p->netns == (unsigned int)netns)) {
+
+        if ((netns > 0) && (p->netns == (unsigned int)netns))
             return (const char*)p->container;
-        }
+
         p++;
     }
     return NULL;
@@ -440,14 +439,12 @@ static int __get_container_cgroup(const char *cmd, char *line)
 {
     FILE *f = NULL;
 
-    if (cmd == NULL || line == NULL) {
+    if (cmd == NULL || line == NULL)
         return -1;
-    }
 
     f = popen(cmd, "r");
-    if (f == NULL) {
+    if (f == NULL)
         return -1;
-    }
 
     if (fgets(line, LEN_BUF, f) == NULL) {
         (void)pclose(f);
@@ -469,25 +466,25 @@ static void __get_container_memory_metric(const char *sub_dir, struct cgroup_met
     if (__get_container_cgroup(command, line) == -1) {
         return;
     }
-    cgroup->memory_usage_in_bytes = strtoull((char *)line, NULL, 10);
+    cgroup->memory_usage_in_bytes = strtoull((char *)line, NULL, TEN);
 
     /* memory.limit_in_bytes */
     (void)memset(command, 0, COMMAND_LEN);
     (void)memset(line, 0, LEN_BUF);
     (void)snprintf(command, COMMAND_LEN, DOCKER_MEMCG_COMMAND, sub_dir, "memory.limit_in_bytes");
-    if (__get_container_cgroup(command, line) == -1) {
+    if (__get_container_cgroup(command, line) == -1)
         return;
-    }
-    cgroup->memory_limit_in_bytes = strtoull((char *)line, NULL, 10);
+
+    cgroup->memory_limit_in_bytes = strtoull((char *)line, NULL, TEN);
 
     /* memory.stat.cache */
     (void)memset(command, 0, COMMAND_LEN);
     (void)memset(line, 0, LEN_BUF);
     (void)snprintf(command, COMMAND_LEN, DOCKER_MEMCG_STAT_COMMAND, sub_dir, "cache");
-    if (__get_container_cgroup(command, line) == -1) {
+    if (__get_container_cgroup(command, line) == -1)
         return;
-    }
-    cgroup->memory_stat_cache = strtoull((char *)line, NULL, 10);
+
+    cgroup->memory_stat_cache = strtoull((char *)line, NULL, TEN);
 
     return;
 }
@@ -501,21 +498,21 @@ static void __get_container_cpuaccet_metric(const char *sub_dir, struct cgroup_m
 
     /* cpuacct.usage */
     (void)snprintf(command, COMMAND_LEN, DOCKER_CPUCG_COMMAND, sub_dir, "cpuacct.usage");
-    if (__get_container_cgroup(command, line) == -1) {
+    if (__get_container_cgroup(command, line) == -1)
         return;
-    }
-    cgroup->cpuacct_usage = strtoull((char *)line, NULL, 10);
+
+    cgroup->cpuacct_usage = strtoull((char *)line, NULL, TEN);
 
     /* cpuacct.usage_percpu */
     (void)memset(command, 0, COMMAND_LEN);
     (void)memset(line, 0, LEN_BUF);
     (void)snprintf(command, COMMAND_LEN, DOCKER_CPUCG_COMMAND, sub_dir, "cpuacct.usage_percpu");
-    if (__get_container_cgroup(command, line) == -1) {
+    if (__get_container_cgroup(command, line) == -1)
         return;
-    }
+
     p = strtok(line, " ");
     while (p != NULL) {
-        cgroup->cpuacct_usage_percpu[cpu_no++] = strtoull(p, NULL, 10);
+        cgroup->cpuacct_usage_percpu[cpu_no++] = strtoull(p, NULL, TEN);
         p = strtok(NULL, " ");
     }
 
@@ -529,19 +526,18 @@ static void __get_container_pids_metric(const char *sub_dir, struct cgroup_metri
 
     /* pids.current */
     (void)snprintf(command, COMMAND_LEN, DOCKER_PIDS_COMMAND, sub_dir, "pids.current");
-    if (__get_container_cgroup(command, line) == -1) {
+    if (__get_container_cgroup(command, line) == -1)
         return;
-    }
-    cgroup->pids_current = strtoull((char *)line, NULL, 10);
+
+    cgroup->pids_current = strtoull((char *)line, NULL, TEN);
 
     /* pids.limit */
     (void)snprintf(command, COMMAND_LEN, DOCKER_PIDS_COMMAND, sub_dir, "pids.max");
-    if (__get_container_cgroup(command, line) == -1) {
+    if (__get_container_cgroup(command, line) == -1)
         return;
-    }
-    if (!strcmp((char *)line, "max")) {
-        cgroup->pids_limit = strtoull((char *)line, NULL, 10);
-    }
+
+    if (strcmp((char *)line, "max") == 0)
+        cgroup->pids_limit = strtoull((char *)line, NULL, TEN);
 
     return;
 }
@@ -550,7 +546,7 @@ void get_container_cgroup_metric(const char *container_id, const char *namespace
 {
     char sub_dir[COMMAND_LEN] = {0};
 
-    if (!strcmp(namespace, "moby")) {    // docker == moby
+    if (strcmp(namespace, "moby") == 0) {    // docker == moby
         (void)snprintf(sub_dir, COMMAND_LEN, "docker/%s", container_id);
     } else {
         (void)snprintf(sub_dir, COMMAND_LEN, "%s/%s", namespace, container_id);
@@ -586,9 +582,8 @@ int get_container_merged_path(const char *container_id, char *path, unsigned int
     }
 
     f = popen(command, "r");
-    if (f == NULL) {
+    if (f == NULL)
         return -1;
-    }
 
     if (fgets(path, len, f) == NULL) {
         (void)pclose(f);
@@ -618,9 +613,8 @@ int exec_container_command(const char *container_id, const char *exec, char *buf
     }
 
     f = popen(command, "r");
-    if (f == NULL) {
+    if (f == NULL)
         return -1;
-    }
 
     if (fgets(buf, len, f) == NULL) {
         (void)pclose(f);

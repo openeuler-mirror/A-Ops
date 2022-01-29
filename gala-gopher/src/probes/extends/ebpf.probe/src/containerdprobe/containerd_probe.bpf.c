@@ -1,7 +1,17 @@
-/*
- * Copyright (c) Huawei Technologies Co., Ltd. 2020-2020. All rights reserved.
- * Description: container_probe bpf prog
- */
+/******************************************************************************
+ * Copyright (c) Huawei Technologies Co., Ltd. 2021. All rights reserved.
+ * gala-gopher licensed under the Mulan PSL v2.
+ * You can use this software according to the terms and conditions of the Mulan PSL v2.
+ * You may obtain a copy of Mulan PSL v2 at:
+ *     http://license.coscl.org.cn/MulanPSL2
+ * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR
+ * IMPLIED, INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY OR FIT FOR A PARTICULAR
+ * PURPOSE.
+ * See the Mulan PSL v2 for more details.
+ * Author: dowzyx
+ * Create: 2021-12-04
+ * Description: container probe bpf prog
+ ******************************************************************************/
 #ifdef BPF_PROG_KERN
 #undef BPF_PROG_KERN
 #endif
@@ -32,7 +42,7 @@ UPROBE(linux_Task_Start, pt_regs)
     unsigned int sym_key = SYMADDRS_MAP_KEY;
 
     // containerd's info [pid + comm]
-    value.containerd_pid = bpf_get_current_pid_tgid() >> 32;
+    value.containerd_pid = bpf_get_current_pid_tgid() >> INT_LEN;
     bpf_get_current_comm(&value.comm, sizeof(value.comm));
 
     // symbol's offset
@@ -71,7 +81,7 @@ UPROBE(linux_Task_Delete, pt_regs)
     unsigned int sym_key = SYMADDRS_MAP_KEY;
 
     // containerd's info
-    unsigned int containerd_pid = bpf_get_current_pid_tgid() >> 32;
+    unsigned int containerd_pid = bpf_get_current_pid_tgid() >> INT_LEN;
 
     // symbol's offset
     struct go_containerd_t *sym_str = bpf_map_lookup_elem(&containerd_symaddrs_map, &sym_key);

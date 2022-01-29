@@ -1,7 +1,17 @@
-/*
- * Copyright (c) Huawei Technologies Co., Ltd. 2020-2020. All rights reserved.
-  * Description: haproxy_probe user prog
- */
+/******************************************************************************
+ * Copyright (c) Huawei Technologies Co., Ltd. 2021. All rights reserved.
+ * gala-gopher licensed under the Mulan PSL v2.
+ * You can use this software according to the terms and conditions of the Mulan PSL v2.
+ * You may obtain a copy of Mulan PSL v2 at:
+ *     http://license.coscl.org.cn/MulanPSL2
+ * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR
+ * IMPLIED, INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY OR FIT FOR A PARTICULAR
+ * PURPOSE.
+ * See the Mulan PSL v2 for more details.
+ * Author: dowzyx
+ * Create: 2021-06-08
+ * Description: haproxy_probe user prog
+ ******************************************************************************/
 #include <errno.h>
 #include <signal.h>
 #include <stdio.h>
@@ -17,10 +27,9 @@
 #endif
 
 #include "bpf.h"
-
+#include "args.h"
 #include "trace_haproxy.skel.h"
 #include "trace_haproxy.h"
-#include "args.h"
 
 #define METRIC_NAME_HAPROXY_LINK "haproxy_link"
 
@@ -32,7 +41,7 @@ static void sig_handler(int sig)
     g_stop = true;
 }
 
-static void get_host_ip(unsigned char *value, unsigned short family)
+static void get_host_ip(const unsigned char *value, unsigned short family)
 {
     FILE *fp = NULL;
     char buffer[INET6_ADDRSTRLEN] = {0};
@@ -46,22 +55,21 @@ static void get_host_ip(unsigned char *value, unsigned short family)
     }
 
     fp = popen(cmd, "r");
-    if (fgets(buffer, 32, fp) == NULL) {
+    if (fgets(buffer, INET6_ADDRSTRLEN, fp) == NULL) {
         printf("Fail get_host_ip.\n");
         return ;
     }
     pclose(fp);
     num = sscanf(buffer, "%47s", value);
-    if (num < 1) {
+    if (num < 1)
         printf("failed get hostip [%d]", errno);
-    }
+
     return ;
 }
 
 static void update_collect_count(struct collect_value *dd)
 {
     dd->link_count++;
-
     return;
 }
 
@@ -158,7 +166,7 @@ static void print_haproxy_collect(int map_fd)
         }
         bpf_map_delete_elem(map_fd, &next_key);
     }
-    fflush(stdout);
+    (void)fflush(stdout);
     return;
 }
 
@@ -172,9 +180,9 @@ int main(int argc, char **argv)
     int attach_flag = 0;
 
     err = args_parse(argc, argv, "t:p:", &params);
-    if (err != 0) {
+    if (err != 0)
         return -1;
-    }
+
     printf("arg parse interval time:%us\n", params.period);
 
     LOAD(trace_haproxy);
@@ -194,19 +202,18 @@ int main(int argc, char **argv)
     for (int i = 0; i < elf_num; i++) {
         int ret = 0;
         UBPF_ATTACH(back_establish, elf[i], back_establish, ret);
-        if (ret <= 0) {
+        if (ret <= 0)
             continue;
-        }
+
         UBPF_ATTACH(stream_free, elf[i], stream_free, ret);
-        if (ret <= 0) {
+        if (ret <= 0)
             continue;
-        }
+
         attach_flag = 1;
     }
     free_exec_path_buf(elf, elf_num);
-    if (!attach_flag) {
+    if (attach_flag == 0)
         goto err;
-    }
 
     /* create collect hash map */
     collect_map_fd =

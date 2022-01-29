@@ -1,7 +1,17 @@
-/*
- * Copyright (c) Huawei Technologies Co., Ltd. 2020-2020. All rights reserved.
+/******************************************************************************
+ * Copyright (c) Huawei Technologies Co., Ltd. 2021. All rights reserved.
+ * gala-gopher licensed under the Mulan PSL v2.
+ * You can use this software according to the terms and conditions of the Mulan PSL v2.
+ * You may obtain a copy of Mulan PSL v2 at:
+ *     http://license.coscl.org.cn/MulanPSL2
+ * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR
+ * IMPLIED, INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY OR FIT FOR A PARTICULAR
+ * PURPOSE.
+ * See the Mulan PSL v2 for more details.
+ * Author: dowzyx
+ * Create: 2021-06-08
  * Description: haproxy_probe bpf prog
- */
+ ******************************************************************************/
 #ifdef BPF_PROG_KERN
 #undef BPF_PROG_KERN
 #endif
@@ -53,7 +63,7 @@ static int haproxy_obtain_key_value(const struct stream_s *s, struct link_key *k
 
     /* real server */
     sock_p = _(s->target_addr);
-    family = sock_to_ip_str(sock_p, &key->s_addr, &key->s_port);
+    family = (unsigned short)sock_to_ip_str(sock_p, &key->s_addr, &key->s_port);
 
     /* C-H link */
     sess_p = _(s->sess);
@@ -81,7 +91,7 @@ static int haproxy_obtain_key_value(const struct stream_s *s, struct link_key *k
             key->p_port = addr2.sin_port;
             break;
         default:
-            bpf_printk("=== obtain_key_value server family(%d) invalid.\n", family);
+            bpf_printk("=== obtain_key_value server family: %d invalid.\n", family);
             break;
     }
 	/* then, obtain info from connection.dst */
@@ -100,7 +110,7 @@ UPROBE(back_establish, pt_regs)
     struct link_value   value = {0};
 
     /* process info */
-    value.pid = bpf_get_current_pid_tgid() >> 32;
+    value.pid = (unsigned short)bpf_get_current_pid_tgid() >> INT_LEN;
     bpf_get_current_comm(&value.comm, sizeof(value.comm));
 
     /* c-p-s IP info */
