@@ -43,7 +43,7 @@ function __get_probes_source_files()
 		file_name=${one_file#*$1}
 		file_name=${file_name%.*}
 		
-		if [[ ! $file_name =~ $2 ]]; then
+		if [[ ! $file_name = $2 ]]; then
 			PROBES_C_LIST=${PROBES_C_LIST}\;${1}${file_name}.c
 		fi
 	done
