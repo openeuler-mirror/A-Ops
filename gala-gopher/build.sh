@@ -37,16 +37,16 @@ function load_tailor()
 
 function __get_probes_source_files()
 {
-	one_probe_src_list=`find $1 -name "*.c"`
-	for one_file in ${one_probe_src_list}
-	do
-		file_name=${one_file#*$1}
-		file_name=${file_name%.*}
-		
-		if [[ ! $file_name = $2 ]]; then
-			PROBES_C_LIST=${PROBES_C_LIST}\;${1}${file_name}.c
-		fi
-	done
+    one_probe_src_list=`find $1 -name "*.c"`
+    for one_file in ${one_probe_src_list}
+    do
+        file_name=${one_file#*$1/}
+        file_name=${file_name%.*}
+
+        if [[ ! $file_name = $2 && ! $file_name = $2_daemon ]]; then
+            PROBES_C_LIST=${PROBES_C_LIST}\;${1}/${file_name}.c
+        fi
+    done
 }
 
 function prepare_probes()
