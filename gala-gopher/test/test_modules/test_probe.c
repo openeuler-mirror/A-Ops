@@ -1,3 +1,17 @@
+/******************************************************************************
+ * Copyright (c) Huawei Technologies Co., Ltd. 2021. All rights reserved.
+ * gala-gopher licensed under the Mulan PSL v2.
+ * You can use this software according to the terms and conditions of the Mulan PSL v2.
+ * You may obtain a copy of Mulan PSL v2 at:
+ *     http://license.coscl.org.cn/MulanPSL2
+ * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR
+ * IMPLIED, INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY OR FIT FOR A PARTICULAR
+ * PURPOSE.
+ * See the Mulan PSL v2 for more details.
+ * Author: Hubble_Zhu
+ * Create: 2021-04-26
+ * Description: provide gala-gopher test
+ ******************************************************************************/
 #include <stdint.h>
 #include <CUnit/Basic.h>
 
@@ -6,7 +20,7 @@
 
 #define PROBE_MGR_SIZE 1024
 
-void TestProbeMgrCreate()
+static void TestProbeMgrCreate(void)
 {
     ProbeMgr *mgr = ProbeMgrCreate(PROBE_MGR_SIZE);
 
@@ -17,7 +31,7 @@ void TestProbeMgrCreate()
     ProbeMgrDestroy(mgr);
 }
 
-void TestProbeMgrPut()
+static void TestProbeMgrPut(void)
 {
     uint32_t ret = 0;
     ProbeMgr *mgr = ProbeMgrCreate(PROBE_MGR_SIZE);
@@ -26,7 +40,7 @@ void TestProbeMgrPut()
     CU_ASSERT(mgr != NULL);
     CU_ASSERT(probe != NULL);
 
-    snprintf(probe->name, MAX_PROBE_NAME_LEN - 1, "test_probe");
+    (void)snprintf(probe->name, MAX_PROBE_NAME_LEN - 1, "test_probe");
 
     ret = ProbeMgrPut(mgr, probe);
     CU_ASSERT(ret == 0);
@@ -36,7 +50,7 @@ void TestProbeMgrPut()
     ProbeMgrDestroy(mgr);
 }
 
-void TestProbeMgrGet()
+static void TestProbeMgrGet(void)
 {
     uint32_t ret = 0;
     ProbeMgr *mgr = ProbeMgrCreate(PROBE_MGR_SIZE);
@@ -46,7 +60,7 @@ void TestProbeMgrGet()
     CU_ASSERT(mgr != NULL);
     CU_ASSERT(probe != NULL);
 
-    snprintf(probe->name, MAX_PROBE_NAME_LEN - 1, "test_probe");
+    (void)snprintf(probe->name, MAX_PROBE_NAME_LEN - 1, "test_probe");
 
     ret = ProbeMgrPut(mgr, probe);
     CU_ASSERT(ret == 0);
@@ -57,7 +71,7 @@ void TestProbeMgrGet()
     ProbeMgrDestroy(mgr);
 }
 
-void TestProbeCreate()
+static void TestProbeCreate(void)
 {
     Probe *probe = ProbeCreate();
 

@@ -398,7 +398,7 @@ static int ConfigMgrLoadWebServerConfig(void *config, config_setting_t *settings
         printf("[CONFIG] load config for webServerConfig port failed.\n");
         return -1;
     }
-    webServerConfig->port = intVal;
+    webServerConfig->port = (uint16_t)intVal;
 
     return 0;
 }

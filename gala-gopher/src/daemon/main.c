@@ -23,9 +23,6 @@
 #define GOPHER_CMD_MAX                    3
 #define GOPHER_CMD_MIN                    1
 
-extern char* g_galaConfPath;
-
-
 static void ShowUsage(void)
 {
     (void)printf("Usage:\n"
@@ -38,34 +35,31 @@ static void ShowUsage(void)
     );
 }
 
-
 static int ParseConfigPath(const char *path)
 {
-    if (access(path, 0) < 0){
-        printf("config path error:%s.(errno:%d, %s)\n", 
+    if (access(path, 0) < 0) {
+        printf("config path error:%s.(errno:%d, %s)\n",
             path, errno, strerror(errno));
         return -1;
     } else {
-        g_galaConfPath = (char *)malloc(strlen(path)+1);
-	if (g_galaConfPath == NULL){
-	    printf("g_galaConfPath: malloc failed!\n");
+        g_galaConfPath = (char *)malloc(strlen(path) + 1);
+    if (g_galaConfPath == NULL) {
+        printf("g_galaConfPath: malloc failed!\n");
             return -1;
-	}
+    }
 
-        memset(g_galaConfPath, 0, strlen(path)+1);
-	memcpy(g_galaConfPath, path, strlen(path));
+        memset(g_galaConfPath, 0, strlen(path) + 1);
+    memcpy(g_galaConfPath, path, strlen(path));
     }
 
     return 0;
 }
 
-
-
 static int CmdProcessing(int argc, char *argv[])
 {
     int cmd;
     int ret = 0;
-	  
+
     static struct option long_options[] = {
         {"help",        no_argument,       0, 'h'},
         {"config_path", required_argument, 0, 'c'},
@@ -88,12 +82,10 @@ static int CmdProcessing(int argc, char *argv[])
  
     while(1) {
         int option_index = 0;
-        
-	cmd = getopt_long(argc, argv, short_options, long_options, &option_index);
-        if (cmd == -1){
-	    break;
-	}
-            
+        cmd = getopt_long(argc, argv, short_options, long_options, &option_index);
+        if (cmd == -1)
+            break;
+
         switch (cmd) {
             case 'h':
                 ShowUsage();

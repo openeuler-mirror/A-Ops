@@ -1,7 +1,17 @@
-/*
- * Copyright (c) Huawei Technologies Co., Ltd. 2020-2020. All rights reserved.
+/******************************************************************************
+ * Copyright (c) Huawei Technologies Co., Ltd. 2021. All rights reserved.
+ * gala-gopher licensed under the Mulan PSL v2.
+ * You can use this software according to the terms and conditions of the Mulan PSL v2.
+ * You may obtain a copy of Mulan PSL v2 at:
+ *     http://license.coscl.org.cn/MulanPSL2
+ * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR
+ * IMPLIED, INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY OR FIT FOR A PARTICULAR
+ * PURPOSE.
+ * See the Mulan PSL v2 for more details.
+ * Author: Mr.lu
+ * Create: 2021-05-17
  * Description: kill_probe user prog
- */
+ ******************************************************************************/
 #include <errno.h>
 #include <signal.h>
 #include <stdio.h>
@@ -33,7 +43,7 @@ static void print_bpf_output(void *ctx, int cpu, void *data, __u32 size)
 
     pv = (struct val_t *)data;
 
-    fprintf(stdout,
+    (void)fprintf(stdout,
         "|%s|%llu|%u|%u|%s|\n",
         PROBE_NAME,
         pv->killer_pid,
@@ -49,9 +59,8 @@ int main(int argc, char **argv)
     struct perf_buffer* pb = NULL;
 
     err = args_parse(argc, argv, "t:", &params);
-    if (err != 0) {
+    if (err != 0)
         return -1;
-    }
 
     printf("arg parse interval time:%us\n", params.period);
 
@@ -65,7 +74,7 @@ int main(int argc, char **argv)
         goto err;
     }
 
-    poll_pb(pb, params.period * 1000);
+    poll_pb(pb, params.period * THOUSAND);
 
     perf_buffer__free(pb);
 err:

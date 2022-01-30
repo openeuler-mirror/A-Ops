@@ -19,10 +19,8 @@
 #include <unistd.h>
 #include <sys/un.h>
 #include <sys/socket.h>
-
-
-#include "daemon.h"
 #include "server.h"
+#include "daemon.h"
 
 #if GALA_GOPHER_INFO("inner func declaration")
 static void *DaemonRunIngress(void *arg);
@@ -98,7 +96,7 @@ static int DaemonCheckProbeNeedStart(char *check_cmd, ProbeStartCheckType chkTyp
 
 #endif
 
-int DaemonRun(ResourceMgr *mgr)
+int DaemonRun(const ResourceMgr *mgr)
 {
     int ret;
 
@@ -177,7 +175,7 @@ int DaemonRun(ResourceMgr *mgr)
     return 0;
 }
 
-int DaemonWaitDone(ResourceMgr *mgr)
+int DaemonWaitDone(const ResourceMgr *mgr)
 {
     // 1. wait ingress done
     pthread_join(mgr->ingressMgr->tid, NULL);

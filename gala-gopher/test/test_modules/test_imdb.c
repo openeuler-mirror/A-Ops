@@ -1,3 +1,17 @@
+/******************************************************************************
+ * Copyright (c) Huawei Technologies Co., Ltd. 2021. All rights reserved.
+ * gala-gopher licensed under the Mulan PSL v2.
+ * You can use this software according to the terms and conditions of the Mulan PSL v2.
+ * You may obtain a copy of Mulan PSL v2 at:
+ *     http://license.coscl.org.cn/MulanPSL2
+ * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR
+ * IMPLIED, INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY OR FIT FOR A PARTICULAR
+ * PURPOSE.
+ * See the Mulan PSL v2 for more details.
+ * Author: Hubble_Zhu
+ * Create: 2021-04-26
+ * Description: provide gala-gopher test
+ ******************************************************************************/
 #include <stdint.h>
 #include <CUnit/Basic.h>
 
@@ -5,26 +19,26 @@
 #include "test_imdb.h"
 
 #if GALA_GOPHER_INFO("test cases")
-void TestIMDB_MetricCreate();
-void TestIMDB_MetricSetValue();
-void TestIMDB_RecordCreate();
-void TestIMDB_RecordCreateWithKey();
-void TestIMDB_RecordAddMetric();
-void TestIMDB_TableCreate();
-void TestIMDB_TableSetMeta();
-void TestIMDB_TableAddRecord();
-void TestIMDB_DataBaseMgrCreate();
-void TestIMDB_DataBaseMgrAddTable();
-void TestIMDB_DataBaseMgrFindTable();
-void TestIMDB_DataBaseMgrAddRecord();
-void TestIMDB_DataBaseMgrData2String();
-void TestIMDB_RecordAppendKey();
-void TestHASH_addRecord();
-void TestHASH_deleteRecord();
-void TestIMDB_TableSetRecordKeySize();
+static void TestIMDB_MetricCreate(void);
+static void TestIMDB_MetricSetValue(void);
+static void TestIMDB_RecordCreate(void);
+static void TestIMDB_RecordCreateWithKey(void);
+static void TestIMDB_RecordAddMetric(void);
+static void TestIMDB_TableCreate(void);
+static void TestIMDB_TableSetMeta(void);
+static void TestIMDB_TableAddRecord(void);
+static void TestIMDB_DataBaseMgrCreate(void);
+static void TestIMDB_TableAddRecord(void);
+static void TestIMDB_DataBaseMgrFindTable(void);
+static void TestIMDB_DataBaseMgrAddRecord(void);
+static void TestIMDB_DataBaseMgrData2String(void);
+static void TestIMDB_RecordAppendKey(void);
+static void TestHASH_addRecord(void);
+static void TestHASH_deleteRecord(void);
+static void TestIMDB_TableSetRecordKeySize(void);
 #endif
 
-void TestIMDB_MetricCreate()
+static void TestIMDB_MetricCreate(void)
 {
     IMDB_Metric *metric = IMDB_MetricCreate("aa", "bb", "cc");
     CU_ASSERT(metric != NULL);
@@ -35,7 +49,7 @@ void TestIMDB_MetricCreate()
     IMDB_MetricDestroy(metric);
 }
 
-void TestIMDB_MetricSetValue()
+static void TestIMDB_MetricSetValue(void)
 {
     int ret = 0;
     IMDB_Metric *metric = IMDB_MetricCreate("aa", "bb", "cc");
@@ -48,7 +62,7 @@ void TestIMDB_MetricSetValue()
     IMDB_MetricDestroy(metric);
 }
 
-void TestIMDB_RecordCreate()
+static void TestIMDB_RecordCreate(void)
 {
     IMDB_Record *record = IMDB_RecordCreate(1024);
     CU_ASSERT(record != NULL);
@@ -61,7 +75,7 @@ void TestIMDB_RecordCreate()
     IMDB_RecordDestroy(record);
 }
 
-void TestIMDB_RecordCreateWithKey()
+static void TestIMDB_RecordCreateWithKey(void)
 {
     IMDB_Record *record = IMDB_RecordCreateWithKey(1024, MAX_IMDB_METRIC_VAL_LEN * 1);
     CU_ASSERT(record != NULL);
@@ -74,7 +88,7 @@ void TestIMDB_RecordCreateWithKey()
     IMDB_RecordDestroy(record);
 }
 
-void TestIMDB_RecordAddMetric()
+static void TestIMDB_RecordAddMetric(void)
 {
     int ret = 0;
     IMDB_Record *record = IMDB_RecordCreate(1024);
@@ -91,7 +105,7 @@ void TestIMDB_RecordAddMetric()
     IMDB_RecordDestroy(record);
 }
 
-void TestIMDB_TableCreate()
+static void TestIMDB_TableCreate(void)
 {
     IMDB_Table *table = IMDB_TableCreate("table1", 1024);
     CU_ASSERT(table != NULL);
@@ -105,7 +119,7 @@ void TestIMDB_TableCreate()
     IMDB_TableDestroy(table);
 }
 
-void TestIMDB_TableSetMeta()
+static void TestIMDB_TableSetMeta(void)
 {
     int ret = 0;
     IMDB_Table *table = IMDB_TableCreate("table1", 1024);
@@ -127,7 +141,7 @@ void TestIMDB_TableSetMeta()
     IMDB_TableDestroy(table);
 }
 
-void TestIMDB_TableAddRecord()
+static void TestIMDB_TableAddRecord(void)
 {
     int ret = 0;
     IMDB_Table *table = IMDB_TableCreate("table1", 1024);
@@ -153,7 +167,7 @@ void TestIMDB_TableAddRecord()
     IMDB_TableDestroy(table);
 }
 
-void TestIMDB_DataBaseMgrCreate()
+static void TestIMDB_DataBaseMgrCreate(void)
 {
     IMDB_DataBaseMgr *mgr = IMDB_DataBaseMgrCreate(1024);
     CU_ASSERT(mgr != NULL);
@@ -164,7 +178,7 @@ void TestIMDB_DataBaseMgrCreate()
     IMDB_DataBaseMgrDestroy(mgr);
 }
 
-void TestIMDB_DataBaseMgrAddTable()
+static void TestIMDB_DataBaseMgrAddTable(void)
 {
     int ret = 0;
     IMDB_DataBaseMgr *mgr = IMDB_DataBaseMgrCreate(1024);
@@ -181,7 +195,7 @@ void TestIMDB_DataBaseMgrAddTable()
     IMDB_DataBaseMgrDestroy(mgr);
 }
 
-void TestIMDB_DataBaseMgrFindTable()
+static void TestIMDB_DataBaseMgrFindTable(void)
 {
     int ret = 0;
     IMDB_DataBaseMgr *mgr = IMDB_DataBaseMgrCreate(1024);
@@ -199,7 +213,7 @@ void TestIMDB_DataBaseMgrFindTable()
     IMDB_DataBaseMgrDestroy(mgr);
 }
 
-void TestIMDB_DataBaseMgrAddRecord()
+static void TestIMDB_DataBaseMgrAddRecord(void)
 {
     int ret = 0;
     IMDB_DataBaseMgr *mgr = IMDB_DataBaseMgrCreate(1024);
@@ -254,7 +268,7 @@ void TestIMDB_DataBaseMgrAddRecord()
     IMDB_DataBaseMgrDestroy(mgr);
 }
 
-void TestIMDB_DataBaseMgrData2String()
+static void TestIMDB_DataBaseMgrData2String(void)
 {
     int ret = 0;
     IMDB_DataBaseMgr *mgr = IMDB_DataBaseMgrCreate(1024);
@@ -296,7 +310,7 @@ void TestIMDB_DataBaseMgrData2String()
     IMDB_DataBaseMgrDestroy(mgr);
 }
 
-void TestIMDB_RecordAppendKey()
+static void TestIMDB_RecordAppendKey(void)
 {
     int ret = 0;
     IMDB_Record *record = IMDB_RecordCreateWithKey(1024, MAX_IMDB_METRIC_VAL_LEN * 2);
@@ -317,7 +331,7 @@ void TestIMDB_RecordAppendKey()
     IMDB_RecordDestroy(record);
 }
 
-void TestHASH_addRecord()
+static void TestHASH_addRecord(void)
 {
     int ret = 0;
     IMDB_Record **records = (IMDB_Record **)malloc(sizeof(IMDB_Record *));
@@ -343,7 +357,7 @@ void TestHASH_addRecord()
     free(records);
 }
 
-void TestHASH_deleteRecord()
+static void TestHASH_deleteRecord(void)
 {
     int ret = 0;
     IMDB_Record **records = (IMDB_Record **)malloc(sizeof(IMDB_Record *));
@@ -377,7 +391,7 @@ void TestHASH_deleteRecord()
     free(records);
 }
 
-void TestIMDB_TableSetRecordKeySize()
+static void TestIMDB_TableSetRecordKeySize(void)
 {
     int ret = 0;
     IMDB_Table *table = IMDB_TableCreate("table1", 1024);

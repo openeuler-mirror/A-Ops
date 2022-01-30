@@ -1,7 +1,17 @@
-/*
- * Copyright (c) Huawei Technologies Co., Ltd. 2020-2020. All rights reserved.
+/******************************************************************************
+ * Copyright (c) Huawei Technologies Co., Ltd. 2021. All rights reserved.
+ * gala-gopher licensed under the Mulan PSL v2.
+ * You can use this software according to the terms and conditions of the Mulan PSL v2.
+ * You may obtain a copy of Mulan PSL v2 at:
+ *     http://license.coscl.org.cn/MulanPSL2
+ * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR
+ * IMPLIED, INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY OR FIT FOR A PARTICULAR
+ * PURPOSE.
+ * See the Mulan PSL v2 for more details.
+ * Author: dowzyx
+ * Create: 2021-06-10
  * Description: dnsmasq_probe user prog
- */
+ ******************************************************************************/
 #include <errno.h>
 #include <signal.h>
 #include <stdio.h>
@@ -16,9 +26,9 @@
 #endif
 
 #include "bpf.h"
+#include "args.h"
 #include "trace_dnsmasq.skel.h"
 #include "trace_dnsmasq.h"
-#include "args.h"
 
 #define METRIC_NAME_DNSMASQ_LINK    "dnsmasq_link"
 
@@ -46,7 +56,7 @@ static void update_collect_map(struct link_key *k, struct link_value *v, int map
     /* update value */
     value.link_count++;
     value.pid = v->pid;
-    snprintf(value.comm, TASK_COMM_LEN - 1, v->comm);
+    (void)snprintf(value.comm, TASK_COMM_LEN - 1, v->comm);
 
     /* update hash map */
     bpf_map_update_elem(map_fd, &key, &value, BPF_ANY);
@@ -108,10 +118,9 @@ static void print_dnsmasq_collect(int map_fd)
         }
         bpf_map_delete_elem(map_fd, &next_key);
     }
-    fflush(stdout);
+    (void)fflush(stdout);
     return;
 }
-
 
 int main(int argc, char **argv)
 {
@@ -122,9 +131,8 @@ int main(int argc, char **argv)
     int attach_flag = 0;
 
     err = args_parse(argc, argv, "t:p:", &params);
-    if (err != 0) {
+    if (err != 0)
         return -1;
-    }
     printf("arg parse interval time:%us\n", params.period);
 
     LOAD(trace_dnsmasq);
@@ -144,15 +152,13 @@ int main(int argc, char **argv)
     for (int i = 0; i < elf_num; i++) {
         int ret = 0;
         UBPF_ATTACH(send_from, elf[i], send_from, ret);
-        if (ret <= 0) {
+        if (ret <= 0)
             continue;
-        }
         attach_flag = 1;
     }
     free_exec_path_buf(elf, elf_num);
-    if (!attach_flag) {
+    if (attach_flag == 0)
         goto err;
-    }
 
     /* create collect hash map */
     collect_map_fd =

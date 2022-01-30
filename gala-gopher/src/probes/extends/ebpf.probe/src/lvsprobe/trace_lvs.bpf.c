@@ -1,7 +1,17 @@
-/*
- * Copyright (c) Huawei Technologies Co., Ltd. 2020-2020. All rights reserved.
+/******************************************************************************
+ * Copyright (c) Huawei Technologies Co., Ltd. 2021. All rights reserved.
+ * gala-gopher licensed under the Mulan PSL v2.
+ * You can use this software according to the terms and conditions of the Mulan PSL v2.
+ * You may obtain a copy of Mulan PSL v2 at:
+ *     http://license.coscl.org.cn/MulanPSL2
+ * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR
+ * IMPLIED, INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY OR FIT FOR A PARTICULAR
+ * PURPOSE.
+ * See the Mulan PSL v2 for more details.
+ * Author: dowzyx
+ * Create: 2021-05-24
  * Description: ipvs_probe bpf prog
- */
+ ******************************************************************************/
 #ifdef BPF_PROG_USER
 #undef BPF_PROG_USER
 #endif
@@ -58,7 +68,7 @@ static void ipvs_state_get_key(const struct ip_vs_conn *p, struct link_key *key,
 }
 
 static void ipvs_fnat_state_get_key(const struct ip_vs_conn_fnat *p, struct link_key *key,
-                                    const struct ip *addr, u16 *port)
+                                    struct ip *addr, u16 *port)
 {
     key->family = _(p->af);
     switch (key->family) {
@@ -120,9 +130,9 @@ KRETPROBE(ip_vs_conn_new, pt_regs)
 
     /* lookup ipvs flags */
     char *buf = bpf_map_lookup_elem(&lvs_flag_map, &f_key);
-    if (buf != (void *)0) {
+    if (buf != (void *)0)
         flags = *buf;
-    }
+
     bpf_printk("===LVS new_ret get flags[0x%x]. \n", flags);
 
     /* obtain key data */
@@ -154,9 +164,8 @@ KPROBE(ip_vs_conn_expire, pt_regs)
 
     /* lookup ipvs flags */
     char *buf = bpf_map_lookup_elem(&lvs_flag_map, &f_key);
-    if (buf != (void *)0) {
+    if (buf != (void *)0)
         flags = *buf;
-    }
 
     /* obtain struct ip_vs_conn's head addr */
     if (flags < IP_VS_CONN_FULLNAT) {
