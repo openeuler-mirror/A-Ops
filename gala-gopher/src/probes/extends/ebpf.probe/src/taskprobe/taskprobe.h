@@ -16,6 +16,7 @@
 #define __TASKPROBE__H
 
 #define TASK_MAP_ENTRY_SIZE (256 * 10)
+#define TASK_EXIT_MAP_FILE_PATH "/sys/fs/bpf/task_exit_event"
 
 struct task_key {
     __u32 tgid;
