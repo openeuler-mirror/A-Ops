@@ -35,7 +35,7 @@ KafkaMgr *KafkaMgrCreate(const char *broker, const char *topic)
 
     mgr = (KafkaMgr *)malloc(sizeof(KafkaMgr));
     if (mgr == NULL) {
-        printf("malloc memory for egress_kafka_mgr failed.\n");
+        DEBUG("malloc memory for egress_kafka_mgr failed.\n");
         return NULL;
     }
 
@@ -46,7 +46,7 @@ KafkaMgr *KafkaMgrCreate(const char *broker, const char *topic)
     mgr->conf = rd_kafka_conf_new();
     ret = rd_kafka_conf_set(mgr->conf, "bootstrap.servers", mgr->kafkaBroker, errstr, sizeof(errstr));
     if (ret != RD_KAFKA_CONF_OK) {
-        printf("set rdkafka bootstrap.servers failed.\n");
+        DEBUG("set rdkafka bootstrap.servers failed.\n");
         free(mgr);
         return NULL;
     }
@@ -54,7 +54,7 @@ KafkaMgr *KafkaMgrCreate(const char *broker, const char *topic)
 
     mgr->rk = rd_kafka_new(RD_KAFKA_PRODUCER, mgr->conf, errstr, sizeof(errstr));
     if (mgr->rk == NULL) {
-        printf("failed to create new kafka_producer.\n");
+        DEBUG("failed to create new kafka_producer.\n");
         rd_kafka_conf_destroy(mgr->conf);
         free(mgr);
         return NULL;
@@ -62,7 +62,7 @@ KafkaMgr *KafkaMgrCreate(const char *broker, const char *topic)
 
     mgr->rkt = rd_kafka_topic_new(mgr->rk, mgr->kafkaTopic,  NULL);
     if (mgr->rkt == NULL) {
-        printf("failed to create new kafka topic object.\n");
+        DEBUG("failed to create new kafka topic object.\n");
         rd_kafka_destroy(mgr->rk);
         rd_kafka_conf_destroy(mgr->conf);
         free(mgr);
@@ -95,7 +95,7 @@ int KafkaMsgProduce(const KafkaMgr *mgr, const char *msg, const uint32_t msgLen)
     int ret = 0;
     ret = rd_kafka_produce(mgr->rkt, RD_KAFKA_PARTITION_UA, RD_KAFKA_MSG_F_COPY, (void *)msg, msgLen, NULL, 0, NULL);
     if (ret == -1) {
-        printf("Failed to produce msg to topic %s: %s.\n", rd_kafka_topic_name(mgr->rkt),
+        DEBUG("Failed to produce msg to topic %s: %s.\n", rd_kafka_topic_name(mgr->rkt),
                                                            rd_kafka_err2str(rd_kafka_last_error()));
         return -1;
     }

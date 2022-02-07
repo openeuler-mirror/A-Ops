@@ -116,7 +116,7 @@ static void pull_probe_data(int fd, int collect_fd)
             if (next_key.p_addr.ip4 == 0x0) {
                 get_host_ip(lb_ip_str, value.family);
             }
-        printf("---- new connect protocol[%s] type[%s] c[%s:%d]--lb[%s:%d]--s[%s:%d] state[%d]. \n",
+        DEBUG("---- new connect protocol[%s] type[%s] c[%s:%d]--lb[%s:%d]--s[%s:%d] state[%d]. \n",
                 (value.type == PR_MODE_TCP) ? "TCP" : "HTTP",
                 (value.family == AF_INET) ? "IPv4" : "IPv6",
                 cli_ip_str,

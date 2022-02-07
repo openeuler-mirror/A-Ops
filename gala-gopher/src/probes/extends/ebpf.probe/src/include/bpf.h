@@ -339,13 +339,13 @@ static __always_inline int libbpf_print_fn(enum libbpf_print_level level, const 
     return vfprintf(stderr, format, args);
 }
 
-#define UNIT_TESTING 1
-
-#if UNIT_TESTING
-#define EBPF_RLIM_INFINITY  RLIM_INFINITY
+#ifndef GOPHER_DEBUG
+#define DEBUG
 #else
-#define EBPF_RLIM_INFINITY  100*1024*1024 // 100M
+#define DEBUG printf
 #endif
+
+#define EBPF_RLIM_INFINITY  100*1024*1024 // 100M
 
 static __always_inline int set_memlock_rlimit(void)
 {
@@ -379,7 +379,6 @@ static __always_inline int set_memlock_rlimit(void)
         (ret) = bpf_map__pin(__map, __PROBE_MATCH_MAP_PIN_PATH); \
     } while (0)
 
-#if UNIT_TESTING
 #define LOAD(probe_name) \
     struct probe_name##_bpf *skel;                 \
     struct bpf_link *link[PATH_NUM];    \
@@ -412,37 +411,6 @@ static __always_inline int set_memlock_rlimit(void)
             goto err; \
         } \
     } while (0)
-#else
-#define LOAD(probe_name) \
-    struct probe_name##_bpf *skel;                 \
-    struct bpf_link *link[PATH_NUM];    \
-    int current = 0;    \
-    do { \
-        int err; \
-        /* Set up libbpf errors and debug info callback */ \
-        libbpf_set_print(libbpf_print_fn); \
-        \
-        /* Open load and verify BPF application */ \
-        skel = probe_name##_bpf__open_and_load(); \
-        if (!skel) { \
-            fprintf(stderr, "Failed to open BPF skeleton\n"); \
-            goto err; \
-        } \
-        /* Attach tracepoint handler */ \
-        err = probe_name##_bpf__attach(skel); \
-        if (err) { \
-            fprintf(stderr, "Failed to attach BPF skeleton\n"); \
-            probe_name##_bpf__destroy(skel); \
-            skel = NULL; \
-            goto err; \
-        } \
-        __PROBE_MATCH_MAP_PIN(err); \
-        if (err < 0) { \
-            goto err; \
-        } \
-    } while (0)
-#endif
-
 
 #define UNLOAD(probe_name) \
     do { \

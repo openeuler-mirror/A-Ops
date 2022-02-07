@@ -83,7 +83,7 @@ static int EgressDataProcesssInput(Fifo *fifo, const EgressMgr *mgr)
     uint64_t val = 0;
     ret = read(fifo->triggerFd, &val, sizeof(val));
     if (ret < 0) {
-        printf("[EGRESS] Read event from triggerfd failed.\n");
+        DEBUG("[EGRESS] Read event from triggerfd failed.\n");
         return -1;
     }
 
@@ -92,9 +92,9 @@ static int EgressDataProcesssInput(Fifo *fifo, const EgressMgr *mgr)
 
         if (kafkaMgr != NULL) {
             KafkaMsgProduce(kafkaMgr, dataStr, strlen(dataStr));
-            printf("[EGRESS] kafka produce one data: %s\n", dataStr);
+            DEBUG("[EGRESS] kafka produce one data: %s\n", dataStr);
         } else {
-            printf("[EGRESS] find no avaliable egress resource, just drop input data str.\n");
+            DEBUG("[EGRESS] find no avaliable egress resource, just drop input data str.\n");
         }
         free(dataStr);
     }
@@ -111,7 +111,7 @@ static int EgressDataProcess(const EgressMgr *mgr)
 
     events_num = epoll_wait(mgr->epoll_fd, events, MAX_EPOLL_EVENTS_NUM, -1);
     if (events_num < 0) {
-        printf("Egress Msg wait failed: %s.\n", strerror(errno));
+        DEBUG("Egress Msg wait failed: %s.\n", strerror(errno));
         if (errno == EINTR)
             // if receive the debugging signal(-1) when debugging, please ignore it
             events_num = 0;
@@ -141,7 +141,7 @@ void EgressMain(EgressMgr *mgr)
     for (;;) {
         ret = EgressDataProcess(mgr);
         if (ret != 0) {
-            printf("[EGRESS] egress data process failed.\n");
+            DEBUG("[EGRESS] egress data process failed.\n");
             return;
         }
     }

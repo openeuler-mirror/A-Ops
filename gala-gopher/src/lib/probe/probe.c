@@ -217,14 +217,14 @@ int __wrap_fprintf(FILE *stream, const char *format, ...)
 
     ret = FifoPut(g_probe->fifo, (void *)dataStr);
     if (ret != 0) {
-        printf("[PROBE %s] fifo full.\n", g_probe->name);
+        DEBUG("[PROBE %s] fifo full.\n", g_probe->name);
         return -1;
     }
 
     uint64_t msg = 1;
     ret = write(g_probe->fifo->triggerFd, &msg, sizeof(uint64_t));
     if (ret != sizeof(uint64_t)) {
-        printf("[PROBE %s] send trigger msg to eventfd failed.\n", g_probe->name);
+        DEBUG("[PROBE %s] send trigger msg to eventfd failed.\n", g_probe->name);
         return -1;
     }
 

@@ -16,11 +16,6 @@ DAEMON_FOLDER=${PROJECT_FOLDER}/src/daemon
 TAILOR_PATH=${PROJECT_FOLDER}/tailor.conf
 TAILOR_PATH_TMP=${TAILOR_PATH}.tmp
 
-echo "PROJECT_FOLDER:"
-echo ${PROJECT_FOLDER}
-echo "PROBES_PATH_LIST:"
-echo ${PROBES_PATH_LIST}
-
 function load_tailor()
 {
     if [ -f ${TAILOR_PATH} ]; then
@@ -94,16 +89,35 @@ function prepare_probes()
     cd -
 }
 
-function compile_daemon()
+function compile_daemon_release()
 {
     cd ${DAEMON_FOLDER}
     rm -rf build
     mkdir build
     cd build
 
-    cmake -DPROBES_C_LIST="${PROBES_C_LIST}" -DPROBES_LIST="${PROBES_LIST}" -DPROBES_META_LIST="${PROBES_META_LIST}" ..
+    cmake -DGOPHER_DEBUG="0" -DPROBES_C_LIST="${PROBES_C_LIST}" -DPROBES_LIST="${PROBES_LIST}" -DPROBES_META_LIST="${PROBES_META_LIST}" ..
     make
 }
+
+function compile_daemon_debug()
+{
+    cd ${DAEMON_FOLDER}
+    rm -rf build
+    mkdir build
+    cd build
+
+    cmake -DGOPHER_DEBUG="1" -DPROBES_C_LIST="${PROBES_C_LIST}" -DPROBES_LIST="${PROBES_LIST}" -DPROBES_META_LIST="${PROBES_META_LIST}" ..
+    make
+}
+
+
+function compile_daemon_clean()
+{
+    rm -rf ${PROJECT_FOLDER}/gala-gopher
+    rm -rf ${PROJECT_FOLDER}/gopher-ctl
+}
+
 
 function clean_env()
 {
@@ -117,17 +131,42 @@ function clean_env()
     done
 }
 
-function compile_extend_probes()
+function compile_extend_probes_clean()
 {
     # Search for build.sh in probe directory
-    echo "==== Begin to compile extend probes ===="
+    echo "==== Begin to clean extend probes ===="
     cd ${EXT_PROBE_FOLDER}
     for BUILD_PATH in ${EXT_PROBE_BUILD_LIST}
     do
-	echo "==== BUILD_PATH: " ${BUILD_PATH}
-        ${BUILD_PATH} --$1
+        echo "==== BUILD_PATH: " ${BUILD_PATH}
+        ${BUILD_PATH} --clean
     done
 }
+
+function compile_extend_probes_debug()
+{
+    # Search for build.sh in probe directory
+    echo "==== Begin to compile debug extend probes ===="
+    cd ${EXT_PROBE_FOLDER}
+    for BUILD_PATH in ${EXT_PROBE_BUILD_LIST}
+    do
+        echo "==== BUILD_PATH: " ${BUILD_PATH}
+        ${BUILD_PATH} --build --debug
+    done
+}
+
+function compile_extend_probes_release()
+{
+    # Search for build.sh in probe directory
+    echo "==== Begin to compile release extend probes ===="
+    cd ${EXT_PROBE_FOLDER}
+    for BUILD_PATH in ${EXT_PROBE_BUILD_LIST}
+    do
+        echo "==== BUILD_PATH: " ${BUILD_PATH}
+        ${BUILD_PATH} --build
+    done
+}
+
 
 # Check dependent packages and install automatically
 function prepare_dependence()
@@ -170,13 +209,21 @@ function prepare_dependence()
     return 0
 }
 
-if [ "$1" == "help" ]; then
-    echo build.sh help :Show this message.
-    echo build.sh check:Check the environment including arch/os/kernel/packages.
-    echo build.sh build:Build the gala-gopher binary.
+function help()
+{
+    echo build.sh --help :Show this message.
+    echo build.sh --check :Check the environment including arch/os/kernel/packages.
+    echo build.sh --debug :Build gala-gopher debug version.
+    echo build.sh --release :Build gala-gopher release version.
+    echo build.sh --clean :Clean gala-gopher build objects.
+}
+
+if [ "$1" == "--help" ]; then
+    help
+    exit
 fi
 
-if [ "$1" == "check" ]; then
+if [ "$1" == "--check" ]; then
     prepare_dependence
 fi
 if [ $? -ne 0 ];then
@@ -184,12 +231,28 @@ if [ $? -ne 0 ];then
     exit
 fi
 
-if [ "$1" = "build" ];then
+if [ "$1" = "--release" ];then
     load_tailor
     prepare_probes
-    compile_daemon
-    compile_extend_probes $1
+    compile_daemon_release
+    compile_extend_probes_release
     clean_env
     exit
 fi
+
+if [ "$1" = "--debug" ];then
+    load_tailor
+    prepare_probes
+    compile_daemon_debug
+    compile_extend_probes_debug
+    clean_env
+    exit
+fi
+
+if [ "$1" = "--clean" ];then
+    compile_daemon_clean
+    compile_extend_probes_clean
+    exit
+fi
+help
 

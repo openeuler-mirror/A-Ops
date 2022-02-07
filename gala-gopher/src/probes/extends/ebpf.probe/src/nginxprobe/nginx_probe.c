@@ -75,7 +75,7 @@ static void pull_probe_data(int map_fd, int statistic_map_fd)
             ip_str(data.src_ip.family, (unsigned char *)&data.src_ip, c_ip_str, INET6_ADDRSTRLEN);
             ip_str(data.ngx_ip.family, (unsigned char *)&data.ngx_ip, c_local_ip_str, INET6_ADDRSTRLEN);
 
-            printf("===ngx[%s]: %s:%d --> %s:%d --> %s\n",
+            DEBUG("===ngx[%s]: %s:%d --> %s:%d --> %s\n",
                 (data.is_l7 == 1 ? "7 LB" : "4 LB"),
                 c_ip_str,
                 ntohs(data.src_ip.port),

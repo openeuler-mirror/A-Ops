@@ -92,7 +92,7 @@ static void _print_endpoint_data(struct endpoint_val_t *data)
     char *time_fmt = get_cur_time();
 
     ip_str(data->family, (unsigned char *)&data->s_addr, s_addr, INET6_ADDRSTRLEN);
-    printf("%s [%d-%s] ep_type:%d, ep_uid:%u, ep_family:%d, ep_s_type:%d, ep_protocol:%d, "
+    DEBUG("%s [%d-%s] ep_type:%d, ep_uid:%u, ep_family:%d, ep_s_type:%d, ep_protocol:%d, "
             "ep_addr:%s, ep_port:%u, ep_listen_drops:%lu, ep_listen_overflows:%lu, "
             "ep_passive_opens:%lu, ep_active_opens:%lu, ep_attempt_fails:%lu, ep_abort_close:%lu, "
             "ep_request_fails:%lu, ep_rmem_schedule:%lu, ep_tcp_oom:%lu, ep_send_tcp_resets:%lu, "
