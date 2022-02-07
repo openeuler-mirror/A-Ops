@@ -96,18 +96,18 @@ static int IngressData2Egress(IngressMgr *mgr, const char *dataStr, int dataStrL
     }
     ret = IMDB_DataStr2Json(mgr->imdbMgr, dataStr, strlen(dataStr), jsonStr, MAX_DATA_STR_LEN);
     if (ret != 0) {
-        printf("[INGRESS] reformat dataStr to json failed.\n");
+        DEBUG("[INGRESS] reformat dataStr to json failed.\n");
     }
     ret = FifoPut(mgr->egressMgr->fifo, (void *)jsonStr);
     if (ret != 0) {
-        printf("[INGRESS] egress fifo full.\n");
+        DEBUG("[INGRESS] egress fifo full.\n");
         return -1;
     }
 
     uint64_t msg = 1;
     ret = write(mgr->egressMgr->fifo->triggerFd, &msg, sizeof(uint64_t));
     if (ret != sizeof(uint64_t)) {
-        printf("[INGRESS] send trigger msg to egress eventfd failed.\n");
+        DEBUG("[INGRESS] send trigger msg to egress eventfd failed.\n");
         return -1;
     }
 
@@ -123,27 +123,27 @@ static int IngressDataProcesssInput(Fifo *fifo, IngressMgr *mgr)
     uint64_t val = 0;
     ret = read(fifo->triggerFd, &val, sizeof(val));
     if (ret < 0) {
-        printf("[INGRESS] Read event from triggerfd failed.\n");
+        DEBUG("[INGRESS] Read event from triggerfd failed.\n");
         return -1;
     }
 
     while (FifoGet(fifo, (void **)&dataStr) == 0) {
         // skip string not start with '|'
         if (strncmp(dataStr, "|", 1) != 0) {
-            printf("[INGRESS] Get dirty data str: %s\n", dataStr);
+            DEBUG("[INGRESS] Get dirty data str: %s\n", dataStr);
             continue;
         }
 
         // save data to imdb
         ret = IMDB_DataBaseMgrAddRecord(mgr->imdbMgr, dataStr, strlen(dataStr));
         if (ret != 0) {
-            printf("[INGRESS] insert data into imdb failed.\n");
+            DEBUG("[INGRESS] insert data into imdb failed.\n");
         }
 
         // send data to egress
         ret = IngressData2Egress(mgr, dataStr, strlen(dataStr));
         if (ret != 0) {
-            printf("[INGRESS] send data to egress failed.\n");
+            DEBUG("[INGRESS] send data to egress failed.\n");
         }
 
         free(dataStr);

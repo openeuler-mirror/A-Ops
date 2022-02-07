@@ -64,6 +64,19 @@ function prepare_dep()
     return 0
 }
 
+function compile_probe_prev()
+{   
+    echo "ADD GOPHER_DEBUG CFLAGS."
+    sed -i '$a CFLAGS+=-DGOPHER_DEBUG' ${SRC_DIR}/mk/var.mk
+}
+
+function compile_probe_end()
+{   
+    echo "DEL GOPHER_DEBUG CFLAGS."
+    sed -i '$d' ${SRC_DIR}/mk/var.mk
+}
+
+
 function compile_probe()
 {
     VMLINUX_VER=${LINUX_VER%.*}
@@ -116,9 +129,18 @@ fi
 if [ "$1" == "-b"  -o  "$1" == "--build" ];
 then
     prepare_dep
+    if [ "$2" == "-d"  -o  "$2" == "--debug" ];
+    then
+        compile_probe_prev
+    fi
     compile_probe
+    if [ "$2" == "-d"  -o  "$2" == "--debug" ];
+    then
+        compile_probe_end
+    fi
     exit
 fi
+
 
 if [ "$1" == "-c"  -o  "$1" == "--clean" ];
 then

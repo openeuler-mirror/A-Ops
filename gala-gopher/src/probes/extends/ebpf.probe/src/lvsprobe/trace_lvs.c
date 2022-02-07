@@ -165,7 +165,7 @@ static void print_ipvs_collect(int map_fd)
                 value.protocol,
                 value.link_count);
 
-            printf("collect c_ip[%s], v_ip[%s:%d] l_ip[%s] s_ip[%s:%d] link_count[%lld]. \n",
+            DEBUG("collect c_ip[%s], v_ip[%s:%d] l_ip[%s] s_ip[%s:%d] link_count[%lld]. \n",
                 cli_ip_str,
                 vir_ip_str,
                 ntohs(next_key.v_port),

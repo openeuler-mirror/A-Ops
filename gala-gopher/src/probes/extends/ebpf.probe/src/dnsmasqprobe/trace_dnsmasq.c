@@ -78,7 +78,7 @@ static void pull_probe_data(int fd, int collect_fd)
         if (ret == 0) {
             ip_str(next_key.family, (unsigned char *)&(next_key.c_addr), cli_ip_str, INET6_ADDRSTRLEN);
             ip_str(next_key.family, (unsigned char *)&(next_key.dns_addr), dns_ip_str, INET6_ADDRSTRLEN);
-            printf("---- new connect c[%s:%d]--dns[%s:53], pid[%u] comm[%s]. \n",
+            DEBUG("---- new connect c[%s:%d]--dns[%s:53], pid[%u] comm[%s]. \n",
                 cli_ip_str,
                 ntohs(next_key.c_port),
                 dns_ip_str,

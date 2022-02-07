@@ -17,6 +17,12 @@
 
 #define GALA_GOPHER_INFO(description)   1
 
+#ifndef GOPHER_DEBUG
+#define DEBUG
+#else
+#define DEBUG printf
+#endif
+
 // ======== COMMON ========
 // probe
 #define MAX_PROBES_NUM        32

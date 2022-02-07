@@ -128,12 +128,10 @@ struct fileprobe_bpf* load_and_attach_progs()
     /* Set up libbpf errors and debug info callback */
     libbpf_set_print(libbpf_print_fn);
 
-	#if UNIT_TESTING
     /* Bump RLIMIT_MEMLOCK to allow BPF sub-system to do anything */
     if (set_memlock_rlimit() == 0) {
 		return NULL;
 	}
-	#endif
 
     /* Open load and verify BPF application */
     skel = fileprobe_bpf__open_and_load();
