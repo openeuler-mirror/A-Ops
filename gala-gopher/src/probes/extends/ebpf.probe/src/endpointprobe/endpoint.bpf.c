@@ -60,6 +60,7 @@ static __always_inline int is_little_endian()
     return (int)*((char *)&i) == 1;
 }
 
+#if KERNEL_VERSION(KER_VER_MAJOR, KER_VER_MINOR, KER_VER_PATCH) < KERNEL_VERSION(5, 6, 0)
 static __always_inline int get_protocol(struct sock *sk)
 {
     int protocol = 0;
@@ -74,6 +75,13 @@ static __always_inline int get_protocol(struct sock *sk)
 
     return protocol;
 }
+#else
+static __always_inline int get_protocol(struct sock *sk)
+{
+    int protocol = _(sk->sk_protocol);
+    return protocol;
+}
+#endif
 
 static __always_inline void init_listen_port_key(struct listen_port_key_t *listen_port_key, struct sock *sk)
 {
