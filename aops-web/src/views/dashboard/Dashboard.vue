@@ -165,11 +165,11 @@ import { dateFormat } from '@/views/utils/Utils'
 
 const DataSet = require('@antv/data-set')
 const cveTypeList = [
-  { typeValue: 'critical', typeName: '严重' },
-  { typeValue: 'high', typeName: '高' },
-  { typeValue: 'medium', typeName: '中等' },
-  { typeValue: 'low', typeName: '低' },
-  { typeValue: 'unknown', typeName: '未知' }
+  { typeValue: 'Critical', typeName: '严重' },
+  { typeValue: 'High', typeName: '高' },
+  { typeValue: 'Medium', typeName: '中等' },
+  { typeValue: 'Low', typeName: '低' },
+  { typeValue: 'Unknown', typeName: '未知' }
 ]
 const cveScale = [{
   dataKey: 'count',
@@ -295,7 +295,7 @@ export default {
         cveTypeList.forEach(type => {
           arr.push({
             item: type.typeName,
-            count: res[type.typeValue] || 0,
+            count: res.result[type.typeValue] || 0,
             color: '#FF0000'
           })
         })

@@ -221,7 +221,7 @@ export function deleteRepo(parameters) {
         url: api.deleteRepo,
         method: 'delete',
         data: {
-            repo_id_list: parameters.repoIdList
+            repo_name_list: parameters.repoNameList
         }
     });
 }
@@ -254,7 +254,7 @@ export function executeTask(parameters) {
         url: api.executeTask,
         method: 'post',
         data: {
-            task_id: parameters.task_id
+            task_id: parameters
         }
     });
 }
@@ -335,7 +335,7 @@ export function getCveUnderCveTask({tableInfo, ...parameters}) {
                         ? true
                         : reboot === 'false'
                         ? false
-                        : null,
+                        : undefined,
                 status: tableInfo.filters.status
             },
             page: tableInfo.pagination.current,

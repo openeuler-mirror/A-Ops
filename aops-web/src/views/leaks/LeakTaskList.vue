@@ -157,7 +157,7 @@ export default {
           dataIndex: 'task_type',
           title: '类型',
           width: 80,
-          filteredValue: filters['task_type'] || null,
+          filteredValue: filters['task_type'] || undefined,
             filters: [
               {
                 text: '漏铜修复',
@@ -217,9 +217,7 @@ export default {
     },
     executeTask (taskId) {
       const _this = this
-      executeTask({
-        taskList: [taskId]
-      }).then(function (res) {
+      executeTask(taskId).then(function (res) {
         _this.$message.success(res.msg)
         _this.selectedRowsAll = []
         _this.selectedRowKeys = []

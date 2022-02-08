@@ -110,8 +110,8 @@ import configs from '@/config/defaultSettings'
 
 const defaultPagination = {
   current: 1,
-  pageSize: 5,
-  total: 5,
+  pageSize: 10,
+  total: 10,
   showSizeChanger: true,
   showQuickJumper: true
 }
