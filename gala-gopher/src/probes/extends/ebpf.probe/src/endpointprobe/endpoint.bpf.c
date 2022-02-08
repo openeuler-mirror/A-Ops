@@ -657,24 +657,6 @@ KPROBE_RET(tcp_check_oom, pt_regs)
     return;
 }
 
-KRAWTRACE(tcp_send_reset, bpf_raw_tracepoint_args)
-{
-    // TP_PROTO(const struct sock *sk, const struct sk_buff *skb)
-    struct sock *sk = (struct sock *)ctx->args[0];
-    struct sk_buff *skb = (struct sk_buff *)ctx->args[1];
-    struct endpoint_val_t *ep_val = get_ep_val_by_sock(sk);
-
-    if (skb != (void *)0) {
-        return;
-    }
-
-    if (ep_val != (void *)0) {
-        ATOMIC_INC_EP_STATS(ep_val, EP_STATS_SEND_TCP_RSTS);
-    }
-
-    return;
-}
-
 KPROBE(tcp_write_wakeup, pt_regs)
 {
     struct sock *sk = (struct sock *)PT_REGS_PARM1(ctx);

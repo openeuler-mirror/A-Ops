@@ -60,7 +60,7 @@ static void _output_endpoint_data(struct endpoint_val_t *data)
 
     ip_str(data->family, (unsigned char *)&data->s_addr, s_addr, INET6_ADDRSTRLEN);
     fprintf(stdout,
-            "|%s|%d|%s|%d|%u|%d|%d|%d|%s|%u|%lu|%lu|%lu|%lu|%lu|%lu|%lu|%lu|%lu|%lu|%lu|\n",
+            "|%s|%d|%s|%d|%u|%d|%d|%d|%s|%u|%lu|%lu|%lu|%lu|%lu|%lu|%lu|%lu|%lu|%lu|\n",
             OO_NAME,
             data->pid,
             data->comm,
@@ -80,7 +80,6 @@ static void _output_endpoint_data(struct endpoint_val_t *data)
             data->ep_stats.stats[EP_STATS_REQUEST_FAILS],
             data->ep_stats.stats[EP_STATS_RMEM_SCHEDULE],
             data->ep_stats.stats[EP_STATS_TCP_OOM],
-            data->ep_stats.stats[EP_STATS_SEND_TCP_RSTS],
             data->ep_stats.stats[EP_STATS_KEEPLIVE_TIMEOUT]);
 
     return;
@@ -95,8 +94,7 @@ static void _print_endpoint_data(struct endpoint_val_t *data)
     printf("%s [%d-%s] ep_type:%d, ep_uid:%u, ep_family:%d, ep_s_type:%d, ep_protocol:%d, "
             "ep_addr:%s, ep_port:%u, ep_listen_drops:%lu, ep_listen_overflows:%lu, "
             "ep_passive_opens:%lu, ep_active_opens:%lu, ep_attempt_fails:%lu, ep_abort_close:%lu, "
-            "ep_request_fails:%lu, ep_rmem_schedule:%lu, ep_tcp_oom:%lu, ep_send_tcp_resets:%lu, "
-            "ep_keepalive_timeout:%lu\n",
+            "ep_request_fails:%lu, ep_rmem_schedule:%lu, ep_tcp_oom:%lu, ep_keepalive_timeout:%lu\n",
             time_fmt,
             data->pid,
             data->comm,
@@ -116,7 +114,6 @@ static void _print_endpoint_data(struct endpoint_val_t *data)
             data->ep_stats.stats[EP_STATS_REQUEST_FAILS],
             data->ep_stats.stats[EP_STATS_RMEM_SCHEDULE],
             data->ep_stats.stats[EP_STATS_TCP_OOM],
-            data->ep_stats.stats[EP_STATS_SEND_TCP_RSTS],
             data->ep_stats.stats[EP_STATS_KEEPLIVE_TIMEOUT]);
 
     return;

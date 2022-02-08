@@ -24,7 +24,6 @@ enum {
     EP_STATS_CONNTRACK_FAILS,
     EP_STATS_TCP_OOM,
     EP_STATS_KEEPLIVE_TIMEOUT,
-    EP_STATS_SEND_TCP_RSTS,
 };
 
 struct endpoint_stats {

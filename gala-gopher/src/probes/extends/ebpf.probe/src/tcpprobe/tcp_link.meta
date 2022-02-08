@@ -139,6 +139,16 @@ measurements:
                 description: "snd_buf_limit",
                 type: "counter",
                 name: "snd_buf_limit_count",
+            },
+            {
+                description: "send_rsts",
+                type: "counter",
+                name: "send_rsts",
+            },
+            {
+                description: "receive_rsts",
+                type: "counter",
+                name: "receive_rsts",
             }
         )
     }

@@ -96,6 +96,8 @@ struct metric_data {
     __u32 tmout;
     __u32 rcvque_full;
     __u32 sndbuf_limit;
+    __u32 send_rsts;
+    __u32 receive_rsts;
     char role;
 };
 
@@ -143,6 +145,8 @@ struct link_data {
     __u32 tmout;            // FROM tcp_write_err event
     __u32 rcvque_full;      // FROM sock_rcvqueue_full event
     __u32 sndbuf_limit;     // FROM sock_exceed_buf_limit event
+    __u32 send_rsts;        // FROM tcp_send_reset event
+    __u32 receive_rsts;     // FROM tcp_receive_reset event
 };
 
 #define TCPPROBE_UPDATE_STATS(data, sk, new_state) \
@@ -168,6 +172,8 @@ struct link_data {
 #define __TCPPROBE_INC_EVT_TMOUT(data) __sync_fetch_and_add(&((data).tmout), 1)
 #define __TCPPROBE_INC_EVT_RCVQUE_FULL(data) __sync_fetch_and_add(&((data).rcvque_full), 1)
 #define __TCPPROBE_INC_EVT_SNDBUF_LIMIT(data) __sync_fetch_and_add(&((data).sndbuf_limit), 1)
+#define __TCPPROBE_INC_EVT_SEND_RSTS(data) __sync_fetch_and_add(&((data).send_rsts), 1)
+#define __TCPPROBE_INC_EVT_RECEIVE_RSTS(data) __sync_fetch_and_add(&((data).receive_rsts), 1)
 
 enum TCPPROBE_EVT_E {
     TCPPROBE_EVT_BACKLOG,
@@ -176,7 +182,9 @@ enum TCPPROBE_EVT_E {
     TCPPROBE_EVT_OFO,
     TCPPROBE_EVT_TMOUT,
     TCPPROBE_EVT_RCVQUE_FULL,
-    TCPPROBE_EVT_SNDBUF_LIMIT
+    TCPPROBE_EVT_SNDBUF_LIMIT,
+    TCPPROBE_EVT_SEND_RST,
+    TCPPROBE_EVT_RECEIVE_RST,
 };
 
 #define TCPPROBE_INC_EVT(type, data) \
@@ -204,8 +212,14 @@ enum TCPPROBE_EVT_E {
             case TCPPROBE_EVT_SNDBUF_LIMIT: \
                 __TCPPROBE_INC_EVT_SNDBUF_LIMIT(data); \
                 break; \
+            case TCPPROBE_EVT_SEND_RST: \
+                __TCPPROBE_INC_EVT_SEND_RSTS(data); \
+                break; \
+            case TCPPROBE_EVT_RECEIVE_RST: \
+                __TCPPROBE_INC_EVT_RECEIVE_RSTS(data); \
+                break; \
         } \
-    }while (0)
+    } while (0)
 
 #define TCPPROBE_UPDATE_PRCINFO(data, proc_info) \
     do { \
