@@ -97,11 +97,6 @@ measurements:
                 name: "tcp_oom",
             },
 	        {
-                description: "tcp send resets of the endpoint",
-                type: "counter",
-                name: "tcp_send_rst",
-            },
-	        {
                 description: "tcp keepalive timeout of the endpoint",
                 type: "counter",
                 name: "tcp_keepalive_timeout",

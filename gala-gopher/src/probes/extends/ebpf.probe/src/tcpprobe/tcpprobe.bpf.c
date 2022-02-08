@@ -374,6 +374,20 @@ KRAWTRACE(sock_rcvqueue_full, bpf_raw_tracepoint_args)
     update_link_event(sk, TCPPROBE_EVT_RCVQUE_FULL);
 }
 
+KRAWTRACE(tcp_send_reset, bpf_raw_tracepoint_args)
+{
+    // TP_PROTO(const struct sock *sk, const struct sk_buff *skb)
+    struct sock *sk = (struct sock *)ctx->args[0];
+    update_link_event(sk, TCPPROBE_EVT_SEND_RST);
+}
+
+KRAWTRACE(tcp_receive_reset, bpf_raw_tracepoint_args)
+{
+    // TP_PROTO(struct sock *sk)
+    struct sock *sk = (struct sock *)ctx->args[0];
+    update_link_event(sk, TCPPROBE_EVT_RECEIVE_RST);
+}
+
 /*
 KPROBE(tcp_data_queue_ofo, pt_regs)
 {

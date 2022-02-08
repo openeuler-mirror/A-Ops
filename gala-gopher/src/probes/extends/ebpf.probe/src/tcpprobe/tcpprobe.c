@@ -124,6 +124,8 @@ static void update_link_metric_data(struct metric_data *dd, struct link_data *d)
     dd->tmout += d->tmout;
     dd->rcvque_full += d->rcvque_full;
     dd->sndbuf_limit += d->sndbuf_limit;
+    dd->send_rsts += d->send_rsts;
+    dd->receive_rsts += d->receive_rsts;
 }
 
 static void update_link_metric_map(const struct link_key *k, struct link_data *d, int map_fd)
@@ -200,7 +202,7 @@ static void print_link_metric(int map_fd)
             ip_str(next_key.proto, (unsigned char *)&(next_key.c_ip), src_ip_str, INET6_ADDRSTRLEN);
             ip_str(next_key.proto, (unsigned char *)&(next_key.s_ip), dst_ip_str, INET6_ADDRSTRLEN);
             fprintf(stdout,
-                "|%s|%u|%s|%d|%s|%s|%u|%u|%u|%llu|%llu|%u|%u|%u|%u|%u|%u|%u|%u|%u|%u|%u|%u|%u|%u|%u|%u|%u|\n",
+                "|%s|%u|%s|%d|%s|%s|%u|%u|%u|%llu|%llu|%u|%u|%u|%u|%u|%u|%u|%u|%u|%u|%u|%u|%u|%u|%u|%u|%u|%u|%u|\n",
                 OO_NAME,
                 next_key.pid,
                 data.comm,
@@ -228,12 +230,15 @@ static void print_link_metric(int map_fd)
                 data.ofo_count,
                 data.tmout,
                 data.rcvque_full,
-                data.sndbuf_limit);
+                data.sndbuf_limit,
+                data.send_rsts,
+                data.receive_rsts);
 
             DEBUG("%s [%u-%s]: c_ip:%s, s_ip:%s:%u, proto:%u, link_num:%u, rx:%llu, tx:%llu, "
                    "segs_in:%u, segs_out:%u, total_retrans:%u, lost:%u, srtt:%uus, srtt_max:%uus, "
                    "rcv_wnd_min:%u, rcv_wnd_avg:%u, rcv_wnd_max:%u, backlog:%u, sk_drop:%u, "
-                   "md5:%u, filter:%u, ofo:%u, tmout:%u, rcvque_full:%u, sndbuf_limit:%u\n",
+                   "md5:%u, filter:%u, ofo:%u, tmout:%u, rcvque_full:%u, sndbuf_limit:%u, "
+                   "send_rsts:%u, receive_rsts:%u\n",
                 tm,
                 next_key.pid,
                 data.comm,
@@ -260,7 +265,9 @@ static void print_link_metric(int map_fd)
                 data.ofo_count,
                 data.tmout,
                 data.rcvque_full,
-                data.sndbuf_limit);
+                data.sndbuf_limit,
+                data.send_rsts,
+                data.receive_rsts);
         }
         bpf_map_delete_elem(map_fd, &next_key);
     }
