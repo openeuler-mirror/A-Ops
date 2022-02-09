@@ -1,6 +1,5 @@
 include ../mk/var.mk
 INCLUDES = $(BASE_INC)
-INCLUDES += -I../taskprobe
 
 APP := endpoint
 
@@ -23,7 +22,7 @@ deps: $(DEPS)
 
 app: $(APP)
 %: %.c $(UTIL_SRC)
-	$(CC) $(CFLAGS) $(INCLUDES) $^ -lbpf -lelf -lpthread -lz -o $@
+	$(CC) $(CFLAGS) $(INCLUDES) $^ -lbpf -lelf -lz -o $@
 
 clean:
 	rm -rf $(DEPS)
