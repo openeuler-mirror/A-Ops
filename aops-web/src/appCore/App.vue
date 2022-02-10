@@ -1,7 +1,10 @@
 <template>
   <a-config-provider :locale="locale">
     <div id="app">
-      <router-view/>
+      <keep-alive>
+         <router-view v-if="$route.meta.keepAlive"/>
+      </keep-alive>
+      <router-view v-if="!$route.meta.keepAlive"/>
     </div>
   </a-config-provider>
 </template>

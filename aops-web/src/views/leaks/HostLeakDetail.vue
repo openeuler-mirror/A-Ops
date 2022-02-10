@@ -18,7 +18,7 @@
               <p>{{ `CVE REPO： ${detail.repo || ''}` }}</p>
             </a-col>
             <a-col span="8">
-              <p>{{ `CVE 数量： ${detail.cve_num || ''}` }}</p>
+              <p>{{ `CVE 数量： ${detail.cve_num}` }}</p>
             </a-col>
             <a-col span="8">
               <a-button type="primary" @click="sacnHost" :loading="scanloading || scanStatus === 'scanning'">
@@ -77,8 +77,9 @@ export default {
         props: {
           routes,
           itemRender: ({ route, params, routes, paths, h }) => {
+            // 若为路由diyBreadcrumb数组的最后一个元素，替换标题文本为其对应的主机名称
             if (routes.indexOf(route) === routes.length - 1) {
-              return <span>{this.host_id}</span>
+              return <span>{this.detail.host_name}</span>
             } else {
               return <router-link to={route.path}>{route.breadcrumbName}</router-link>
             }
@@ -154,8 +155,8 @@ export default {
         _this.cveAllIsLoading = false
       })
     },
-    handleStatusUpdated () {
-      this.getCVEList(this.host_id)
+    handleStatusUpdated (data) {
+      this.getCVEList(this.host_id, data)
     },
     sacnHost () {
       const _this = this
