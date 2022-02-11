@@ -30,6 +30,7 @@
 #include "bpf.h"
 #include "args.h"
 #include "taskprobe.skel.h"
+#include "task.h"
 #include "taskprobe.h"
 
 #define TASK_PROBE_IO_PATH "cat /proc/%d/io"
@@ -53,12 +54,12 @@ static void task_probe_pull_probe_data(int map_fd)
     int ret;
     struct task_key ckey = {0};
     struct task_key nkey = {0};
-    struct task_kdata tkd;
+    struct task_data tkd;
 
     while (bpf_map_get_next_key(map_fd, &ckey, &nkey) != -1) {
         ret = bpf_map_lookup_elem(map_fd, &nkey, &tkd);
         if (ret == 0)
-            fprintf(stdout, "|%s|%u|%u|%u|\n", OO_NAME_TASK, nkey.tgid, nkey.pid, tkd.fork_count);
+            fprintf(stdout, "|%s|%u|%u|%u|\n", OO_NAME_TASK, tkd.tgid, nkey.pid, tkd.fork_count);
 
         ckey = nkey;
     }

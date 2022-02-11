@@ -16,25 +16,25 @@
 #define __TASKPROBE__H
 
 #define TASK_MAP_ENTRY_SIZE (256 * 10)
+#define WHITENAME_MAP_ENTRY_SIZE 128
+#define TASK_COMM_LEN           16
+#define TASK_EXE_FILE_LEN       128
+#define MAX_PROCESS_NAME_LEN    128
+#define COMMAND_LEN             256
+#define LINE_BUF_LEN            512
+#define JAVA_COMMAND_LEN        128
+#define JAVA_CLASSPATH_LEN      512
 #define TASK_EXIT_MAP_FILE_PATH "/sys/fs/bpf/task_exit_event"
 
-struct task_key {
-    __u32 tgid;
-    __u32 pid;
+enum ps_type {
+    PS_TYPE_PID,
+    PS_TYPE_PPID,
+    PS_TYPE_PGID,
+    PS_TYPE_COMM,
+    PS_TYPE_MAX,
 };
 
-struct task_kdata {
-    __u32 ptid;                // parent task id
-    __u32 fork_count;
-    __u64 offcpu_time;
-    __u64 signal_count;
-    __u64 syscall_fails;
-    __u32 oom_count;
-    __u32 page_cache_count;
-    __u32 io_wait_time_max;
-};
-
-struct task_data {
+struct task_metric {
     __u32 ptid;                // parent task id
                                // namespace
     __u64 offcpu_time;
