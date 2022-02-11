@@ -38,6 +38,8 @@
 #define TASK_PROBE_SMAPS_PATH "cat /proc/%d/smaps"
 #define PROCESS_STATUS_COMMAND \
     "ps -eo pid,ppid,pgid,comm | grep -w \"%s\" | awk '{print $1 \"|\" $2 \"|\" $3 \"|\" $4}'"
+#define TASK_PROBE_JAVA_COMMAND "sun.java.command"
+#define TASK_PROBE_JAVA_CLASSPATH "java.class.path"
 #define OO_NAME_TASK "task"
 
 #define TASK_PROBE_COLLECTION_PERIOD 5
@@ -111,7 +113,7 @@ static int parse_ps_result(const char *ps_rlt, struct task_key *k, struct task_d
 
     k->pid = (unsigned int)atoi(id_str[PS_TYPE_PID]);
     d->tgid = k->pid;
-    d->ptid = (unsigned int)atoi(id_str[PS_TYPE_PPID]);
+    d->ppid = (unsigned int)atoi(id_str[PS_TYPE_PPID]);
     d->pgid = (unsigned int)atoi(id_str[PS_TYPE_PGID]);
     (void)strncpy((char *)id_str[j], ps_rlt + start, len - start);
     (void)strcpy((char *)d->comm, (char *)id_str[j]);
@@ -189,19 +191,97 @@ static int update_default_probed_process_to_map(int p_fd)
     return 0;
 }
 
+int jinfo_get_label_info(int pid, char *label, char *buf, int buf_len)
+{
+    FILE *f = NULL;
+    char command[COMMAND_LEN] = {0};
+    char line[LINE_BUF_LEN] = {0};
+    char *colon = NULL;
+    int len = (buf_len <= LINE_BUF_LEN) ? buf_len : LINE_BUF_LEN;
+
+    (void)snprintf(command, COMMAND_LEN, "jinfo %d | grep %s | awk '{print $3}'", pid, label);
+    f = popen(command, "r");
+    if (f == NULL)
+        return -1;
+    if (fgets(line, len, f) == NULL) {
+        (void)pclose(f);
+        return -1;
+    }
+    __SPLIT_NEWLINE_SYMBOL(line);
+    (void)strncpy(buf, line, len - 1);
+
+    (void)pclose(f);
+    return 0;
+}
+
+int update_java_process_info(int pid, char *java_command, char *java_classpath)
+{
+    memset(java_command, 0, JAVA_COMMAND_LEN);
+    if (jinfo_get_label_info(pid, TASK_PROBE_JAVA_COMMAND, java_command, JAVA_COMMAND_LEN) < 0) {
+        printf("java process get command fail.\n");
+        return -1;
+    }
+    memset(java_classpath, 0, JAVA_CLASSPATH_LEN);
+    if (jinfo_get_label_info(pid, TASK_PROBE_JAVA_CLASSPATH, java_classpath, JAVA_CLASSPATH_LEN) < 0) {
+        printf("java process get command fail.\n");
+        return -1;
+    }
+    return 0;
+}
+
 static void task_probe_pull_probe_data(int map_fd)
 {
     int ret;
     struct task_key ckey = {0};
     struct task_key nkey = {0};
     struct task_data tkd;
+    char java_command[JAVA_COMMAND_LEN] = {0};
+    char java_classpath[JAVA_CLASSPATH_LEN] = {0};
 
     while (bpf_map_get_next_key(map_fd, &ckey, &nkey) != -1) {
         ret = bpf_map_lookup_elem(map_fd, &nkey, &tkd);
-        if (ret == 0)
-            fprintf(stdout, "|%s|%u|%u|%u|\n", OO_NAME_TASK, tkd.tgid, nkey.pid, tkd.fork_count);
-
-        ckey = nkey;
+        if (ret != 0) {
+	    continue;
+	}
+	/* exec file name */
+        if (strlen(tkd.exe_file) == 0) {
+            get_task_exe(nkey.pid, &tkd.exe_file, TASK_EXE_FILE_LEN);
+        }
+	if (strstr(tkd.comm, "java") != NULL) {
+            /* java */
+            (void)update_java_process_info(nkey.pid, (char *)java_command, (char *)java_classpath);
+        } else if (strstr(tkd.comm, "python") != NULL || strstr(tkd.comm, "go") != NULL) {
+            /* python/go run */
+            (void)get_task_pwd(nkey.pid, (char *)tkd.exec_file);
+        } else {
+            /* c/c++/go */
+            strcpy((char *)tkd.exec_file, (char *)tkd.exe_file);
+        }
+#if 1
+        fprintf(stdout, "|%s|%d|%d|%d|%s|%s|%s|%s|%d\n",
+            OO_NAME_TASK,
+            tkd.tgid,
+            nkey.pid,
+            tkd.pgid,
+            tkd.comm,
+            tkd.exe_file,
+            strlen(tkd.exec_file) == 0 ? java_command : tkd.exec_file,
+            java_classpath,
+            tkd.fork_count
+        );
+#endif
+	printf("tgid[%d] pid[%d] ppid[%d] pgid[%d] comm[%s] exe_file[%s] exec_file[%s] fork_count[%d] java_classpath[%s] \n",
+            tkd.tgid,
+            nkey.pid,
+            tkd.ppid,
+            tkd.pgid,
+            tkd.comm,
+            tkd.exe_file,
+            strlen(tkd.exec_file) == 0 ? java_command : tkd.exec_file,
+	    tkd.fork_count,
+            java_classpath
+        );
+	ckey = nkey;
     }
 
     return;

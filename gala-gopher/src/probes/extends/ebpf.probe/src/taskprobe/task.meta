@@ -15,6 +15,31 @@ measurements:
                 type: "label",
                 name: "pid",
             },
+			{
+                description: "pid of process group",
+                type: "label",
+                name: "pgid",
+            },
+			{
+                description: "comm of the task",
+                type: "label",
+                name: "comm",
+            },
+			{
+                description: "exe_file of the task",
+                type: "label",
+                name: "exe_file",
+            },
+			{
+                description: "exec_file of the task",
+                type: "label",
+                name: "exec_file",
+            },
+			{
+                description: "java_classpath of the task",
+                type: "label",
+                name: "java_classpath",
+            },
             {
                 description: "fork count of the task",
                 type: "counter",

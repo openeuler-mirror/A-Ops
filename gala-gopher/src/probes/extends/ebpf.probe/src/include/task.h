@@ -24,7 +24,7 @@ struct task_key {
 
 struct task_data {
     int tgid;			// task group id
-    int ptid;                   // parent task id
+    int ppid;                   // parent process id
     int pgid;                   // process group id
     char comm[TASK_COMM_LEN];
     char exe_file[TASK_EXE_FILE_LEN];	// EXE path, eg. /usr/bin/java

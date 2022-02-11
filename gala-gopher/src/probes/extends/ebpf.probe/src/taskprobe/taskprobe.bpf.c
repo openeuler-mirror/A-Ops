@@ -42,12 +42,38 @@ struct bpf_map_def SEC("maps") probe_proc_map = {
     .max_entries = PROBE_PROC_MAP_ENTRY_SIZE,
 };
 
+static int get_task_pgid(const struct task_struct *cur_task)
+{
+    int pgid = 0;
+
+    /* ns info from thread_pid */
+    struct pid *thread_pid = _(cur_task->thread_pid);
+    char *ns_info = (void *)0;
+    if (thread_pid != 0) {
+        int l = _(thread_pid->level);
+        struct upid thread_upid = _(thread_pid->numbers[l]);
+        ns_info = thread_upid.ns;
+    }
+
+    /* upid info from signal */
+    struct signal_struct* signal = _(cur_task->signal);
+    struct pid *pid_p = (void *)0;
+    bpf_probe_read(&pid_p, sizeof(struct pid *), &signal->pids[PIDTYPE_PGID]);
+    int level = _(pid_p->level);
+    struct upid upid = _(pid_p->numbers[level]);
+    if (upid.ns == ns_info) {
+        pgid = upid.nr;
+    }
+
+    return pgid;
+}
+
 KRAWTRACE(sched_process_fork, bpf_raw_tracepoint_args)
 {
     struct task_key parent_key = {0};
-    struct task_data *parent_data;
     struct task_key child_key = {0};
-    struct task_data child_data = {0};
+    struct task_data *parent_data_p;
+    struct task_data task_value = {0};
     struct probe_process pname = {0};
     int flag = 0;
 
@@ -62,18 +88,28 @@ KRAWTRACE(sched_process_fork, bpf_raw_tracepoint_args)
     }
     /* if process in whitelist, update info to task_map */
     if (flag == 1) {
-        parent_key.pid = _(parent->pid);
-        parent_data = bpf_map_lookup_elem(&task_map, &parent_key);
-        if (parent_data != (void *)0) {
-            __sync_fetch_and_add(&parent_data->fork_count, 1);
-        }
-
+        /* Add child task info to task_map */
         child_key.pid = _(child->pid);
-        child_data.tgid = _(child->tgid);
-        child_data.ptid = _(parent->tgid);
-        bpf_probe_read_str(&child_data.comm, TASK_COMM_LEN * sizeof(char), (char *)child->comm);
+        task_value.tgid = _(child->tgid);
+        task_value.ppid = _(parent->pid);
+        bpf_probe_read_str(&task_value.comm, TASK_COMM_LEN * sizeof(char), (char *)child->comm);
+        task_value.pgid = get_task_pgid(child);
+        bpf_map_update_elem(&task_map, &child_key, &task_value, BPF_ANY);
 
-        bpf_map_update_elem(&task_map, &child_key, &child_data, BPF_ANY);
+        /* obtain parent task info */
+        parent_key.pid = task_value.ppid;
+        parent_data_p = bpf_map_lookup_elem(&task_map, &parent_key);
+
+	if (parent_data_p != (void *)0) {
+            /* fork_count add 1 */
+            __sync_fetch_and_add(&parent_data_p->fork_count, 1);
+        } else {
+            /* Add parent's task info to task_map first time */
+            task_value.tgid = _(parent->tgid);
+            task_value.ppid = 0xffff;
+	    task_value.fork_count = 1;
+            bpf_map_update_elem(&task_map, &parent_key, &task_value, BPF_NOEXIST);
+        }
     }
 }
 
