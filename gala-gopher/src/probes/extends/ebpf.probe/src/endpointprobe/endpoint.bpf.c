@@ -34,14 +34,14 @@
 char g_license[] SEC("license") = "GPL";
 
 struct bpf_map_def SEC("maps") s_endpoint_map = {
-    .type = BPF_MAP_TYPE_HASH,
+    .type = BPF_MAP_TYPE_LRU_HASH,
     .key_size = sizeof(struct s_endpoint_key_t),
     .value_size = sizeof(struct endpoint_val_t),
     .max_entries = MAX_ENDPOINT_LEN,
 };
 
 struct bpf_map_def SEC("maps") c_endpoint_map = {
-    .type = BPF_MAP_TYPE_HASH,
+    .type = BPF_MAP_TYPE_LRU_HASH,
     .key_size = sizeof(struct c_endpoint_key_t),
     .value_size = sizeof(struct endpoint_val_t),
     .max_entries = MAX_ENDPOINT_LEN,
