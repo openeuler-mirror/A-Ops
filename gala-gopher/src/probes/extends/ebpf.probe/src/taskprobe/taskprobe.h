@@ -15,15 +15,13 @@
 #ifndef __TASKPROBE__H
 #define __TASKPROBE__H
 
-#define TASK_MAP_ENTRY_SIZE (256 * 10)
-#define WHITENAME_MAP_ENTRY_SIZE 128
-#define TASK_COMM_LEN           16
-#define TASK_EXE_FILE_LEN       128
-#define MAX_PROCESS_NAME_LEN    128
-#define COMMAND_LEN             256
-#define LINE_BUF_LEN            512
-#define JAVA_COMMAND_LEN        128
-#define JAVA_CLASSPATH_LEN      512
+#define TASK_MAP_ENTRY_SIZE     (256 * 10)
+#define PROBE_PROC_MAP_ENTRY_SIZE   128
+#define MAX_PROCESS_NAME_LEN        128
+#define COMMAND_LEN                 256
+#define LINE_BUF_LEN                512
+#define JAVA_COMMAND_LEN            128
+#define JAVA_CLASSPATH_LEN          512
 #define TASK_EXIT_MAP_FILE_PATH "/sys/fs/bpf/task_exit_event"
 
 enum ps_type {
@@ -66,6 +64,11 @@ struct task_metric {
     __u32 syscw_count;
     __u64 read_bytes;
     __u64 write_bytes;
+};
+
+/* process needed to be probed */
+struct probe_process {
+    char name[MAX_PROCESS_NAME_LEN];
 };
 
 #endif
