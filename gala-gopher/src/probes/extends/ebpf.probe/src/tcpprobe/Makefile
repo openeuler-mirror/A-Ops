@@ -1,11 +1,14 @@
 include ../mk/var.mk
-
 INCLUDES = $(BASE_INC)
 
 APP := tcpprobe
 
-DEPS := $(patsubst %.bpf.c, %.bpf.o, $(wildcard *.bpf.c))
-DEPS += $(patsubst %.bpf.c, %.skel.h, $(wildcard *.bpf.c))
+BPF_C := $(wildcard *.bpf.c)
+DEPS := $(patsubst %.bpf.c, %.bpf.o, $(BPF_C))
+DEPS += $(patsubst %.bpf.c, %.skel.h, $(BPF_C))
+
+SRC_C := $(filter-out $(BPF_C), $(wildcard *.c))
+SRC_C += $(UTIL_SRC)
 
 .PHONY: all clean install
 
@@ -21,9 +24,8 @@ deps: $(DEPS)
 %.skel.h: %.bpf.o
 	$(BPFTOOL) gen skeleton $< > $@
 
-#INCLUDES += -I$(LIBBPF_SRC)
 app: $(APP)
-%: %.c $(UTIL_SRC)
+%: %.c $(SRC_C)
 	$(CC) $(CFLAGS) $(INCLUDES) $^ -lbpf -lelf -lz -o $@
 
 clean:
@@ -33,3 +35,4 @@ clean:
 install:
 	mkdir -p $(INSTALL_DIR)
 	cp $(APP) $(INSTALL_DIR)
+

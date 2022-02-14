@@ -49,7 +49,7 @@
         if (__len > 0 && (s)[__len - 1] == '\n') { \
             (s)[__len - 1] = 0; \
         } \
-    } while (0) \
+    } while (0)
 
 bool __is_install_rpm(const char* command)
 {

@@ -26,7 +26,7 @@
         if (__len > 0 && (s)[__len - 1] == '\n') { \
             (s)[__len - 1] = 0; \
         } \
-    } while (0) \
+    } while (0)
 
 enum task_stat_e {
     TASK_STAT_MINFLT = 10,
@@ -262,9 +262,10 @@ int get_task_pwd(int pid, char *pwd)
     ret = readlink(pwd_file, buf, COMMAND_LEN);
     if (ret < 0) {
         perror("readlink ");
-        return NULL;
+        return -1;
     }
     buf[ret] = '\0';
+	return 0;
 }
 
 int get_task_exe(int pid, char *exe, int exe_len)
@@ -285,4 +286,5 @@ int get_task_exe(int pid, char *exe, int exe_len)
         return -1;
     }
     buf[ret] = '\0';
+	return 0;
 }

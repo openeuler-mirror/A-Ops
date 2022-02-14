@@ -50,7 +50,7 @@
         if (__len > 0 && (s)[__len - 1] == '\n') { \
             (s)[__len - 1] = 0; \
         } \
-    } while (0) \
+    } while (0)
 
 static volatile sig_atomic_t stop = 0;
 static struct probe_params tp_params = {.period = TASK_PROBE_COLLECTION_PERIOD};
@@ -166,7 +166,7 @@ static int update_existed_task_to_map(int p_fd, int map_fd)
             if (is_existed_process((char *)nkey.name) >= 0) {
                 /* add other info of process */
                 if (add_process_infos((char *)nkey.name, map_fd) < 0) {
-		    printf("add process info fail.\n");
+            		printf("add process info fail.\n");
                     return -1;
                 }
             }
@@ -240,14 +240,15 @@ static void task_probe_pull_probe_data(int map_fd)
 
     while (bpf_map_get_next_key(map_fd, &ckey, &nkey) != -1) {
         ret = bpf_map_lookup_elem(map_fd, &nkey, &tkd);
-        if (ret != 0) {
-	    continue;
-	}
-	/* exec file name */
+        	if (ret != 0) {
+        	continue;
+    	}
+    	/* exec file name */
         if (strlen(tkd.exe_file) == 0) {
             get_task_exe(nkey.pid, &tkd.exe_file, TASK_EXE_FILE_LEN);
         }
-	if (strstr(tkd.comm, "java") != NULL) {
+		
+    	if (strstr(tkd.comm, "java") != NULL) {
             /* java */
             (void)update_java_process_info(nkey.pid, (char *)java_command, (char *)java_classpath);
         } else if (strstr(tkd.comm, "python") != NULL || strstr(tkd.comm, "go") != NULL) {
@@ -257,7 +258,7 @@ static void task_probe_pull_probe_data(int map_fd)
             /* c/c++/go */
             strcpy((char *)tkd.exec_file, (char *)tkd.exe_file);
         }
-#if 1
+
         fprintf(stdout, "|%s|%d|%d|%d|%s|%s|%s|%s|%d\n",
             OO_NAME_TASK,
             tkd.tgid,
@@ -269,19 +270,19 @@ static void task_probe_pull_probe_data(int map_fd)
             java_classpath,
             tkd.fork_count
         );
-#endif
-	printf("tgid[%d] pid[%d] ppid[%d] pgid[%d] comm[%s] exe_file[%s] exec_file[%s] fork_count[%d] java_classpath[%s] \n",
-            tkd.tgid,
-            nkey.pid,
-            tkd.ppid,
-            tkd.pgid,
-            tkd.comm,
-            tkd.exe_file,
-            strlen(tkd.exec_file) == 0 ? java_command : tkd.exec_file,
-	    tkd.fork_count,
-            java_classpath
-        );
-	ckey = nkey;
+
+	    DEBUG("tgid[%d] pid[%d] ppid[%d] pgid[%d] comm[%s] exe_file[%s] exec_file[%s] fork_count[%d] java_classpath[%s] \n",
+	            tkd.tgid,
+	            nkey.pid,
+	            tkd.ppid,
+	            tkd.pgid,
+	            tkd.comm,
+	            tkd.exe_file,
+	            strlen(tkd.exec_file) == 0 ? java_command : tkd.exec_file,
+	        	tkd.fork_count,
+	            java_classpath
+	        );
+    	ckey = nkey;
     }
 
     return;
