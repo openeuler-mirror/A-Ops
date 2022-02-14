@@ -35,37 +35,36 @@
 #include "task.h"
 
 
-#define __SHARE_MAP_TASK_MAX_ENTRIES 10 * 1024
 struct bpf_map_def SEC("maps") __task_map = {
     .type = BPF_MAP_TYPE_HASH,
     .key_size = sizeof(struct task_key),
     .value_size = sizeof(struct task_data),
-    .max_entries = __SHARE_MAP_TASK_MAX_ENTRIES,
+    .max_entries = SHARE_MAP_TASK_MAX_ENTRIES,
 };
 
 static __always_inline char is_task_exist(int pid)
 {
-	struct task_key key = {.pid = pid};
-	
-	if (bpf_map_lookup_elem(&__task_map, &key) == (void *)0) {
-		return 0;
-	}
-	return 1;
+    struct task_key key = {.pid = pid};
+    
+    if (bpf_map_lookup_elem(&__task_map, &key) == (void *)0) {
+        return 0;
+    }
+    return 1;
 }
 
 static __always_inline int upd_task_entry(struct task_key* pk, struct task_data* pd)
 {
-	return bpf_map_update_elem(&__task_map, pk, pd, BPF_ANY);
+    return bpf_map_update_elem(&__task_map, pk, pd, BPF_ANY);
 }
 
 static __always_inline void* get_task_entry(struct task_key* pk)
 {
-	return bpf_map_lookup_elem(&__task_map, pk);
+    return bpf_map_lookup_elem(&__task_map, pk);
 }
 
 static __always_inline int del_task_entry(struct task_key* pk)
 {
-	return bpf_map_delete_elem(&__task_map, pk);
+    return bpf_map_delete_elem(&__task_map, pk);
 }
 
 #endif

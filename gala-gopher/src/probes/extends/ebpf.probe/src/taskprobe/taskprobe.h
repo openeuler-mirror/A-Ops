@@ -15,20 +15,14 @@
 #ifndef __TASKPROBE__H
 #define __TASKPROBE__H
 
-#define TASK_MAP_ENTRY_SIZE     (256 * 10)
 #define PROBE_PROC_MAP_ENTRY_SIZE   128
 #define MAX_PROCESS_NAME_LEN        128
-#define COMMAND_LEN                 256
-#define LINE_BUF_LEN                512
-#define JAVA_COMMAND_LEN            128
-#define JAVA_CLASSPATH_LEN          512
-#define TASK_EXIT_MAP_FILE_PATH "/sys/fs/bpf/task_exit_event"
+//#define TASK_EXIT_MAP_FILE_PATH "/sys/fs/bpf/task_exit_event"
 
 enum ps_type {
-    PS_TYPE_PID,
+    PS_TYPE_PID = 0,
     PS_TYPE_PPID,
     PS_TYPE_PGID,
-    PS_TYPE_COMM,
     PS_TYPE_MAX,
 };
 
@@ -36,5 +30,4 @@ enum ps_type {
 struct probe_process {
     char name[MAX_PROCESS_NAME_LEN];
 };
-
 #endif

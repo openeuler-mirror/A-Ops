@@ -15,6 +15,15 @@
 #ifndef __GOPHER_TASK_H__
 #define __GOPHER_TASK_H__
 
+#define SHARE_MAP_TASK_MAX_ENTRIES 10 * 1024
+
+enum task_status_type {
+    TASK_STATUS_ACTIVE = 0,
+    TASK_STATUS_INACTIVE,
+    TASK_STATUS_INVALID,
+    TASK_STATUS_MAX,
+};
+
 struct task_key {
     int pid;                // FROM '/proc/[PID]'
 };
@@ -39,23 +48,25 @@ struct task_io_data {
     __u64 task_cancelled_write_bytes;   // FROM same as 'task_rchar_bytes'
 };
 
-struct task_id_data {
+struct task_id {
     int tgid;                   // task group id
     int ppid;                   // parent process id
     int pgid;                   // process group id
-#if !defined( BPF_PROG_KERN ) && !defined( BPF_PROG_USER )   
-    char comm[TASK_COMM_LEN];   // FROM '/proc/[PID]/comm'
-    char exe_file[TASK_EXE_FILE_LEN];   // EXE path, eg. /usr/bin/java
+};
+
+struct task_bin {
+    char comm[TASK_COMM_LEN];           // FROM '/proc/[PID]/comm'
     char exec_file[TASK_EXE_FILE_LEN];  // executed_file path, eg. xxx.jar
-#endif    
+    char exe_file[TASK_EXE_FILE_LEN];   // EXE path, eg. /usr/bin/java
 };
 
 struct task_base_data {
+    __u32 task_status;
     __u32 fork_count;
 };
 
 struct task_data {
-    struct task_id_data id;
+    struct task_id id;
     struct task_base_data base;
     struct task_io_data io;
 };

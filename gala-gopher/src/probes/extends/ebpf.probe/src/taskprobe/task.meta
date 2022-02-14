@@ -35,11 +35,6 @@ measurements:
                 type: "label",
                 name: "exec_file",
             },
-			{
-                description: "java_classpath of the task",
-                type: "label",
-                name: "java_classpath",
-            },
             {
                 description: "fork count of the task",
                 type: "counter",

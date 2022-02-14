@@ -15,8 +15,8 @@
 #ifndef __GOPHER_BPF_H__
 #define __GOPHER_BPF_H__
 
-#define __PROBE_MATCH_MAP_PIN_PATH 	"/sys/fs/bpf/probe/match_map"
-#define SHARE_MAP_TASK_PATH 		"/sys/fs/bpf/probe/task_map"
+#define __PROBE_MATCH_MAP_PIN_PATH  "/sys/fs/bpf/probe/match_map"
+#define SHARE_MAP_TASK_PATH         "/sys/fs/bpf/probe/task_map"
 
 #define INT_LEN    32
 #define THOUSAND   1000
@@ -24,6 +24,11 @@
 
 #define TASK_COMM_LEN           16
 #define TASK_EXE_FILE_LEN       128
+#define JAVA_COMMAND_LEN        128
+#define JAVA_CLASSPATH_LEN      512
+
+#define COMMAND_LEN             256
+#define LINE_BUF_LEN            512
 
 #ifndef GOPHER_DEBUG
 #define DEBUG
