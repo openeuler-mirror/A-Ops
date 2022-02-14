@@ -17,17 +17,9 @@
 #endif
 #define BPF_PROG_KERN
 #include "bpf.h"
-#include "task.h"
 #include "taskprobe.h"
 
 char g_linsence[] SEC("license") = "GPL";
-
-struct bpf_map_def SEC("maps") task_map = {
-    .type = BPF_MAP_TYPE_HASH,
-    .key_size = sizeof(struct task_key),
-    .value_size = sizeof(struct task_data),
-    .max_entries = TASK_MAP_ENTRY_SIZE,
-};
 
 struct bpf_map_def SEC("maps") task_exit_event = {
     .type = BPF_MAP_TYPE_PERF_EVENT_ARRAY,
@@ -90,25 +82,26 @@ KRAWTRACE(sched_process_fork, bpf_raw_tracepoint_args)
     if (flag == 1) {
         /* Add child task info to task_map */
         child_key.pid = _(child->pid);
-        task_value.tgid = _(child->tgid);
-        task_value.ppid = _(parent->pid);
-        bpf_probe_read_str(&task_value.comm, TASK_COMM_LEN * sizeof(char), (char *)child->comm);
-        task_value.pgid = get_task_pgid(child);
-        bpf_map_update_elem(&task_map, &child_key, &task_value, BPF_ANY);
+        task_value.id.tgid = _(child->tgid);
+        task_value.id.ppid = _(parent->pid);
+        // bpf_probe_read_str(&task_value.id.comm, TASK_COMM_LEN * sizeof(char), (char *)child->comm);
+        task_value.id.pgid = get_task_pgid(child);
+        upd_task_entry(&child_key, &task_value);
 
         /* obtain parent task info */
-        parent_key.pid = task_value.ppid;
-        parent_data_p = bpf_map_lookup_elem(&task_map, &parent_key);
+        parent_key.pid = task_value.id.ppid;
+        
+        parent_data_p = (struct task_data *)get_task_entry(&parent_key);
 
-    if (parent_data_p != (void *)0) {
+    if (parent_data_p != (struct task_data *)0) {
             /* fork_count add 1 */
-            __sync_fetch_and_add(&parent_data_p->fork_count, 1);
+            __sync_fetch_and_add(&parent_data_p->base.fork_count, 1);
         } else {
             /* Add parent's task info to task_map first time */
-            task_value.tgid = _(parent->tgid);
-            task_value.ppid = 0xffff;
-            task_value.fork_count = 1;
-            bpf_map_update_elem(&task_map, &parent_key, &task_value, BPF_NOEXIST);
+            task_value.id.tgid = _(parent->tgid);
+            task_value.id.ppid = 0xffff;
+            task_value.base.fork_count = 1;
+            upd_task_entry(&parent_key, &task_value);
         }
     }
 }
@@ -120,7 +113,7 @@ KRAWTRACE(sched_process_exit, bpf_raw_tracepoint_args)
 
     int tgid = bpf_get_current_pid_tgid() >> 32;
     tkey.pid = _(task->pid);
-    if (bpf_map_delete_elem(&task_map, &tkey) == 0) {
+    if (del_task_entry(&tkey) == 0) {
         if (tgid == tkey.pid) {
             bpf_perf_event_output(ctx, &task_exit_event, 0, &tkey.pid, sizeof(tkey.pid));
         }

@@ -30,12 +30,16 @@
 #include "bpf.h"
 #include "args.h"
 #include "taskprobe.skel.h"
-#include "task.h"
 #include "taskprobe.h"
+
+#define ERR_MSG "No such file or directory"
 
 #define TASK_PROBE_IO_PATH "cat /proc/%d/io"
 #define TASK_PROBE_STAT_PATH "cat /proc/%d/stat"
 #define TASK_PROBE_SMAPS_PATH "cat /proc/%d/smaps"
+
+#define TASK_COMM "/usr/bin/cat /proc/%d/comm"
+
 #define PROCESS_STATUS_COMMAND \
     "ps -eo pid,ppid,pgid,comm | grep -w \"%s\" | awk '{print $1 \"|\" $2 \"|\" $3 \"|\" $4}'"
 #define TASK_PROBE_JAVA_COMMAND "sun.java.command"
@@ -70,24 +74,32 @@ static void sig_int(int signal)
     stop = 1;
 }
 
-static int is_existed_process(const char *comm)
+static int get_task_comm(int pid, char *buf, unsigned int buf_len)
 {
+    char cmd[COMMAND_LEN];
+    char line[LINE_BUF_LEN];
     FILE *f = NULL;
-    char cmd[COMMAND_LEN] = {0};
-    char line[LINE_BUF_LEN] = {0};
 
-    (void)snprintf(cmd, COMMAND_LEN, PROCESS_STATUS_COMMAND, comm);
+    cmd[0] = 0;
+    line[0] = 0;
+    (void)snprintf(cmd, COMMAND_LEN, TASK_COMM, pid);
     f = popen(cmd, "r");
     if (f == NULL) {
         return -1;
     }
     if (fgets(line, LINE_BUF_LEN, f) == NULL) {
-        printf("process %s is not existed.\n", comm);
+        (void)pclose(f);
         return -1;
     }
-    (void)pclose(f);
+    if (strstr(line, ERR_MSG) != NULL) {
+        (void)pclose(f);
+        return -1;
+    }
+    __SPLIT_NEWLINE_SYMBOL(line);
+    (void)strncpy(buf, line, buf_len);
     return 0;
 }
+
 
 /* ps_rlt exemple:
     ps -eo pid,ppid,pgid,comm | grep nginx | awk '{print $1 "|" $2 "|" $3 "|" $4}'
@@ -112,11 +124,11 @@ static int parse_ps_result(const char *ps_rlt, struct task_key *k, struct task_d
     }
 
     k->pid = (unsigned int)atoi(id_str[PS_TYPE_PID]);
-    d->tgid = k->pid;
-    d->ppid = (unsigned int)atoi(id_str[PS_TYPE_PPID]);
-    d->pgid = (unsigned int)atoi(id_str[PS_TYPE_PGID]);
+    d->id.tgid = k->pid;
+    d->id.ppid = (unsigned int)atoi(id_str[PS_TYPE_PPID]);
+    d->id.pgid = (unsigned int)atoi(id_str[PS_TYPE_PGID]);
     (void)strncpy((char *)id_str[j], ps_rlt + start, len - start);
-    (void)strcpy((char *)d->comm, (char *)id_str[j]);
+    (void)strcpy((char *)d->id.comm, (char *)id_str[j]);
 
     return 0;
 }
@@ -145,7 +157,7 @@ static int add_process_infos(const char *comm, int map_fd)
             goto out;
         }
         /* update task_map */
-        bpf_map_update_elem(map_fd, &key, &kdata, BPF_ANY);
+        (void)bpf_map_update_elem(map_fd, &key, &kdata, BPF_ANY);
     }
 out:
     pclose(f);
@@ -162,13 +174,9 @@ static int update_existed_task_to_map(int p_fd, int map_fd)
     while (bpf_map_get_next_key(p_fd, &ckey, &nkey) != -1) {
         ret = bpf_map_lookup_elem(p_fd, &nkey, &flag);
         if (ret == 0) {
-            /* check whether process existed, if it is, add process to task_map */
-            if (is_existed_process((char *)nkey.name) >= 0) {
-                /* add other info of process */
-                if (add_process_infos((char *)nkey.name, map_fd) < 0) {
-            		printf("add process info fail.\n");
-                    return -1;
-                }
+            if (add_process_infos((char *)nkey.name, map_fd) < 0) {
+                printf("add process info fail.\n");
+                return -1;
             }
         }
         ckey = nkey;
@@ -183,10 +191,10 @@ static int update_default_probed_process_to_map(int p_fd)
     int flag = 1;
 
     for (int i = 0; i < default_probed_process_num; i++) {
-        memset(pname.name, 0, MAX_PROCESS_NAME_LEN);
-        strcpy(pname.name, default_probed_process_list[i]);
+        (void)memset(pname.name, 0, MAX_PROCESS_NAME_LEN);
+        (void)strcpy(pname.name, default_probed_process_list[i]);
         /* update task_map */
-        bpf_map_update_elem(p_fd, &pname, &flag, BPF_ANY);
+        (void)bpf_map_update_elem(p_fd, &pname, &flag, BPF_ANY);
     }
     return 0;
 }
@@ -216,12 +224,12 @@ int jinfo_get_label_info(int pid, char *label, char *buf, int buf_len)
 
 int update_java_process_info(int pid, char *java_command, char *java_classpath)
 {
-    memset(java_command, 0, JAVA_COMMAND_LEN);
+    (void)memset(java_command, 0, JAVA_COMMAND_LEN);
     if (jinfo_get_label_info(pid, TASK_PROBE_JAVA_COMMAND, java_command, JAVA_COMMAND_LEN) < 0) {
         printf("java process get command fail.\n");
         return -1;
     }
-    memset(java_classpath, 0, JAVA_CLASSPATH_LEN);
+    (void)memset(java_classpath, 0, JAVA_CLASSPATH_LEN);
     if (jinfo_get_label_info(pid, TASK_PROBE_JAVA_CLASSPATH, java_classpath, JAVA_CLASSPATH_LEN) < 0) {
         printf("java process get command fail.\n");
         return -1;
@@ -240,49 +248,52 @@ static void task_probe_pull_probe_data(int map_fd)
 
     while (bpf_map_get_next_key(map_fd, &ckey, &nkey) != -1) {
         ret = bpf_map_lookup_elem(map_fd, &nkey, &tkd);
-        	if (ret != 0) {
-        	continue;
-    	}
-    	/* exec file name */
-        if (strlen(tkd.exe_file) == 0) {
-            get_task_exe(nkey.pid, &tkd.exe_file, TASK_EXE_FILE_LEN);
+        if (ret != 0) {
+            continue;
         }
-		
-    	if (strstr(tkd.comm, "java") != NULL) {
+        
+        if (tkd.id.comm[0] == 0) {
+            (void)get_task_comm(nkey.pid, tkd.id.comm, TASK_COMM_LEN);
+        }
+        
+        /* exec file name */
+        if (strlen(tkd.id.exe_file) == 0) {
+            get_task_exe(nkey.pid, &tkd.id.exe_file, TASK_EXE_FILE_LEN);
+        }
+        
+        if (strstr(tkd.id.comm, "java") != NULL) {
             /* java */
             (void)update_java_process_info(nkey.pid, (char *)java_command, (char *)java_classpath);
-        } else if (strstr(tkd.comm, "python") != NULL || strstr(tkd.comm, "go") != NULL) {
+        } else if (strstr(tkd.id.comm, "python") != NULL || strstr(tkd.id.comm, "go") != NULL) {
             /* python/go run */
-            (void)get_task_pwd(nkey.pid, (char *)tkd.exec_file);
+            (void)get_task_pwd(nkey.pid, (char *)tkd.id.exec_file);
         } else {
             /* c/c++/go */
-            strcpy((char *)tkd.exec_file, (char *)tkd.exe_file);
+            strcpy((char *)tkd.id.exec_file, (char *)tkd.id.exe_file);
         }
 
         fprintf(stdout, "|%s|%d|%d|%d|%s|%s|%s|%s|%d\n",
-            OO_NAME_TASK,
-            tkd.tgid,
-            nkey.pid,
-            tkd.pgid,
-            tkd.comm,
-            tkd.exe_file,
-            strlen(tkd.exec_file) == 0 ? java_command : tkd.exec_file,
-            java_classpath,
-            tkd.fork_count
-        );
+                OO_NAME_TASK,
+                tkd.id.tgid,
+                nkey.pid,
+                tkd.id.pgid,
+                tkd.id.comm,
+                tkd.id.exe_file,
+                strlen(tkd.id.exec_file) == 0 ? java_command : tkd.id.exec_file,
+                java_classpath,
+                tkd.base.fork_count);
 
-	    DEBUG("tgid[%d] pid[%d] ppid[%d] pgid[%d] comm[%s] exe_file[%s] exec_file[%s] fork_count[%d] java_classpath[%s] \n",
-	            tkd.tgid,
-	            nkey.pid,
-	            tkd.ppid,
-	            tkd.pgid,
-	            tkd.comm,
-	            tkd.exe_file,
-	            strlen(tkd.exec_file) == 0 ? java_command : tkd.exec_file,
-	        	tkd.fork_count,
-	            java_classpath
-	        );
-    	ckey = nkey;
+        DEBUG("tgid[%d] pid[%d] ppid[%d] pgid[%d] comm[%s] exe_file[%s] exec_file[%s] fork_count[%d] java_classpath[%s] \n",
+                tkd.id.tgid,
+                nkey.pid,
+                tkd.id.ppid,
+                tkd.id.pgid,
+                tkd.id.comm,
+                tkd.id.exe_file,
+                strlen(tkd.id.exec_file) == 0 ? java_command : tkd.id.exec_file,
+                tkd.base.fork_count,
+                java_classpath);
+        ckey = nkey;
     }
 
     return;
@@ -316,8 +327,8 @@ int main(int argc, char **argv)
     }
     printf("Exit task map pin success.\n");
 
-    pmap_fd = bpf_map__fd(skel->maps.probe_proc_map);
-    taskmap_fd = bpf_map__fd(skel->maps.task_map);
+    pmap_fd = GET_MAP_FD(probe_proc_map);
+    taskmap_fd = GET_MAP_FD(__task_map);
 
     ret = update_default_probed_process_to_map(pmap_fd);
     if (ret != 0) {

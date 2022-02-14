@@ -20,6 +20,7 @@
 
 #include <bpf/libbpf.h>
 #include <sys/resource.h>
+#include "task.h"
 #include "util.h"
 
 #define EBPF_RLIM_INFINITY  100*1024*1024 // 100M
@@ -58,6 +59,12 @@ static __always_inline int set_memlock_rlimit(void)
         printf("======>SHARE map(" #map_name ") pin FD=%d.\n", __fd); \
     } while (0)
 
+#define __PIN_SHARE_MAP_ALL \
+        do { \
+            __PIN_SHARE_MAP(__probe_match_map, __PROBE_MATCH_MAP_PIN_PATH); \
+            __PIN_SHARE_MAP(__task_map, SHARE_MAP_TASK_PATH); \
+        } while (0)
+
 #define LOAD(probe_name) \
     struct probe_name##_bpf *skel;                 \
     struct bpf_link *link[PATH_NUM];    \
@@ -85,7 +92,7 @@ static __always_inline int set_memlock_rlimit(void)
             skel = NULL; \
             goto err; \
         } \
-        __PIN_SHARE_MAP(__probe_match_map, __PROBE_MATCH_MAP_PIN_PATH); \
+        __PIN_SHARE_MAP_ALL; \
     } while (0)
 
 #define UNLOAD(probe_name) \
@@ -121,7 +128,7 @@ static __always_inline int set_memlock_rlimit(void)
             skel = NULL; \
             goto err; \
         } \
-        __PIN_SHARE_MAP(__probe_match_map, __PROBE_MATCH_MAP_PIN_PATH); \
+        __PIN_SHARE_MAP_ALL; \
         probe = skel; \
     } while (0)
 
