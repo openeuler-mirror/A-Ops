@@ -12,7 +12,7 @@ measurements:
             },
             {
                 description: "pid of the task",
-                type: "label",
+                type: "key",
                 name: "pid",
             },
 			{

@@ -100,14 +100,14 @@ KRAWTRACE(sched_process_fork, bpf_raw_tracepoint_args)
         parent_key.pid = task_value.ppid;
         parent_data_p = bpf_map_lookup_elem(&task_map, &parent_key);
 
-	if (parent_data_p != (void *)0) {
+    if (parent_data_p != (void *)0) {
             /* fork_count add 1 */
             __sync_fetch_and_add(&parent_data_p->fork_count, 1);
         } else {
             /* Add parent's task info to task_map first time */
             task_value.tgid = _(parent->tgid);
             task_value.ppid = 0xffff;
-	    task_value.fork_count = 1;
+            task_value.fork_count = 1;
             bpf_map_update_elem(&task_map, &parent_key, &task_value, BPF_NOEXIST);
         }
     }

@@ -19,16 +19,16 @@
 #define TASK_EXE_FILE_LEN       128
 
 struct task_key {
-    int pid;			// task key
+    int pid;            // task key
 };
 
 struct task_data {
-    int tgid;			// task group id
+    int tgid;           // task group id
     int ppid;                   // parent process id
     int pgid;                   // process group id
     char comm[TASK_COMM_LEN];
-    char exe_file[TASK_EXE_FILE_LEN];	// EXE path, eg. /usr/bin/java
-    char exec_file[TASK_EXE_FILE_LEN];	// executed_file path, eg. xxx.jar
+    char exe_file[TASK_EXE_FILE_LEN];   // EXE path, eg. /usr/bin/java
+    char exec_file[TASK_EXE_FILE_LEN];  // executed_file path, eg. xxx.jar
     __u32 fork_count;
     __u64 offcpu_time;
     __u64 signal_count;
