@@ -1,173 +1,97 @@
 import os
 import json
 import importlib
-from ragdoll.utils.yang_module import YangModule
-from ragdoll.parses.ini_parse import IniJsonParse
-from ragdoll.analy.ini_config_parser import IniConfigParser
 
-ANALYPATH = "ragdoll.analy."
-CONFIGPARSERNAME = "ConfigParser"
-OBJECTFILENAME = "_config_parser"
-PARSE = "parse"
-PARSEPATH = "ragdoll.parses."
+from ragdoll.utils.yang_module import YangModule
+
+
+BASE_PATH = "ragdoll.config_model."
+CONFIG_MODEL_NAME = "Config"
+PROJECT_NAME = "_config"
 
 
 class ObjectParse(object):
+    def __init__(self):
+        self._yang_modules = YangModule()
 
-    def parse_content_to_json(self, file_path, contents):
+    def create_conf_model_by_type(self, conf_type):
         """
-        desc: parse the contents to the json accroding the yang file.
-        """
-        # load all yang modules:
-        yang_modules = YangModule()
-        module_list = yang_modules.module_list
-        module = yang_modules.getModuleByFilePath(file_path)
-        d_type = yang_modules.getTypeInModdule([module])
-        conf_type = d_type[module.name()]
-        repo = self.create_object_by_type(conf_type)
-        # Fill an object with content
-        object_with_content = ""
-        if conf_type == "ini":
-            self.add_ini_module_info_in_object(module, repo)
-            object_with_content = self.parse_ini_content_to_object(repo, contents)
-        # Convert model data to JSON data
-        ini_json = self.create_parse_by_type(conf_type)
-        content_string = self.parse_object_to_json(object_with_content, conf_type)
-        return content_string
+        desc: Create a structured model corresponding to the configuration type.
 
-    def parse_json_to_content(self, filepath, jsonlist):
+        example: 
+            param: conf_type: ini
+            return: IniConfig()
         """
-        desc: parse the contents to the object accroding the yang file
-        """
-        # load all yang modules:
-        yang_modules = YangModule()
-        module_list = yang_modules.module_list
-        module = yang_modules.getModuleByFilePath(filepath)
-        d_type = yang_modules.getTypeInModdule([module])
-        conf_type = d_type[module.name()]
-        obj = self.create_object_by_type(conf_type)
-        # Convert JSON data into model data
-        d_object = self.parse_json_to_object(obj, jsonlist, conf_type)
-        contents = ""
-        if d_object and conf_type == "ini":
-            contents = self.parse_object_to_ini_content(d_object)
+        conf_model = ""
+        project_name = conf_type + PROJECT_NAME    # example: ini_config
+        project_path = BASE_PATH + project_name    # example: ragdoll.config_model.ini_config
+        model_name = conf_type.capitalize() + CONFIG_MODEL_NAME     # example: IniConfig
 
-        return contents
+        try:
+            project = importlib.import_module(project_path)
+        except ImportError:
+            conf_model = ""
+        else:
+            _conf_model_class = getattr(project, model_name, None)    # example: IniConfig
+            if _conf_model_class:
+                conf_model = _conf_model_class()     # example: IniConfig()
 
-    def create_object_by_type(self, d_type):
-        """
-        desc: create a object accroding the type.
-        """
-        project_name = d_type + OBJECTFILENAME
-        object_name = d_type.capitalize() + CONFIGPARSERNAME
-        all_path = ANALYPATH + project_name
-        project = importlib.import_module(all_path)
-        module_obj = getattr(project, object_name)
-        res = module_obj()
-        return res
-
-    def add_ini_module_info_in_object(self, module, module_obj):
-        """
-        desc: add module info in object
-        """
-        # get all xpath in yang module
-        yang_module = YangModule()
-        xpath = yang_module.getXpathInModule(module)
-        for d_xpath in xpath:
-            real_path = d_xpath.split('/')
-            section = real_path[2]
-            option = real_path[3]
-            if module_obj.has_sections(section):
-                module_obj.set_option(section, option)
-            else:
-                module_obj.add_sections(section)
-                module_obj.set_option(section, option)
-
-    def parse_ini_content_to_object(self, module_obj, contents):
-        """
-        desc: parse the contents of type INI to the object accroding the yang file.
-        """
-        content_obj = self.create_object_by_type("ini")
-        content_obj.read(contents)
-        if not content_obj.sections():
-            return False
-
-        res = self.create_object_by_type("ini")
-        sections_mod = module_obj.sections()
-        sections_cont = content_obj.sections()
-
-        for c_section in sections_cont:
-            cont_options = content_obj.options(c_section)
-            m_section = self.get_mactch_section(cont_options, module_obj)
-            for d_opt in cont_options:
-                if d_opt is "__name__":
-                    continue
-                value = content_obj.get(c_section, d_opt)
-                if m_section is not None:
-                    if res.has_sections(c_section):
-                        res.set_option(c_section, d_opt, value)
-                    else:
-                        res.add_sections(c_section)
-                        res.set_option(c_section, d_opt, value)
-        return res
-
-    def get_mactch_section(self, option_list, obj):
-        """
-        desc: Blur matches two objects by option
-        """
-        res = None
-        for m_section in obj.sections():
-            m_options = list(obj.options(m_section))
-            count = 0
-            for d_option in list(option_list):
-                if d_option in m_options:
-                    count = count + 1
-            if len(option_list) == 1 and count == 1:
-                res = m_section
-                break
-            else:
-                if count > 2:
-                    res = m_section
-                    break
-        return res
-
-    def create_parse_by_type(self, d_type):
-        """
-        desc: create the parse object the type of d_type
-        """
-        project_name = d_type + "_" + PARSE
-        object_name = d_type.capitalize() + "Json" + PARSE.capitalize()
-        all_path = PARSEPATH + project_name
-        project = importlib.import_module(all_path)
-        d_object = getattr(project, object_name)
-        res = d_object()
-        return res
-
-    def parse_object_to_json(self, d_object, d_type):
+        return conf_model
+    
+    def get_conf_type_by_conf_path(self, conf_path):
+        yang_model = self._yang_modules.getModuleByFilePath(conf_path)
+        _conf_type = self._yang_modules.getTypeInModdule([yang_model])
+        conf_type = _conf_type[yang_model.name()]
+        return conf_type
+    
+    def parse_model_to_json(self, d_model):
         """
         desc: convert object to json.
         """
-        content_string = ""
-        parse_obj = self.create_parse_by_type(d_type)
-        if d_type == "ini":
-            repo_json = parse_obj.parse_ini(d_object)
-            content_string = json.dumps(repo_json, indent = 4, ensure_ascii= False)
-        return content_string
+        conf_json = ""
 
-    def parse_object_to_ini_content(self, obj):
-        """
-        desc: parse the object to the content of type INI accroding the yang file.
-        """
-        content = obj.write()
-        content_string = json.dumps(content, indent = 4, ensure_ascii= False)
-        return content
+        conf_dict = d_model.conf
+        conf_json = json.dumps(conf_dict, indent = 4, ensure_ascii= False)
+        
+        return conf_json
 
-    def parse_json_to_object(self, parse_object, d_json, d_type):
+
+
+    def parse_conf_to_json(self, conf_path, conf_info):
         """
-        desc: convert json to object.
+        desc: parse the conf contents to the json accroding the yang file.
         """
-        d_object = None
-        parse_obj = self.create_parse_by_type(d_type)
-        if d_type == "ini":
-            d_object = parse_obj.parse_content(parse_object, d_json)
-        return d_object
+        conf_type = self.get_conf_type_by_conf_path(conf_path)
+
+        # create conf model
+        conf_model = self.create_conf_model_by_type(conf_type)
+
+        # load yang model info 
+        yang_info = self._yang_modules.getModuleByFilePath(conf_path)
+        conf_model.load_yang_model(yang_info)
+
+        # load conf info
+        conf_model.read_conf(conf_info)
+
+        # to json
+        conf_json = self.parse_model_to_json(conf_model)
+
+        return conf_json
+
+    def parse_json_to_conf(self, conf_path, json_list):
+        """
+        desc: 将json格式的配置信息解析成原始配置文件格式
+        
+        """
+        conf_type = self.get_conf_type_by_conf_path(conf_path)
+
+        # create conf model
+        conf_model = self.create_conf_model_by_type(conf_type)
+
+        # load conf info(json) to model
+        conf_model.read_json(json_list)
+
+        # to content
+        conf_info = conf_model.write_conf()
+
+        return conf_info

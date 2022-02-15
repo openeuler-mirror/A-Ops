@@ -23,7 +23,7 @@ from ragdoll.utils.conf_tools import ConfTools
 from ragdoll.utils.git_tools import GitTools
 from ragdoll.utils.yang_module import YangModule
 from ragdoll.utils.object_parse import ObjectParse
-from ragdoll.parses.ini_parse import IniJsonParse
+
 
 TARGETDIR = GitTools().target_dir
 
@@ -94,7 +94,7 @@ def add_management_confs_in_domain(body=None):  # noqa: E501
                 base_rsp = BaseResponse(codeNum, "The input parameters are not compliant, " +
                                                  "please check the input parameters.")
                 return base_rsp, codeNum
-            content_string = object_parse.parse_content_to_json(d_conf.file_path, d_conf.contents)
+            content_string = object_parse.parse_conf_to_json(d_conf.file_path, d_conf.contents)
             if not json.loads(content_string):
                 codeNum = 400
                 base_rsp = BaseResponse(codeNum, "Input configuration content verification failed, " +
@@ -160,7 +160,7 @@ def add_management_confs_in_domain(body=None):  # noqa: E501
             for d_file in d_res_infos:
                 file_path = d_file.get("path")
                 content = d_file.get("content")
-                content_string = object_parse.parse_content_to_json(file_path, content)
+                content_string = object_parse.parse_conf_to_json(file_path, content)
                 # create the file and expected value in domain
                 if not json.loads(content_string):
                     codeNum = 400

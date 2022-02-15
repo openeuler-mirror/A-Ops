@@ -40,11 +40,11 @@ gala-ragdoll 针对配置溯源服务提供了flask_testing的单元测试框架
 
   测试yang模型是否合规
 
-- test_analy.py
+- test_config_model.py
 
   测试转换脚本的object是否能进行转换
 
-- test_reverse_analy.py
+- test_reverse_config_model.py
 
   测试反转换脚本是否能转换成object
 
