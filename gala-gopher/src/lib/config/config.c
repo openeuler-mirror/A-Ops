@@ -139,6 +139,14 @@ static int ConfigMgrLoadGlobalConfig(void *config, config_setting_t *settings)
     }
 
     memcpy(globalConfig->logDirectory, strVal, strlen(strVal));
+
+    ret = config_setting_lookup_string(settings, "pin_path", &strVal);
+    if (ret == 0) {
+        printf("[CONFIG] load config for pin path failed.\n");
+        return -1;
+    }
+
+    memcpy(globalConfig->bpfPinPath, strVal, strlen(strVal));
     return 0;
 }
 

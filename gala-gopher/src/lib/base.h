@@ -62,6 +62,7 @@
 // ======== CONFIG ========
 // global config
 #define MAX_LOG_DIRECTORY_LEN 128
+#define MAX_PIN_PATH_LEN 128
 
 // kafka config
 #define MAX_KAFKA_BROKER_LEN  32

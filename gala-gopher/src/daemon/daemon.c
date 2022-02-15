@@ -96,9 +96,39 @@ static int DaemonCheckProbeNeedStart(char *check_cmd, ProbeStartCheckType chkTyp
 
 #endif
 
+static void CleanData(const ResourceMgr *mgr)
+{
+#define __SYS_FS_BPF "/sys/fs/bpf"
+
+    char *pinPath;
+    char cmd[MAX_COMMAND_LEN];
+
+    cmd[0] = 0;
+    pinPath = NULL;
+    
+    if (mgr->configMgr && mgr->configMgr->globalConfig) {
+        pinPath = mgr->configMgr->globalConfig->bpfPinPath;
+    }
+
+    if (pinPath == NULL) {
+        return;
+    }
+    if (strstr(pinPath, __SYS_FS_BPF) == NULL) {
+        return;
+    }
+    
+    (void)snprintf(cmd, MAX_COMMAND_LEN, "/usr/bin/rm -rf %s/*", pinPath);
+    (void)popen(cmd, "r");
+    
+    printf("[DAEMON] clean data success[%s].\n", cmd);
+}
+
 int DaemonRun(const ResourceMgr *mgr)
 {
     int ret;
+
+    // 0. clean data
+    CleanData(mgr);
 
     // 1. start ingress thread
     ret = pthread_create(&mgr->ingressMgr->tid, NULL, DaemonRunIngress, mgr->ingressMgr);

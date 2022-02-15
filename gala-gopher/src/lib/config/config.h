@@ -29,6 +29,7 @@ typedef enum {
 typedef struct {
     char logDirectory[MAX_LOG_DIRECTORY_LEN];
     LOG_LEVEL logLevel;
+    char bpfPinPath[MAX_PIN_PATH_LEN];
 } GlobalConfig;
 
 typedef struct {

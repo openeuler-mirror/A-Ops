@@ -138,16 +138,23 @@ static void bpf_add_link(const struct sock *sk, int role)
     struct proc_info proc = {0};
     u16 src_port = _(sk->sk_num);
     u16 dst_port = _(sk->sk_dport);
+    
     /* if port 0, break. */
     if (dst_port == 0 || src_port == 0)
         return;
 
-    bpf_get_current_comm(&proc.comm, sizeof(proc.comm));
-    /* skip ssh sshd proc */
+    // FILTER by task
+    if (!is_task_exist(bpf_get_current_pid_tgid() >> INT_LEN)) {
+        return;
+    }
+    
+    /* skip ssh sshd proc 
     if (proc.comm[0] == 's' && proc.comm[1] == 's' && proc.comm[2] == 'h' &&
         (proc.comm[3] == '\0' || (proc.comm[3] == 'd' && proc.comm[4] == '\0')))
         return;
+    */
 
+    bpf_get_current_comm(&proc.comm, sizeof(proc.comm));
     proc.pid = bpf_get_current_pid_tgid() >> INT_LEN;
     proc.ts = bpf_ktime_get_ns();
     proc.role = role;
