@@ -50,6 +50,6 @@ class TestController:
         assert task1_resp.entityid == task1.id
         assert task1_resp.type == 'task'
         assert task1_resp.level == 'PROCESS'
-        assert len(task1_resp.attrs) == 5
+        assert len(task1_resp.attrs) == 8
         assert len(task1_resp.dependingitems) == 1
         assert len(task1_resp.dependeditems) == 2
