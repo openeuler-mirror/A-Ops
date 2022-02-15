@@ -462,8 +462,8 @@ static int IMDB_MetricType2String(const IMDB_Metric *metric, char *buffer, uint3
     return snprintf(buffer, maxLen, "# TYPE gala_gopher_%s_%s %s\n", tableName, metric->name, metric->type);
 }
 
-static int IMDB_MetricValue2String(const IMDB_Metric *metric, const char *tableName, const char *labels,
-                                    char *buffer, uint32_t maxLen)
+static int IMDB_MetricValue2String(const IMDB_Metric *metric, char *buffer, uint32_t maxLen, 
+                                    const char *tableName, const char *labels)
 {
     time_t now;
     (void)time(&now);
