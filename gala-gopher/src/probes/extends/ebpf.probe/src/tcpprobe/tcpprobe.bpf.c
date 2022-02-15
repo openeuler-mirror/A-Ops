@@ -88,7 +88,7 @@ static __always_inline void __create_link_entry_by_sock(struct link_key *key,
                                 struct sock *sk, u16 new_state) {
     struct link_data data = {0};
     struct proc_info *p;
-    struct tcp_sock *tcp = (struct tcp_sock *)sk;
+    // struct tcp_sock *tcp = (struct tcp_sock *)sk;
 
     u32 pid = bpf_get_current_pid_tgid() >> 32;
     p = __get_sock_data(sk);
@@ -99,7 +99,7 @@ static __always_inline void __create_link_entry_by_sock(struct link_key *key,
 
     TCPPROBE_UPDATE_STATS(data, sk, new_state);
     TCPPROBE_UPDATE_PRCINFO(data, p);
-    bpf_map_update_elem(&link_map, key, &data, BPF_ANY);
+    (void)bpf_map_update_elem(&link_map, key, &data, BPF_ANY);
 }
 
 static void __update_link_stats(struct sock *sk, u16 new_state)
@@ -122,10 +122,10 @@ static void update_link_event(const struct sock *sk, enum TCPPROBE_EVT_E type)
     struct link_data *data;
     struct link_key key = {0};
 
-    __get_link_key_by_sock(&key, sk);
-    data = __get_link_entry_by_sock(sk);
+    __get_link_key_by_sock(&key, (struct sock *)sk);
+    data = __get_link_entry_by_sock((struct sock *)sk);
     if (!data) {
-        __create_link_entry_by_sock(&key, sk, _(sk->sk_state));
+        __create_link_entry_by_sock(&key, (struct sock *)sk, _(sk->sk_state));
         return;
     }
     TCPPROBE_INC_EVT(type, *data);
@@ -165,7 +165,7 @@ static void bpf_add_link(const struct sock *sk, int role)
         return;
     }
 
-    __update_link_stats(sk, TCP_ESTABLISHED);
+    __update_link_stats((struct sock *)sk, TCP_ESTABLISHED);
     return;
 }
 
@@ -224,7 +224,7 @@ static void bpf_add_long_link(u32 pid)
     bpf_add_each_long_link(l->fds[8], l->fd_role[8]);
     bpf_add_each_long_link(l->fds[9], l->fd_role[9]);
 
-    bpf_map_delete_elem(&long_link_map, &pid);
+    (void)bpf_map_delete_elem(&long_link_map, &pid);
     return;
 }
 
@@ -248,7 +248,7 @@ KPROBE(tcp_set_state, pt_regs)
 {
     u16 new_state = (u16)PT_REGS_PARM2(ctx);
     struct sock *sk = (struct sock *)PT_REGS_PARM1(ctx);
-    struct tcp_sock *tcp = (struct tcp_sock *)sk;
+    // struct tcp_sock *tcp = (struct tcp_sock *)sk;
 
     u32 pid = bpf_get_current_pid_tgid() >> 32;
     if (new_state == TCP_SYN_SENT) {
@@ -267,7 +267,7 @@ KPROBE(tcp_set_state, pt_regs)
     __update_link_stats(sk, new_state);
 
     /* 3 del sock_map item */
-    bpf_map_delete_elem(&sock_map, &sk);
+    (void)bpf_map_delete_elem(&sock_map, &sk);
     return;
 }
 
@@ -295,15 +295,15 @@ static void update_link_stats(const struct pt_regs *ctx)
 
     u64 ts = bpf_ktime_get_ns();
     if ((ts - p->ts) > TCPPROBE_INTERVAL_NS) {
-        struct tcp_sock *tcp = (struct tcp_sock *)sk;
-        u32 pid = bpf_get_current_pid_tgid() >> 32;
+        // struct tcp_sock *tcp = (struct tcp_sock *)sk;
+        // u32 pid = bpf_get_current_pid_tgid() >> 32;
 
         /* update link stats */
         __update_link_stats(sk, (u16)(_(sk->sk_state)));
 
         /* update sock map item */
         p->ts = ts;
-        bpf_map_update_elem(&sock_map, &sk, p, BPF_ANY);
+        (void)bpf_map_update_elem(&sock_map, &sk, p, BPF_ANY);
     }
     return;
 }

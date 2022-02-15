@@ -16,8 +16,6 @@
 #define __NGX_PROBE_H__
 #include "nginx_1.12.1.h"
 
-#define IP6_LEN 16
-#define INET6_ADDRSTRLEN 48
 #define BIN_FILE_PATH_LEN 128
 
 #define STATISTIC_MAX_ENTRIES 100000

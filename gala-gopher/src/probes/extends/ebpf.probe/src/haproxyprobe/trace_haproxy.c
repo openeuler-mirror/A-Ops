@@ -45,13 +45,13 @@ static void get_host_ip(const unsigned char *value, unsigned short family)
 {
     FILE *fp = NULL;
     char buffer[INET6_ADDRSTRLEN] = {0};
-    char cmd[CMD_LEN] = {""};
+    char cmd[COMMAND_LEN] = {""};
     int num = -1;
 
     if (family == AF_INET) {
-        snprintf(cmd, CMD_LEN - 1, "/sbin/ifconfig | grep inet | grep -v 127.0.0.1 | grep -v inet6 | awk '{print $2}'");
+        (void)snprintf(cmd, COMMAND_LEN - 1, "/sbin/ifconfig | grep inet | grep -v 127.0.0.1 | grep -v inet6 | awk '{print $2}'");
     } else {
-        snprintf(cmd, CMD_LEN - 1, "/sbin/ifconfig | grep inet6 | grep -v ::1 | awk '{print $2}'");
+        (void)snprintf(cmd, COMMAND_LEN - 1, "/sbin/ifconfig | grep inet6 | grep -v ::1 | awk '{print $2}'");
     }
 
     fp = popen(cmd, "r");
@@ -60,7 +60,7 @@ static void get_host_ip(const unsigned char *value, unsigned short family)
         return ;
     }
     pclose(fp);
-    num = sscanf(buffer, "%47s", value);
+    num = sscanf(buffer, "%47s", (char *)value);
     if (num < 1)
         printf("failed get hostip [%d]", errno);
 
@@ -85,14 +85,14 @@ static void update_haproxy_collect_map(struct link_key *k, struct link_value *v,
     key.p_port = k->p_port;
     key.s_port = k->s_port;
     /* lookup value */
-    bpf_map_lookup_elem(map_fd, &key, &val);
+    (void)bpf_map_lookup_elem(map_fd, &key, &val);
     /* update value */
     update_collect_count(&val);
     val.family = v->family;
     val.protocol = v->type;
     val.pid = v->pid;
     /* update hash map */
-    bpf_map_update_elem(map_fd, &key, &val, BPF_ANY);
+    (void)bpf_map_update_elem(map_fd, &key, &val, BPF_ANY);
 
     return;
 }
@@ -130,7 +130,7 @@ static void pull_probe_data(int fd, int collect_fd)
             update_haproxy_collect_map(&next_key, &value, collect_fd);
         }
         if (value.state == SI_ST_CLO) {
-            bpf_map_delete_elem(fd, &next_key);
+            (void)bpf_map_delete_elem(fd, &next_key);
         } else {
             key = next_key;
         }
@@ -164,7 +164,7 @@ static void print_haproxy_collect(int map_fd)
                 value.protocol,
                 value.link_count);
         }
-        bpf_map_delete_elem(map_fd, &next_key);
+        (void)bpf_map_delete_elem(map_fd, &next_key);
     }
     (void)fflush(stdout);
     return;

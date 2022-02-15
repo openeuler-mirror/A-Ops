@@ -22,8 +22,6 @@
 #include <sys/resource.h>
 #include "util.h"
 
-#define BUF_TMP_LEN 256
-
 #if BPF_UTIL_DESC("util funcs")
 char *get_cur_time(void)
 {
@@ -73,6 +71,8 @@ void ip6_str(unsigned char *ip6, unsigned char *ip_str, unsigned int ip_str_size
 
 void ip_str(unsigned int family, unsigned char *ip, unsigned char *ip_str, unsigned int ip_str_size)
 {
+	ip_str[0] = 0;
+	
     if (family == AF_INET6) {
         (void)ip6_str(ip, ip_str, ip_str_size);
         return;

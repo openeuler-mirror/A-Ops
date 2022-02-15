@@ -69,7 +69,7 @@ UPROBE(linux_Task_Start, pt_regs)
     value.status = 1;
 
     /* update hash map */
-    bpf_map_update_elem(&containers_map, &key, &value, BPF_ANY);
+    (void)bpf_map_update_elem(&containers_map, &key, &value, BPF_ANY);
 
     return;
 }
@@ -81,7 +81,7 @@ UPROBE(linux_Task_Delete, pt_regs)
     unsigned int sym_key = SYMADDRS_MAP_KEY;
 
     // containerd's info
-    unsigned int containerd_pid = bpf_get_current_pid_tgid() >> INT_LEN;
+    //unsigned int containerd_pid = bpf_get_current_pid_tgid() >> INT_LEN;
 
     // symbol's offset
     struct go_containerd_t *sym_str = bpf_map_lookup_elem(&containerd_symaddrs_map, &sym_key);
@@ -100,14 +100,14 @@ UPROBE(linux_Task_Delete, pt_regs)
 
     /* lookup containerd map, update status */
     v_str = bpf_map_lookup_elem(&containers_map, &key);
-    if (!v_str == (void *)0) {
+    if (v_str == (struct container_value *)0) {
         bpf_printk("===containerd Delete containerID not in hash map.\n");
         return;
     }
     v_str->status = 0;
 
     /* update hash map */
-    bpf_map_update_elem(&containers_map, &key, v_str, BPF_ANY);
+    (void)bpf_map_update_elem(&containers_map, &key, v_str, BPF_ANY);
 
     return;
 }

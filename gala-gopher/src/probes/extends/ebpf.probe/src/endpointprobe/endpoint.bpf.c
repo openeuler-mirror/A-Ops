@@ -498,7 +498,7 @@ KPROBE_RET(tcp_create_openreq_child, pt_regs)
     struct probe_val val;
 
     struct endpoint_val_t *ep_val;
-    u32 tid = bpf_get_current_pid_tgid();
+    //u32 tid = bpf_get_current_pid_tgid();
 
     if (ret == (void *)0) {
         return;
@@ -581,7 +581,7 @@ KPROBE_RET(tcp_check_req, pt_regs)
     struct probe_val val;
 
     struct endpoint_val_t *ep_val;
-    u32 tid = bpf_get_current_pid_tgid();
+    //u32 tid = bpf_get_current_pid_tgid();
 
     PROBE_GET_PARMS(tcp_check_req, ctx, val);
     sk = (struct sock *)PROBE_PARM1(val);
@@ -600,7 +600,7 @@ KPROBE_RET(tcp_check_req, pt_regs)
 KPROBE(tcp_reset, pt_regs)
 {
     struct sock *sk = (struct sock *)PT_REGS_PARM1(ctx);
-    unsigned char state = _(sk->sk_state);
+    // unsigned char state = _(sk->sk_state);
     struct endpoint_val_t *ep_val;
 
     ep_val = get_ep_val_by_sock(sk);
@@ -618,7 +618,7 @@ KPROBE_RET(tcp_try_rmem_schedule, pt_regs)
     struct probe_val val;
 
     struct endpoint_val_t *ep_val;
-    u32 tid = bpf_get_current_pid_tgid();
+    //u32 tid = bpf_get_current_pid_tgid();
 
     if (ret == 0) {
         return;
@@ -645,7 +645,7 @@ KPROBE_RET(tcp_check_oom, pt_regs)
     struct probe_val val;
 
     struct endpoint_val_t *ep_val;
-    u32 tid = bpf_get_current_pid_tgid();
+    //u32 tid = bpf_get_current_pid_tgid();
 
     if (!ret) {
         return;
@@ -670,7 +670,7 @@ KPROBE(tcp_write_wakeup, pt_regs)
     struct sock *sk = (struct sock *)PT_REGS_PARM1(ctx);
     int mib = (int)PT_REGS_PARM2(ctx);
     struct endpoint_val_t *ep_val;
-    u32 tid = bpf_get_current_pid_tgid();
+    //u32 tid = bpf_get_current_pid_tgid();
 
     if (mib != LINUX_MIB_TCPKEEPALIVE) {
         return;

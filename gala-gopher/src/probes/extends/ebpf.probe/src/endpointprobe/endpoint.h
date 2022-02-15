@@ -6,8 +6,6 @@
 
 #define MAX_ENDPOINT_LEN (0xffff)
 #define MAX_ENDPOINT_STATS_LEN 20
-#define TASK_COMM_LEN 16
-#define IP6_LEN 16
 
 #define MAX_ENTRIES 8192
 

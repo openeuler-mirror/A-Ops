@@ -18,10 +18,15 @@
 #define GALA_GOPHER_INFO(description)   1
 
 #ifndef GOPHER_DEBUG
-#define DEBUG
+static inline int __debug_printf(const char *format, ...)
+{
+        return 0;
+}
+#define DEBUG (void)__debug_printf
 #else
 #define DEBUG printf
 #endif
+
 
 // ======== COMMON ========
 // probe

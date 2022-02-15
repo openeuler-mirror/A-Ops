@@ -110,7 +110,7 @@ UPROBE(back_establish, pt_regs)
     struct link_value   value = {0};
 
     /* process info */
-    value.pid = (unsigned short)bpf_get_current_pid_tgid() >> INT_LEN;
+    value.pid = bpf_get_current_pid_tgid() >> INT_LEN;
     bpf_get_current_comm(&value.comm, sizeof(value.comm));
 
     /* c-p-s IP info */

@@ -15,16 +15,11 @@
 #ifndef __LVSPROBE__H
 #define __LVSPROBE__H
 
-#define IP6_LEN             16
-#define INET_ADDRSTRLEN     16
-#define INET6_ADDRSTRLEN    48
-
 #define IPPROTO_IP      0   /* Dummy protocol for TCP */
 #define IPPROTO_TCP     6   /* Transmission Control Protocol */
 #define IPPROTO_UDP     17  /* User Datagram Protocol */
 #define IPPROTO_IPV6    41  /* IPv6-in-IPv4 tunnelling */
 
-#define TASK_COMM_LEN   16
 #define IPVS_MAX_ENTRIES      8192
 #define IPVS_MIN_ENTRIES      1024
 #define IPVS_FLAGS_KEY_VAL    0x10  /* be used to lvs_flag_map as key */

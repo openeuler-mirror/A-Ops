@@ -15,12 +15,6 @@
 #ifndef __TCPPROBE__H
 #define __TCPPROBE__H
 
-#define AF_INET 2
-#define AF_INET6 10
-
-#define INET_ADDRSTRLEN (16)
-#define INET6_ADDRSTRLEN (48)
-
 #define TM_STR_LEN  48
 
 #define TCP_ESTABLISHED 1
@@ -42,9 +36,6 @@
 
 #define LINK_ROLE_SERVER 0
 #define LINK_ROLE_CLIENT 1
-
-#define IP6_LEN 16
-#define TASK_COMM_LEN 16
 
 #define TCPPROBE_INTERVAL_NS (5000000000)
 #define TCPPROBE_CYCLE_SEC (5)

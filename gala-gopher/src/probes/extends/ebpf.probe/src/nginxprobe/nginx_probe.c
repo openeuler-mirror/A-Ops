@@ -50,13 +50,13 @@ static void update_statistic_map(int map_fd, const struct ngx_metric *data)
     k.is_l7 = data->is_l7;
     memcpy(k.sip_str, data->dst_ip_str, INET6_ADDRSTRLEN);
 
-    bpf_map_lookup_elem(map_fd, &k, &v);
+    (void)bpf_map_lookup_elem(map_fd, &k, &v);
     if (v.link_count == 0)
         memcpy(&(v.ngx_ip), &(data->ngx_ip), sizeof(struct ip_addr));
 
     v.link_count++;
 
-    bpf_map_update_elem(map_fd, &k, &v, BPF_ANY);
+    (void)bpf_map_update_elem(map_fd, &k, &v, BPF_ANY);
     return;
 }
 
@@ -87,7 +87,7 @@ static void pull_probe_data(int map_fd, int statistic_map_fd)
         }
 
         if (data.is_finish) {
-            bpf_map_delete_elem(map_fd, &next_key);
+            (void)bpf_map_delete_elem(map_fd, &next_key);
         } else {
             key = next_key;
         }
@@ -106,7 +106,7 @@ static void print_statistic_map(int fd)
 
     unsigned char cip_str[INET6_ADDRSTRLEN];
     unsigned char ngxip_str[INET6_ADDRSTRLEN];
-    unsigned char sip_str[INET6_ADDRSTRLEN];
+    // unsigned char sip_str[INET6_ADDRSTRLEN];
 
     char *colon = NULL;
 
@@ -134,7 +134,7 @@ static void print_statistic_map(int fd)
             if (colon != NULL)
                 *colon = ':';
         }
-        bpf_map_delete_elem(fd, &nk);
+        (void)bpf_map_delete_elem(fd, &nk);
     }
     (void)fflush(stdout);
     return;

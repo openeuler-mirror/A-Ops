@@ -15,14 +15,7 @@
 #ifndef __TRACE_DNSMASQ__H
 #define __TRACE_DNSMASQ__H
 
-#define AF_INET     2   /* Internet IP Protocol */
-#define AF_INET6    10  /* IP version 6 */
 
-#define IP6_LEN         16
-#define TASK_COMM_LEN   16
-
-#define INET_ADDRSTRLEN     16
-#define INET6_ADDRSTRLEN    48
 #define MAXDNAME            128 /* maximum presentation domain name */
 #define LINK_MAX_ENTRIES    81920
 #define METRIC_ENTRIES      8192

@@ -15,15 +15,8 @@
 #ifndef __TRACE_HAPROXY__H
 #define __TRACE_HAPROXY__H
 
-#define IP6_LEN             16
-#define INET6_ADDRSTRLEN    48
-#define TASK_COMM_LEN       16
-#define CMD_LEN             100
 #define LINK_MAX_ENTRIES    81920
 #define METRIC_ENTRIES      8192
-
-#define AF_INET     2   /* IP protocol family.  */
-#define AF_INET6    10  /* IP version 6.  */
 
 #define	SIGINT      2   /* Interactive attention signal.  */
 #define	SIGTERM     15  /* Termination request.  */

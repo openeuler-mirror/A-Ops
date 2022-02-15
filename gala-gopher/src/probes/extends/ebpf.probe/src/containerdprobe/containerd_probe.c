@@ -66,7 +66,7 @@ static void bpf_update_containerd_symaddrs(int fd)
     symaddrs.runtime_Exit_Status_offset     = 4;
     symaddrs.runtime_Exit_Timestamp_offset  = 8;
 
-    bpf_map_update_elem(fd, &sym_key, &symaddrs, BPF_ANY);
+    (void)bpf_map_update_elem(fd, &sym_key, &symaddrs, BPF_ANY);
 }
 
 static void print_container_metric(int fd)
@@ -90,7 +90,7 @@ static void print_container_metric(int fd)
                 v.pids_current = cgroup.pids_current;
                 v.pids_limit = cgroup.pids_limit;
                 /* update hash map */
-                bpf_map_update_elem(fd, &nk, &v, BPF_ANY);
+                (void)bpf_map_update_elem(fd, &nk, &v, BPF_ANY);
             }
             fprintf(stdout, "|%s|%s|%s|%u|%llu|%llu|%llu|%llu|%llu|%llu|%u|\n",
                 METRIC_NAME_RUNC_TRACE,
@@ -106,7 +106,7 @@ static void print_container_metric(int fd)
                 v.status);
         }
         if (v.status == 0) {
-            bpf_map_delete_elem(fd, &nk);
+            (void)bpf_map_delete_elem(fd, &nk);
         } else {
             k = nk;
         }
@@ -129,7 +129,7 @@ static void update_current_containers_info(int map_fd)
             if (ret) {
                 c_value.task_pid = p->pid;
                 c_value.status = 1;
-                bpf_map_update_elem(map_fd, p->container, &c_value, BPF_ANY);
+                (void)bpf_map_update_elem(map_fd, p->container, &c_value, BPF_ANY);
             }
             p++;
         }
