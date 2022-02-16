@@ -26,6 +26,16 @@ enum ps_type {
     PS_TYPE_MAX,
 };
 
+struct task_io_stats {
+    __u32 io;
+    __u32 major;
+    __u32 minor;
+    __u32 rsvd;
+    __u64 read_bytes;
+    __u64 write_bytes;
+    __u64 us;
+};
+
 /* process needed to be probed */
 struct probe_process {
     char name[MAX_PROCESS_NAME_LEN];

@@ -30,6 +30,7 @@
 #include "bpf.h"
 #include "args.h"
 #include "taskprobe.skel.h"
+#include "taskprobe_io.skel.h"
 #include "taskprobe.h"
 #include "task_stat.h"
 
@@ -383,7 +384,8 @@ int main(int argc, char **argv)
     printf("Task probe starts with period: %us.\n", tp_params.period);
 
     INIT_BPF_APP(taskprobe);
-    LOAD(taskprobe, err);
+    LOAD(taskprobe, err2);
+    LOAD(taskprobe_io, err);
 
     /*
     remove(TASK_EXIT_MAP_FILE_PATH);
@@ -428,8 +430,9 @@ int main(int argc, char **argv)
         fprintf(stderr, "Failed to remove pinned file:(%s) of task exit map.", TASK_EXIT_MAP_FILE_PATH);
     }
     */
-
 err:
+    UNLOAD(taskprobe_io);
+err2:
     UNLOAD(taskprobe);
     return ret;
 }
