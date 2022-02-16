@@ -135,7 +135,8 @@ int main(int argc, char **argv)
         return -1;
     printf("arg parse interval time:%us\n", params.period);
 
-    LOAD(trace_dnsmasq);
+    INIT_BPF_APP(trace_dnsmasq);
+    LOAD(trace_dnsmasq, err);
 
     /* Cleaner handling of Ctrl-C */
     signal(SIGINT, sig_handler);
@@ -151,7 +152,7 @@ int main(int argc, char **argv)
     /* Attach tracepoint handler for each elf_path */
     for (int i = 0; i < elf_num; i++) {
         int ret = 0;
-        UBPF_ATTACH(send_from, elf[i], send_from, ret);
+        UBPF_ATTACH(trace_dnsmasq, send_from, elf[i], send_from, ret);
         if (ret <= 0)
             continue;
 
@@ -166,7 +167,7 @@ int main(int argc, char **argv)
         bpf_create_map(BPF_MAP_TYPE_HASH, sizeof(struct collect_key), sizeof(struct collect_value), METRIC_ENTRIES, 0);
 
     while (!g_stop) {
-        pull_probe_data(GET_MAP_FD(dns_query_link_map), collect_map_fd);
+        pull_probe_data(GET_MAP_FD(trace_dnsmasq, dns_query_link_map), collect_map_fd);
         print_dnsmasq_collect(collect_map_fd);
         sleep(params.period);
     }

@@ -191,7 +191,8 @@ int main(int argc, char **argv)
 
     printf("arg parse interval time:%us\n", params.period);
 
-    LOAD(trace_lvs);
+    INIT_BPF_APP(trace_lvs);
+    LOAD(trace_lvs, err);
 
     if (signal(SIGINT, sig_int) == SIG_ERR) {
         fprintf(stderr, "can't set signal handler: %s\n", strerror(errno));
@@ -210,7 +211,7 @@ int main(int argc, char **argv)
     printf("Successfully started! \n");
 
     while (stop == 0) {
-        pull_probe_data(GET_MAP_FD(lvs_link_map), collect_map_fd);
+        pull_probe_data(GET_MAP_FD(trace_lvs, lvs_link_map), collect_map_fd);
         print_ipvs_collect(collect_map_fd);
         sleep(params.period);
     }

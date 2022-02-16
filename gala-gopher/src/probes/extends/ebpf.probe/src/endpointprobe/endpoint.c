@@ -154,7 +154,8 @@ int main(int argc, char **argv)
     }
     printf("arg parse interval time:%us\n", params.period);
 
-    LOAD(endpoint);
+	INIT_BPF_APP(endpoint);
+    LOAD(endpoint, err);
 
     if (signal(SIGINT, sig_int) == SIG_ERR) {
         fprintf(stderr, "Can't set signal handler: %d\n", errno);
@@ -164,8 +165,8 @@ int main(int argc, char **argv)
     printf("Endpoint probe successfully started!\n");
 
     while (!stop) {
-        pull_endpoint_data(GET_MAP_FD(s_endpoint_map));
-        pull_client_endpoint_data(GET_MAP_FD(c_endpoint_map));
+        pull_endpoint_data(GET_MAP_FD(endpoint, s_endpoint_map));
+        pull_client_endpoint_data(GET_MAP_FD(endpoint, c_endpoint_map));
 
         sleep(params.period);
     }
