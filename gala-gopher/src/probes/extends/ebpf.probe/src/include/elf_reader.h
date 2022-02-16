@@ -23,9 +23,9 @@
 #define BCC_SYM_ALL_TYPES   65535
 
 struct symbol_info {
-    const char *name;
-    const char *demangle_name;
-    const char *module;
+    char *name;
+    char *demangle_name;
+    char *module;
     uint64_t offset;
 };
 

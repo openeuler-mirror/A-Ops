@@ -15,6 +15,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <bpf/libbpf.h>
+#include "bpf.h"
 #include "container.h"
 
 #define ERR_MSG "No such file or directory"
@@ -40,20 +41,9 @@
 #define DOCKER_CPUCG_COMMAND "/usr/bin/cat /sys/fs/cgroup/cpuacct/%s/%s"
 #define DOCKER_PIDS_COMMAND "/usr/bin/cat /sys/fs/cgroup/pids/%s/%s"
 
-#define LEN_BUF 256
-#define COMMAND_LEN 512
-
-#define __SPLIT_NEWLINE_SYMBOL(s) \
-    do { \
-        int __len = strlen(s); \
-        if (__len > 0 && (s)[__len - 1] == '\n') { \
-            (s)[__len - 1] = 0; \
-        } \
-    } while (0)
-
 bool __is_install_rpm(const char* command)
 {
-    char line[LEN_BUF];
+    char line[LINE_BUF_LEN];
     FILE *f;
     bool is_installed;
 
@@ -62,8 +52,8 @@ bool __is_install_rpm(const char* command)
     if (f == NULL)
         return false;
 
-    (void)memset(line, 0, LEN_BUF);
-    if (fgets(line, LEN_BUF, f) == NULL)
+    (void)memset(line, 0, LINE_BUF_LEN);
+    if (fgets(line, LINE_BUF_LEN, f) == NULL)
         goto out;
 
     if (strstr(line, ERR_MSG2) != NULL)
@@ -77,7 +67,7 @@ out:
 
 bool __is_service_running(const char* service)
 {
-    char line[LEN_BUF];
+    char line[LINE_BUF_LEN];
     FILE *f;
     bool is_running;
 
@@ -87,8 +77,8 @@ bool __is_service_running(const char* service)
         return false;
 
     while (!feof(f)) {
-        (void)memset(line, 0, LEN_BUF);
-        if (fgets(line, LEN_BUF, f) == NULL)
+        (void)memset(line, 0, LINE_BUF_LEN);
+        if (fgets(line, LINE_BUF_LEN, f) == NULL)
             goto out;
 
         if (strstr(line, RUNNING) != NULL) {
@@ -106,18 +96,22 @@ bool __is_dockerd()
 {
     if (__is_install_rpm("/usr/bin/rpm -ql docker-engine"))
         return __is_service_running("/usr/bin/systemctl status docker");
+    
+    return false;
 }
 
 bool __is_isulad()
 {
     if (__is_install_rpm("/usr/bin/rpm -ql iSulad"))
         return __is_service_running("/usr/bin/systemctl service iSulad");
+
+    return false;
 }
 
 static int __get_container_count(const char *command_s)
 {
     int container_num;
-    char line[LEN_BUF];
+    char line[LINE_BUF_LEN];
     char command[COMMAND_LEN];
     FILE *f = NULL;
 
@@ -129,8 +123,8 @@ static int __get_container_count(const char *command_s)
         return 0;
 
     while (feof(f) == 0) {
-        (void)memset(line, 0, LEN_BUF);
-        if (fgets(line, LEN_BUF, f) == NULL)
+        (void)memset(line, 0, LINE_BUF_LEN);
+        if (fgets(line, LINE_BUF_LEN, f) == NULL)
             goto out;
 
         if (strstr(line, ERR_MSG) != NULL)
@@ -146,7 +140,7 @@ out:
 
 static int __get_containers_id(container_tbl* cstbl, const char *command_s)
 {
-    char line[LEN_BUF];
+    char line[LINE_BUF_LEN];
     FILE *f = NULL;
     int index, ret;
     container_info *p;
@@ -162,12 +156,12 @@ static int __get_containers_id(container_tbl* cstbl, const char *command_s)
 
     ret = 0;
     while (!feof(f) && index < cstbl->num) {
-        (void)memset(line, 0, LEN_BUF);
-        if (fgets(line, LEN_BUF, f) == NULL) {
+        (void)memset(line, 0, LINE_BUF_LEN);
+        if (fgets(line, LINE_BUF_LEN, f) == NULL) {
             ret = -1;
             goto out;
         }
-        __SPLIT_NEWLINE_SYMBOL(line);
+        SPLIT_NEWLINE_SYMBOL(line);
         (void)snprintf(p->container, CONTAINER_ID_LEN, "%s", line);
         p++;
         index++;
@@ -180,7 +174,7 @@ out:
 
 static int __get_containers_pid(container_tbl* cstbl, const char *command_s)
 {
-    char line[LEN_BUF];
+    char line[LINE_BUF_LEN];
     char command[COMMAND_LEN];
     FILE *f = NULL;
     int index;
@@ -197,12 +191,12 @@ static int __get_containers_pid(container_tbl* cstbl, const char *command_s)
         if (f == NULL)
             continue;
 
-        (void)memset(line, 0, LEN_BUF);
-        if (fgets(line, LEN_BUF, f) == NULL) {
+        (void)memset(line, 0, LINE_BUF_LEN);
+        if (fgets(line, LINE_BUF_LEN, f) == NULL) {
             (void)pclose(f);
             continue;
         }
-        __SPLIT_NEWLINE_SYMBOL(line);
+        SPLIT_NEWLINE_SYMBOL(line);
         p->pid = (unsigned int)atoi((const char *)line);
         p++;
         (void)pclose(f);
@@ -212,7 +206,7 @@ static int __get_containers_pid(container_tbl* cstbl, const char *command_s)
 
 static int __get_containers_comm(container_tbl* cstbl, const char *command_s)
 {
-    char line[LEN_BUF];
+    char line[LINE_BUF_LEN];
     char command[COMMAND_LEN];
     FILE *f = NULL;
     int index;
@@ -229,13 +223,13 @@ static int __get_containers_comm(container_tbl* cstbl, const char *command_s)
         if (f == NULL)
             continue;
 
-        (void)memset(line, 0, LEN_BUF);
-        if (fgets(line, LEN_BUF, f) == NULL) {
+        (void)memset(line, 0, LINE_BUF_LEN);
+        if (fgets(line, LINE_BUF_LEN, f) == NULL) {
             (void)pclose(f);
             continue;
         }
-        __SPLIT_NEWLINE_SYMBOL(line);
-        (void)snprintf(p->comm, COMM_LEN, "%s", line);
+        SPLIT_NEWLINE_SYMBOL(line);
+        (void)snprintf(p->comm, TASK_COMM_LEN, "%s", line);
         p++;
         (void)pclose(f);
     }
@@ -244,7 +238,7 @@ static int __get_containers_comm(container_tbl* cstbl, const char *command_s)
 
 static int __get_containers_pod(container_tbl* cstbl, const char *command_s)
 {
-    char line[LEN_BUF];
+    char line[LINE_BUF_LEN];
     char command[COMMAND_LEN];
     FILE *f = NULL;
     int index;
@@ -262,12 +256,12 @@ static int __get_containers_pod(container_tbl* cstbl, const char *command_s)
         if (f == NULL)
             continue;
 
-        (void)memset(line, 0, LEN_BUF);
-        if (fgets(line, LEN_BUF, f) == NULL) {
+        (void)memset(line, 0, LINE_BUF_LEN);
+        if (fgets(line, LINE_BUF_LEN, f) == NULL) {
             (void)pclose(f);
             continue;
         }
-        __SPLIT_NEWLINE_SYMBOL(line);
+        SPLIT_NEWLINE_SYMBOL(line);
         (void)snprintf(p->pod, POD_NAME_LEN, "%s", line);
         p++;
         (void)pclose(f);
@@ -277,7 +271,7 @@ static int __get_containers_pod(container_tbl* cstbl, const char *command_s)
 
 static unsigned int __get_pid_namespace(unsigned int pid, const char *namespace)
 {
-    char line[LEN_BUF];
+    char line[LINE_BUF_LEN];
     char command[COMMAND_LEN];
     FILE *f = NULL;
 
@@ -287,13 +281,13 @@ static unsigned int __get_pid_namespace(unsigned int pid, const char *namespace)
     if (f == NULL)
         return -1;
 
-    (void)memset(line, 0, LEN_BUF);
-    if (fgets(line, LEN_BUF, f) == NULL) {
+    (void)memset(line, 0, LINE_BUF_LEN);
+    if (fgets(line, LINE_BUF_LEN, f) == NULL) {
         (void)pclose(f);
         return -1;
     }
     (void)pclose(f);
-    __SPLIT_NEWLINE_SYMBOL(line);
+    SPLIT_NEWLINE_SYMBOL(line);
     return (unsigned int)strtoul((const char *)line, NULL, TEN);
 }
 
@@ -446,20 +440,20 @@ static int __get_container_cgroup(const char *cmd, char *line)
     if (f == NULL)
         return -1;
 
-    if (fgets(line, LEN_BUF, f) == NULL) {
+    if (fgets(line, LINE_BUF_LEN, f) == NULL) {
         (void)pclose(f);
         return -1;
     }
     (void)pclose(f);
 
-    __SPLIT_NEWLINE_SYMBOL(line);
+    SPLIT_NEWLINE_SYMBOL(line);
     return 0;
 }
 
 static void __get_container_memory_metric(const char *sub_dir, struct cgroup_metric *cgroup)
 {
     char command[COMMAND_LEN] = {0};
-    char line[LEN_BUF] = {0};
+    char line[LINE_BUF_LEN] = {0};
 
     /* memory.usage_in_bytes */
     (void)snprintf(command, COMMAND_LEN, DOCKER_MEMCG_COMMAND, sub_dir, "memory.usage_in_bytes");
@@ -470,7 +464,7 @@ static void __get_container_memory_metric(const char *sub_dir, struct cgroup_met
 
     /* memory.limit_in_bytes */
     (void)memset(command, 0, COMMAND_LEN);
-    (void)memset(line, 0, LEN_BUF);
+    (void)memset(line, 0, LINE_BUF_LEN);
     (void)snprintf(command, COMMAND_LEN, DOCKER_MEMCG_COMMAND, sub_dir, "memory.limit_in_bytes");
     if (__get_container_cgroup(command, line) == -1)
         return;
@@ -479,7 +473,7 @@ static void __get_container_memory_metric(const char *sub_dir, struct cgroup_met
 
     /* memory.stat.cache */
     (void)memset(command, 0, COMMAND_LEN);
-    (void)memset(line, 0, LEN_BUF);
+    (void)memset(line, 0, LINE_BUF_LEN);
     (void)snprintf(command, COMMAND_LEN, DOCKER_MEMCG_STAT_COMMAND, sub_dir, "cache");
     if (__get_container_cgroup(command, line) == -1)
         return;
@@ -492,7 +486,7 @@ static void __get_container_memory_metric(const char *sub_dir, struct cgroup_met
 static void __get_container_cpuaccet_metric(const char *sub_dir, struct cgroup_metric *cgroup)
 {
     char command[COMMAND_LEN] = {0};
-    char line[LEN_BUF] = {0};
+    char line[LINE_BUF_LEN] = {0};
     char *p = NULL;
     int cpu_no = 0;
 
@@ -505,7 +499,7 @@ static void __get_container_cpuaccet_metric(const char *sub_dir, struct cgroup_m
 
     /* cpuacct.usage_percpu */
     (void)memset(command, 0, COMMAND_LEN);
-    (void)memset(line, 0, LEN_BUF);
+    (void)memset(line, 0, LINE_BUF_LEN);
     (void)snprintf(command, COMMAND_LEN, DOCKER_CPUCG_COMMAND, sub_dir, "cpuacct.usage_percpu");
     if (__get_container_cgroup(command, line) == -1)
         return;
@@ -522,7 +516,7 @@ static void __get_container_cpuaccet_metric(const char *sub_dir, struct cgroup_m
 static void __get_container_pids_metric(const char *sub_dir, struct cgroup_metric *cgroup)
 {
     char command[COMMAND_LEN] = {0};
-    char line[LEN_BUF] = {0};
+    char line[LINE_BUF_LEN] = {0};
 
     /* pids.current */
     (void)snprintf(command, COMMAND_LEN, DOCKER_PIDS_COMMAND, sub_dir, "pids.current");
@@ -589,7 +583,7 @@ int get_container_merged_path(const char *container_id, char *path, unsigned int
         (void)pclose(f);
         return -1;
     }
-    __SPLIT_NEWLINE_SYMBOL(path);
+    SPLIT_NEWLINE_SYMBOL(path);
     (void)pclose(f);
     return 0;
 }
@@ -620,7 +614,7 @@ int exec_container_command(const char *container_id, const char *exec, char *buf
         (void)pclose(f);
         return -1;
     }
-    __SPLIT_NEWLINE_SYMBOL(buf);
+    SPLIT_NEWLINE_SYMBOL(buf);
     (void)pclose(f);
     return 0;
 }

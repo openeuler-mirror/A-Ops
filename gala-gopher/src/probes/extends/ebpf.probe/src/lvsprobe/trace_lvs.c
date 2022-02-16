@@ -82,10 +82,10 @@ static void update_ipvs_collect_map(const struct link_key *k, unsigned short pro
     key.v_port = k->v_port;
     key.s_port = k->s_port;
 
-    bpf_map_lookup_elem(map_fd, &key, &val);
+    (void)bpf_map_lookup_elem(map_fd, &key, &val);
     update_ipvs_collect_data(&val);
     val.protocol = protocol;
-    bpf_map_update_elem(map_fd, &key, &val, BPF_ANY);
+    (void)bpf_map_update_elem(map_fd, &key, &val, BPF_ANY);
 
     return;
 }
@@ -126,7 +126,7 @@ static void pull_probe_data(int fd, int collect_fd)
             update_ipvs_collect_map(&next_key, value.protocol, &value.l_addr, collect_fd);
         }
         if (value.state == IP_VS_TCP_S_CLOSE) {
-            bpf_map_delete_elem(fd, &next_key);
+            (void)bpf_map_delete_elem(fd, &next_key);
         } else {
             key = next_key;
         }
@@ -174,7 +174,7 @@ static void print_ipvs_collect(int map_fd)
                 ntohs(next_key.s_port),
                 value.link_count);
         }
-        bpf_map_delete_elem(map_fd, &next_key);
+        (void)bpf_map_delete_elem(map_fd, &next_key);
     }
     (void)fflush(stdout);
     return;

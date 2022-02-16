@@ -28,6 +28,8 @@
 #define AF_INET6 10
 #endif
 
+unsigned short ntohs(unsigned short netshort);
+
 #define NIP6(addr)                                                                                  \
     ntohs((addr)[0]), ntohs(addr[1]), ntohs(addr[2]), ntohs(addr[3]), ntohs(addr[4]), ntohs(addr[5]), \
         (ntohs((addr)[6]) >> 8), (ntohs(addr[6]) & 0xff), (ntohs(addr[7]) >> 8), (ntohs(addr[7]) & 0xff)

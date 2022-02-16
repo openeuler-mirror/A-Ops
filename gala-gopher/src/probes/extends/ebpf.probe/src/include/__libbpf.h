@@ -19,8 +19,10 @@
 #if !defined( BPF_PROG_KERN ) && !defined( BPF_PROG_USER )
 
 #include <bpf/libbpf.h>
+#include <bpf/bpf.h>
 #include <sys/resource.h>
 #include "task.h"
+#include "elf_reader.h"
 #include "util.h"
 
 #define EBPF_RLIM_INFINITY  100*1024*1024 // 100M
@@ -56,7 +58,7 @@ static __always_inline int set_memlock_rlimit(void)
         __map = GET_MAP_OBJ(map_name); \
         (void)bpf_map__pin(__map, map_path); \
         __fd = bpf_obj_get(map_path); \
-        printf("======>SHARE map(" #map_name ") pin FD=%d.\n", __fd); \
+        (void)printf("======>SHARE map(" #map_name ") pin FD=%d.\n", __fd); \
     } while (0)
 
 #define __PIN_SHARE_MAP_ALL \
@@ -72,7 +74,7 @@ static __always_inline int set_memlock_rlimit(void)
     do { \
         int err; \
         /* Set up libbpf errors and debug info callback */ \
-        libbpf_set_print(libbpf_print_fn); \
+        (void)libbpf_set_print(libbpf_print_fn); \
         \
         /* Bump RLIMIT_MEMLOCK  allow BPF sub-system to do anything */ \
         if (set_memlock_rlimit() == 0) { \
@@ -81,13 +83,13 @@ static __always_inline int set_memlock_rlimit(void)
         /* Open load and verify BPF application */ \
         skel = probe_name##_bpf__open_and_load(); \
         if (!skel) { \
-            fprintf(stderr, "Failed to open BPF skeleton\n"); \
+            (void)fprintf(stderr, "Failed to open BPF skeleton\n"); \
             goto err; \
         } \
         /* Attach tracepoint handler */ \
         err = probe_name##_bpf__attach(skel); \
         if (err) { \
-            fprintf(stderr, "Failed to attach BPF skeleton\n"); \
+            (void)fprintf(stderr, "Failed to attach BPF skeleton\n"); \
             probe_name##_bpf__destroy(skel); \
             skel = NULL; \
             goto err; \
@@ -140,12 +142,13 @@ static __always_inline int set_memlock_rlimit(void)
         } \
     } while (0)
 
+
 #define ELF_REAL_PATH(proc_name, elf_abs_path, container_id, elf_path, path_num) \
     do { \
-        path_num = get_exec_file_path( #proc_name, elf_abs_path, #container_id, elf_path, PATH_NUM); \
+        path_num = get_exec_file_path( #proc_name, (const char *)elf_abs_path, #container_id, elf_path, PATH_NUM); \
         if ((path_num) <= 0) { \
-            fprintf(stderr, "Failed to get proc(" #proc_name ") abs_path.\n"); \
-            (void)free_exec_path_buf(elf_path, path_num); \
+            (void)fprintf(stderr, "Failed to get proc(" #proc_name ") abs_path.\n"); \
+            free_exec_path_buf(elf_path, path_num); \
             break; \
         } \
     } while (0)
@@ -153,24 +156,24 @@ static __always_inline int set_memlock_rlimit(void)
 #define UBPF_ATTACH(probe_name, elf_path, func_name, error) \
     do { \
         int err; \
-        long symbol_offset; \
-        err = resolve_symbol_infos(elf_path, #func_name, NULL, &symbol_offset); \
+        uint64_t symbol_offset; \
+        err = resolve_symbol_infos((const char *)elf_path, #func_name, NULL, &symbol_offset); \
         if (err < 0) { \
-            fprintf(stderr, "Failed to get func(" #func_name ") in(%s) offset.\n", elf_path); \
+            (void)fprintf(stderr, "Failed to get func(" #func_name ") in(%s) offset.\n", elf_path); \
             error = 0; \
             break; \
         } \
         \
         /* Attach tracepoint handler */ \
         link[current] = bpf_program__attach_uprobe( \
-            skel->progs.ubpf_##probe_name, false /* not uretprobe */, -1, elf_path, symbol_offset); \
+            skel->progs.ubpf_##probe_name, false /* not uretprobe */, -1, elf_path, (size_t)symbol_offset); \
         err = libbpf_get_error(link[current]); \
         if (err) { \
-            fprintf(stderr, "Failed to attach uprobe: %d\n", err); \
+            (void)fprintf(stderr, "Failed to attach uprobe: %d\n", err); \
             error = 0; \
             break; \
         } \
-        fprintf(stdout, "Success to attach uprobe to elf: %s\n", elf_path); \
+        (void)fprintf(stdout, "Success to attach uprobe to elf: %s\n", elf_path); \
         current += 1; \
         error = 1; \
     } while (0)
@@ -178,24 +181,24 @@ static __always_inline int set_memlock_rlimit(void)
 #define UBPF_RET_ATTACH(probe_name, elf_path, func_name, error) \
     do { \
         int err; \
-        long symbol_offset; \
-        err = resolve_symbol_infos(elf_path, #func_name, NULL, &symbol_offset); \
+        uint64_t symbol_offset; \
+        err = resolve_symbol_infos((const char *)elf_path, #func_name, NULL, &symbol_offset); \
         if (err < 0) { \
-            fprintf(stderr, "Failed to get func(" #func_name ") in(%s) offset.\n", elf_path); \
+            (void)fprintf(stderr, "Failed to get func(" #func_name ") in(%s) offset.\n", elf_path); \
             error = 0; \
             break; \
         } \
         \
         /* Attach tracepoint handler */ \
         link[current] = bpf_program__attach_uprobe( \
-            skel->progs.ubpf_ret_##probe_name, true /* uretprobe */, -1, elf_path, symbol_offset); \
+            skel->progs.ubpf_ret_##probe_name, true /* uretprobe */, -1, elf_path, (size_t)symbol_offset); \
         err = libbpf_get_error(link[current]); \
         if (err) { \
-            fprintf(stderr, "Failed to attach uprobe: %d\n", err); \
+            (void)fprintf(stderr, "Failed to attach uprobe: %d\n", err); \
             error = 0; \
             break; \
         } \
-        fprintf(stdout, "Success to attach uretprobe to elf: %s\n", elf_path); \
+        (void)fprintf(stdout, "Success to attach uretprobe to elf: %s\n", elf_path); \
         current += 1; \
         error = 1; \
     } while (0)

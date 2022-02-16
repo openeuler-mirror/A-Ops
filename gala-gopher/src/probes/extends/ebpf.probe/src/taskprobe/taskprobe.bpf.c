@@ -62,6 +62,7 @@ static int get_task_pgid(const struct task_struct *cur_task)
     return pgid;
 }
 
+#if 0
 static void create_task(struct task_struct* task, int pgid)
 {
     struct task_key key = {0};
@@ -72,19 +73,6 @@ static void create_task(struct task_struct* task, int pgid)
     data.id.ppid = pgid;
     data.id.pgid = get_task_pgid(task);
     upd_task_entry(&key, &data);
-    return;
-}
-
-static void update_task_status(struct task_struct* task, __u32 task_status)
-{
-    struct task_key key = {0};
-    struct task_data *data;
-    
-    key.pid = _(task->pid);
-    data = (struct task_data *)get_task_entry(&key);
-    if (data != (struct task_data *)0) {
-        data->base.task_status = task_status;
-    }
     return;
 }
 
@@ -106,6 +94,20 @@ static void update_fork_count(struct task_struct* task)
         data->id.pgid = get_task_pgid(task);
         data->base.fork_count = 1;
         upd_task_entry(&key, data);
+    }
+    return;
+}
+#endif
+
+static void update_task_status(struct task_struct* task, __u32 task_status)
+{
+    struct task_key key = {0};
+    struct task_data *data;
+    
+    key.pid = _(task->pid);
+    data = (struct task_data *)get_task_entry(&key);
+    if (data != (struct task_data *)0) {
+        data->base.task_status = task_status;
     }
     return;
 }

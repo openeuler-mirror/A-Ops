@@ -789,7 +789,8 @@ static int IMDB_RecordEvent2Json(const IMDB_DataBaseMgr *mgr, IMDB_Table *table,
     return 0;
 }
 
-int IMDB_DataStr2Json(IMDB_DataBaseMgr *mgr, char *recordStr, int recordLen, char *jsonStr, uint32_t jsonStrLen)
+int IMDB_DataStr2Json(IMDB_DataBaseMgr *mgr, const char *recordStr, 
+                                  int recordLen, char *jsonStr, uint32_t jsonStrLen)
 {
     pthread_rwlock_wrlock(&mgr->rwlock);
 

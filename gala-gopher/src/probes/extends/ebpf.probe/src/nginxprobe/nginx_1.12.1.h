@@ -15,12 +15,6 @@
 #ifndef __NGX_VERSION_1_12_1_H__
 #define __NGX_VERSION_1_12_1_H__
 
-#define TASK_COMM_LEN 16
-#define MAX_FILENAME_LEN 127
-#define AF_INET 2   /* Internet IP Protocol 	*/
-#define AF_INET6 10 /* IP version 6			*/
-#define IP_STR_LEN 32
-
 struct sockaddr {
     unsigned short sa_family;
     char sa_data[14];

@@ -31,6 +31,7 @@
 #include "args.h"
 #include "taskprobe.skel.h"
 #include "taskprobe.h"
+#include "task_stat.h"
 
 #define ERR_MSG "No such file or directory"
 
@@ -47,14 +48,6 @@
 #define OO_NAME_TASK "task"
 
 #define TASK_PROBE_COLLECTION_PERIOD 5
-
-#define __SPLIT_NEWLINE_SYMBOL(s) \
-    do { \
-        int __len = strlen(s); \
-        if (__len > 0 && (s)[__len - 1] == '\n') { \
-            (s)[__len - 1] = 0; \
-        } \
-    } while (0)
 
 static volatile sig_atomic_t stop = 0;
 static struct probe_params tp_params = {.period = TASK_PROBE_COLLECTION_PERIOD};
@@ -95,7 +88,7 @@ static int get_task_comm(int pid, char *buf, unsigned int buf_len)
         (void)pclose(f);
         return -1;
     }
-    __SPLIT_NEWLINE_SYMBOL(line);
+    SPLIT_NEWLINE_SYMBOL(line);
     (void)strncpy(buf, line, buf_len);
     return 0;
 }
@@ -149,7 +142,7 @@ static int get_daemon_task_id(const char *comm, int task_map_fd)
         if (fgets(line, LINE_BUF_LEN, f) == NULL) {
             break;
         }
-        __SPLIT_NEWLINE_SYMBOL(line);
+        SPLIT_NEWLINE_SYMBOL(line);
         if (do_get_daemon_task_id((char *)line, &key, &data) < 0) {
             ret = -1;
             goto out;
@@ -202,7 +195,6 @@ int jinfo_get_label_info(int pid, char *label, char *buf, int buf_len)
     FILE *f = NULL;
     char command[COMMAND_LEN];
     char line[LINE_BUF_LEN];
-    char *colon = NULL;
     int len = (buf_len <= LINE_BUF_LEN) ? buf_len : LINE_BUF_LEN;
 
     command[0] = 0;
@@ -215,7 +207,7 @@ int jinfo_get_label_info(int pid, char *label, char *buf, int buf_len)
         (void)pclose(f);
         return -1;
     }
-    __SPLIT_NEWLINE_SYMBOL(line);
+    SPLIT_NEWLINE_SYMBOL(line);
     (void)strncpy(buf, line, len - 1);
 
     (void)pclose(f);
@@ -303,7 +295,7 @@ static void get_task_bin_data(struct task_bin* bin, int pid)
     
     /* exe file name */
     if (bin->exe_file[0] == 0) {
-        get_task_exe(pid, &bin->exe_file, TASK_EXE_FILE_LEN);
+        (void)get_task_exe(pid, bin->exe_file, TASK_EXE_FILE_LEN);
     }
 
     /* exec file name */
@@ -379,10 +371,9 @@ int main(int argc, char **argv)
     int task_map_fd = -1;
     int task_bin_map_fd = -1;
 
-    ret = signal(SIGINT, sig_int);
-    if (ret < 0) {
-        printf("Can't set signal handler: %d\n", errno);
-        goto err;
+    if (signal(SIGINT, sig_int) == SIG_ERR) {
+        fprintf(stderr, "can't set signal handler: %s\n", strerror(errno));
+        return -1;
     }
 
     ret = args_parse(argc, argv, "t:", &tp_params);

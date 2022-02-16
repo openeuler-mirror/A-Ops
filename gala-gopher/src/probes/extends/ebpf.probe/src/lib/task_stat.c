@@ -7,6 +7,8 @@
 #include <string.h>
 #include <unistd.h>
 
+#include "bpf.h"
+
 #define PROC_TASK_FILE "/proc/%u/stat"
 #define AWK_FIELD "\"\%u=\"$\%u\"\\n\""
 #define AWK_FIELD2 "\"\%u=\"$\%u"
@@ -16,17 +18,6 @@
 #define DEL_SYMBOL "="
 #define PROC_CWD_FILE "/proc/%d/cwd"
 #define PROC_EXE_FILE "/proc/%d/exe"
-
-#define LEN_BUF 256
-#define COMMAND_LEN 512
-
-#define __SPLIT_NEWLINE_SYMBOL(s) \
-    do { \
-        int __len = strlen(s); \
-        if (__len > 0 && (s)[__len - 1] == '\n') { \
-            (s)[__len - 1] = 0; \
-        } \
-    } while (0)
 
 enum task_stat_e {
     TASK_STAT_MINFLT = 10,
@@ -149,7 +140,7 @@ int read_task_stat(unsigned int pid)
     long long value;
     char stat_file[COMMAND_LEN];
     char cat_command[COMMAND_LEN];
-    char line[LEN_BUF];
+    char line[LINE_BUF_LEN];
 
     stat_file[0] = 0;
     (void)snprintf(stat_file, COMMAND_LEN, PROC_TASK_FILE, pid);
@@ -176,10 +167,10 @@ int read_task_stat(unsigned int pid)
 
     while (!feof(f)) {
         line[0] = 0;
-        if (fgets(line, LEN_BUF, f) == NULL) {
+        if (fgets(line, LINE_BUF_LEN, f) == NULL) {
             goto out;
         }
-        __SPLIT_NEWLINE_SYMBOL(line);
+        SPLIT_NEWLINE_SYMBOL(line);
         __get_line_info(line, &stat_index, &value);
 
         if (stat_index < TASK_STAT_MAX) {
@@ -250,7 +241,6 @@ long long get_task_rss(unsigned int read_handle)
 
 int get_task_pwd(int pid, char *pwd)
 {
-    int i;
     int ret;
     char pwd_file[COMMAND_LEN] = {0};
     char *buf = pwd;
@@ -270,7 +260,6 @@ int get_task_pwd(int pid, char *pwd)
 
 int get_task_exe(int pid, char *exe, int exe_len)
 {
-    int i;
     int ret;
     char pwd_file[COMMAND_LEN] = {0};
     char *buf = exe;

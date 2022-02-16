@@ -32,7 +32,6 @@
 #include "endpoint.h"
 
 #define OO_NAME "endpoint"
-#define INET6_ADDRSTRLEN (48)
 
 static volatile sig_atomic_t stop;
 static struct probe_params params = {.period = DEFAULT_PERIOD};

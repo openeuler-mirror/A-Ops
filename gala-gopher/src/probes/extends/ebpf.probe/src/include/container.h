@@ -15,20 +15,17 @@
 #ifndef __CONTAINER_H__
 #define __CONTAINER_H__
 
-#define CONTAINER_ID_LEN    64
-#define POD_NAME_LEN        64
-#define COMM_LEN            64
-#define COER_NUM            16
 #define TEN                 10
+#define COER_NUM            16
 
 struct cgroup_metric {
-    char *memory_usage_in_bytes;
-    char *memory_limit_in_bytes;
-    char *memory_stat_cache;
-    char *cpuacct_usage;
-    char *cpuacct_usage_percpu[COER_NUM];
-    char *pids_current;
-    char *pids_limit;
+    unsigned long memory_usage_in_bytes;
+    unsigned long memory_limit_in_bytes;
+    unsigned long memory_stat_cache;
+    unsigned long cpuacct_usage;
+    unsigned long cpuacct_usage_percpu[COER_NUM];
+    unsigned long pids_current;
+    unsigned long pids_limit;
 };
 
 typedef struct container_info_s {
@@ -38,7 +35,7 @@ typedef struct container_info_s {
     unsigned int cgroup;
     char container[CONTAINER_ID_LEN];
     char pod[POD_NAME_LEN];
-    char comm[COMM_LEN];
+    char comm[TASK_COMM_LEN];
 } container_info;
 
 typedef struct container_tbl_s {

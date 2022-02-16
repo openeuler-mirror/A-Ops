@@ -51,7 +51,7 @@ static void update_collect_map(struct link_key *k, struct link_value *v, int map
     key.family = k->family;
 
     /* lookup value */
-    bpf_map_lookup_elem(map_fd, &key, &value);
+    (void)bpf_map_lookup_elem(map_fd, &key, &value);
 
     /* update value */
     value.link_count++;
@@ -59,7 +59,7 @@ static void update_collect_map(struct link_key *k, struct link_value *v, int map
     (void)snprintf(value.comm, TASK_COMM_LEN - 1, v->comm);
 
     /* update hash map */
-    bpf_map_update_elem(map_fd, &key, &value, BPF_ANY);
+    (void)bpf_map_update_elem(map_fd, &key, &value, BPF_ANY);
 
     return;
 }
@@ -87,7 +87,7 @@ static void pull_probe_data(int fd, int collect_fd)
             /* update collect map */
             update_collect_map(&next_key, &value, collect_fd);
         }
-        bpf_map_delete_elem(fd, &next_key);
+        (void)bpf_map_delete_elem(fd, &next_key);
         key = next_key;
     }
 }
@@ -106,7 +106,7 @@ static void print_dnsmasq_collect(int map_fd)
         if (ret == 0) {
             ip_str(next_key.family, (unsigned char *)&(next_key.c_addr), cli_ip_str, INET6_ADDRSTRLEN);
             ip_str(next_key.family, (unsigned char *)&(next_key.dns_addr), dns_ip_str, INET6_ADDRSTRLEN);
-            fprintf(stdout,
+            (void)fprintf(stdout,
                 "|%s|%s|%s|%d|%u|%u|%s|\n",
                 METRIC_NAME_DNSMASQ_LINK,
                 cli_ip_str,
@@ -116,7 +116,7 @@ static void print_dnsmasq_collect(int map_fd)
                 value.pid,
                 value.comm);
         }
-        bpf_map_delete_elem(map_fd, &next_key);
+        (void)bpf_map_delete_elem(map_fd, &next_key);
     }
     (void)fflush(stdout);
     return;
@@ -154,7 +154,8 @@ int main(int argc, char **argv)
         UBPF_ATTACH(send_from, elf[i], send_from, ret);
         if (ret <= 0)
             continue;
-        attach_flag = 1;
+
+		attach_flag = 1;
     }
     free_exec_path_buf(elf, elf_num);
     if (attach_flag == 0)
