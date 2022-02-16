@@ -153,11 +153,12 @@ int main(int argc, char **argv)
     signal(SIGINT, sig_handler);
     signal(SIGTERM, sig_handler);
     /* load bpf prog */
-    LOAD(containerd_probe);
+	INIT_BPF_APP(containerd_probe);
+    LOAD(containerd_probe, err);
     /* Update already running container */
-    update_current_containers_info(GET_MAP_FD(containers_map));
+    update_current_containers_info(GET_MAP_FD(containerd_probe, containers_map));
     /* Update BPF symaddrs for this binary */
-    bpf_update_containerd_symaddrs(GET_MAP_FD(containerd_symaddrs_map));
+    bpf_update_containerd_symaddrs(GET_MAP_FD(containerd_probe, containerd_symaddrs_map));
     /* Find elf's abs_path */
     ELF_REAL_PATH(containerd, params.elf_path, NULL, elf, elf_num);
     if (elf_num <= 0)
@@ -166,11 +167,13 @@ int main(int argc, char **argv)
     /* Attach tracepoint handler for each elf_path */
     for (int i = 0; i < elf_num; i++) {
         int ret = 0;
-        UBPF_ATTACH(linux_Task_Start, elf[i], github.com/containerd/containerd/runtime/v1/linux.(*Task).Start, ret);
+        UBPF_ATTACH(containerd_probe, linux_Task_Start, elf[i], 
+        		github.com/containerd/containerd/runtime/v1/linux.(*Task).Start, ret);
         if (ret <= 0) {
             continue;
         }
-        UBPF_ATTACH(linux_Task_Delete, elf[i], github.com/containerd/containerd/runtime/v1/linux.(*Task).Delete, ret);
+        UBPF_ATTACH(containerd_probe, linux_Task_Delete, elf[i], 
+        		github.com/containerd/containerd/runtime/v1/linux.(*Task).Delete, ret);
         if (ret <= 0) {
             continue;
         }
@@ -181,13 +184,13 @@ int main(int argc, char **argv)
         goto err;
     }
 
-    int pinned = bpf_obj_pin(GET_MAP_FD(containers_map), CONTAINERS_MAP_FILE_PATH);
+    int pinned = bpf_obj_pin(GET_MAP_FD(containerd_probe, containers_map), CONTAINERS_MAP_FILE_PATH);
     if (pinned < 0) {
         printf("Failed to pin containers_map to the file system: %d, err: %d\n", pinned, errno);
         goto err;
     }
     while (!g_stop) {
-        print_container_metric(GET_MAP_FD(containers_map));
+        print_container_metric(GET_MAP_FD(containerd_probe, containers_map));
         sleep(params.period);
     }
 err:

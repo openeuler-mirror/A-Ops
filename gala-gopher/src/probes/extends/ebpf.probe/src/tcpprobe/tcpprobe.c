@@ -347,7 +347,8 @@ int main(int argc, char **argv)
 
     printf("arg parse interval time:%us\n", params.period);
 
-    LOAD(tcpprobe);
+    INIT_BPF_APP(tcpprobe);
+    LOAD(tcpprobe, err);
 
     if (signal(SIGINT, sig_int) == SIG_ERR) {
         fprintf(stderr, "can't set signal handler: %s\n", strerror(errno));
@@ -363,12 +364,12 @@ int main(int argc, char **argv)
     }
 
     /* update long link info */
-    bpf_update_long_link_info_to_map(GET_MAP_FD(long_link_map), GET_MAP_FD(listen_port_map));
+    bpf_update_long_link_info_to_map(GET_MAP_FD(tcpprobe, long_link_map), GET_MAP_FD(tcpprobe, listen_port_map));
 
     printf("Successfully started!\n");
 
     while (g_stop == 0) {
-        pull_probe_data(GET_MAP_FD(link_map), metric_map_fd);
+        pull_probe_data(GET_MAP_FD(tcpprobe, link_map), metric_map_fd);
         print_link_metric(metric_map_fd);
         sleep(params.period);
     }

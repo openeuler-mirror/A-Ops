@@ -46,161 +46,139 @@ static __always_inline int set_memlock_rlimit(void)
     return 1;
 }
 
-#define GET_MAP_OBJ(map_name) (skel->maps.map_name)
-#define GET_MAP_FD(map_name) bpf_map__fd(skel->maps.map_name)
-#define GET_PROG_FD(prog_name) bpf_program__fd(skel->progs.prog_name)
+#define GET_MAP_OBJ(probe_name, map_name) (probe_name##_skel->maps.map_name)
+#define GET_MAP_FD(probe_name, map_name) bpf_map__fd(probe_name##_skel->maps.map_name)
+#define GET_PROG_FD(prog_name) bpf_program__fd(probe_name##_skel->progs.prog_name)
 
-#define __PIN_SHARE_MAP(map_name, map_path) \
+#define __PIN_SHARE_MAP(probe_name, map_name, map_path) \
     do { \
         int __fd; \
         struct bpf_map *__map; \
         \
-        __map = GET_MAP_OBJ(map_name); \
+        __map = GET_MAP_OBJ(probe_name, map_name); \
         (void)bpf_map__pin(__map, map_path); \
         __fd = bpf_obj_get(map_path); \
         (void)printf("======>SHARE map(" #map_name ") pin FD=%d.\n", __fd); \
     } while (0)
 
-#define __PIN_SHARE_MAP_ALL \
+#define __PIN_SHARE_MAP_ALL(probe_name) \
         do { \
-            __PIN_SHARE_MAP(__probe_match_map, __PROBE_MATCH_MAP_PIN_PATH); \
-            __PIN_SHARE_MAP(__task_map, SHARE_MAP_TASK_PATH); \
+            __PIN_SHARE_MAP(probe_name, __probe_match_map, __PROBE_MATCH_MAP_PIN_PATH); \
+            __PIN_SHARE_MAP(probe_name, __task_map, SHARE_MAP_TASK_PATH); \
         } while (0)
 
-#define LOAD(probe_name) \
-    struct probe_name##_bpf *skel;                 \
-    struct bpf_link *link[PATH_NUM];    \
-    int current = 0;    \
+#define INIT_BPF_APP(app_name) \
+    static char __init = 0; \
+    do { \
+        if (!__init) { \
+            /* Set up libbpf errors and debug info callback */ \
+            (void)libbpf_set_print(libbpf_print_fn); \
+            \
+            /* Bump RLIMIT_MEMLOCK  allow BPF sub-system to do anything */ \
+            if (set_memlock_rlimit() == 0) { \
+                (void)fprintf(stderr, "BPF app(" #app_name ") failed to set mem limit.\n"); \
+                return -1; \
+            } \
+            __init = 1; \
+        } \
+    } while (0)
+
+#define LOAD(probe_name, end) \
+    struct probe_name##_bpf *probe_name##_skel = NULL;           \
+    struct bpf_link *probe_name##_link[PATH_NUM] __maybe_unused; \
+    int probe_name##_link_current = 0;    \
     do { \
         int err; \
-        /* Set up libbpf errors and debug info callback */ \
-        (void)libbpf_set_print(libbpf_print_fn); \
-        \
-        /* Bump RLIMIT_MEMLOCK  allow BPF sub-system to do anything */ \
-        if (set_memlock_rlimit() == 0) { \
-            return -1; \
-        } \
         /* Open load and verify BPF application */ \
-        skel = probe_name##_bpf__open_and_load(); \
-        if (!skel) { \
-            (void)fprintf(stderr, "Failed to open BPF skeleton\n"); \
-            goto err; \
+        probe_name##_skel = probe_name##_bpf__open_and_load(); \
+        if (!probe_name##_skel) { \
+            (void)fprintf(stderr, "Failed to open BPF " #probe_name "skeleton\n"); \
+            goto end; \
         } \
         /* Attach tracepoint handler */ \
-        err = probe_name##_bpf__attach(skel); \
+        err = probe_name##_bpf__attach(probe_name##_skel); \
         if (err) { \
-            (void)fprintf(stderr, "Failed to attach BPF skeleton\n"); \
-            probe_name##_bpf__destroy(skel); \
-            skel = NULL; \
-            goto err; \
+            (void)fprintf(stderr, "Failed to attach BPF " #probe_name " skeleton\n"); \
+            probe_name##_bpf__destroy(probe_name##_skel); \
+            probe_name##_skel = NULL; \
+            goto end; \
         } \
-        __PIN_SHARE_MAP_ALL; \
+        __PIN_SHARE_MAP_ALL(probe_name); \
     } while (0)
 
 #define UNLOAD(probe_name) \
     do { \
         int err; \
-        if (skel != NULL) { \
-            probe_name##_bpf__destroy(skel); \
+        if (probe_name##_skel != NULL) { \
+            probe_name##_bpf__destroy(probe_name##_skel); \
         } \
-        for (int i = 0; i < current; i++) { \
-            err = bpf_link__destroy(link[i]); \
+        for (int i = 0; i < probe_name##_link_current; i++) { \
+            err = bpf_link__destroy(probe_name##_link[i]); \
             if (err < 0) { \
-                fprintf(stderr, "Failed to detach uprobe: %d\n", err); \
+                fprintf(stderr, "Failed to detach BPF " #probe_name " %d\n", err); \
                 break; \
             } \
         } \
     } while (0)
 
-#define LOAD_PROBE(probe_name, probe) \
-    struct probe_name##_bpf *skel;                 \
+#define ELF_REAL_PATH(binary_file, elf_abs_path, container_id, elf_path, path_num) \
     do { \
-        int err; \
-        /* Open load and verify BPF application */ \
-        skel = probe_name##_bpf__open_and_load(); \
-        if (!skel) { \
-            fprintf(stderr, "Failed to open BPF skeleton\n"); \
-            goto err; \
-        } \
-        /* Attach tracepoint handler */ \
-        err = probe_name##_bpf__attach(skel); \
-        if (err) { \
-            fprintf(stderr, "Failed to attach BPF skeleton\n"); \
-            probe_name##_bpf__destroy(skel); \
-            skel = NULL; \
-            goto err; \
-        } \
-        __PIN_SHARE_MAP_ALL; \
-        probe = skel; \
-    } while (0)
-
-#define UNLOAD_PROBE(probe_name, probe) \
-    do { \
-        int err; \
-        if (probe != NULL) { \
-            probe_name##_bpf__destroy(probe); \
-        } \
-    } while (0)
-
-
-#define ELF_REAL_PATH(proc_name, elf_abs_path, container_id, elf_path, path_num) \
-    do { \
-        path_num = get_exec_file_path( #proc_name, (const char *)elf_abs_path, #container_id, elf_path, PATH_NUM); \
+        path_num = get_exec_file_path( #binary_file, (const char *)elf_abs_path, #container_id, elf_path, PATH_NUM); \
         if ((path_num) <= 0) { \
-            (void)fprintf(stderr, "Failed to get proc(" #proc_name ") abs_path.\n"); \
+            (void)fprintf(stderr, "Failed to get proc(" #binary_file ") abs_path.\n"); \
             free_exec_path_buf(elf_path, path_num); \
             break; \
         } \
     } while (0)
 
-#define UBPF_ATTACH(probe_name, elf_path, func_name, error) \
+#define UBPF_ATTACH(probe_name, sec, elf_path, func_name, succeed) \
     do { \
         int err; \
         uint64_t symbol_offset; \
         err = resolve_symbol_infos((const char *)elf_path, #func_name, NULL, &symbol_offset); \
         if (err < 0) { \
             (void)fprintf(stderr, "Failed to get func(" #func_name ") in(%s) offset.\n", elf_path); \
-            error = 0; \
+            succeed = 0; \
             break; \
         } \
         \
         /* Attach tracepoint handler */ \
-        link[current] = bpf_program__attach_uprobe( \
-            skel->progs.ubpf_##probe_name, false /* not uretprobe */, -1, elf_path, (size_t)symbol_offset); \
-        err = libbpf_get_error(link[current]); \
+        probe_name##_link[probe_name##_link_current] = bpf_program__attach_uprobe( \
+            probe_name##_skel->progs.ubpf_##sec, false /* not uretprobe */, -1, elf_path, (size_t)symbol_offset); \
+        err = libbpf_get_error(probe_name##_link[probe_name##_link_current]); \
         if (err) { \
-            (void)fprintf(stderr, "Failed to attach uprobe: %d\n", err); \
-            error = 0; \
+            (void)fprintf(stderr, "Failed to attach uprobe(" #sec "): %d\n", err); \
+            succeed = 0; \
             break; \
         } \
-        (void)fprintf(stdout, "Success to attach uprobe to elf: %s\n", elf_path); \
-        current += 1; \
-        error = 1; \
+        (void)fprintf(stdout, "Success to attach uprobe(" #probe_name "): to elf: %s\n", elf_path); \
+        probe_name##_link_current += 1; \
+        succeed = 1; \
     } while (0)
 
-#define UBPF_RET_ATTACH(probe_name, elf_path, func_name, error) \
+#define UBPF_RET_ATTACH(probe_name, sec, elf_path, func_name, succeed) \
     do { \
         int err; \
         uint64_t symbol_offset; \
         err = resolve_symbol_infos((const char *)elf_path, #func_name, NULL, &symbol_offset); \
         if (err < 0) { \
             (void)fprintf(stderr, "Failed to get func(" #func_name ") in(%s) offset.\n", elf_path); \
-            error = 0; \
+            succeed = 0; \
             break; \
         } \
         \
         /* Attach tracepoint handler */ \
-        link[current] = bpf_program__attach_uprobe( \
-            skel->progs.ubpf_ret_##probe_name, true /* uretprobe */, -1, elf_path, (size_t)symbol_offset); \
-        err = libbpf_get_error(link[current]); \
+        probe_name##_link[probe_name##_link_current] = bpf_program__attach_uprobe( \
+            probe_name##_skel->progs.ubpf_ret_##sec, true /* uretprobe */, -1, elf_path, (size_t)symbol_offset); \
+        err = libbpf_get_error(probe_name##_link[probe_name##_link_current]); \
         if (err) { \
-            (void)fprintf(stderr, "Failed to attach uprobe: %d\n", err); \
-            error = 0; \
+            (void)fprintf(stderr, "Failed to attach uprobe(" #sec "): %d\n", err); \
+            succeed = 0; \
             break; \
         } \
-        (void)fprintf(stdout, "Success to attach uretprobe to elf: %s\n", elf_path); \
-        current += 1; \
-        error = 1; \
+        (void)fprintf(stdout, "Success to attach uretprobe(" #probe_name ") to elf: %s\n", elf_path); \
+        probe_name##_link_current += 1; \
+        succeed = 1; \
     } while (0)
 
 static __always_inline __maybe_unused struct perf_buffer* create_pref_buffer(int map_fd, perf_buffer_sample_fn cb)

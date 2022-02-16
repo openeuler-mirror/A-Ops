@@ -64,9 +64,10 @@ int main(int argc, char **argv)
 
     printf("arg parse interval time:%us\n", params.period);
 
-    LOAD(killprobe);
+    INIT_BPF_APP(killprobe);
+    LOAD(killprobe, err);
 
-    map_fd = GET_MAP_FD(output);
+    map_fd = GET_MAP_FD(killprobe, output);
 
     pb = create_pref_buffer(map_fd, print_bpf_output);
     if (pb == NULL) {

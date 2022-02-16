@@ -185,7 +185,8 @@ int main(int argc, char **argv)
 
     printf("arg parse interval time:%us\n", params.period);
 
-    LOAD(trace_haproxy);
+    INIT_BPF_APP(trace_haproxy);
+    LOAD(trace_haproxy, err);
 
     /* Cleaner handling of Ctrl-C */
     signal(SIGINT, sig_handler);
@@ -201,11 +202,11 @@ int main(int argc, char **argv)
     /* Attach tracepoint handler for each elf_path */
     for (int i = 0; i < elf_num; i++) {
         int ret = 0;
-        UBPF_ATTACH(back_establish, elf[i], back_establish, ret);
+        UBPF_ATTACH(trace_haproxy, back_establish, elf[i], back_establish, ret);
         if (ret <= 0)
             continue;
 
-        UBPF_ATTACH(stream_free, elf[i], stream_free, ret);
+        UBPF_ATTACH(trace_haproxy, stream_free, elf[i], stream_free, ret);
         if (ret <= 0)
             continue;
 
@@ -224,7 +225,7 @@ int main(int argc, char **argv)
     }
 
     while (!g_stop) {
-        pull_probe_data(GET_MAP_FD(haproxy_link_map), collect_map_fd);
+        pull_probe_data(GET_MAP_FD(trace_haproxy, haproxy_link_map), collect_map_fd);
         print_haproxy_collect(collect_map_fd);
         sleep(params.period);
     }

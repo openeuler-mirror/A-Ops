@@ -382,7 +382,8 @@ int main(int argc, char **argv)
 
     printf("Task probe starts with period: %us.\n", tp_params.period);
 
-    LOAD(taskprobe);
+    INIT_BPF_APP(taskprobe);
+    LOAD(taskprobe, err);
 
     /*
     remove(TASK_EXIT_MAP_FILE_PATH);
@@ -394,8 +395,8 @@ int main(int argc, char **argv)
     printf("Exit task map pin success.\n");
     */
 
-    pmap_fd = GET_MAP_FD(probe_proc_map);
-    task_map_fd = GET_MAP_FD(__task_map);
+    pmap_fd = GET_MAP_FD(taskprobe, probe_proc_map);
+    task_map_fd = GET_MAP_FD(taskprobe, __task_map);
     task_bin_map_fd = create_task_bin_tbl();
     if (task_bin_map_fd < 0) {
         goto err;
