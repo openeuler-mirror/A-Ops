@@ -42,7 +42,7 @@ struct bpf_map_def SEC("maps") __task_map = {
     .max_entries = SHARE_MAP_TASK_MAX_ENTRIES,
 };
 
-static __always_inline char is_task_exist(int pid)
+static __always_inline __maybe_unused char is_task_exist(int pid)
 {
     struct task_key key = {.pid = pid};
     
@@ -52,17 +52,17 @@ static __always_inline char is_task_exist(int pid)
     return 1;
 }
 
-static __always_inline int upd_task_entry(struct task_key* pk, struct task_data* pd)
+static __always_inline __maybe_unused int upd_task_entry(struct task_key* pk, struct task_data* pd)
 {
     return bpf_map_update_elem(&__task_map, pk, pd, BPF_ANY);
 }
 
-static __always_inline void* get_task_entry(struct task_key* pk)
+static __always_inline __maybe_unused void* get_task_entry(struct task_key* pk)
 {
     return bpf_map_lookup_elem(&__task_map, pk);
 }
 
-static __always_inline int del_task_entry(struct task_key* pk)
+static __always_inline __maybe_unused int del_task_entry(struct task_key* pk)
 {
     return bpf_map_delete_elem(&__task_map, pk);
 }

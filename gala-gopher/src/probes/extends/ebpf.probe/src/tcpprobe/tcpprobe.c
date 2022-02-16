@@ -234,7 +234,7 @@ static void print_link_metric(int map_fd)
                 data.send_rsts,
                 data.receive_rsts);
 
-            DEBUG("%s [%u-%s]: c_ip:%s, s_ip:%s:%u, proto:%u, link_num:%u, rx:%lu, tx:%lu, "
+            DEBUG("%s [%u-%s]: c_ip:%s, s_ip:%s:%u, proto:%u, link_num:%u, rx:%llu, tx:%llu, "
                    "segs_in:%u, segs_out:%u, total_retrans:%u, lost:%u, srtt:%uus, srtt_max:%uus, "
                    "rcv_wnd_min:%u, rcv_wnd_avg:%u, rcv_wnd_max:%u, backlog:%u, sk_drop:%u, "
                    "md5:%u, filter:%u, ofo:%u, tmout:%u, rcvque_full:%u, sndbuf_limit:%u, "

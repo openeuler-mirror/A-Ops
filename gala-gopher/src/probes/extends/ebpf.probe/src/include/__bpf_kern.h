@@ -52,7 +52,7 @@
 
 #define KERNEL_VERSION(a, b, c) (((a) << 16) + ((b) << 8) + (c))
 
-static __always_inline struct sock *sock_get_by_fd(int fd, struct task_struct *task)
+static __always_inline __maybe_unused struct sock *sock_get_by_fd(int fd, struct task_struct *task)
 {
     struct files_struct *files = _(task->files);
     struct fdtable *fdt = _(files->fdt);
