@@ -64,6 +64,7 @@ static inline int __debug_printf(const char *format, ...)
         } \
     } while (0)
 
+#define __maybe_unused		__attribute__((unused))
 
 #include "__share_map_task.h"
 #include "__share_map_match.h"

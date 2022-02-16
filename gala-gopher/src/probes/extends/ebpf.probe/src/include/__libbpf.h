@@ -39,8 +39,8 @@ static __always_inline int set_memlock_rlimit(void)
         .rlim_max   = EBPF_RLIM_INFINITY,
     };
 
-    if (setrlimit(RLIMIT_MEMLOCK, &rlim_new)) {
-        fprintf(stderr, "Failed to increase RLIMIT_MEMLOCK limit!\n");
+    if (setrlimit(RLIMIT_MEMLOCK, (const struct rlimit *)&rlim_new) != 0) {
+        (void)fprintf(stderr, "Failed to increase RLIMIT_MEMLOCK limit!\n");
         return 0;
     }
     return 1;
@@ -78,7 +78,7 @@ static __always_inline int set_memlock_rlimit(void)
         \
         /* Bump RLIMIT_MEMLOCK  allow BPF sub-system to do anything */ \
         if (set_memlock_rlimit() == 0) { \
-            return NULL; \
+            return -1; \
         } \
         /* Open load and verify BPF application */ \
         skel = probe_name##_bpf__open_and_load(); \
@@ -203,7 +203,7 @@ static __always_inline int set_memlock_rlimit(void)
         error = 1; \
     } while (0)
 
-static __always_inline struct perf_buffer* create_pref_buffer(int map_fd, perf_buffer_sample_fn cb)
+static __always_inline __maybe_unused struct perf_buffer* create_pref_buffer(int map_fd, perf_buffer_sample_fn cb)
 {
     struct perf_buffer_opts pb_opts = {};
     struct perf_buffer *pb;
@@ -224,7 +224,7 @@ static __always_inline struct perf_buffer* create_pref_buffer(int map_fd, perf_b
     return pb;
 }
 
-static __always_inline void poll_pb(struct perf_buffer *pb, int timeout_ms)
+static __always_inline __maybe_unused void poll_pb(struct perf_buffer *pb, int timeout_ms)
 {
     int ret;
 
