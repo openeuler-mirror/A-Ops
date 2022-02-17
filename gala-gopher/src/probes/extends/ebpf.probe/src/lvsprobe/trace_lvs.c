@@ -140,10 +140,10 @@ static void print_ipvs_collect(int map_fd)
     struct collect_key  next_key = {0};
     struct collect_value    value = {0};
 
-    unsigned char cli_ip_str[16];
-    unsigned char vir_ip_str[16];
-    unsigned char src_ip_str[16];
-    unsigned char loc_ip_str[16];
+    unsigned char cli_ip_str[INET6_ADDRSTRLEN];
+    unsigned char vir_ip_str[INET6_ADDRSTRLEN];
+    unsigned char loc_ip_str[INET6_ADDRSTRLEN];
+    unsigned char src_ip_str[INET6_ADDRSTRLEN];
 
     while (bpf_map_get_next_key(map_fd, &key, &next_key) != -1) {
         ret = bpf_map_lookup_elem(map_fd, &next_key, &value);

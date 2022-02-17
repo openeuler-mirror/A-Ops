@@ -150,7 +150,7 @@ KRAWTRACE(sched_process_fork, bpf_raw_tracepoint_args)
         } else {
             /* Add parent's task info to task_map first time */
             task_value.id.tgid = _(parent->tgid);
-            task_value.id.ppid = 0xffff;
+            task_value.id.ppid = -1;
             task_value.base.fork_count = 1;
             upd_task_entry(&parent_key, &task_value);
         }

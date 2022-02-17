@@ -44,6 +44,8 @@
 
 #define THOUSAND        1000
 
+#define INVALID_METRIC_VALUE "(null)"
+
 typedef struct {
     char machineId[MAX_IMDB_MACHINEID_LEN];
     char hostName[MAX_IMDB_HOSTNAME_LEN];

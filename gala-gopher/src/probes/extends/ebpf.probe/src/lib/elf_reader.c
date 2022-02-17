@@ -132,9 +132,12 @@ static int __do_get_path_from_host(const char *binary_file, char **res_buf, int 
     int r_len = 0;
     char *p = NULL;
     char *syspath_ptr = getenv("PATH");
+    char syspath[PATH_LEN];
 
-    if (syspath_ptr == NULL)
-		(void)snprintf(syspath_ptr, strlen(DEFAULT_PATH_LIST), "%s", DEFAULT_PATH_LIST);
+    if (syspath_ptr == NULL) {
+        (void)snprintf((void *)syspath, PATH_LEN, "%s", DEFAULT_PATH_LIST);
+        syspath_ptr = syspath;
+    }
 
     p = strtok(syspath_ptr, ":");
     while (p != NULL) {
