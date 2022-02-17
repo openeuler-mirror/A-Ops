@@ -20,6 +20,7 @@ class ValueCheckEnum(Enum):
 class EntityType(ValueCheckEnum):
     HOST = 'host'
     CONTAINER = 'container'
+    APPINSTANCE = 'appinstance'
     TASK = 'task'
     ENDPOINT = 'endpoint'
     TCP_LINK = 'tcp_link'
@@ -50,6 +51,7 @@ class RelationSideType(ValueCheckEnum):
 class TopologyLevelType(ValueCheckEnum):
     HOST = 'HOST'
     CONTAINER = 'CONTAINER'
+    APPLICATION = 'APPLICATION'
     RUNTIME = 'RUNTIME'
     PROCESS = 'PROCESS'
     RPC = 'RPC'

@@ -49,19 +49,17 @@ observe_entities:
           -
             type: container
   -
-    type: task
+    type: appinstance
     keys:
-      - pid
+      - pgid
       - machine_id
     labels:
-      - &task_name task_name
-      - tgid
-      - pidns
+      - exe_file
+      - exec_file
+      - java_classpath
       - container_id
-    name: *task_name
-    metrics:
-      - fork_count
-    level: PROCESS
+      - tasks
+    level: APPLICATION
     dependingitems:
       -
         id: runs_on
@@ -88,15 +86,40 @@ observe_entities:
                 label: container_id
                 value: null
       -
+        id: connect
+        layer: indirect
+        toTypes:
+          -
+            type: appinstance
+  -
+    type: task
+    keys:
+      - pid
+      - machine_id
+    labels:
+      - tgid
+      - pgid
+      - &task_name comm
+      - exe_file
+      - exec_file
+      - java_classpath
+      - pidns
+      - container_id
+    name: *task_name
+    metrics:
+      - fork_count
+    level: PROCESS
+    dependingitems:
+      -
         id: belongs_to
         layer: direct
         toTypes:
           -
-            type: task
+            type: appinstance
             matches:
               -
-                from: tgid
-                to: pid
+                from: pgid
+                to: pgid
               -
                 from: machine_id
                 to: machine_id

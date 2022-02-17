@@ -172,6 +172,9 @@ class PrometheusProcessor(DataProcessor, metaclass=Singleton):
                 if entity is not None:
                     res.append(entity)
 
+        logical_entities = ObserveEntityCreator.create_logical_observe_entities(res)
+        res.extend(logical_entities)
+
         return res
 
     def _get_metric_id(self, entity_type: str, metric_name: str):

@@ -82,7 +82,7 @@ gala-spider用于架构感知探测结果呈现，可以根据各个节点上报
     - netcgrp：容器关联的 net cgroup 。
     - memcgrp：容器关联的 memory cgroup 。
     - cpucgrp：容器关联的 cpu cgroup 。
-  
+    
 3. Task：进程节点
     - pid：进程ID，用于标识主机/虚拟机或容器上运行的一个进程。
     - machine_id：主机ID，用于关联进程所属的主机/虚拟机。
@@ -100,6 +100,14 @@ gala-spider用于架构感知探测结果呈现，可以根据各个节点上报
 5. Jvm：Java程序运行时
 6. Python：Python程序运行时
 7. Golang：Go程序运行时
+
+8. AppInstance: 应用实例节点
+    - pgid：进程组ID，用于标识一个应用实例。
+    - machine_id：主机ID，用于关联应用实例所属的主机/虚拟机。
+    - container_id：容器ID，用于关联应用实例所属的容器。
+    - exe_file: 应用可执行文件，用于标识一个应用。
+    - exec_file：应用被执行文件，用于标识一个应用。
+
 
 ### 接口文档
 
