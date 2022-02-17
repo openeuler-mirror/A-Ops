@@ -446,10 +446,30 @@ static int __get_listen_pid(const char *s, unsigned int *pid)
     return 0;
 }
 
+/*
+   s example: 127.0.0.1:38338users:(("lubanagent",pid=1709,fd=4))
+*/
+static int __get_listen_fd(const char *s, int *fd)
+{
+    int ret;
+    char fd_str[FID_LEN];
+
+    ret = __get_sub_str(s, "fd=", "))", fd_str, FID_LEN);
+    if (ret < 0)
+        return -1;
+
+    if (__is_digit_str((const char *)fd_str) == 0)
+        return -1;
+
+    *fd = atoi(fd_str);
+    return 0;
+}
+
 static struct tcp_listen_port* __new_tlp(const char *s)
 {
     int ret;
     unsigned int port, pid;
+    int fd;
     char comm[TASK_COMM_LEN];
     struct tcp_listen_port* tlp;
 
@@ -465,12 +485,17 @@ static struct tcp_listen_port* __new_tlp(const char *s)
     if (ret < 0)
         return NULL;
 
+    ret = __get_listen_fd(s, &fd);
+    if (ret < 0)
+        return NULL;
+
     tlp = (struct tcp_listen_port *)malloc(sizeof(struct tcp_listen_port));
     if (tlp == NULL)
         return NULL;
 
     tlp->pid = pid;
     tlp->port = port;
+    tlp->fd = fd;
     memcpy(tlp->comm, comm, TASK_COMM_LEN);
     return tlp;
 }

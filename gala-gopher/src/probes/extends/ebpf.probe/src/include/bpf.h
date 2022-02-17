@@ -18,8 +18,12 @@
 #define __PROBE_MATCH_MAP_PIN_PATH  "/sys/fs/bpf/probe/match_map"
 #define SHARE_MAP_TASK_PATH         "/sys/fs/bpf/probe/task_map"
 
+#ifndef AF_INET
 #define AF_INET     2   /* Internet IP Protocol */
+#endif
+#ifndef AF_INET6
 #define AF_INET6    10  /* IP version 6 */
+#endif
 
 #define INT_LEN    				32
 #define THOUSAND   				1000
