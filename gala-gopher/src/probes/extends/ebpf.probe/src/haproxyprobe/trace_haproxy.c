@@ -49,9 +49,9 @@ static void get_host_ip(const unsigned char *value, unsigned short family)
     int num = -1;
 
     if (family == AF_INET) {
-        (void)snprintf(cmd, COMMAND_LEN - 1, "/sbin/ifconfig | grep inet | grep -v 127.0.0.1 | grep -v inet6 | awk '{print $2}'");
+        (void)snprintf(cmd, COMMAND_LEN, "/sbin/ifconfig | grep inet | grep -v 127.0.0.1 | grep -v inet6 | awk '{print $2}'");
     } else {
-        (void)snprintf(cmd, COMMAND_LEN - 1, "/sbin/ifconfig | grep inet6 | grep -v ::1 | awk '{print $2}'");
+        (void)snprintf(cmd, COMMAND_LEN, "/sbin/ifconfig | grep inet6 | grep -v ::1 | awk '{print $2}'");
     }
 
     fp = popen(cmd, "r");
@@ -103,9 +103,9 @@ static void pull_probe_data(int fd, int collect_fd)
     struct link_key     key = {0};
     struct link_key     next_key = {0};
     struct link_value   value = {0};
-    unsigned char cli_ip_str[16];
-    unsigned char lb_ip_str[16];
-    unsigned char src_ip_str[16];
+    unsigned char cli_ip_str[INET6_ADDRSTRLEN];
+    unsigned char lb_ip_str[INET6_ADDRSTRLEN];
+    unsigned char src_ip_str[INET6_ADDRSTRLEN];
 
     while (bpf_map_get_next_key(fd, &key, &next_key) == 0) {
         ret = bpf_map_lookup_elem(fd, &next_key, &value);
@@ -143,9 +143,9 @@ static void print_haproxy_collect(int map_fd)
     struct collect_key  key = {0};
     struct collect_key  next_key = {0};
     struct collect_value    value = {0};
-    unsigned char cli_ip_str[16];
-    unsigned char lb_ip_str[16];
-    unsigned char src_ip_str[16];
+    unsigned char cli_ip_str[INET6_ADDRSTRLEN];
+    unsigned char lb_ip_str[INET6_ADDRSTRLEN];
+    unsigned char src_ip_str[INET6_ADDRSTRLEN];
 
     while (bpf_map_get_next_key(map_fd, &key, &next_key) != -1) {
         ret = bpf_map_lookup_elem(map_fd, &next_key, &value);

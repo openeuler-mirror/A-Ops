@@ -56,7 +56,7 @@ static void update_collect_map(struct link_key *k, struct link_value *v, int map
     /* update value */
     value.link_count++;
     value.pid = v->pid;
-    (void)snprintf(value.comm, TASK_COMM_LEN - 1, v->comm);
+    (void)snprintf(value.comm, TASK_COMM_LEN, v->comm);
 
     /* update hash map */
     (void)bpf_map_update_elem(map_fd, &key, &value, BPF_ANY);
@@ -70,8 +70,8 @@ static void pull_probe_data(int fd, int collect_fd)
     struct link_key     key = {0};
     struct link_key     next_key = {0};
     struct link_value   value = {0};
-    unsigned char cli_ip_str[16];
-    unsigned char dns_ip_str[16];
+    unsigned char cli_ip_str[INET6_ADDRSTRLEN];
+    unsigned char dns_ip_str[INET6_ADDRSTRLEN];
 
     while (bpf_map_get_next_key(fd, &key, &next_key) == 0) {
         ret = bpf_map_lookup_elem(fd, &next_key, &value);
@@ -98,8 +98,8 @@ static void print_dnsmasq_collect(int map_fd)
     struct collect_key      key = {0};
     struct collect_key      next_key = {0};
     struct collect_value    value = {0};
-    unsigned char cli_ip_str[16];
-    unsigned char dns_ip_str[16];
+    unsigned char cli_ip_str[INET6_ADDRSTRLEN];
+    unsigned char dns_ip_str[INET6_ADDRSTRLEN];
 
     while (bpf_map_get_next_key(map_fd, &key, &next_key) != -1) {
         ret = bpf_map_lookup_elem(map_fd, &next_key, &value);

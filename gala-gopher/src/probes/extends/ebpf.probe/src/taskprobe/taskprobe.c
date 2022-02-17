@@ -52,14 +52,18 @@
 static volatile sig_atomic_t stop = 0;
 static struct probe_params tp_params = {.period = TASK_PROBE_COLLECTION_PERIOD};
 
-static int default_probed_process_num = 6;
+static int default_probed_process_num = 10;
 static char default_probed_process_list[10][MAX_PROCESS_NAME_LEN] = {
     "go",
     "java",
     "python",
     "python3",
     "nginx",
-    "gala-gopher"
+    "gala-gopher",
+    "redis",
+    "redis-server",
+    "redis-client",
+    "redis-cli"
 };
 
 static void sig_int(int signal)
@@ -112,9 +116,10 @@ static int do_get_daemon_task_id(const char *ps_rlt, struct task_key *k, struct 
             start = i + 1;
         }
     }
-    if (j != PS_TYPE_MAX - 1) {
+    if (j < PS_TYPE_MAX - 1) {
         return -1;
     }
+    (void)strncpy(id_str[j], ps_rlt + start, i - start);
 
     k->pid = (unsigned int)atoi(id_str[PS_TYPE_PID]);
     data->id.tgid = k->pid;
@@ -127,8 +132,8 @@ static int do_get_daemon_task_id(const char *ps_rlt, struct task_key *k, struct 
 static int get_daemon_task_id(const char *comm, int task_map_fd)
 {
     FILE *f = NULL;
-    char cmd[COMMAND_LEN] = {0};
-    char line[LINE_BUF_LEN] = {0};
+    char cmd[COMMAND_LEN];
+    char line[LINE_BUF_LEN];
     struct task_key key = {0};
     struct task_data data = {0};
     int ret = 0;
@@ -217,11 +222,11 @@ int jinfo_get_label_info(int pid, char *label, char *buf, int buf_len)
 int update_java_process_info(int pid, char *java_command, char *java_classpath)
 {
     java_command[0] = 0;
+    java_classpath[0] = 0;
     if (jinfo_get_label_info(pid, TASK_PROBE_JAVA_COMMAND, java_command, JAVA_COMMAND_LEN) < 0) {
         printf("java process get command fail.\n");
         return -1;
     }
-    java_classpath[0] = 0;
     if (jinfo_get_label_info(pid, TASK_PROBE_JAVA_CLASSPATH, java_classpath, JAVA_CLASSPATH_LEN) < 0) {
         printf("java process get command fail.\n");
         return -1;
@@ -284,34 +289,38 @@ static void pull_probe_data(int task_map_fd, int task_bin_map_fd)
     return;
 }
 
-static void get_task_bin_data(struct task_bin* bin, int pid)
+static void get_task_bin_data(int bin_fd, struct task_bin* bin, struct task_key* key)
 {
     char java_command[JAVA_COMMAND_LEN];
     char java_classpath[JAVA_CLASSPATH_LEN];
 
     if (bin->comm[0] == 0) {
-        (void)get_task_comm(pid, bin->comm, TASK_COMM_LEN);
+        (void)get_task_comm(key->pid, bin->comm, TASK_COMM_LEN);
     }
-    
+
     /* exe file name */
     if (bin->exe_file[0] == 0) {
-        (void)get_task_exe(pid, bin->exe_file, TASK_EXE_FILE_LEN);
+        (void)get_task_exe(key->pid, bin->exe_file, TASK_EXE_FILE_LEN);
     }
 
     /* exec file name */
     if (strstr(bin->comm, "java") != NULL && bin->exec_file[0] == 0) {
         /* java */
-        (void)update_java_process_info(pid, (char *)java_command, (char *)java_classpath);
+        (void)update_java_process_info(key->pid, (char *)java_command, (char *)java_classpath);
         (void)strncpy(bin->exec_file, java_command, TASK_EXE_FILE_LEN);
     } else if (strstr(bin->comm, "python") != NULL || strstr(bin->comm, "go") != NULL) {
         /* python/go run */
-        (void)get_task_pwd(pid, (char *)bin->exec_file);
+        (void)get_task_pwd(key->pid, (char *)bin->exec_file);
     } else if (bin->exec_file[0] == 0) {
         /* c/c++/go */
         (void)strncpy((char *)bin->exec_file, (char *)bin->exe_file, TASK_EXE_FILE_LEN);
     } else {
         ; // nothing to do.
     }
+
+    /* update task bin */
+    (void)bpf_map_update_elem(bin_fd, key, bin, BPF_ANY);
+
     return;
 }
 
@@ -338,7 +347,7 @@ static void task_probe_pull_probe_data(int task_map_fd, int task_bin_map_fd)
             continue;
         }
 
-        get_task_bin_data(&bin, nkey.pid);
+        get_task_bin_data(task_bin_map_fd, &bin, &nkey);
         (void)get_task_io(&data.io, nkey.pid);
         
         fprintf(stdout, "|%s|%d|%d|%d|%s|%s|%s|%d|%d|%d|%llu|%llu|%llu|%llu|%llu|%u|%u|%llu|%llu|%llu|\n",

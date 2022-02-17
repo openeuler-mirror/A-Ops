@@ -367,8 +367,12 @@ int IMDB_DataBaseMgrAddRecord(IMDB_DataBaseMgr *mgr, char *recordStr, int len)
 
     // start analyse record string
     for (token = strsep(&buffer, delim); token != NULL; token = strsep(&buffer, delim)) {
-        if (strcmp(token, "") == 0)
-            continue;
+        if (strcmp(token, "") == 0) {
+            if (index == -1)
+                continue;
+            else
+                token = INVALID_METRIC_VALUE;
+        }
 
         if (strcmp(token, "\n") == 0)
             continue;
@@ -400,6 +404,10 @@ int IMDB_DataBaseMgrAddRecord(IMDB_DataBaseMgr *mgr, char *recordStr, int len)
             continue;
         }
 
+        // if index > metricNum, it's invalid
+        if (index >= table->meta->metricsNum) {
+            continue;
+        }
         // fill record by the rest substrings
         metric = IMDB_MetricCreate(table->meta->metrics[index]->name,
                                    table->meta->metrics[index]->description,
@@ -813,8 +821,12 @@ int IMDB_DataStr2Json(IMDB_DataBaseMgr *mgr, const char *recordStr,
 
     // start analyse record string
     for (token = strsep(&buffer, delim); token != NULL; token = strsep(&buffer, delim)) {
-        if (strcmp(token, "") == 0)
-            continue;
+        if (strcmp(token, "") == 0) {
+            if (index == -1)
+                continue;
+            else
+                token = INVALID_METRIC_VALUE;
+        }
 
         if (strcmp(token, "\n") == 0)
             continue;
@@ -839,6 +851,10 @@ int IMDB_DataStr2Json(IMDB_DataBaseMgr *mgr, const char *recordStr,
             continue;
         }
 
+        // if index > metricNum, it's invalid
+        if (index >= table->meta->metricsNum) {
+            continue;
+        }
         // fill record by the rest substrings
         metric = IMDB_MetricCreate(table->meta->metrics[index]->name,
                                    table->meta->metrics[index]->description,
