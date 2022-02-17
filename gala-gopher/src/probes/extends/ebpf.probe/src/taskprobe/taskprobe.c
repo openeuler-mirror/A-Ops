@@ -36,7 +36,6 @@
 
 #define ERR_MSG "No such file or directory"
 
-#define TASK_PROBE_IO_PATH "cat /proc/%d/io"
 #define TASK_PROBE_STAT_PATH "cat /proc/%d/stat"
 #define TASK_PROBE_SMAPS_PATH "cat /proc/%d/smaps"
 
@@ -316,6 +315,8 @@ static void get_task_bin_data(struct task_bin* bin, int pid)
     return;
 }
 
+int get_task_io(struct task_io_data *io_data, int pid);
+
 static void task_probe_pull_probe_data(int task_map_fd, int task_bin_map_fd)
 {
     int ret;
@@ -338,8 +339,9 @@ static void task_probe_pull_probe_data(int task_map_fd, int task_bin_map_fd)
         }
 
         get_task_bin_data(&bin, nkey.pid);
+        (void)get_task_io(&data.io, nkey.pid);
         
-        fprintf(stdout, "|%s|%d|%d|%d|%s|%s|%s|%d\n",
+        fprintf(stdout, "|%s|%d|%d|%d|%s|%s|%s|%d|%d|%d|%llu|%llu|%llu|%llu|%llu|%u|%u|%llu|%llu|%llu|\n",
                 OO_NAME_TASK,
                 data.id.tgid,
                 nkey.pid,
@@ -347,9 +349,23 @@ static void task_probe_pull_probe_data(int task_map_fd, int task_bin_map_fd)
                 bin.comm,
                 bin.exe_file,
                 bin.exec_file,
-                data.base.fork_count);
+                data.base.fork_count,
+                data.io.major,
+                data.io.minor,
+                data.io.task_io_wait_time_us,
+                data.io.task_io_count,
+                data.io.task_io_time_us,
+                data.io.task_rchar_bytes,
+                data.io.task_wchar_bytes,
+                data.io.task_syscr_count,
+                data.io.task_syscw_count,
+                data.io.task_read_bytes,
+                data.io.task_write_bytes,
+                data.io.task_cancelled_write_bytes);
 
-        DEBUG("tgid[%d] pid[%d] ppid[%d] pgid[%d] comm[%s] exe_file[%s] exec_file[%s] fork_count[%d]\n",
+        DEBUG("tgid[%d] pid[%d] ppid[%d] pgid[%d] comm[%s] exe_file[%s] exec_file[%s] fork_count[%d] major[%d] minor[%d] "
+                "iowait[%llu] iocount[%llu] iotime[%llu] rchar[%llu] wchar[%llu] sysr[%u] sysw[%u] rbytes[%llu] wbytes[%llu] "
+                "cancelbytes[%llu]\n",
                 data.id.tgid,
                 nkey.pid,
                 data.id.ppid,
@@ -357,7 +373,19 @@ static void task_probe_pull_probe_data(int task_map_fd, int task_bin_map_fd)
                 bin.comm,
                 bin.exe_file,
                 bin.exec_file,
-                data.base.fork_count);
+                data.base.fork_count,
+                data.io.major,
+                data.io.minor,
+                data.io.task_io_wait_time_us,
+                data.io.task_io_count,
+                data.io.task_io_time_us,
+                data.io.task_rchar_bytes,
+                data.io.task_wchar_bytes,
+                data.io.task_syscr_count,
+                data.io.task_syscw_count,
+                data.io.task_read_bytes,
+                data.io.task_write_bytes,
+                data.io.task_cancelled_write_bytes);
 
         ckey = nkey;
     }

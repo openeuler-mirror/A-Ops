@@ -17,7 +17,6 @@
 #endif
 #define BPF_PROG_KERN
 #include "bpf.h"
-#include "taskprobe.h"
 
 #define MAX_CPU 8
 #define TASK_REQUEST_MAX 100
@@ -27,13 +26,6 @@
 
 char g_linsence[] SEC("license") = "GPL";
 
-struct bpf_map_def SEC("maps") task_io_count = {
-    .type = BPF_MAP_TYPE_HASH,
-    .key_size = sizeof(struct task_key),
-    .value_size = sizeof(struct task_io_stats),
-    .max_entries = SHARE_MAP_TASK_MAX_ENTRIES,
-};
-
 struct bpf_map_def SEC("maps") task_request_start = {
     .type = BPF_MAP_TYPE_HASH,
     .key_size = sizeof(struct request *),
@@ -41,38 +33,17 @@ struct bpf_map_def SEC("maps") task_request_start = {
     .max_entries = TASK_REQUEST_MAX,
 };
 
-static __always_inline void create_task_count_entry(struct task_key *key, struct request *request, 
-                                                                u64 delta_us, int rwflag)
-{
-    struct task_io_stats new_io_stats = {0};
-    struct gendisk *gd;
-
-    new_io_stats.io = 1;
-    new_io_stats.us = delta_us;
-    gd = _(request->rq_disk);
-    new_io_stats.major = _(gd->major);
-    new_io_stats.minor = _(gd->first_minor);
-    
-    if (rwflag) {
-        // new_io_stats.write_bytes = _(request->__data_len);
-    } else {
-        // new_io_stats.read_bytes = _(request->__data_len);
-    }
-    
-    (void)bpf_map_update_elem(&task_io_count, key, &new_io_stats, BPF_ANY);
-}
-
-static __always_inline void update_task_count_entry(struct task_io_stats *io_statsp, struct request *request, 
+static __always_inline void update_task_count_entry(struct task_data *data, struct request *request, 
                                                                 u64 delta_us, int rwflag)
 {
     struct gendisk *gd;
 
-    __sync_fetch_and_add(&(io_statsp->io), 1);
-    __sync_fetch_and_add(&(io_statsp->us), delta_us);
+    __sync_fetch_and_add(&(data->io.task_io_count), 1);
+    __sync_fetch_and_add(&(data->io.task_io_time_us), delta_us);
     
     gd = _(request->rq_disk);
-    io_statsp->major = _(gd->major);
-    io_statsp->minor = _(gd->first_minor);
+    data->io.major = _(gd->major);
+    data->io.minor = _(gd->first_minor);
     
     if (rwflag) {
         // __sync_fetch_and_add(&(io_statsp->write_bytes), _(request->__data_len));
@@ -100,7 +71,7 @@ KPROBE(blk_account_io_completion, pt_regs)
 {
     int rwflag = 0;
     struct task_key key = {0};
-    struct task_io_stats *io_statsp;
+    struct task_data *data;
     u64 *tsp;
     struct request *request = (struct request *)PT_REGS_PARM1(ctx);
 
@@ -112,14 +83,12 @@ KPROBE(blk_account_io_completion, pt_regs)
     u64 delta_us = (bpf_ktime_get_ns() - *tsp) / 1000;
 
     key.pid = bpf_get_current_pid_tgid() >> 32;
-    io_statsp = (struct task_io_stats *)bpf_map_lookup_elem(&task_io_count, &key);
+    data = (struct task_data *)bpf_map_lookup_elem(&__task_map, &key);
 
     rwflag = !!((request->cmd_flags & REQ_OP_MASK) == REQ_OP_WRITE);
     
-    if (io_statsp == (struct task_io_stats *)0) {
-        create_task_count_entry(&key, request, delta_us, rwflag);
-    } else {
-        update_task_count_entry(io_statsp, request, delta_us, rwflag);
+    if (data != (struct task_data *)0) {
+        update_task_count_entry(data, request, delta_us, rwflag);
     }
 }
 
@@ -137,7 +106,6 @@ static __always_inline void __add_iowait(struct task_key *key, u64 delta_us)
         __sync_fetch_and_add(&data->io.task_io_wait_time_us, delta_us);
     }
 }
-
 
 KPROBE(io_schedule_prepare, pt_regs)
 {

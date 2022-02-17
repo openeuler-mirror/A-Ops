@@ -90,10 +90,8 @@ static __always_inline void __create_link_entry_by_sock(struct link_key *key,
     struct proc_info *p;
     // struct tcp_sock *tcp = (struct tcp_sock *)sk;
 
-    u32 pid = bpf_get_current_pid_tgid() >> 32;
     p = __get_sock_data(sk);
     if (!p) {
-        bpf_printk("no find sock:%p, pid:%u\n", &sk, pid);
         return;
     }
 
