@@ -29,6 +29,8 @@ struct task_key {
 };
 
 struct task_io_data {
+    int major;
+    int minor;
     __u32 fd_count;         // FROM '/usr/bin/ls -l /proc/[PID]/fd | wc -l'
 
     __u64 task_io_wait_time_us; // FROM 'io_schedule_prepare/io_schedule_finish'
