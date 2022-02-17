@@ -1,5 +1,5 @@
 <template>
-  <page-header-wrapper>
+  <page-header-wrapper :breadcrumb="breadcrumb">
     <a-card :bordered="false" class="aops-theme">
       <div class="detail-info-content">
         <a-spin :spinning="infoLoading">
@@ -14,7 +14,7 @@
           <a-row type="flex">
             <a-col :span="8"><p>自动重启：{{ detail.auto_reboot ? '是' : '否' }}</p></a-col>
           </a-row>
-          <a-row>
+          <a-row v-if="detail.latest_execute_time">
             <a-col :span="8">
               <p>
                 最新状态
@@ -25,7 +25,7 @@
                   <a-icon v-else type="loading-3-quarters" />
                   {{ detail.statuses && detail.statuses['running'] }}
                 </span>
-                <span><a-icon type="clock-circle" class="color-standby-circle" />{{ detail.statuses && detail.statuses['on standby'] }}</span>
+                <span><a-icon type="question-circle" class="color-standby-circle" />{{ detail.statuses && detail.statuses['unknown'] }}</span>
               </p>
             </a-col>
             <a-col :span="16">
@@ -115,7 +115,7 @@
 
 import { PageHeaderWrapper } from '@ant-design-vue/pro-layout'
 import HostStatusInTaskDrawer from './components/HostStatusInTaskDrawer'
-
+import { i18nRender } from '@/appCore/locales'
 import { dateFormat } from '@/views/utils/Utils'
 import { downloadBlobFile } from '@/views/utils/downloadBlobFile'
 import { getSelectedRow } from '../utils/getSelectedRow'
@@ -144,16 +144,18 @@ const statusTextMap = {
   'succeed': '修复成功',
   'fail': '修复失败',
   'running': '运行中',
-  'on standby': '等待',
-  'set': '已设置'
+  'unknown': '未知',
+  'set': '已设置',
+  'unset': '未设置'
 }
 
 const statusValueMap = {
   'succeed': 'success',
   'fail': 'error',
   'running': 'processing',
-  'on standby': 'default',
-  'set': 'success'
+  'unknown': 'default',
+  'set': 'success',
+  'unset': 'warning'
 }
 
 const defaultPagination = {
@@ -195,6 +197,27 @@ export default {
     }
   },
   computed: {
+    breadcrumb () {
+      const routes = this.$route.meta.diyBreadcrumb.map((route) => {
+        return {
+          path: route.path,
+          breadcrumbName: i18nRender(route.breadcrumbName)
+        }
+      })
+      return {
+        props: {
+          routes,
+          itemRender: ({ route, params, routes, paths, h }) => {
+            // 若为路由diyBreadcrumb数组的最后一个元素，替换标题文本为其对应的任务名称
+            if (routes.indexOf(route) === routes.length - 1) {
+              return <span>{this.detail.task_name}</span>
+            } else {
+              return <router-link to={route.path}>{route.breadcrumbName}</router-link>
+            }
+          }
+        }
+      }
+    },
     rowSelection () {
       return {
         selectedRowKeys: this.selectedRowKeys,
@@ -247,7 +270,7 @@ export default {
             { text: '修复成功', value: 'succeed' },
             { text: '修复失败', value: 'fail' },
             { text: '运行中', value: 'running' },
-            { text: '等待', value: 'on standby' },
+            { text: '未知', value: 'unknown' },
             { text: '已设置', value: 'set' }
           ]
         }
@@ -280,7 +303,7 @@ export default {
             { text: '修复成功', value: 'succeed' },
             { text: '修复失败', value: 'fail' },
             { text: '运行中', value: 'running' },
-            { text: '等待', value: 'on standby' },
+            { text: '未知', value: 'unknown' },
             { text: '已设置', value: 'set' }
           ]
         }
@@ -555,10 +578,18 @@ export default {
         this.filters = {}
       }
       if (this.taskType === 'cve') {
-        this.filters.cveId = text
+        if (text !== '') {
+          this.filters.cveId = text
+        } else {
+          this.filters.cveId = undefined
+        }
         this.getCveList()
       } else {
-        this.filters.hostName = text
+        if (text !== '') {
+          this.filters.hostName = text
+        } else {
+          this.filters.hostName = undefined
+        }
         this.getHostList()
       }
     }

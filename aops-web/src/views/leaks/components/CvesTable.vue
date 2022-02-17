@@ -25,8 +25,7 @@
             />
           </a-col>
           <a-col>
-            <!-- <a-button @click="upLoadFileVisible = true" type="primary">上传文件</a-button> -->
-            <upload-file @addSuccess="handleUploadSuccess" />
+            <upload-file v-if="standalone ? true : false" @addSuccess="handleUploadSuccess" />
           </a-col>
           <a-col v-if="selectedRowKeys.length === 0">
             <create-repair-task-drawer
@@ -413,7 +412,11 @@ export default {
       if (!this.filters) {
         this.filters = {}
       }
-      this.filters.cveId = text
+      if (text !== '') {
+        this.filters.cveId = text
+      } else {
+        this.filters.cveId = undefined
+      }
       this.getCves()
     },
     handleTaskCreateSuccess () {
@@ -425,7 +428,22 @@ export default {
       if (this.standalone) {
         this.handleRefresh()
       } else {
-        this.$emit('statusUpdated')
+        const pagination = this.pagination || {}
+        const filters = this.filters || {}
+        const sorter = this.sorter || {}
+        this.$emit('statusUpdated', {
+          tableInfo: {
+            pagination: {
+              current: pagination.current,
+              pageSize: pagination.pageSize
+            },
+            filters: filters,
+            sorter: {
+              field: sorter.field,
+              order: sorter.order
+            }
+          }
+        })
       }
     },
     uploadfile() {
