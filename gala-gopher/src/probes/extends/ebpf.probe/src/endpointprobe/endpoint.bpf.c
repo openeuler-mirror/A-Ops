@@ -203,7 +203,7 @@ KPROBE_RET(inet_bind, pt_regs)
     struct s_endpoint_key_t ep_key = {0};
     struct endpoint_val_t ep_val = {0};
     struct listen_port_key_t listen_port_key = {0};
-    u32 tid = bpf_get_current_pid_tgid();
+    u32 tgid = bpf_get_current_pid_tgid() >> INT_LEN;
     long err;
 
     if (ret != 0) {
@@ -214,7 +214,7 @@ KPROBE_RET(inet_bind, pt_regs)
     sock = (struct socket *)PROBE_PARM1(val);
     sk = _(sock->sk);
     if (sk == (void *)0) {
-        bpf_printk("====[tid=%u]: sock is null.\n", tid);
+        bpf_printk("====[tgid=%u]: sock is null.\n", tgid);
         return;
     }
 
@@ -225,12 +225,12 @@ KPROBE_RET(inet_bind, pt_regs)
         ep_val.type = SK_TYPE_LISTEN_UDP;
         err = bpf_map_update_elem(&s_endpoint_map, &ep_key, &ep_val, BPF_ANY);
         if (err < 0) {
-            bpf_printk("====[tid=%u]: new udp listen endpoint updates to map failed.\n", tid);
+            bpf_printk("====[tgid=%u]: new udp listen endpoint updates to map failed.\n", tgid);
             return;
         }
         init_listen_port_key(&listen_port_key, sk);
         bpf_map_update_elem(&listen_port_map, &listen_port_key, &sk, BPF_ANY);
-        bpf_printk("====[tid=%u]: new udp listen endpoint created.\n", tid);
+        bpf_printk("====[tgid=%u]: new udp listen endpoint created.\n", tgid);
     }
 
     return;
@@ -246,7 +246,7 @@ KPROBE_RET(inet_listen, pt_regs)
     struct s_endpoint_key_t ep_key = {0};
     struct endpoint_val_t ep_val = {0};
     struct listen_port_key_t listen_port_key = {0};
-    u32 tid = bpf_get_current_pid_tgid();
+    u32 tgid = bpf_get_current_pid_tgid() >> INT_LEN;
     long err;
 
     if (ret != 0) {
@@ -257,7 +257,7 @@ KPROBE_RET(inet_listen, pt_regs)
     sock = (struct socket *)PROBE_PARM1(val);
     sk = _(sock->sk);
     if (sk == (void *)0) {
-        bpf_printk("====[tid=%u]: sock is null.\n", tid);
+        bpf_printk("====[tgid=%u]: sock is null.\n", tgid);
         return;
     }
 
@@ -266,11 +266,11 @@ KPROBE_RET(inet_listen, pt_regs)
     ep_val.type = SK_TYPE_LISTEN_TCP;
     err = bpf_map_update_elem(&s_endpoint_map, &ep_key, &ep_val, BPF_ANY);
     if (err < 0) {
-        bpf_printk("====[tid=%u]: new tcp listen endpoint updates to map failed.\n", tid);
+        bpf_printk("====[tgid=%u]: new tcp listen endpoint updates to map failed.\n", tgid);
     }
     init_listen_port_key(&listen_port_key, sk);
     bpf_map_update_elem(&listen_port_map, &listen_port_key, &sk, BPF_ANY);
-    bpf_printk("====[tid=%u]: new tcp listen endpoint created.\n", tid);
+    bpf_printk("====[tgid=%u]: new tcp listen endpoint created.\n", tgid);
 
     return;
 }
@@ -279,7 +279,7 @@ KPROBE(__sys_accept4, pt_regs)
 {
     int fd = PT_REGS_PARM1(ctx);
     int *fd_ptr;
-    int pid = bpf_get_current_pid_tgid() >> 32;
+    int pid = bpf_get_current_pid_tgid() >> INT_LEN;
     struct task_struct *task = (struct task_struct *)bpf_get_current_task();
     struct sock *sk;
 
@@ -315,7 +315,7 @@ static __always_inline void _tcp_connect(struct pt_regs *ctx, struct sock *sk)
     int ret = PT_REGS_RC(ctx);
     struct c_endpoint_key_t ep_key = {0};
     struct endpoint_val_t ep_val = {0};
-    u32 tid = bpf_get_current_pid_tgid();
+    u32 tgid = bpf_get_current_pid_tgid() >> INT_LEN;
     long err;
 
     if (ret != 0) {
@@ -323,7 +323,7 @@ static __always_inline void _tcp_connect(struct pt_regs *ctx, struct sock *sk)
     }
 
     if (sk == (void *)0) {
-        bpf_printk("====[tid=%u]: sock is null.\n", tid);
+        bpf_printk("====[tgid=%u]: sock is null.\n", tgid);
         return;
     }
 
@@ -337,9 +337,9 @@ static __always_inline void _tcp_connect(struct pt_regs *ctx, struct sock *sk)
     ATOMIC_INC_EP_STATS(&ep_val, EP_STATS_ACTIVE_OPENS);
     err = bpf_map_update_elem(&c_endpoint_map, &ep_key, &ep_val, BPF_ANY);
     if (err < 0) {
-        bpf_printk("====[tid=%u]: new tcp client endpoint updates to map failed.\n", tid);
+        bpf_printk("====[tgid=%u]: new tcp client endpoint updates to map failed.\n", tgid);
     }
-    bpf_printk("====[tid=%u]: new tcp client endpoint created.\n", tid);
+    bpf_printk("====[tgid=%u]: new tcp client endpoint created.\n", tgid);
 
     return;
 }
@@ -376,7 +376,7 @@ KPROBE_RET(udp_sendmsg, pt_regs)
 
     struct c_endpoint_key_t ep_key = {0};
     struct endpoint_val_t ep_val = {0};
-    u32 tid = bpf_get_current_pid_tgid();
+    u32 tgid = bpf_get_current_pid_tgid() >> INT_LEN;
     long err;
 
     if (ret < 0) {
@@ -386,7 +386,7 @@ KPROBE_RET(udp_sendmsg, pt_regs)
     PROBE_GET_PARMS(udp_sendmsg, ctx, val);
     sk = (struct sock *)PROBE_PARM1(val);
     if (sk == (void *)0) {
-        bpf_printk("====[tid=%u]: sock is null.\n", tid);
+        bpf_printk("====[tgid=%u]: sock is null.\n", tgid);
         return;
     }
 
@@ -399,9 +399,9 @@ KPROBE_RET(udp_sendmsg, pt_regs)
     ep_val.type = SK_TYPE_CLIENT_UDP;
     err = bpf_map_update_elem(&c_endpoint_map, &ep_key, &ep_val, BPF_ANY);
     if (err < 0) {
-        bpf_printk("====[tid=%u]: new udp client endpoint updates to map failed.\n", tid);
+        bpf_printk("====[tgid=%u]: new udp client endpoint updates to map failed.\n", tgid);
     }
-    bpf_printk("====[tid=%u]: new udp client endpoint created.\n", tid);
+    bpf_printk("====[tgid=%u]: new udp client endpoint created.\n", tgid);
 
     return;
 }
@@ -412,7 +412,7 @@ KPROBE(__sock_release, pt_regs)
     struct sock *sk = _(sock->sk);
     struct s_endpoint_key_t ep_key = {0};
     struct listen_port_key_t listen_port_key = {0};
-    u32 tid = bpf_get_current_pid_tgid();
+    u32 tgid = bpf_get_current_pid_tgid() >> INT_LEN;
     long err;
 
     init_ep_key(&ep_key, (unsigned long)sk);
@@ -420,7 +420,7 @@ KPROBE(__sock_release, pt_regs)
     err = bpf_map_delete_elem(&s_endpoint_map, &ep_key);
     if (err == 0) {
         bpf_map_delete_elem(&listen_port_map, &listen_port_key);
-        bpf_printk("====[tid=%u]: endpoint has been removed.\n", tid);
+        bpf_printk("====[tgid=%u]: endpoint has been removed.\n", tgid);
     }
 
     return;
@@ -540,7 +540,7 @@ KPROBE_RET(tcp_create_openreq_child, pt_regs)
     struct probe_val val;
 
     struct endpoint_val_t *ep_val;
-    u32 tid __maybe_unused = bpf_get_current_pid_tgid();
+    u32 pid __maybe_unused = bpf_get_current_pid_tgid();
 
     if (ret == (void *)0) {
         return;
@@ -569,7 +569,7 @@ KPROBE_RET(tcp_connect, pt_regs)
     struct tcp_sock *tp;
     u8 repair_at;
     struct endpoint_val_t *ep_val;
-    u32 tid = bpf_get_current_pid_tgid();
+    u32 tgid = bpf_get_current_pid_tgid() >> INT_LEN;
     long err;
 
     if (ret != 0) {
@@ -585,7 +585,7 @@ KPROBE_RET(tcp_connect, pt_regs)
     tp = (struct tcp_sock *)sk;
     err = bpf_probe_read(&repair_at, sizeof(u8), (void *)(((unsigned long)&tp->repair_queue) - 1));
     if (err < 0) {
-        bpf_printk("====[tid=%u]: read repair field of sock failed.\n", tid);
+        bpf_printk("====[tgid=%u]: read repair field of sock failed.\n", tgid);
         return;
     }
     if (repair_at & TCP_SOCK_REPAIR_MASK) {
@@ -623,7 +623,7 @@ KPROBE_RET(tcp_check_req, pt_regs)
     struct probe_val val;
 
     struct endpoint_val_t *ep_val;
-    u32 tid __maybe_unused = bpf_get_current_pid_tgid();
+    u32 pid __maybe_unused = bpf_get_current_pid_tgid();
 
     PROBE_GET_PARMS(tcp_check_req, ctx, val);
     sk = (struct sock *)PROBE_PARM1(val);
@@ -659,7 +659,7 @@ KPROBE_RET(tcp_try_rmem_schedule, pt_regs)
     struct probe_val val;
 
     struct endpoint_val_t *ep_val;
-    u32 tid __maybe_unused = bpf_get_current_pid_tgid();
+    u32 pid __maybe_unused = bpf_get_current_pid_tgid();
 
     if (ret == 0) {
         return;
@@ -686,7 +686,7 @@ KPROBE_RET(tcp_check_oom, pt_regs)
     struct probe_val val;
 
     struct endpoint_val_t *ep_val;
-    u32 tid __maybe_unused = bpf_get_current_pid_tgid();
+    u32 pid __maybe_unused = bpf_get_current_pid_tgid();
 
     if (!ret) {
         return;
@@ -711,7 +711,7 @@ KPROBE(tcp_write_wakeup, pt_regs)
     struct sock *sk = (struct sock *)PT_REGS_PARM1(ctx);
     int mib = (int)PT_REGS_PARM2(ctx);
     struct endpoint_val_t *ep_val;
-    u32 tid __maybe_unused = bpf_get_current_pid_tgid();
+    u32 pid __maybe_unused = bpf_get_current_pid_tgid();
 
     if (mib != LINUX_MIB_TCPKEEPALIVE) {
         return;

@@ -148,7 +148,7 @@ static void update_link_metric_map(const struct link_key *k, struct link_data *d
         key.s_port = k->src_port;
     }
     key.proto = k->family;
-    key.pid = d->pid;
+    key.tgid = d->tgid;
     data.role = d->role;
 
     bpf_map_lookup_elem(map_fd, &key, &data);
@@ -204,7 +204,7 @@ static void print_link_metric(int map_fd)
             fprintf(stdout,
                 "|%s|%u|%s|%d|%s|%s|%u|%u|%u|%llu|%llu|%u|%u|%u|%u|%u|%u|%u|%u|%u|%u|%u|%u|%u|%u|%u|%u|%u|%u|%u|\n",
                 OO_NAME,
-                next_key.pid,
+                next_key.tgid,
                 data.comm,
                 data.role,
                 src_ip_str,
@@ -240,7 +240,7 @@ static void print_link_metric(int map_fd)
                    "md5:%u, filter:%u, ofo:%u, tmout:%u, rcvque_full:%u, sndbuf_limit:%u, "
                    "send_rsts:%u, receive_rsts:%u\n",
                 tm,
-                next_key.pid,
+                next_key.tgid,
                 data.comm,
                 src_ip_str,
                 dst_ip_str,
@@ -275,15 +275,15 @@ static void print_link_metric(int map_fd)
     return;
 }
 
-static void bpf_add_long_link_info_to_map(int map_fd, __u32 proc_id, int fd, __u8 role)
+static void bpf_add_long_link_info_to_map(int map_fd, __u32 tgid, int fd, __u8 role)
 {
     struct long_link_info ll = {0};
 
-    bpf_map_lookup_elem(map_fd, &proc_id, &ll);
+    bpf_map_lookup_elem(map_fd, &tgid, &ll);
     ll.fds[ll.cnt] = fd;
     ll.fd_role[ll.cnt] = role;
     ll.cnt++;
-    bpf_map_update_elem(map_fd, &proc_id, &ll, BPF_ANY);
+    bpf_map_update_elem(map_fd, &tgid, &ll, BPF_ANY);
 }
 
 static void bpf_update_long_link_info_to_map(int long_link_map_fd, int listen_port_map_fd)

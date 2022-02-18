@@ -45,7 +45,7 @@ struct container_key {
 struct container_value {
     char namespace[NAMESPACE_LEN];
     __u32 task_pid;
-    int containerd_pid;
+    int tgid;
     __u32 status;
     char comm[16];
     __u64 memory_usage_in_bytes;

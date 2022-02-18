@@ -63,7 +63,7 @@ struct bpf_map_def SEC("maps") __probe_match_map = {
 
 static __always_inline __maybe_unused void __get_probe_key(struct __probe_key *key, const long bp) {
     key->smp_id = bpf_get_smp_processor_id();
-    key->pid = bpf_get_current_pid_tgid() >> 32;
+    key->pid = (unsigned int)bpf_get_current_pid_tgid();
     key->bp = bp;
 }
 

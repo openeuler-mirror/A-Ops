@@ -25,7 +25,7 @@ char g_linsence[] SEC("license") = "GPL";
 // Temporary MAP. Data exists only in the startup phase.
 struct bpf_map_def SEC("maps") long_link_map = {
     .type = BPF_MAP_TYPE_HASH,
-    .key_size = sizeof(u32),
+    .key_size = sizeof(u32),	// tgid
     .value_size = sizeof(struct long_link_info),
     .max_entries = MAX_LONG_LINK_PROCS,
 };
@@ -142,7 +142,7 @@ static void bpf_add_link(const struct sock *sk, int role)
         return;
 
     // FILTER by task
-    if (!is_task_exist(bpf_get_current_pid_tgid() >> INT_LEN)) {
+    if (!is_task_exist((int)bpf_get_current_pid_tgid())) {
         return;
     }
     
@@ -153,7 +153,7 @@ static void bpf_add_link(const struct sock *sk, int role)
     */
 
     bpf_get_current_comm(&proc.comm, sizeof(proc.comm));
-    proc.pid = bpf_get_current_pid_tgid() >> INT_LEN;
+    proc.tgid = bpf_get_current_pid_tgid() >> INT_LEN;
     proc.ts = bpf_ktime_get_ns();
     proc.role = role;
 
@@ -205,9 +205,9 @@ static void bpf_add_each_long_link(int fd, int role)
     return;
 }
 
-static void bpf_add_long_link(u32 pid)
+static void bpf_add_long_link(u32 tgid)
 {
-    struct long_link_info *l = bpf_map_lookup_elem(&long_link_map, &pid);
+    struct long_link_info *l = bpf_map_lookup_elem(&long_link_map, &tgid);
     if (!l)
         return;
 
@@ -222,14 +222,14 @@ static void bpf_add_long_link(u32 pid)
     bpf_add_each_long_link(l->fds[8], l->fd_role[8]);
     bpf_add_each_long_link(l->fds[9], l->fd_role[9]);
 
-    (void)bpf_map_delete_elem(&long_link_map, &pid);
+    (void)bpf_map_delete_elem(&long_link_map, &tgid);
     return;
 }
 
 KRETPROBE(inet_csk_accept, pt_regs)
 {
     struct sock *sk = (struct sock *)PT_REGS_RC(ctx);
-    u32 pid = bpf_get_current_pid_tgid() >> 32;
+    u32 tgid = bpf_get_current_pid_tgid() >> INT_LEN;
     char comm[TASK_COMM_LEN] = {0};
 
     bpf_get_current_comm(&comm, sizeof(comm));
@@ -238,7 +238,7 @@ KRETPROBE(inet_csk_accept, pt_regs)
     bpf_add_link(sk, LINK_ROLE_SERVER);
 
     /* add long link sock map */
-    bpf_add_long_link(pid);
+    bpf_add_long_link(tgid);
     return;
 }
 
@@ -248,13 +248,13 @@ KPROBE(tcp_set_state, pt_regs)
     struct sock *sk = (struct sock *)PT_REGS_PARM1(ctx);
     // struct tcp_sock *tcp = (struct tcp_sock *)sk;
 
-    u32 pid = bpf_get_current_pid_tgid() >> 32;
+    u32 tgid = bpf_get_current_pid_tgid() >> INT_LEN;
     if (new_state == TCP_SYN_SENT) {
         /* client: add new link */
         bpf_add_link(sk, LINK_ROLE_CLIENT);
 
         /* add long link sock map */
-        bpf_add_long_link(pid);
+        bpf_add_long_link(tgid);
         return;
     }
 

@@ -42,7 +42,7 @@ UPROBE(linux_Task_Start, pt_regs)
     unsigned int sym_key = SYMADDRS_MAP_KEY;
 
     // containerd's info [pid + comm]
-    value.containerd_pid = bpf_get_current_pid_tgid() >> INT_LEN;
+    value.tgid = bpf_get_current_pid_tgid() >> INT_LEN;
     bpf_get_current_comm(&value.comm, sizeof(value.comm));
 
     // symbol's offset
