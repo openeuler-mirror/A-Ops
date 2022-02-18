@@ -28,7 +28,7 @@ static int __period_arg_parse(char opt, char *arg, struct probe_params *params)
 {
     unsigned int interval = 0;
 
-    if ((opt != 't' && opt != 'p') || arg == NULL)
+    if ((opt != 't' && opt != 'p' && opt != 'w') || arg == NULL)
         return -1;
 
     switch (opt) {
@@ -43,6 +43,10 @@ static int __period_arg_parse(char opt, char *arg, struct probe_params *params)
         case 'p':
             if (arg != NULL)
                 (void)snprintf((void *)params->elf_path, MAX_PATH_LEN, "%s", arg);
+            break;
+        case 'w':
+            if (arg != NULL)
+                (void)snprintf((void *)params->task_whitelist, MAX_PATH_LEN, "%s", arg);
             break;
         default:
             break;
