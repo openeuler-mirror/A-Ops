@@ -50,7 +50,8 @@
 #define TASK_PROBE_COLLECTION_PERIOD 5
 
 static volatile sig_atomic_t stop = 0;
-static struct probe_params tp_params = {.period = TASK_PROBE_COLLECTION_PERIOD};
+static struct probe_params tp_params = {.period = TASK_PROBE_COLLECTION_PERIOD,
+                                        .task_whitelist = {0}};
 
 static int default_probed_process_num = 10;
 static char default_probed_process_list[10][MAX_PROCESS_NAME_LEN] = {
@@ -193,6 +194,38 @@ static int update_default_probed_process_to_map(int p_fd)
         (void)bpf_map_update_elem(p_fd, &pname, &flag, BPF_ANY);
     }
     return 0;
+}
+
+static int parse_task_whitelist_to_map(int p_fd)
+{
+    int ret = 0;
+    FILE *f = NULL;
+    char line[MAX_PROCESS_NAME_LEN];
+    struct probe_process pname;
+    int flag = 1;
+
+    f = fopen(tp_params.task_whitelist, "r");
+    if (f == NULL) {
+        return -1;
+    }
+    while (!feof(f)) {
+        (void)memset(line, 0, MAX_PROCESS_NAME_LEN);
+        if (fgets(line, MAX_PROCESS_NAME_LEN, f) == NULL) {
+            goto out;
+        }
+        SPLIT_NEWLINE_SYMBOL(line);
+        if (strlen(line) == 0) {
+            continue;
+        }
+        (void)memset(pname.name, 0, MAX_PROCESS_NAME_LEN);
+        (void)strcpy(pname.name, line);
+
+        /* update task_map */
+        (void)bpf_map_update_elem(p_fd, &pname, &flag, BPF_ANY);
+    }
+out:
+    fclose(f);
+    return ret;
 }
 
 int jinfo_get_label_info(int pid, char *label, char *buf, int buf_len)
@@ -414,7 +447,7 @@ int main(int argc, char **argv)
         return -1;
     }
 
-    ret = args_parse(argc, argv, "t:", &tp_params);
+    ret = args_parse(argc, argv, "t:w:", &tp_params);
     if (ret != 0)
         return ret;
 
@@ -445,6 +478,16 @@ int main(int argc, char **argv)
     if (ret != 0) {
         fprintf(stderr, "Failed to update default probe proc info to probe_process map. \n");
         goto err;
+    }
+
+    if (strlen(tp_params.task_whitelist) == 0) {
+        fprintf(stderr, "***task_whitelist_path is null, please check param : -c xx/xxx *** \n");
+    } else {
+        ret = parse_task_whitelist_to_map(pmap_fd);
+        if (ret != 0) {
+            fprintf(stderr, "Failed to parse task_whitelist infos to probe_process map. \n");
+            goto err;
+        }
     }
 
     ret = get_daemon_task(pmap_fd, task_map_fd);
