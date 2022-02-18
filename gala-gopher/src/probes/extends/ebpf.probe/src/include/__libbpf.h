@@ -52,13 +52,12 @@ static __always_inline int set_memlock_rlimit(void)
 
 #define __PIN_SHARE_MAP(probe_name, map_name, map_path) \
     do { \
-        int __fd; \
+        int ret; \
         struct bpf_map *__map; \
         \
         __map = GET_MAP_OBJ(probe_name, map_name); \
-        (void)bpf_map__pin(__map, map_path); \
-        __fd = bpf_obj_get(map_path); \
-        (void)printf("======>SHARE map(" #map_name ") pin FD=%d.\n", __fd); \
+        ret = bpf_map__set_pin_path(__map, map_path); \
+        (void)printf("======>SHARE map(" #map_name ") set pin path \"%s\"(ret=%d).\n", map_path, ret); \
     } while (0)
 
 #define __PIN_SHARE_MAP_ALL(probe_name) \
@@ -90,9 +89,14 @@ static __always_inline int set_memlock_rlimit(void)
     do { \
         int err; \
         /* Open load and verify BPF application */ \
-        probe_name##_skel = probe_name##_bpf__open_and_load(); \
+        probe_name##_skel = probe_name##_bpf__open(); \
         if (!probe_name##_skel) { \
             (void)fprintf(stderr, "Failed to open BPF " #probe_name "skeleton\n"); \
+            goto end; \
+        } \
+        __PIN_SHARE_MAP_ALL(probe_name); \
+        if (probe_name##_bpf__load(probe_name##_skel)) { \
+            (void)fprintf(stderr, "Failed to load BPF " #probe_name "skeleton\n"); \
             goto end; \
         } \
         /* Attach tracepoint handler */ \
@@ -103,7 +107,6 @@ static __always_inline int set_memlock_rlimit(void)
             probe_name##_skel = NULL; \
             goto end; \
         } \
-        __PIN_SHARE_MAP_ALL(probe_name); \
     } while (0)
 
 #define UNLOAD(probe_name) \
