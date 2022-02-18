@@ -16,6 +16,8 @@
 #include <signal.h>
 #include <errno.h>
 #include <unistd.h>
+#include <arpa/inet.h>
+#include <string.h>
 
 #ifdef BPF_PROG_KERN
 #undef BPF_PROG_KERN
@@ -30,6 +32,7 @@
 #include "args.h"
 #include "endpoint.skel.h"
 #include "endpoint.h"
+#include "tcp.h"
 
 #define OO_NAME "endpoint"
 
@@ -41,11 +44,114 @@ static void sig_int(int signo)
     stop = 1;
 }
 
+static int _init_ipaddr(struct ip *ip, const struct ip_addr *ip_addr)
+{
+    struct in_addr iaddr;
+    struct in6_addr iaddr6;
+    int ret;
+
+    if (ip_addr->ipv4) {
+        ret = inet_aton(ip_addr->ip, &iaddr);
+        if (ret == 0) {
+            return -1;
+        }
+        ip->ip.ip4 = (unsigned int)iaddr.s_addr;
+        ip->family = AF_INET;
+    } else {
+        ret = inet_pton(AF_INET6, ip_addr->ip, &iaddr6);
+        if (ret < 1) {
+            return -1;
+        }
+        memcpy(ip->ip.ip6, &iaddr6, sizeof(ip->ip.ip6));
+        ip->family = AF_INET6;
+    }
+
+    return 0;
+}
+
+static void _update_tcp_endpoint_to_map(int c_endpoint_map_fd, int listen_port_map_fd, int listen_sockfd_map_fd)
+{
+    int err;
+    struct tcp_listen_ports *tlps = NULL;
+    struct tcp_listen_port *tlp = NULL;
+    struct listen_port_key_t listen_port_key = {0};
+    struct listen_sockfd_key_t listen_sockfd_key = {0};
+    unsigned short listen_port;
+
+    struct tcp_estabs *tes = NULL;
+    struct tcp_estab *te = NULL;
+    struct tcp_estab_comm *tec = NULL;
+
+    struct c_endpoint_key_t c_ep_key;
+    struct endpoint_val_t ep_val;
+
+    tlps = get_listen_ports();
+    if (tlps == NULL) {
+        goto err;
+    }
+
+    for (int i = 0; i < tlps->tlp_num; i++) {
+        tlp = tlps->tlp[i];
+        listen_port = (unsigned short)tlp->port;
+        listen_port_key.protocol = IPPROTO_TCP;
+        listen_port_key.port = listen_port;
+        bpf_map_update_elem(listen_port_map_fd, &listen_port_key, &listen_port, BPF_ANY);
+        listen_sockfd_key.pid = tlp->pid;
+        listen_sockfd_key.fd = tlp->fd;
+        bpf_map_update_elem(listen_sockfd_map_fd, &listen_sockfd_key, &(tlp->fd), BPF_ANY);
+    }
+
+    tes = get_estab_tcps(tlps);
+    if (tes == NULL) {
+        goto err;
+    }
+
+    /* insert tcp client info into map */
+    for (int i = 0; i < tes->te_num; i++) {
+        te = tes->te[i];
+        if (te->is_client != 1) {
+            continue;
+        }
+        for (int j = 0; j < te->te_comm_num; j++) {
+            tec = te->te_comm[j];
+            memset(&c_ep_key, 0, sizeof(c_ep_key));
+            memset(&ep_val, 0, sizeof(ep_val));
+
+            // init endpoint key
+            c_ep_key.pid = tec->pid;
+            err = _init_ipaddr(&c_ep_key.ip_addr, &te->local);
+            if (err < 0) {
+                break;
+            }
+            c_ep_key.protocol = IPPROTO_TCP;
+
+            // init endpoint value
+            ep_val.type = SK_TYPE_CLIENT_TCP;
+            ep_val.pid = c_ep_key.pid;
+            snprintf(ep_val.comm, sizeof(ep_val.comm), "%s", tec->comm);
+            ep_val.s_type = SOCK_STREAM;
+            ep_val.protocol = c_ep_key.protocol;
+            memcpy(&ep_val.s_addr, &c_ep_key.ip_addr, sizeof(struct ip));
+
+            bpf_map_update_elem(c_endpoint_map_fd, &c_ep_key, &ep_val, BPF_ANY);
+        }
+    }
+
+err:
+    if (tlps != NULL) {
+        free_listen_ports(&tlps);
+    }
+
+    if (tes != NULL) {
+        free_estab_tcps(&tes);
+    }
+}
+
 static void _output_endpoint_data(struct endpoint_val_t *data)
 {
     unsigned char s_addr[INET6_ADDRSTRLEN];
 
-    ip_str(data->family, (unsigned char *)&data->s_addr, s_addr, INET6_ADDRSTRLEN);
+    ip_str(data->s_addr.family, (unsigned char *)&data->s_addr.ip, s_addr, INET6_ADDRSTRLEN);
     fprintf(stdout,
             "|%s|%d|%s|%d|%u|%d|%d|%d|%s|%u|%lu|%lu|%lu|%lu|%lu|%lu|%lu|%lu|%lu|%lu|\n",
             OO_NAME,
@@ -53,7 +159,7 @@ static void _output_endpoint_data(struct endpoint_val_t *data)
             data->comm,
             data->type,
             data->uid,
-            data->family,
+            data->s_addr.family,
             data->s_type,
             data->protocol,
             s_addr,
@@ -77,7 +183,7 @@ static void _print_endpoint_data(struct endpoint_val_t *data)
     unsigned char s_addr[INET6_ADDRSTRLEN];
     char *time_fmt = get_cur_time();
 
-    ip_str(data->family, (unsigned char *)&data->s_addr, s_addr, INET6_ADDRSTRLEN);
+    ip_str(data->s_addr.family, (unsigned char *)&data->s_addr.ip, s_addr, INET6_ADDRSTRLEN);
     DEBUG("%s [%d-%s] ep_type:%d, ep_uid:%u, ep_family:%d, ep_s_type:%d, ep_protocol:%d, "
             "ep_addr:%s, ep_port:%u, ep_listen_drops:%lu, ep_listen_overflows:%lu, "
             "ep_passive_opens:%lu, ep_active_opens:%lu, ep_attempt_fails:%lu, ep_abort_close:%lu, "
@@ -87,7 +193,7 @@ static void _print_endpoint_data(struct endpoint_val_t *data)
             data->comm,
             data->type,
             data->uid,
-            data->family,
+            data->s_addr.family,
             data->s_type,
             data->protocol,
             s_addr,
@@ -163,6 +269,10 @@ int main(int argc, char **argv)
     }
 
     printf("Endpoint probe successfully started!\n");
+
+    _update_tcp_endpoint_to_map(GET_MAP_FD(endpoint, c_endpoint_map),
+                                GET_MAP_FD(endpoint, listen_port_map),
+                                GET_MAP_FD(endpoint, listen_sockfd_map));
 
     while (!stop) {
         pull_endpoint_data(GET_MAP_FD(endpoint, s_endpoint_map));

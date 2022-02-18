@@ -50,7 +50,14 @@ struct bpf_map_def SEC("maps") c_endpoint_map = {
 struct bpf_map_def SEC("maps") listen_port_map = {
     .type = BPF_MAP_TYPE_HASH,
     .key_size = sizeof(struct listen_port_key_t),
-    .value_size = sizeof(unsigned long),
+    .value_size = sizeof(unsigned short),
+    .max_entries = MAX_ENDPOINT_LEN,
+};
+
+struct bpf_map_def SEC("maps") listen_sockfd_map = {
+    .type = BPF_MAP_TYPE_HASH,
+    .key_size = sizeof(struct listen_sockfd_key_t),
+    .value_size = sizeof(int),
     .max_entries = MAX_ENDPOINT_LEN,
 };
 
@@ -91,15 +98,14 @@ static __always_inline void init_listen_port_key(struct listen_port_key_t *liste
     return;
 }
 
-static __always_inline int is_listen_endpoint(struct sock *sk, struct sock **lsk)
+static __always_inline int is_listen_endpoint(struct sock *sk)
 {
     struct listen_port_key_t listen_port_key = {0};
-    struct sock **val;
+    int *val;
 
     init_listen_port_key(&listen_port_key, sk);
-    val = (struct sock **)bpf_map_lookup_elem(&listen_port_map, &listen_port_key);
+    val = (int *)bpf_map_lookup_elem(&listen_port_map, &listen_port_key);
     if (val != (void *)0) {
-        *lsk = *val;
         return 1;
     }
 
@@ -118,10 +124,11 @@ static __always_inline void init_ip(struct ip *ip_addr, struct sock *sk)
 {
     int family = _(sk->sk_family);
     if (family == AF_INET) {
-        ip_addr->ip4 = _(sk->sk_rcv_saddr);
+        ip_addr->ip.ip4 = _(sk->sk_rcv_saddr);
     } else if (family == AF_INET6) {
-        bpf_probe_read(ip_addr->ip6, IP6_LEN, &sk->sk_v6_rcv_saddr);
+        bpf_probe_read(ip_addr->ip.ip6, IP6_LEN, &sk->sk_v6_rcv_saddr);
     }
+    ip_addr->family = family;
 
     return;
 }
@@ -136,7 +143,6 @@ static __always_inline void init_client_ep_key(struct c_endpoint_key_t *ep_key, 
 {
     u32 pid = bpf_get_current_pid_tgid() >> 32;
     ep_key->pid = pid;
-    ep_key->family = _(sk->sk_family);
     init_ip((struct ip *)&ep_key->ip_addr, sk);
     ep_key->protocol = get_protocol(sk);
 
@@ -151,7 +157,6 @@ static __always_inline void init_ep_val(struct endpoint_val_t *ep_val, struct so
     ep_val->pid = bpf_get_current_pid_tgid() >> 32;
     bpf_get_current_comm(&ep_val->comm, sizeof(ep_val->comm));
     ep_val->s_type = _(sock->type);
-    ep_val->family = _(sk->sk_family);
     ep_val->protocol = get_protocol(sk);
     init_ip((struct ip *)&ep_val->s_addr, sk);
     ep_val->s_port = _(sk->sk_num);
@@ -178,7 +183,9 @@ static __always_inline struct endpoint_val_t *get_client_ep_val_by_sock(struct s
 static __always_inline struct endpoint_val_t *get_ep_val_by_sock(struct sock *sk)
 {
     struct sock *lsk;
-    if (is_listen_endpoint(sk, &lsk)) {
+
+    if (is_listen_endpoint(sk)) {
+        lsk = listen_sock(sk);
         return get_listen_ep_val_by_sock(lsk);
     }
 
@@ -264,6 +271,41 @@ KPROBE_RET(inet_listen, pt_regs)
     init_listen_port_key(&listen_port_key, sk);
     bpf_map_update_elem(&listen_port_map, &listen_port_key, &sk, BPF_ANY);
     bpf_printk("====[tid=%u]: new tcp listen endpoint created.\n", tid);
+
+    return;
+}
+
+KPROBE(__sys_accept4, pt_regs)
+{
+    int fd = PT_REGS_PARM1(ctx);
+    int *fd_ptr;
+    int pid = bpf_get_current_pid_tgid() >> 32;
+    struct task_struct *task = (struct task_struct *)bpf_get_current_task();
+    struct sock *sk;
+
+    struct listen_sockfd_key_t listen_sockfd_key = {0};
+    struct s_endpoint_key_t ep_key = {0};
+    struct endpoint_val_t ep_val = {0};
+
+    listen_sockfd_key.pid = pid;
+    listen_sockfd_key.fd = fd;
+    fd_ptr = (int *)bpf_map_lookup_elem(&listen_sockfd_map, &listen_sockfd_key);
+    if (fd_ptr == (void *)0) {
+        return;
+    }
+
+    if (task == (void *)0) {
+        return;
+    }
+    sk = sock_get_by_fd(fd, task);
+    if (sk == (void *)0) {
+        return;
+    }
+    init_ep_key(&ep_key, (unsigned long)sk);
+    init_ep_val(&ep_val, sk);
+    ep_val.type = SK_TYPE_LISTEN_TCP;
+    bpf_map_update_elem(&s_endpoint_map, &ep_key, &ep_val, BPF_ANY);
+    bpf_map_delete_elem(&listen_sockfd_map, &listen_sockfd_key);
 
     return;
 }
@@ -498,7 +540,7 @@ KPROBE_RET(tcp_create_openreq_child, pt_regs)
     struct probe_val val;
 
     struct endpoint_val_t *ep_val;
-    //u32 tid = bpf_get_current_pid_tgid();
+    u32 tid __maybe_unused = bpf_get_current_pid_tgid();
 
     if (ret == (void *)0) {
         return;
@@ -581,7 +623,7 @@ KPROBE_RET(tcp_check_req, pt_regs)
     struct probe_val val;
 
     struct endpoint_val_t *ep_val;
-    //u32 tid = bpf_get_current_pid_tgid();
+    u32 tid __maybe_unused = bpf_get_current_pid_tgid();
 
     PROBE_GET_PARMS(tcp_check_req, ctx, val);
     sk = (struct sock *)PROBE_PARM1(val);
@@ -600,7 +642,6 @@ KPROBE_RET(tcp_check_req, pt_regs)
 KPROBE(tcp_reset, pt_regs)
 {
     struct sock *sk = (struct sock *)PT_REGS_PARM1(ctx);
-    // unsigned char state = _(sk->sk_state);
     struct endpoint_val_t *ep_val;
 
     ep_val = get_ep_val_by_sock(sk);
@@ -618,7 +659,7 @@ KPROBE_RET(tcp_try_rmem_schedule, pt_regs)
     struct probe_val val;
 
     struct endpoint_val_t *ep_val;
-    //u32 tid = bpf_get_current_pid_tgid();
+    u32 tid __maybe_unused = bpf_get_current_pid_tgid();
 
     if (ret == 0) {
         return;
@@ -645,7 +686,7 @@ KPROBE_RET(tcp_check_oom, pt_regs)
     struct probe_val val;
 
     struct endpoint_val_t *ep_val;
-    //u32 tid = bpf_get_current_pid_tgid();
+    u32 tid __maybe_unused = bpf_get_current_pid_tgid();
 
     if (!ret) {
         return;
@@ -670,7 +711,7 @@ KPROBE(tcp_write_wakeup, pt_regs)
     struct sock *sk = (struct sock *)PT_REGS_PARM1(ctx);
     int mib = (int)PT_REGS_PARM2(ctx);
     struct endpoint_val_t *ep_val;
-    //u32 tid = bpf_get_current_pid_tgid();
+    u32 tid __maybe_unused = bpf_get_current_pid_tgid();
 
     if (mib != LINUX_MIB_TCPKEEPALIVE) {
         return;

@@ -23,6 +23,7 @@
 struct tcp_listen_port {
     unsigned int pid;
     unsigned int port;
+    unsigned int fd;
     char comm[TASK_COMM_LEN];
 };
 
@@ -35,7 +36,7 @@ struct tcp_listen_ports {
 };
 
 struct ip_addr {
-    char ip[IP_LEN];
+    char ip[IP_STR_LEN];
     unsigned int port;
     int ipv4;
 };
