@@ -90,43 +90,24 @@ KPROBE(blk_account_io_completion, pt_regs)
     }
 }
 
-struct bpf_map_def SEC("maps") task_io_wait = {
-    .type = BPF_MAP_TYPE_HASH,
-    .key_size = sizeof(struct task_key),
-    .value_size = sizeof(u64),
-    .max_entries = MAX_CPU,
-};
-
-static __always_inline void __add_iowait(struct task_key *key, u64 delta_us)
+KRAWTRACE(sched_stat_iowait, bpf_raw_tracepoint_args)
 {
-    struct task_data *data = bpf_map_lookup_elem(&__task_map, key);
+    struct task_struct* task = (struct task_struct*)ctx->args[0];
+    u64 delta = (u64)ctx->args[1];
+
+    struct task_key key = {.pid = _(task->pid)};
+    struct task_data *data = (struct task_data *)bpf_map_lookup_elem(&__task_map, &key);
     if (data) {
-        __sync_fetch_and_add(&data->io.task_io_wait_time_us, delta_us);
+        __sync_fetch_and_add(&(data->io.task_io_wait_time_us), delta);
     }
 }
 
-KPROBE(io_schedule_prepare, pt_regs)
+KRAWTRACE(sched_process_hang, bpf_raw_tracepoint_args)
 {
-    struct task_key key = {0};
-    u64 us = 0;
-    
-    key.pid = (int)bpf_get_current_pid_tgid();
-    if (bpf_map_lookup_elem(&task_io_wait, &key) == 0) {
-        us = bpf_ktime_get_ns() >> 3;
-        (void)bpf_map_update_elem(&task_io_wait, &key, &us, BPF_ANY);
+    struct task_struct* task = (struct task_struct*)ctx->args[0];
+    struct task_key key = {.pid = _(task->pid)};
+    struct task_data *data = (struct task_data *)bpf_map_lookup_elem(&__task_map, &key);
+    if (data) {
+        __sync_fetch_and_add(&(data->io.task_hang_count), 1);
     }
 }
-
-KPROBE(io_schedule_finish, pt_regs)
-{
-    struct task_key key = {0};
-    key.pid = (int)bpf_get_current_pid_tgid();
-    u64* us = bpf_map_lookup_elem(&task_io_wait, &key);
-    if (us) {
-        u64 ts = bpf_ktime_get_ns();
-        *us = (ts >> 3) - *us;
-        __add_iowait(&key, *us);
-        (void)bpf_map_delete_elem(&task_io_wait, &key);
-    }
-}
-

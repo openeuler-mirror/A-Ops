@@ -12,7 +12,5 @@ long long get_task_stime(unsigned int read_handle);
 long long get_task_vsize(unsigned int read_handle);
 long long get_task_rss(unsigned int read_handle);
 void free_task_stat(unsigned int read_handle);
-int get_task_pwd(int pid, char *pwd);
-int get_task_exe(int pid, char *exe, int exe_len);
 
 #endif

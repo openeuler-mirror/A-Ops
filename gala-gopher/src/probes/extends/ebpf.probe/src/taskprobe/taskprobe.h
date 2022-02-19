@@ -16,19 +16,13 @@
 #define __TASKPROBE__H
 
 #define PROBE_PROC_MAP_ENTRY_SIZE   128
-#define MAX_PROCESS_NAME_LEN        128
-//#define TASK_EXIT_MAP_FILE_PATH "/sys/fs/bpf/task_exit_event"
-
-enum ps_type {
-    PS_TYPE_PID = 0,
-    PS_TYPE_PPID,
-    PS_TYPE_PGID,
-    PS_TYPE_MAX,
-};
+#define MAX_PROCESS_NAME_LEN        32
 
 /* process needed to be probed */
 struct probe_process {
     char name[MAX_PROCESS_NAME_LEN];
 };
+
+void load_daemon_task_by_name(int fd, const char *name);
 
 #endif
