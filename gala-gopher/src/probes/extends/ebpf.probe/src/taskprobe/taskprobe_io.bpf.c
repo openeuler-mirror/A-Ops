@@ -54,9 +54,7 @@ static __always_inline void update_task_count_entry(struct task_data *data, stru
 
 KPROBE(blk_mq_start_request, pt_regs)
 {
-    int pid;
-
-    pid = bpf_get_current_pid_tgid() >> 32;
+    int pid = (int)bpf_get_current_pid_tgid();
     if (!is_task_exist(pid)) {
         return;
     }
@@ -82,7 +80,7 @@ KPROBE(blk_account_io_completion, pt_regs)
 
     u64 delta_us = (bpf_ktime_get_ns() - *tsp) / 1000;
 
-    key.pid = bpf_get_current_pid_tgid() >> 32;
+    key.pid = (int)bpf_get_current_pid_tgid();
     data = (struct task_data *)bpf_map_lookup_elem(&__task_map, &key);
 
     rwflag = !!((request->cmd_flags & REQ_OP_MASK) == REQ_OP_WRITE);
@@ -112,7 +110,7 @@ KPROBE(io_schedule_prepare, pt_regs)
     struct task_key key = {0};
     u64 us = 0;
     
-    key.pid = bpf_get_current_pid_tgid() >> 32;
+    key.pid = (int)bpf_get_current_pid_tgid();
     if (bpf_map_lookup_elem(&task_io_wait, &key) == 0) {
         us = bpf_ktime_get_ns() >> 3;
         (void)bpf_map_update_elem(&task_io_wait, &key, &us, BPF_ANY);
@@ -122,7 +120,7 @@ KPROBE(io_schedule_prepare, pt_regs)
 KPROBE(io_schedule_finish, pt_regs)
 {
     struct task_key key = {0};
-    key.pid = bpf_get_current_pid_tgid() >> 32;
+    key.pid = (int)bpf_get_current_pid_tgid();
     u64* us = bpf_map_lookup_elem(&task_io_wait, &key);
     if (us) {
         u64 ts = bpf_ktime_get_ns();

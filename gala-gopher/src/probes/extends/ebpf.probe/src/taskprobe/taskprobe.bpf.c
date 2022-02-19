@@ -21,14 +21,6 @@
 
 char g_linsence[] SEC("license") = "GPL";
 
-/*
-struct bpf_map_def SEC("maps") task_exit_event = {
-    .type = BPF_MAP_TYPE_PERF_EVENT_ARRAY,
-    .key_size = sizeof(int),
-    .value_size = sizeof(int),
-};
-*/
-
 struct bpf_map_def SEC("maps") probe_proc_map = {
     .type = BPF_MAP_TYPE_HASH,
     .key_size = sizeof(struct probe_process),
@@ -61,43 +53,6 @@ static int get_task_pgid(const struct task_struct *cur_task)
 
     return pgid;
 }
-
-#if 0
-static void create_task(struct task_struct* task, int pgid)
-{
-    struct task_key key = {0};
-    struct task_data data = {0};
-
-    key.pid = _(task->pid);
-    data.id.tgid = _(task->tgid);
-    data.id.ppid = pgid;
-    data.id.pgid = get_task_pgid(task);
-    upd_task_entry(&key, &data);
-    return;
-}
-
-static void update_fork_count(struct task_struct* task)
-{
-    struct task_key key = {0};
-    struct task_data *data;
-    
-    key.pid = _(task->pid);
-    
-    data = (struct task_data *)get_task_entry(&key);
-    
-    if (data != (struct task_data *)0) {
-        /* fork_count add 1 */
-        __sync_fetch_and_add(&data->base.fork_count, 1);
-    } else {
-        // data->id.tgid = _(task->tgid);
-        data->id.ppid = 0xffff;
-        data->id.pgid = get_task_pgid(task);
-        data->base.fork_count = 1;
-        upd_task_entry(&key, data);
-    }
-    return;
-}
-#endif
 
 static void update_task_status(struct task_struct* task, __u32 task_status)
 {
@@ -159,17 +114,6 @@ KRAWTRACE(sched_process_fork, bpf_raw_tracepoint_args)
 
 KRAWTRACE(sched_process_exit, bpf_raw_tracepoint_args)
 {
-#if 0
-    struct task_key tkey = {0};
-    struct task_struct* task = (struct task_struct*)ctx->args[0];
-    int tgid = bpf_get_current_pid_tgid() >> 32;
-    tkey.pid = _(task->pid);
-    if (del_task_entry(&tkey) == 0) {
-        if (tgid == tkey.pid) {
-            bpf_perf_event_output(ctx, &task_exit_event, 0, &tkey.pid, sizeof(tkey.pid));
-        }
-    }
-#endif
     struct task_struct* task = (struct task_struct*)ctx->args[0];
     update_task_status(task, TASK_STATUS_INVALID);
 }

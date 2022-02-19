@@ -62,7 +62,7 @@ struct metric_key {
     struct ip s_ip;
     __u16 s_port;
     __u16 proto;
-    __u32 pid;
+    __u32 tgid;		// process id
 };
 
 struct metric_data {
@@ -93,7 +93,7 @@ struct metric_data {
 };
 
 struct proc_info {
-    __u32 pid;
+    __u32 tgid;		// process id
     char comm[TASK_COMM_LEN];
     __u64 role : 1;
     __u64 ts : 63;
@@ -114,7 +114,7 @@ struct link_key {
 };
 
 struct link_data {
-    pid_t pid;
+    pid_t tgid;		// process id
     char comm[TASK_COMM_LEN];
     __u16 states; /* status after established */
     __u16 role;   /* 0: server 1: client */
@@ -214,7 +214,7 @@ enum TCPPROBE_EVT_E {
 
 #define TCPPROBE_UPDATE_PRCINFO(data, proc_info) \
     do { \
-        (data).pid = (proc_info)->pid; \
+        (data).tgid = (proc_info)->tgid; \
         (data).role = (proc_info)->role; \
         __builtin_memcpy(&(data).comm, &(proc_info)->comm, TASK_COMM_LEN); \
     } while (0)
