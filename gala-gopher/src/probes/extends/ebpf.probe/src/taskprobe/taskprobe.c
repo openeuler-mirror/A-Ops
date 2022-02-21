@@ -32,39 +32,50 @@
 #include "taskprobe.skel.h"
 #include "taskprobe_io.skel.h"
 #include "taskprobe.h"
-#include "task_stat.h"
 
-#define ERR_MSG "No such file or directory"
+#define TASK_COMM "/proc/%d/comm"
+#define TASK_CWD_FILE "/proc/%d/cwd"
+#define TASK_EXE_FILE "/proc/%d/exe"
 
-#define TASK_PROBE_STAT_PATH "cat /proc/%d/stat"
-#define TASK_PROBE_SMAPS_PATH "cat /proc/%d/smaps"
-
-#define TASK_COMM_COMMAND "/usr/bin/cat /proc/%d/comm"
-
-#define TASK_ID_COMMAND \
-    "ps -eo pid,ppid,pgid,comm | grep -w \"%s\" | awk '{print $1 \"|\" $2 \"|\" $3}'"
 #define TASK_PROBE_JAVA_COMMAND "sun.java.command"
 #define TASK_PROBE_JAVA_CLASSPATH "java.class.path"
 #define OO_NAME_TASK "task"
 
 #define TASK_PROBE_COLLECTION_PERIOD 5
 
+enum task_type_e {
+    TASK_TYPE_APP = 0,
+    TASK_TYPE_KERN,
+    TASK_TYPE_OS
+};
+
+struct task_name_t {
+    char name[MAX_PROCESS_NAME_LEN];
+    enum task_type_e type;
+};
+
 static volatile sig_atomic_t stop = 0;
 static struct probe_params tp_params = {.period = TASK_PROBE_COLLECTION_PERIOD,
                                         .task_whitelist = {0}};
 
-static int default_probed_process_num = 10;
-static char default_probed_process_list[10][MAX_PROCESS_NAME_LEN] = {
-    "go",
-    "java",
-    "python",
-    "python3",
-    "nginx",
-    "gala-gopher",
-    "redis",
-    "redis-server",
-    "redis-client",
-    "redis-cli"
+static struct task_name_t task_range[] = {
+    {"go",              TASK_TYPE_APP},
+    {"java",            TASK_TYPE_APP},
+    {"python",          TASK_TYPE_APP},
+    {"python3",         TASK_TYPE_APP},
+    {"nginx",           TASK_TYPE_APP},
+    {"redis",           TASK_TYPE_APP},
+    {"redis-server",    TASK_TYPE_APP},
+    {"redis-client",    TASK_TYPE_APP},
+    {"redis-cli",       TASK_TYPE_APP},
+    {"dhclient",        TASK_TYPE_OS},
+    {"NetworkManager",  TASK_TYPE_OS},
+    {"dbus",            TASK_TYPE_OS},
+    {"rpcbind",         TASK_TYPE_OS},
+    {"systemd",         TASK_TYPE_OS},
+    {"scsi",            TASK_TYPE_KERN},
+    {"softirq",         TASK_TYPE_KERN},
+    {"kworker",         TASK_TYPE_KERN}
 };
 
 static void sig_int(int signal)
@@ -72,15 +83,32 @@ static void sig_int(int signal)
     stop = 1;
 }
 
-static int get_task_comm(int pid, char *buf, unsigned int buf_len)
+static int do_read_link(const char* fname, char *buf, unsigned int buf_len)
+{
+    int len;
+    len = readlink(fname, buf, buf_len);
+    if (len < 0) {
+        return -1;
+    }
+
+    if (len < buf_len)
+        buf[len] = '\0';
+    return 0;
+}
+
+static int do_read_file(const char* fname, char *buf, unsigned int buf_len)
 {
     char cmd[COMMAND_LEN];
     char line[LINE_BUF_LEN];
     FILE *f = NULL;
 
+    if (access(fname, 0) != 0) {
+        return -1;
+    }
+
     cmd[0] = 0;
     line[0] = 0;
-    (void)snprintf(cmd, COMMAND_LEN, TASK_COMM_COMMAND, pid);
+    (void)snprintf(cmd, COMMAND_LEN, "/usr/bin/cat %s", fname);
     f = popen(cmd, "r");
     if (f == NULL) {
         return -1;
@@ -89,116 +117,86 @@ static int get_task_comm(int pid, char *buf, unsigned int buf_len)
         (void)pclose(f);
         return -1;
     }
-    if (strstr(line, ERR_MSG) != NULL) {
-        (void)pclose(f);
-        return -1;
-    }
+    
     SPLIT_NEWLINE_SYMBOL(line);
     (void)strncpy(buf, line, buf_len);
     return 0;
 }
-
-
-/* ps_rlt exemple:
-    ps -eo pid,ppid,pgid,comm | grep nginx | awk '{print $1 "|" $2 "|" $3 "|" $4}'
-    3144599|3144598|3144598
-    3144600|3144598|3144598
- */
-static int do_get_daemon_task_id(const char *ps_rlt, struct task_key *k, struct task_data *data)
+                                    
+static int get_task_exe(int pid, char *buf, unsigned int buf_len)
 {
-    int i;
-    int start = 0, j = 0;
-    char id_str[PS_TYPE_MAX][INT_LEN] = {0};
-    int len = strlen(ps_rlt);
+    char fname[COMMAND_LEN];
 
-    for (i = 0; i < len; i++) {
-        if (ps_rlt[i] == '|') {
-            (void)strncpy(id_str[j++], ps_rlt + start, i - start);
-            start = i + 1;
-        }
-    }
-    if (j < PS_TYPE_MAX - 1) {
-        return -1;
-    }
-    (void)strncpy(id_str[j], ps_rlt + start, i - start);
-
-    k->pid = (unsigned int)atoi(id_str[PS_TYPE_PID]);
-    data->id.tgid = k->pid;
-    data->id.ppid = (unsigned int)atoi(id_str[PS_TYPE_PPID]);
-    data->id.pgid = (unsigned int)atoi(id_str[PS_TYPE_PGID]);
-
-    return 0;
+    fname[0] = 0;
+    (void)snprintf(fname, COMMAND_LEN, TASK_EXE_FILE, pid);
+    return do_read_link(fname, buf, buf_len);
 }
 
-static int get_daemon_task_id(const char *comm, int task_map_fd)
+static int get_task_cwd(int pid, char *buf, unsigned int buf_len)
 {
-    FILE *f = NULL;
-    char cmd[COMMAND_LEN];
-    char line[LINE_BUF_LEN];
-    struct task_key key = {0};
-    struct task_data data = {0};
-    int ret = 0;
+    char fname[COMMAND_LEN];
 
-    (void)snprintf(cmd, COMMAND_LEN, TASK_ID_COMMAND, comm);
-    f = popen(cmd, "r");
-    if (f == NULL) {
-        return -1;
-    }
-    while (!feof(f)) {
-        if (fgets(line, LINE_BUF_LEN, f) == NULL) {
-            break;
-        }
-        SPLIT_NEWLINE_SYMBOL(line);
-        if (do_get_daemon_task_id((char *)line, &key, &data) < 0) {
-            ret = -1;
-            goto out;
-        }
-        /* update damemon task map */
-        (void)bpf_map_update_elem(task_map_fd, &key, &data, BPF_ANY);
-    }
-out:
-    pclose(f);
-    return ret;
+    fname[0] = 0;
+    (void)snprintf(fname, COMMAND_LEN, TASK_CWD_FILE, pid);
+    return do_read_link(fname, buf, buf_len);
 }
 
-static int get_daemon_task(int p_fd, int task_map_fd)
+static int get_task_comm(int pid, char *buf, unsigned int buf_len)
+{
+    char fname[COMMAND_LEN];
+
+    fname[0] = 0;
+    (void)snprintf(fname, COMMAND_LEN, TASK_COMM, pid);
+    return do_read_file(fname, buf, buf_len);
+}
+
+static void load_daemon_task(int app_fd, int task_map_fd)
 {
     struct probe_process ckey = {0};
     struct probe_process nkey = {0};
     int flag;
     int ret = -1;
 
-    while (bpf_map_get_next_key(p_fd, &ckey, &nkey) != -1) {
-        ret = bpf_map_lookup_elem(p_fd, &nkey, &flag);
+    while (bpf_map_get_next_key(app_fd, &ckey, &nkey) != -1) {
+        ret = bpf_map_lookup_elem(app_fd, &nkey, &flag);
         if (ret == 0) {
-            if (get_daemon_task_id((char *)nkey.name, task_map_fd) < 0) {
-                printf("add process info fail.\n");
-                return -1;
-            }
+            load_daemon_task_by_name(task_map_fd, (const char *)nkey.name);
+            DEBUG("[TASKPROBE]: load daemon process '%s'.\n", nkey.name);
         }
         ckey = nkey;
     }
 
-    return 0;
-}
+    uint32_t index, size = sizeof(task_range) / sizeof(task_range[0]);
+    for (index = 0; index < size; index++) {
+        if (task_range[index].type != TASK_TYPE_APP) {
 
-static int update_default_probed_process_to_map(int p_fd)
-{
-    struct probe_process pname;
-    int flag = 1;
-
-    for (int i = 0; i < default_probed_process_num; i++) {
-        (void)memset(pname.name, 0, MAX_PROCESS_NAME_LEN);
-        (void)strcpy(pname.name, default_probed_process_list[i]);
-        /* update task_map */
-        (void)bpf_map_update_elem(p_fd, &pname, &flag, BPF_ANY);
+            load_daemon_task_by_name(task_map_fd, (const char *)task_range[index].name);
+            DEBUG("[TASKPROBE]: load daemon process '%s'.\n", task_range[index].name);
+        }
     }
-    return 0;
+    return;
 }
 
-static int parse_task_whitelist_to_map(int p_fd)
+static void load_task_range(int fd)
 {
-    int ret = 0;
+    int flag = 1;
+    struct probe_process pname;
+    uint32_t index, size = sizeof(task_range) / sizeof(task_range[0]);
+    for (index = 0; index < size; index++) {
+        if (task_range[index].type == TASK_TYPE_APP) {
+            (void)memset(pname.name, 0, MAX_PROCESS_NAME_LEN);
+            (void)strcpy(pname.name, task_range[index].name);
+
+            /* update probe_proc_map */
+            (void)bpf_map_update_elem(fd, &pname, &flag, BPF_ANY);
+
+            DEBUG("[TASKPROBE]: load probe process name '%s'.\n", pname.name);
+        }
+    }
+}
+
+static void load_task_wl(int fd)
+{
     FILE *f = NULL;
     char line[MAX_PROCESS_NAME_LEN];
     struct probe_process pname;
@@ -206,7 +204,7 @@ static int parse_task_whitelist_to_map(int p_fd)
 
     f = fopen(tp_params.task_whitelist, "r");
     if (f == NULL) {
-        return -1;
+        return;
     }
     while (!feof(f)) {
         (void)memset(line, 0, MAX_PROCESS_NAME_LEN);
@@ -218,14 +216,16 @@ static int parse_task_whitelist_to_map(int p_fd)
             continue;
         }
         (void)memset(pname.name, 0, MAX_PROCESS_NAME_LEN);
-        (void)strcpy(pname.name, line);
+        (void)strncpy(pname.name, line, MAX_PROCESS_NAME_LEN);
 
-        /* update task_map */
-        (void)bpf_map_update_elem(p_fd, &pname, &flag, BPF_ANY);
+        /* update probe_proc_map */
+        (void)bpf_map_update_elem(fd, &pname, &flag, BPF_ANY);
+
+        DEBUG("[TASKPROBE]: load probe process name '%s'.\n", pname.name);
     }
 out:
     fclose(f);
-    return ret;
+    return;
 }
 
 int jinfo_get_label_info(int pid, char *label, char *buf, int buf_len)
@@ -265,19 +265,6 @@ int update_java_process_info(int pid, char *java_command, char *java_classpath)
         return -1;
     }
     return 0;
-}
-
-static int create_task_bin_tbl()
-{
-    int fd;
-    /* create bin hs map */
-    fd = bpf_create_map(BPF_MAP_TYPE_HASH, sizeof(struct task_key), \
-            sizeof(struct task_bin), SHARE_MAP_TASK_MAX_ENTRIES, 0);
-    if (fd < 0) {
-        fprintf(stderr, "create_task_bin_tbl create failed.\n");
-        return -1;
-    }
-    return fd;
 }
 
 static void update_task_bin_map(struct task_key *key, struct task_data *data, 
@@ -343,10 +330,10 @@ static void get_task_bin_data(int bin_fd, struct task_bin* bin, struct task_key*
         (void)strncpy(bin->exec_file, java_command, TASK_EXE_FILE_LEN);
     } else if (strstr(bin->comm, "python") != NULL || strstr(bin->comm, "go") != NULL) {
         /* python/go run */
-        (void)get_task_pwd(key->pid, (char *)bin->exec_file);
+        (void)get_task_cwd(key->pid, bin->exec_file, TASK_EXE_FILE_LEN);
     } else if (bin->exec_file[0] == 0) {
         /* c/c++/go */
-        (void)strncpy((char *)bin->exec_file, (char *)bin->exe_file, TASK_EXE_FILE_LEN);
+        (void)strncpy(bin->exec_file, bin->exe_file, TASK_EXE_FILE_LEN);
     } else {
         ; // nothing to do.
     }
@@ -383,7 +370,7 @@ static void task_probe_pull_probe_data(int task_map_fd, int task_bin_map_fd)
         get_task_bin_data(task_bin_map_fd, &bin, &nkey);
         (void)get_task_io(&data.io, nkey.pid);
         
-        fprintf(stdout, "|%s|%d|%d|%d|%s|%s|%s|%d|%d|%d|%llu|%llu|%llu|%llu|%llu|%u|%u|%llu|%llu|%llu|\n",
+        fprintf(stdout, "|%s|%d|%d|%d|%s|%s|%s|%d|%d|%d|%llu|%llu|%llu|%llu|%llu|%u|%u|%llu|%llu|%llu|%u|\n",
                 OO_NAME_TASK,
                 data.id.tgid,
                 nkey.pid,
@@ -403,11 +390,12 @@ static void task_probe_pull_probe_data(int task_map_fd, int task_bin_map_fd)
                 data.io.task_syscw_count,
                 data.io.task_read_bytes,
                 data.io.task_write_bytes,
-                data.io.task_cancelled_write_bytes);
+                data.io.task_cancelled_write_bytes,
+                data.io.task_hang_count);
 
         DEBUG("tgid[%d] pid[%d] ppid[%d] pgid[%d] comm[%s] exe_file[%s] exec_file[%s] fork_count[%d] major[%d] minor[%d] "
                 "iowait[%llu] iocount[%llu] iotime[%llu] rchar[%llu] wchar[%llu] sysr[%u] sysw[%u] rbytes[%llu] wbytes[%llu] "
-                "cancelbytes[%llu]\n",
+                "cancelbytes[%llu] hang[%u]\n",
                 data.id.tgid,
                 nkey.pid,
                 data.id.ppid,
@@ -427,7 +415,8 @@ static void task_probe_pull_probe_data(int task_map_fd, int task_bin_map_fd)
                 data.io.task_syscw_count,
                 data.io.task_read_bytes,
                 data.io.task_write_bytes,
-                data.io.task_cancelled_write_bytes);
+                data.io.task_cancelled_write_bytes,
+                data.io.task_hang_count);
 
         ckey = nkey;
     }
@@ -438,9 +427,7 @@ static void task_probe_pull_probe_data(int task_map_fd, int task_bin_map_fd)
 int main(int argc, char **argv)
 {
     int ret = -1;
-    int pmap_fd = -1;
-    int task_map_fd = -1;
-    int task_bin_map_fd = -1;
+    int pmap_fd, task_map_fd, task_bin_map_fd;
 
     if (signal(SIGINT, sig_int) == SIG_ERR) {
         fprintf(stderr, "can't set signal handler: %s\n", strerror(errno));
@@ -451,50 +438,26 @@ int main(int argc, char **argv)
     if (ret != 0)
         return ret;
 
-    printf("Task probe starts with period: %us.\n", tp_params.period);
+    if (strlen(tp_params.task_whitelist) == 0) {
+        fprintf(stderr, "***task_whitelist_path is null, please check param : -c xx/xxx *** \n");
+    }
+
+    DEBUG("Task probe starts with period: %us.\n", tp_params.period);
 
     INIT_BPF_APP(taskprobe);
+
     LOAD(taskprobe, err2);
     LOAD(taskprobe_io, err);
 
-    /*
-    remove(TASK_EXIT_MAP_FILE_PATH);
-    ret = bpf_obj_pin(GET_MAP_FD(task_exit_event), TASK_EXIT_MAP_FILE_PATH);
-    if (ret != 0) {
-        fprintf(stderr, "Failed to pin exit task map: %d\n", errno);
-        goto err;
-    }
-    printf("Exit task map pin success.\n");
-    */
-
     pmap_fd = GET_MAP_FD(taskprobe, probe_proc_map);
     task_map_fd = GET_MAP_FD(taskprobe, __task_map);
-    task_bin_map_fd = create_task_bin_tbl();
-    if (task_bin_map_fd < 0) {
-        goto err;
-    }
+    task_bin_map_fd = GET_MAP_FD(taskprobe, task_bin_map);
 
-    ret = update_default_probed_process_to_map(pmap_fd);
-    if (ret != 0) {
-        fprintf(stderr, "Failed to update default probe proc info to probe_process map. \n");
-        goto err;
-    }
+    load_task_range(pmap_fd);
 
-    if (strlen(tp_params.task_whitelist) == 0) {
-        fprintf(stderr, "***task_whitelist_path is null, please check param : -c xx/xxx *** \n");
-    } else {
-        ret = parse_task_whitelist_to_map(pmap_fd);
-        if (ret != 0) {
-            fprintf(stderr, "Failed to parse task_whitelist infos to probe_process map. \n");
-            goto err;
-        }
-    }
+    load_task_wl(pmap_fd);
 
-    ret = get_daemon_task(pmap_fd, task_map_fd);
-    if (ret != 0) {
-        fprintf(stderr, "Failed to update existed proc to task map. \n");
-        goto err;
-    }
+    load_daemon_task(pmap_fd, task_map_fd);
 
     while (stop == 0) {
         pull_probe_data(task_map_fd, task_bin_map_fd);
@@ -502,14 +465,6 @@ int main(int argc, char **argv)
         sleep(tp_params.period);
     }
 
-    /*
-    ret = remove(TASK_EXIT_MAP_FILE_PATH);
-    if (!ret) {
-        printf("Pinned file:(%s) of task exit map removed.\n", TASK_EXIT_MAP_FILE_PATH);
-    } else {
-        fprintf(stderr, "Failed to remove pinned file:(%s) of task exit map.", TASK_EXIT_MAP_FILE_PATH);
-    }
-    */
 err:
     UNLOAD(taskprobe_io);
 err2:

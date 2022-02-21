@@ -16,8 +16,6 @@
 #define AWK_COMMAND_END   "}'"
 #define CAT_COMMAND   "/usr/bin/cat %s %s"
 #define DEL_SYMBOL "="
-#define PROC_CWD_FILE "/proc/%d/cwd"
-#define PROC_EXE_FILE "/proc/%d/exe"
 
 enum task_stat_e {
     TASK_STAT_MINFLT = 10,
@@ -239,41 +237,3 @@ long long get_task_rss(unsigned int read_handle)
     return 0;
 }
 
-int get_task_pwd(int pid, char *pwd)
-{
-    int ret;
-    char pwd_file[COMMAND_LEN] = {0};
-    char *buf = pwd;
-
-    if (pid < 0) {
-        return -1;
-    }
-    (void)snprintf(pwd_file, COMMAND_LEN, PROC_CWD_FILE, pid);
-    ret = readlink(pwd_file, buf, COMMAND_LEN);
-    if (ret < 0) {
-        perror("readlink ");
-        return -1;
-    }
-    buf[ret] = '\0';
-	return 0;
-}
-
-int get_task_exe(int pid, char *exe, int exe_len)
-{
-    int ret;
-    char pwd_file[COMMAND_LEN] = {0};
-    char *buf = exe;
-    int buf_len = (exe_len <= COMMAND_LEN) ? exe_len : COMMAND_LEN;
-
-    if (pid < 0) {
-        return -1;
-    }
-    (void)snprintf(pwd_file, COMMAND_LEN, PROC_EXE_FILE, pid);
-    ret = readlink(pwd_file, buf, buf_len - 1);
-    if (ret < 0) {
-        perror("readlink ");
-        return -1;
-    }
-    buf[ret] = '\0';
-	return 0;
-}

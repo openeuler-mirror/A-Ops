@@ -15,22 +15,22 @@ measurements:
                 type: "key",
                 name: "pid",
             },
-			{
+            {
                 description: "pid of process group",
                 type: "label",
                 name: "pgid",
             },
-			{
+            {
                 description: "comm of the task",
                 type: "label",
                 name: "comm",
             },
-			{
+            {
                 description: "exe_file of the task",
                 type: "label",
                 name: "exe_file",
             },
-			{
+            {
                 description: "exec_file of the task",
                 type: "label",
                 name: "exec_file",
@@ -99,6 +99,11 @@ measurements:
                 description: "bytes written to disk cancelled by task",
                 type: "counter",
                 name: "task_cancelled_write_bytes",
+            },
+            {
+                description: "count of task I/O hang event",
+                type: "counter",
+                name: "task_hang_count",
             }
         )
     }

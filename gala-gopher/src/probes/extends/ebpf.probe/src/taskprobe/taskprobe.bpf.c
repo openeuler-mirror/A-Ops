@@ -28,7 +28,27 @@ struct bpf_map_def SEC("maps") probe_proc_map = {
     .max_entries = PROBE_PROC_MAP_ENTRY_SIZE,
 };
 
-static int get_task_pgid(const struct task_struct *cur_task)
+struct bpf_map_def SEC("maps") task_bin_map = {
+    .type = BPF_MAP_TYPE_HASH,
+    .key_size = sizeof(struct task_key),
+    .value_size = sizeof(struct task_bin),
+    .max_entries = SHARE_MAP_TASK_MAX_ENTRIES,
+};
+
+static void update_task_status(struct task_struct* task, __u32 task_status)
+{
+    struct task_key key = {0};
+    struct task_data *data;
+    
+    key.pid = _(task->pid);
+    data = (struct task_data *)get_task_entry(&key);
+    if (data != (struct task_data *)0) {
+        data->base.task_status = task_status;
+    }
+    return;
+}
+
+static __always_inline int get_task_pgid(const struct task_struct *cur_task)
 {
     int pgid = 0;
 
@@ -52,19 +72,6 @@ static int get_task_pgid(const struct task_struct *cur_task)
     }
 
     return pgid;
-}
-
-static void update_task_status(struct task_struct* task, __u32 task_status)
-{
-    struct task_key key = {0};
-    struct task_data *data;
-    
-    key.pid = _(task->pid);
-    data = (struct task_data *)get_task_entry(&key);
-    if (data != (struct task_data *)0) {
-        data->base.task_status = task_status;
-    }
-    return;
 }
 
 KRAWTRACE(sched_process_fork, bpf_raw_tracepoint_args)
@@ -118,3 +125,14 @@ KRAWTRACE(sched_process_exit, bpf_raw_tracepoint_args)
     update_task_status(task, TASK_STATUS_INVALID);
 }
 
+KRAWTRACE(task_rename, bpf_raw_tracepoint_args)
+{
+    struct task_struct* task = (struct task_struct *)ctx->args[0];
+    const char *comm = (const char *)ctx->args[1];
+
+    struct task_key key = {.pid = _(task->pid)};
+    struct task_bin *bin = (struct task_bin *)bpf_map_lookup_elem(&task_bin_map, &key);
+    if (bin) {
+        __builtin_memcpy(&(bin->comm), &comm, TASK_COMM_LEN);
+    }
+}
