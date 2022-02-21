@@ -44,12 +44,13 @@ struct ip {
 };
 
 struct listen_port_key_t {
+    int tgid;               /* 用户进程 ID */
     int protocol;           /* 协议族 */
     unsigned short port;    /* 监听端口号 */
 };
 
 struct listen_sockfd_key_t {
-    int pid;                /* 用户进程 ID */
+    int tgid;               /* 用户进程 ID */
     int fd;                 /* socket的文件描述符 */
 };
 
@@ -59,15 +60,15 @@ struct s_endpoint_key_t {
 
 
 struct c_endpoint_key_t {
-    int pid;                /* 用户进程 ID */
+    int tgid;               /* 用户进程 ID */
     struct ip ip_addr;      /* 端口绑定的地址 */
     int protocol;           /* 协议族 */
 };
 
 struct endpoint_val_t {
-    enum endpoint_t type;    /* endpoint 类型 */
+    enum endpoint_t type;       /* endpoint 类型 */
     unsigned int uid;           /* 用户 ID */
-    int pid;                    /* 用户进程 ID */
+    int tgid;                   /* 用户进程 ID */
     char comm[TASK_COMM_LEN];   /* 进程名 */
     int s_type;                 /* socket 类型 */
     int protocol;               /* 协议族 */

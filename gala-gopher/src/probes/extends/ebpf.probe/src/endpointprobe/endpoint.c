@@ -93,10 +93,11 @@ static void _update_tcp_endpoint_to_map(int c_endpoint_map_fd, int listen_port_m
     for (int i = 0; i < tlps->tlp_num; i++) {
         tlp = tlps->tlp[i];
         listen_port = (unsigned short)tlp->port;
+        listen_port_key.tgid = tlp->pid;
         listen_port_key.protocol = IPPROTO_TCP;
         listen_port_key.port = listen_port;
         bpf_map_update_elem(listen_port_map_fd, &listen_port_key, &listen_port, BPF_ANY);
-        listen_sockfd_key.pid = tlp->pid;
+        listen_sockfd_key.tgid = tlp->pid;
         listen_sockfd_key.fd = tlp->fd;
         bpf_map_update_elem(listen_sockfd_map_fd, &listen_sockfd_key, &(tlp->fd), BPF_ANY);
     }
@@ -118,7 +119,7 @@ static void _update_tcp_endpoint_to_map(int c_endpoint_map_fd, int listen_port_m
             memset(&ep_val, 0, sizeof(ep_val));
 
             // init endpoint key
-            c_ep_key.pid = tec->pid;
+            c_ep_key.tgid = tec->pid;
             err = _init_ipaddr(&c_ep_key.ip_addr, &te->local);
             if (err < 0) {
                 break;
@@ -127,7 +128,7 @@ static void _update_tcp_endpoint_to_map(int c_endpoint_map_fd, int listen_port_m
 
             // init endpoint value
             ep_val.type = SK_TYPE_CLIENT_TCP;
-            ep_val.pid = c_ep_key.pid;
+            ep_val.tgid = c_ep_key.tgid;
             snprintf(ep_val.comm, sizeof(ep_val.comm), "%s", tec->comm);
             ep_val.s_type = SOCK_STREAM;
             ep_val.protocol = c_ep_key.protocol;
@@ -155,7 +156,7 @@ static void _output_endpoint_data(struct endpoint_val_t *data)
     fprintf(stdout,
             "|%s|%d|%s|%d|%u|%d|%d|%d|%s|%u|%lu|%lu|%lu|%lu|%lu|%lu|%lu|%lu|%lu|%lu|\n",
             OO_NAME,
-            data->pid,
+            data->tgid,
             data->comm,
             data->type,
             data->uid,
@@ -189,7 +190,7 @@ static void _print_endpoint_data(struct endpoint_val_t *data)
             "ep_passive_opens:%lu, ep_active_opens:%lu, ep_attempt_fails:%lu, ep_abort_close:%lu, "
             "ep_request_fails:%lu, ep_rmem_schedule:%lu, ep_tcp_oom:%lu, ep_keepalive_timeout:%lu\n",
             time_fmt,
-            data->pid,
+            data->tgid,
             data->comm,
             data->type,
             data->uid,
