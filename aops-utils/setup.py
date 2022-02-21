@@ -17,6 +17,13 @@ setup(
         'requests',
         'prettytable',
         'pygments',
+        'SQLAlchemy',
+        'elasticsearch>=7',
+        'prometheus_api_client',
+        'urllib3',
+        'Werkzeug',
+        'Flask_RESTful',
+        'Flask'
     ],
     author='cmd-lsw-yyy-zyc',
     data_files=[

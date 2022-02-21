@@ -24,8 +24,7 @@ from aops_utils.restful.status import StatusCode, PARAM_ERROR, SUCCEED
 from aops_utils.conf.constant import GENERATE_TASK, DELETE_TASK, GET_TASK, IMPORT_TEMPLATE, \
     DELETE_TEMPLATE, GET_TEMPLATE
 from aops_utils.compare import compare_two_object
-from aops_utils.restful.response import MyResponse
-from aops_utils.restful.resource import BaseResource
+from aops_utils.restful.response import BaseResponse
 
 app = Flask("manager")
 for blue, api in aops_manager.BLUE_POINT:
@@ -44,7 +43,7 @@ class TestDeployManage(unittest.TestCase):
     test deploy manager restful
     """
 
-    @mock.patch.object(MyResponse, "verify_token")
+    @mock.patch.object(BaseResponse, 'verify_token')
     def test_restful_manage_add_task(self, mock_verify_token):
         mock_verify_token.return_value = SUCCEED
         # normal
@@ -53,11 +52,12 @@ class TestDeployManage(unittest.TestCase):
             "description": "xx",
             "template_name": ["t1", "t2"]
         }
-        with mock.patch.object(BaseResource, "operate") as mock_operate:
+        with mock.patch("aops_utils.restful.response.operate") as mock_operate:
             expected_res = 200
             mock_operate.return_value = expected_res
-            client.post(GENERATE_TASK, json=args, headers=header)
-            self.assertIn('task_id', mock_operate.call_args[0][1].keys())
+            response = client.post(GENERATE_TASK, json=args, headers=header).json
+            # self.assertIn('task_id', mock_operate.call_args[0][1].keys())
+            self.assertIn('task_id', response.keys())
 
         # abnormal, miss param
         args = {
@@ -67,7 +67,7 @@ class TestDeployManage(unittest.TestCase):
         response = client.post(GENERATE_TASK, json=args, headers=header)
         self.assertTrue(compare_two_object(response.json, expected_res))
 
-    @mock.patch.object(MyResponse, "verify_token")
+    @mock.patch.object(BaseResponse, "verify_token")
     def test_restful_manage_delete_task(self, mock_verify_token):
         mock_verify_token.return_value = SUCCEED
 
@@ -75,7 +75,7 @@ class TestDeployManage(unittest.TestCase):
         args = {
             "task_list": ["name1", "name2"]
         }
-        with mock.patch.object(BaseResource, "operate") as mock_operate:
+        with mock.patch("aops_utils.restful.response.operate") as mock_operate:
             expected_res = 200
             mock_operate.return_value = expected_res
             client.delete(DELETE_TASK, json=args, headers=header)
@@ -90,14 +90,14 @@ class TestDeployManage(unittest.TestCase):
         args['username'] = 'admin'
         self.assertTrue(compare_two_object(response.json, expected_res))
 
-    @mock.patch.object(MyResponse, "verify_token")
+    @mock.patch.object(BaseResponse, "verify_token")
     def test_restful_manage_get_task(self, mock_verify_token):
         mock_verify_token.return_value = SUCCEED
         # normal
         args = {
             "task_list": ["name1", "name2"]
         }
-        with mock.patch.object(BaseResource, "operate") as mock_operate:
+        with mock.patch("aops_utils.restful.response.operate") as mock_operate:
             expected_res = 200
             mock_operate.return_value = expected_res
             client.post(GET_TASK, json=args, headers=header)
@@ -115,7 +115,7 @@ class TestDeployManage(unittest.TestCase):
 
         # ==============execute task===================
 
-    @mock.patch.object(MyResponse, "verify_token")
+    @mock.patch.object(BaseResponse, "verify_token")
     def test_restful_manage_import_template(self, mock_verify_token):
         mock_verify_token.return_value = SUCCEED
 
@@ -125,7 +125,7 @@ class TestDeployManage(unittest.TestCase):
             "template_content": {},
             "description": "xx"
         }
-        with mock.patch.object(BaseResource, "operate") as mock_operate:
+        with mock.patch("aops_utils.restful.response.operate") as mock_operate:
             expected_res = 200
             mock_operate.return_value = expected_res
             client.post(IMPORT_TEMPLATE, json=args, headers=header)
@@ -139,14 +139,14 @@ class TestDeployManage(unittest.TestCase):
         response = client.post(IMPORT_TEMPLATE, json=args, headers=header)
         self.assertTrue(compare_two_object(response.json, expected_res))
 
-    @mock.patch.object(MyResponse, "verify_token")
+    @mock.patch.object(BaseResponse, "verify_token")
     def test_restful_manage_get_template(self, mock_verify_token):
         mock_verify_token.return_value = SUCCEED
         # normal
         args = {
             "template_list": ["xx"]
         }
-        with mock.patch.object(BaseResource, "operate") as mock_operate:
+        with mock.patch("aops_utils.restful.response.operate") as mock_operate:
             expected_res = 200
 
             mock_operate.return_value = expected_res
@@ -162,7 +162,7 @@ class TestDeployManage(unittest.TestCase):
         res = response.json
         self.assertTrue(compare_two_object(res, expected_res))
 
-    @mock.patch.object(MyResponse, "verify_token")
+    @mock.patch.object(BaseResponse, "verify_token")
     def test_restful_manage_delete_template(self, mock_verify_token):
         mock_verify_token.return_value = SUCCEED
 
@@ -170,7 +170,7 @@ class TestDeployManage(unittest.TestCase):
         args = {
             "template_list": ["x"]
         }
-        with mock.patch.object(BaseResource, "operate") as mock_operate:
+        with mock.patch("aops_utils.restful.response.operate") as mock_operate:
             expected_res = 200
             mock_operate.return_value = expected_res
             client.delete(DELETE_TEMPLATE, json=args, headers=header)

@@ -13,14 +13,17 @@
 """
 Time:
 Author:
-Description: For host related interfaces
+Description:
 """
-from marshmallow import Schema
-from marshmallow import fields
+from sqlalchemy import Column
+from sqlalchemy.ext.declarative import declarative_base
+from sqlalchemy.sql.sqltypes import Integer, String
 
 
-class CollectConfigSchema(Schema):
-    """
-    validators for parameter of /manage/config/collect
-    """
-    infos = fields.List(fields.Dict(), required=True)
+Base = declarative_base()
+
+class Test(Base):
+    __tablename__ = "test"
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    name = Column(String(20), nullable=False)
+    age = Column(Integer, nullable=False)

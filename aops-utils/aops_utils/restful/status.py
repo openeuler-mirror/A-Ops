@@ -29,6 +29,8 @@ DATABASE_QUERY_ERROR = 1104
 DATA_EXIST = 1105
 DATA_DEPENDENCY_ERROR = 1106
 DATABASE_UPDATE_ERROR = 1107
+NO_DATA = 1108
+WRONG_DATA = 1109
 LOGIN_ERROR = 1200
 TOKEN_ERROR = 1201
 REPEAT_LOGIN = 1202
@@ -37,6 +39,7 @@ CHANGE_PASSWORD = 1204
 REPEAT_PASSWORD = 1205
 CHANGE_PASSWORD_FAIL = 1206
 TASK_EXECUTION_FAIL = 1301
+REPEAT_TASK_EXECUTION = 1302
 
 
 class StatusCode:  # pylint: disable=R0903
@@ -74,6 +77,9 @@ class StatusCode:  # pylint: disable=R0903
         DATA_EXIST: {
             "msg": "data has existed"
         },
+        NO_DATA: {
+            "msg": "No data found in database"
+        },
         DATA_DEPENDENCY_ERROR: {
             "msg": "delete fail for it has dependency"
         },
@@ -106,6 +112,12 @@ class StatusCode:  # pylint: disable=R0903
         },
         TASK_EXECUTION_FAIL: {
             "msg": "Task execution failed."
+        },
+        WRONG_DATA: {
+            "msg": "The query parameter is not valid, please check again"
+        },
+        REPEAT_TASK_EXECUTION: {
+            "msg": "Task execute repeatedly"
         }
     }
 

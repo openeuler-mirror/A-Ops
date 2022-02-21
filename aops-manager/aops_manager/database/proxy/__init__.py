@@ -10,8 +10,3 @@
 # PURPOSE.
 # See the Mulan PSL v2 for more details.
 # ******************************************************************************/
-"""
-Time: 2021-12-22 16:11:02
-Author: peixiaochao
-Description: 
-"""

@@ -18,26 +18,27 @@ Description: functions about of database proxy
 import hmac
 import base64
 import time
+import math
 from sqlalchemy import create_engine
-from sqlalchemy.orm import sessionmaker
-from sqlalchemy.orm.scoping import scoped_session
+from sqlalchemy.sql.expression import desc, asc
 
-from aops_utils.database.table import Base
 from aops_utils.restful.status import DATABASE_CONNECT_ERROR, PARTIAL_SUCCEED, SUCCEED
-from aops_utils.conf import configuration
 
 
-def make_mysql_engine_url():
+def make_mysql_engine_url(configuration):
     """
     Create engine url of mysql
+
+    Args:
+        configuration (Config): configuration object of certain module
 
     Returns:
         str: url of engine
     """
-    mysql_host = configuration.mysql.get("IP")  # pylint: disable=E1101
-    mysql_port = configuration.mysql.get("PORT")  # pylint: disable=E1101
-    mysql_url_format = configuration.mysql.get("ENGINE_FORMAT")  # pylint: disable=E1101
-    mysql_database_name = configuration.mysql.get("DATABASE_NAME")  # pylint: disable=E1101
+    mysql_host = configuration.mysql.get("IP")
+    mysql_port = configuration.mysql.get("PORT")
+    mysql_url_format = configuration.mysql.get("ENGINE_FORMAT")
+    mysql_database_name = configuration.mysql.get("DATABASE_NAME")
     url = mysql_url_format % (mysql_host, mysql_port, mysql_database_name)
     return url
 
@@ -58,31 +59,27 @@ def create_database_engine(url, pool_size, pool_recycle):
     return engine
 
 
-engine_url = make_mysql_engine_url()
-ENGINE = create_database_engine(engine_url,
-                                configuration.mysql.get("POOL_SIZE"),  # pylint: disable=E1101
-                                configuration.mysql.get("POOL_RECYCLE"))  # pylint: disable=E1101
-SESSION = scoped_session(sessionmaker(bind=ENGINE))
-
-
-def create_tables(engine):
+def create_tables(base, engine, tables=None):
     """
     Create all tables according to metadata of Base.
 
     Args:
+        base (instance): sqlalchemy.ext.declarative.declarative_base(), actually a registry instance
         engine(instance): _engine.Engine instance
+        tables (list): table object list
     """
-    Base.metadata.create_all(engine)
+    base.metadata.create_all(engine, tables=tables)
 
 
-def drop_tables(engine):
+def drop_tables(base, engine):
     """
     Drop all tables according to metadata of Base.
 
     Args:
+        base (instance): sqlalchemy.ext.declarative.declarative_base(), actually a registry instance
         engine(instance): _engine.Engine instance
     """
-    Base.metadata.drop_all(engine)
+    base.metadata.drop_all(engine)
 
 
 def timestamp_datetime(value):
@@ -144,6 +141,41 @@ def operate(proxy, data, func, session=None):
     return res
 
 
+def sort_and_page(query_result, column, direction, per_page, page):
+    """
+    Sort and paginate the query result
+    Args:
+        query_result (sqlalchemy.orm.query.Query): query result
+        column (sqlalchemy.orm.attributes.InstrumentedAttribute/
+            sqlalchemy.sql.functions.count/None): the column that sort based on
+        direction (str/None): desc or asc
+        per_page (int/None): number of record per page, if per_page = None, return all
+        page (int/None): which page to return, if page = None, return all
+
+    Returns:
+        sqlalchemy.orm.query.Query
+    """
+    total_page = 1
+    total_count = len(query_result.all())
+
+    if not total_count:
+        return query_result, total_page
+
+    direction = desc if direction == 'desc' else asc
+
+    # when column is a sqlalchemy.sql.functions.count object, like func.count(Hots.host_id),
+    # it has no boolean value, so "if column:" here is not available
+    if column is not None:
+        query_result = query_result.order_by(direction(column))
+
+    if page and per_page:
+        total_page = math.ceil(total_count / per_page)
+        query_result = query_result.offset(
+            (page - 1) * per_page).limit(per_page)
+
+    return query_result, total_page
+
+
 def judge_return_code(result, default_stat):
     """
     Generate return result according to result
@@ -197,7 +229,8 @@ def generate_token(username, expire=3600):
     """
     time_str = str(time.time() + expire)
     time_byte = time_str.encode("utf-8")
-    sha1_tester = hmac.new(username.encode("utf-8"), time_byte, 'sha1').hexdigest()
+    sha1_tester = hmac.new(username.encode(
+        "utf-8"), time_byte, 'sha1').hexdigest()
     token = time_str + ':' + sha1_tester
     b64_token = base64.urlsafe_b64encode(token.encode("utf-8"))
     return b64_token.decode("utf-8")

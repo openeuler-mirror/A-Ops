@@ -16,13 +16,15 @@ setup(
         'marshmallow>=3.13.0',
         'Flask',
         'Flask-RESTful',
-        'requests'
+        'requests',
+        'SQLAlchemy',
+        'Werkzeug'
         ],
     author='cmd-lsw-yyy-zyc',
     data_files=[
-        ('/etc/aops', ['conf/manager.ini']),
+        ('/etc/aops', ['conf/manager.ini', 'conf/default.json']),
         ('/usr/lib/systemd/system', ['aops-manager.service']),
     ],
-    scripts=['aops-manager'],
+    scripts=['aops-manager', 'aops-basedatabase'],
     zip_safe=False
 )
