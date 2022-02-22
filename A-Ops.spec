@@ -1,5 +1,5 @@
 Name:		A-Ops
-Version:	v1.1.1
+Version:	v1.1.12
 Release:	1
 Summary:	The intelligent ops toolkit for openEuler
 License:	MulanPSL2
