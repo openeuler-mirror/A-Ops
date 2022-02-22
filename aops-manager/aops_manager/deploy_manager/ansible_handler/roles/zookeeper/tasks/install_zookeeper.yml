@@ -5,6 +5,7 @@
   dnf:
     state: latest
     name:
+      - python3-libselinux
       - zookeeper
 
 - name: Create Data Dir
