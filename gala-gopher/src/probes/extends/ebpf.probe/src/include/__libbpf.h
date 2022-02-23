@@ -50,7 +50,7 @@ static __always_inline int set_memlock_rlimit(void)
 #define GET_MAP_FD(probe_name, map_name) bpf_map__fd(probe_name##_skel->maps.map_name)
 #define GET_PROG_FD(prog_name) bpf_program__fd(probe_name##_skel->progs.prog_name)
 
-#define __PIN_SHARE_MAP(probe_name, map_name, map_path) \
+#define __MAP_SET_PIN_PATH(probe_name, map_name, map_path) \
     do { \
         int ret; \
         struct bpf_map *__map; \
@@ -62,8 +62,8 @@ static __always_inline int set_memlock_rlimit(void)
 
 #define __PIN_SHARE_MAP_ALL(probe_name) \
         do { \
-            __PIN_SHARE_MAP(probe_name, __probe_match_map, __PROBE_MATCH_MAP_PIN_PATH); \
-            __PIN_SHARE_MAP(probe_name, __task_map, SHARE_MAP_TASK_PATH); \
+            __MAP_SET_PIN_PATH(probe_name, __probe_match_map, __PROBE_MATCH_MAP_PIN_PATH); \
+            __MAP_SET_PIN_PATH(probe_name, __task_map, SHARE_MAP_TASK_PATH); \
         } while (0)
 
 #define INIT_BPF_APP(app_name) \
@@ -107,6 +107,53 @@ static __always_inline int set_memlock_rlimit(void)
             probe_name##_skel = NULL; \
             goto end; \
         } \
+        (void)fprintf(stdout, "Succeed to load and attach BPF " #probe_name " skeleton\n"); \
+    } while (0)
+
+#define OPEN(probe_name, end, load) \
+    struct probe_name##_bpf *probe_name##_skel = NULL;           \
+    struct bpf_link *probe_name##_link[PATH_NUM] __maybe_unused; \
+    int probe_name##_link_current = 0;    \
+    do { \
+        if (load) \
+        {\
+            /* Open load and verify BPF application */ \
+            probe_name##_skel = probe_name##_bpf__open(); \
+            if (!probe_name##_skel) { \
+                (void)fprintf(stderr, "Failed to open BPF " #probe_name "skeleton\n"); \
+                goto end; \
+            } \
+        }\
+    } while (0)
+    
+#define MAP_SET_PIN_PATH(probe_name, map_name, map_path, load) \
+    do { \
+        if (load) \
+        {\
+            __MAP_SET_PIN_PATH(probe_name, map_name, map_path);\
+        }\
+    } while (0)
+    
+#define LOAD_ATTACH(probe_name, end, load) \
+    do { \
+        if (load) \
+        {\
+            int err; \
+            __PIN_SHARE_MAP_ALL(probe_name); \
+            if (probe_name##_bpf__load(probe_name##_skel)) { \
+                (void)fprintf(stderr, "Failed to load BPF " #probe_name "skeleton\n"); \
+                goto end; \
+            } \
+            /* Attach tracepoint handler */ \
+            err = probe_name##_bpf__attach(probe_name##_skel); \
+            if (err) { \
+                (void)fprintf(stderr, "Failed to attach BPF " #probe_name " skeleton\n"); \
+                probe_name##_bpf__destroy(probe_name##_skel); \
+                probe_name##_skel = NULL; \
+                goto end; \
+            } \
+            (void)fprintf(stdout, "Succeed to load and attach BPF " #probe_name " skeleton\n"); \
+        }\
     } while (0)
 
 #define UNLOAD(probe_name) \

@@ -25,13 +25,13 @@
 #define AF_INET6    10  /* IP version 6 */
 #endif
 
-#define INT_LEN    				32
-#define THOUSAND   				1000
-#define PATH_NUM   				20
-#define IP_LEN 	   				4
-#define IP_STR_LEN 	   			128
-#define IP6_LEN    				16
-#define IP6_STR_LEN    			128
+#define INT_LEN                 32
+#define THOUSAND                1000
+#define PATH_NUM                20
+#define IP_LEN                  4
+#define IP_STR_LEN              128
+#define IP6_LEN                 16
+#define IP6_STR_LEN             128
 
 #define TASK_COMM_LEN           16
 #define TASK_EXE_FILE_LEN       128
@@ -40,15 +40,18 @@
 
 #define CONTAINER_ID_LEN        64
 #define NAMESPACE_LEN           64
-#define POD_NAME_LEN        	64
+#define POD_NAME_LEN            64
 
 #define COMMAND_LEN             256
 #define LINE_BUF_LEN            512
 
 #if !defined INET6_ADDRSTRLEN
-	#define INET6_ADDRSTRLEN 	48
+    #define INET6_ADDRSTRLEN    48
 #endif
 
+#if !defined DISK_NAME_LEN
+    #define DISK_NAME_LEN       32
+#endif
 
 #ifndef GOPHER_DEBUG
 static inline int __debug_printf(const char *format, ...)
@@ -68,7 +71,7 @@ static inline int __debug_printf(const char *format, ...)
         } \
     } while (0)
 
-#define __maybe_unused		__attribute__((unused))
+#define __maybe_unused      __attribute__((unused))
 
 #include "__share_map_task.h"
 #include "__share_map_match.h"
