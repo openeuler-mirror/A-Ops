@@ -17,7 +17,6 @@
 
 #define KILL_INFO_MAX_NUM 100
 #define MONITOR_PIDS_MAX_NUM 10
-#define TASK_COMM_LEN 16
 
 #define PROBE_CYCLE_SEC (5)
 

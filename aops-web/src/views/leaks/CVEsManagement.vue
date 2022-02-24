@@ -2,7 +2,9 @@
   <page-header-wrapper :breadcrumb="breadcrumb">
     <a-card :bordered="false" class="aops-theme">
       <div>
-        <cves-table standalone />
+        <cves-table
+        standalone
+         />
       </div>
     </a-card>
   </page-header-wrapper>

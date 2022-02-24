@@ -29,9 +29,11 @@ struct task_key {
 };
 
 struct task_io_data {
+    int major;
+    int minor;
     __u32 fd_count;         // FROM '/usr/bin/ls -l /proc/[PID]/fd | wc -l'
 
-    __u64 task_io_wait_time_us; // FROM 'io_schedule_prepare/io_schedule_finish'
+    __u64 task_io_wait_time_us; // FROM tracepoint 'sched_stat_iowait'
     
     __u64 task_wblock_bytes;    // FROM 'blk_account_io_start/blk_mq_start_request/blk_account_io_completion'
     __u64 task_rblock_bytes;    // FROM same as 'task_wblock_bytes'
@@ -46,6 +48,8 @@ struct task_io_data {
     __u64 task_read_bytes;      // FROM same as 'task_rchar_bytes'
     __u64 task_write_bytes;     // FROM same as 'task_rchar_bytes'
     __u64 task_cancelled_write_bytes;   // FROM same as 'task_rchar_bytes'
+
+    __u32 task_hang_count;      // FROM tracepoint 'sched_process_hang'
 };
 
 struct task_id {

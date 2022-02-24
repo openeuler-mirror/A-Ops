@@ -61,13 +61,13 @@ struct bpf_map_def SEC("maps") __probe_match_map = {
     .max_entries = __PROBE_MATCH_MAP_MAX_ENTRIES,
 };
 
-static __always_inline void __get_probe_key(struct __probe_key *key, const long bp) {
+static __always_inline __maybe_unused void __get_probe_key(struct __probe_key *key, const long bp) {
     key->smp_id = bpf_get_smp_processor_id();
-    key->pid = bpf_get_current_pid_tgid() >> 32;
+    key->pid = (unsigned int)bpf_get_current_pid_tgid();
     key->bp = bp;
 }
 
-static __always_inline void __get_probe_val(struct __probe_val *val,
+static __always_inline __maybe_unused void __get_probe_val(struct __probe_val *val,
                                                     const long p1,
                                                     const long p2,
                                                     const long p3,
@@ -82,12 +82,12 @@ static __always_inline void __get_probe_val(struct __probe_val *val,
     val->params[__PROBE_PARAM6] = p6;
 }
 
-static __always_inline int __do_push_match_map(const struct __probe_key *key,
+static __always_inline __maybe_unused int __do_push_match_map(const struct __probe_key *key,
                                     const struct __probe_val* val) {
     return bpf_map_update_elem(&__probe_match_map, key, val, BPF_ANY);
 }
 
-int __do_pop_match_map_entry(const struct __probe_key *key,
+static __maybe_unused int __do_pop_match_map_entry(const struct __probe_key *key,
                                     struct __probe_val* val)
 {
     struct __probe_val* tmp;

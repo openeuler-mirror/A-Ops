@@ -6,8 +6,6 @@
 
 #define MAX_ENDPOINT_LEN (0xffff)
 #define MAX_ENDPOINT_STATS_LEN 20
-#define TASK_COMM_LEN 16
-#define IP6_LEN 16
 
 #define MAX_ENTRIES 8192
 
@@ -30,7 +28,7 @@ struct endpoint_stats {
     unsigned long stats[MAX_ENDPOINT_STATS_LEN];
 };
 
-enum endpoint_type {
+enum endpoint_t {
     SK_TYPE_LISTEN_TCP = 1,
     SK_TYPE_LISTEN_UDP,
     SK_TYPE_CLIENT_TCP,
@@ -41,12 +39,19 @@ struct ip {
     union {
         unsigned int ip4;               /* IPv4 地址 */
         unsigned char ip6[IP6_LEN];     /* IPv6 地址 */
-    };
+    }ip;
+    int family;                         /* 地址族 */
 };
 
 struct listen_port_key_t {
+    int tgid;               /* 用户进程 ID */
     int protocol;           /* 协议族 */
     unsigned short port;    /* 监听端口号 */
+};
+
+struct listen_sockfd_key_t {
+    int tgid;               /* 用户进程 ID */
+    int fd;                 /* socket的文件描述符 */
 };
 
 struct s_endpoint_key_t {
@@ -55,19 +60,16 @@ struct s_endpoint_key_t {
 
 
 struct c_endpoint_key_t {
-    int pid;                /* 用户进程 ID */
-    int family;             /* 地址族 */
+    int tgid;               /* 用户进程 ID */
     struct ip ip_addr;      /* 端口绑定的地址 */
     int protocol;           /* 协议族 */
 };
 
 struct endpoint_val_t {
-    enum endpoint_type type;    /* endpoint 类型 */
+    enum endpoint_t type;       /* endpoint 类型 */
     unsigned int uid;           /* 用户 ID */
-    int pid;                    /* 用户进程 ID */
+    int tgid;                   /* 用户进程 ID */
     char comm[TASK_COMM_LEN];   /* 进程名 */
-    // unsigned int fd;            /* socket 文件描述符 */
-    int family;                 /* 地址族 */
     int s_type;                 /* socket 类型 */
     int protocol;               /* 协议族 */
     struct ip s_addr;           /* socket 绑定的地址 */

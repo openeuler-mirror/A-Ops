@@ -1,6 +1,6 @@
 <template>
   <div @click="showModal">
-    <a-button type="primary">上传文件</a-button>
+    <a-button type="primary">上传安全公告</a-button>
     <a-modal
       title="上传文件"
       :visible="visible"

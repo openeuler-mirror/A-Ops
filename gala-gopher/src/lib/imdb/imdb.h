@@ -44,6 +44,8 @@
 
 #define THOUSAND        1000
 
+#define INVALID_METRIC_VALUE "(null)"
+
 typedef struct {
     char machineId[MAX_IMDB_MACHINEID_LEN];
     char hostName[MAX_IMDB_HOSTNAME_LEN];
@@ -118,7 +120,8 @@ IMDB_Table *IMDB_DataBaseMgrFindTable(IMDB_DataBaseMgr *mgr, char *tableName);
 int IMDB_DataBaseMgrAddRecord(IMDB_DataBaseMgr *mgr, char *recordStr, int len);
 int IMDB_DataBaseMgrData2String(IMDB_DataBaseMgr *mgr, char *buffer, uint32_t maxLen);
 
-int IMDB_DataStr2Json(IMDB_DataBaseMgr *mgr, char *recordStr, int recordLen, char *jsonStr, uint32_t jsonStrLen);
+int IMDB_DataStr2Json(IMDB_DataBaseMgr *mgr, const char *recordStr, 
+	                           int recordLen, char *jsonStr, uint32_t jsonStrLen);
 
 #endif
 

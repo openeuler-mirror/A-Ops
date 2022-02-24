@@ -45,13 +45,13 @@ static void get_host_ip(const unsigned char *value, unsigned short family)
 {
     FILE *fp = NULL;
     char buffer[INET6_ADDRSTRLEN] = {0};
-    char cmd[CMD_LEN] = {""};
+    char cmd[COMMAND_LEN] = {""};
     int num = -1;
 
     if (family == AF_INET) {
-        snprintf(cmd, CMD_LEN - 1, "/sbin/ifconfig | grep inet | grep -v 127.0.0.1 | grep -v inet6 | awk '{print $2}'");
+        (void)snprintf(cmd, COMMAND_LEN, "/sbin/ifconfig | grep inet | grep -v 127.0.0.1 | grep -v inet6 | awk '{print $2}'");
     } else {
-        snprintf(cmd, CMD_LEN - 1, "/sbin/ifconfig | grep inet6 | grep -v ::1 | awk '{print $2}'");
+        (void)snprintf(cmd, COMMAND_LEN, "/sbin/ifconfig | grep inet6 | grep -v ::1 | awk '{print $2}'");
     }
 
     fp = popen(cmd, "r");
@@ -60,7 +60,7 @@ static void get_host_ip(const unsigned char *value, unsigned short family)
         return ;
     }
     pclose(fp);
-    num = sscanf(buffer, "%47s", value);
+    num = sscanf(buffer, "%47s", (char *)value);
     if (num < 1)
         printf("failed get hostip [%d]", errno);
 
@@ -85,14 +85,14 @@ static void update_haproxy_collect_map(struct link_key *k, struct link_value *v,
     key.p_port = k->p_port;
     key.s_port = k->s_port;
     /* lookup value */
-    bpf_map_lookup_elem(map_fd, &key, &val);
+    (void)bpf_map_lookup_elem(map_fd, &key, &val);
     /* update value */
     update_collect_count(&val);
     val.family = v->family;
     val.protocol = v->type;
     val.pid = v->pid;
     /* update hash map */
-    bpf_map_update_elem(map_fd, &key, &val, BPF_ANY);
+    (void)bpf_map_update_elem(map_fd, &key, &val, BPF_ANY);
 
     return;
 }
@@ -103,9 +103,9 @@ static void pull_probe_data(int fd, int collect_fd)
     struct link_key     key = {0};
     struct link_key     next_key = {0};
     struct link_value   value = {0};
-    unsigned char cli_ip_str[16];
-    unsigned char lb_ip_str[16];
-    unsigned char src_ip_str[16];
+    unsigned char cli_ip_str[INET6_ADDRSTRLEN];
+    unsigned char lb_ip_str[INET6_ADDRSTRLEN];
+    unsigned char src_ip_str[INET6_ADDRSTRLEN];
 
     while (bpf_map_get_next_key(fd, &key, &next_key) == 0) {
         ret = bpf_map_lookup_elem(fd, &next_key, &value);
@@ -130,7 +130,7 @@ static void pull_probe_data(int fd, int collect_fd)
             update_haproxy_collect_map(&next_key, &value, collect_fd);
         }
         if (value.state == SI_ST_CLO) {
-            bpf_map_delete_elem(fd, &next_key);
+            (void)bpf_map_delete_elem(fd, &next_key);
         } else {
             key = next_key;
         }
@@ -143,9 +143,9 @@ static void print_haproxy_collect(int map_fd)
     struct collect_key  key = {0};
     struct collect_key  next_key = {0};
     struct collect_value    value = {0};
-    unsigned char cli_ip_str[16];
-    unsigned char lb_ip_str[16];
-    unsigned char src_ip_str[16];
+    unsigned char cli_ip_str[INET6_ADDRSTRLEN];
+    unsigned char lb_ip_str[INET6_ADDRSTRLEN];
+    unsigned char src_ip_str[INET6_ADDRSTRLEN];
 
     while (bpf_map_get_next_key(map_fd, &key, &next_key) != -1) {
         ret = bpf_map_lookup_elem(map_fd, &next_key, &value);
@@ -164,7 +164,7 @@ static void print_haproxy_collect(int map_fd)
                 value.protocol,
                 value.link_count);
         }
-        bpf_map_delete_elem(map_fd, &next_key);
+        (void)bpf_map_delete_elem(map_fd, &next_key);
     }
     (void)fflush(stdout);
     return;
@@ -185,7 +185,8 @@ int main(int argc, char **argv)
 
     printf("arg parse interval time:%us\n", params.period);
 
-    LOAD(trace_haproxy);
+    INIT_BPF_APP(trace_haproxy);
+    LOAD(trace_haproxy, err);
 
     /* Cleaner handling of Ctrl-C */
     signal(SIGINT, sig_handler);
@@ -201,11 +202,11 @@ int main(int argc, char **argv)
     /* Attach tracepoint handler for each elf_path */
     for (int i = 0; i < elf_num; i++) {
         int ret = 0;
-        UBPF_ATTACH(back_establish, elf[i], back_establish, ret);
+        UBPF_ATTACH(trace_haproxy, back_establish, elf[i], back_establish, ret);
         if (ret <= 0)
             continue;
 
-        UBPF_ATTACH(stream_free, elf[i], stream_free, ret);
+        UBPF_ATTACH(trace_haproxy, stream_free, elf[i], stream_free, ret);
         if (ret <= 0)
             continue;
 
@@ -224,7 +225,7 @@ int main(int argc, char **argv)
     }
 
     while (!g_stop) {
-        pull_probe_data(GET_MAP_FD(haproxy_link_map), collect_map_fd);
+        pull_probe_data(GET_MAP_FD(trace_haproxy, haproxy_link_map), collect_map_fd);
         print_haproxy_collect(collect_map_fd);
         sleep(params.period);
     }

@@ -1,0 +1,120 @@
+version = "1.0.0"
+measurements:
+(
+    {
+        name: "block",
+        fields:
+        (
+            {
+                description: "Major id of block",
+                type: "key",
+                name: "major",
+            },
+            {
+                description: "First minor id of block",
+                type: "key",
+                name: "first_minor",
+            },
+            {
+                description: "Type of block, such as disk, part.",
+                type: "label",
+                name: "blk_type",
+            },
+            {
+                description: "Type of block driver, such as iscsi, virtio.",
+                type: "label",
+                name: "drv_type",
+            },
+            {
+                description: "Name of disk",
+                type: "label",
+                name: "disk_name",
+            },
+            {
+                description: "Max latency of request consumed, include block queued time",
+                type: "gauge",
+                name: "latency_req_max",
+            },
+            {
+                description: "Avg latency of request consumed, include block queued time",
+                type: "gauge",
+                name: "latency_req_avg",
+            },
+            {
+                description: "Last latency of request consumed, include block queued time",
+                type: "gauge",
+                name: "latency_req_last",
+            },
+            {
+                description: "Max latency of flush operation consumed, include block queued time",
+                type: "gauge",
+                name: "latency_flush_max",
+            },
+            {
+                description: "Avg latency of flush operation consumed, include block queued time",
+                type: "gauge",
+                name: "latency_flush_avg",
+            },
+            {
+                description: "Last latency of flush operation consumed, include block queued time",
+                type: "gauge",
+                name: "latency_flush_last",
+            },
+            {
+                description: "Max latency of iscsi operation consumed, include block queued time",
+                type: "gauge",
+                name: "latency_iscsi_max",
+            },
+            {
+                description: "Avg latency of iscsi operation consumed, include block queued time",
+                type: "gauge",
+                name: "latency_iscsi_avg",
+            },
+            {
+                description: "Last latency of iscsi operation consumed, include block queued time",
+                type: "gauge",
+                name: "latency_iscsi_last",
+            },
+            {
+                description: "Count of iscsi operation time out",
+                type: "counter",
+                name: "count_iscsi_tmout",
+            },
+            {
+                description: "Count of iscsi operation error",
+                type: "counter",
+                name: "count_iscsi_err",
+            },
+            {
+                description: "Count of iscsi transport bad op-code",
+                type: "counter",
+                name: "conn_err_bad_opcode",
+            },
+            {
+                description: "Count of iscsi transport bad op-code",
+                type: "counter",
+                name: "conn_err_bad_opcode",
+            },
+            {
+                description: "Count of iscsi transport xmit failed",
+                type: "counter",
+                name: "conn_err_xmit_failed",
+            },
+            {
+                description: "Count of iscsi transport time out",
+                type: "counter",
+                name: "conn_err_tmout",
+            },
+            {
+                description: "Count of iscsi transport connection failed",
+                type: "counter",
+                name: "conn_err_connect_failed",
+            },
+            {
+                description: "Count of iscsi sas abort",
+                type: "counter",
+                name: "count_sas_abort",
+            }
+        )
+    }
+)

@@ -15,12 +15,6 @@
 #ifndef __TCPPROBE__H
 #define __TCPPROBE__H
 
-#define AF_INET 2
-#define AF_INET6 10
-
-#define INET_ADDRSTRLEN (16)
-#define INET6_ADDRSTRLEN (48)
-
 #define TM_STR_LEN  48
 
 #define TCP_ESTABLISHED 1
@@ -42,9 +36,6 @@
 
 #define LINK_ROLE_SERVER 0
 #define LINK_ROLE_CLIENT 1
-
-#define IP6_LEN 16
-#define TASK_COMM_LEN 16
 
 #define TCPPROBE_INTERVAL_NS (5000000000)
 #define TCPPROBE_CYCLE_SEC (5)
@@ -71,7 +62,7 @@ struct metric_key {
     struct ip s_ip;
     __u16 s_port;
     __u16 proto;
-    __u32 pid;
+    __u32 tgid;		// process id
 };
 
 struct metric_data {
@@ -102,7 +93,7 @@ struct metric_data {
 };
 
 struct proc_info {
-    __u32 pid;
+    __u32 tgid;		// process id
     char comm[TASK_COMM_LEN];
     __u64 role : 1;
     __u64 ts : 63;
@@ -123,7 +114,7 @@ struct link_key {
 };
 
 struct link_data {
-    pid_t pid;
+    pid_t tgid;		// process id
     char comm[TASK_COMM_LEN];
     __u16 states; /* status after established */
     __u16 role;   /* 0: server 1: client */
@@ -223,7 +214,7 @@ enum TCPPROBE_EVT_E {
 
 #define TCPPROBE_UPDATE_PRCINFO(data, proc_info) \
     do { \
-        (data).pid = (proc_info)->pid; \
+        (data).tgid = (proc_info)->tgid; \
         (data).role = (proc_info)->role; \
         __builtin_memcpy(&(data).comm, &(proc_info)->comm, TASK_COMM_LEN); \
     } while (0)

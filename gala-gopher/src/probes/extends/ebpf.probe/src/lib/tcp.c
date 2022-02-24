@@ -16,6 +16,7 @@
 #include <stdlib.h>
 #include <ctype.h>
 #include <string.h>
+#include "bpf.h"
 #include "tcp.h"
 
 /*
@@ -42,9 +43,6 @@
 */
 #define SS_ESTAB_COMMAND "ss -anpt | grep ESTAB |  awk '{print $4 \"|\" $5 \"@\" $6}'"
 
-
-#define LEN_BUF 256
-#define COMMAND_LEN 512
 #define PORT_LEN 11
 #define PID_LEN 32
 #define FID_LEN 32
@@ -113,7 +111,7 @@ static int __erase_square_brackets(const char* s, char *buf, unsigned int buf_le
 {
     char *p1, *p2;
     int len;
-    char tmp[LEN_BUF];
+    char tmp[LINE_BUF_LEN];
 
     p1 = strchr(s, '[');
     p2 = strchr(s, ']');
@@ -123,7 +121,7 @@ static int __erase_square_brackets(const char* s, char *buf, unsigned int buf_le
     if (p2 <= p1)
         return -1;
 
-    if (__get_sub_str(s, "[", "]", tmp, LEN_BUF) < 0)
+    if (__get_sub_str(s, "[", "]", tmp, LINE_BUF_LEN) < 0)
         return -1;
 
     len = (int)strlen(tmp);
@@ -158,7 +156,7 @@ static int __get_estab_addr(const char *s, struct ip_addr* ip_addr,
     (void)memcpy(ip_addr->ip, addr_buf, ip_len);
     ip_addr->ip[ip_len] = 0;
 
-    if (__erase_square_brackets((const char*)ip_addr->ip, ip_addr->ip, IP_LEN) == 0) {
+    if (__erase_square_brackets((const char*)ip_addr->ip, ip_addr->ip, IP_STR_LEN) == 0) {
         ip_addr->ipv4 = 0;
     } else {
         ip_addr->ipv4 = 1;
@@ -183,20 +181,20 @@ static struct tcp_estab_comm* __get_estab_comm(const char *start, unsigned int l
 {
     /* ("sshd",pid=1264958,fd=3) */
     int ret;
-    char comm[COMM_LEN];
+    char comm[TASK_COMM_LEN];
     char pid_s[PID_LEN];
     char fd_s[FID_LEN];
-    char tmp[LEN_BUF];
+    char tmp[LINE_BUF_LEN];
     const char *s = tmp;
     struct tcp_estab_comm *te_comm;
 
-    if ((start == NULL) || (len >= LEN_BUF))
+    if ((start == NULL) || (len >= LINE_BUF_LEN))
         return NULL;
 
     (void)memcpy(tmp, start, len);
     tmp[len] = 0;
 
-    ret = __get_sub_str(s, "(\"", "\",", comm, COMM_LEN);
+    ret = __get_sub_str(s, "(\"", "\",", comm, TASK_COMM_LEN);
     ret |= __get_sub_str(s, "pid=", ",fd", pid_s, PID_LEN);
     ret |= __get_sub_str(s, ",fd=", ")", fd_s, FID_LEN);
     if (ret < 0 || !__is_digit_str((const char *)pid_s)
@@ -216,7 +214,7 @@ static int __add_estab_comm(struct tcp_estab* te, const struct tcp_estab_comm *t
     if (te->te_comm_num >= TCP_ESTAB_COMM_MAX)
         return -1;
 
-    te->te_comm[te->te_comm_num++] = te_comm;
+    te->te_comm[te->te_comm_num++] = (struct tcp_estab_comm *)te_comm;
     return 0;
 }
 
@@ -294,26 +292,26 @@ static int __get_estab(const char *s, struct tcp_estab* te)
     int ret;
     int offset;
     char *start, *end;
-    char addr_str[IP_LEN];
-    char comms_str[LEN_BUF];
+    char addr_str[IP_STR_LEN];
+    char comms_str[LINE_BUF_LEN];
     struct tcp_estab_comm *te_comm;
 
     // get establish tcp local address and port
     addr_str[0] = 0;
-    ret = __get_sub_str(s, NULL, "|", addr_str, IP_LEN);
+    ret = __get_sub_str(s, NULL, "|", addr_str, IP_STR_LEN);
     ret |= __get_estab_addr(s, &(te->local), addr_str);
     if (ret < 0)
         goto err;
 
     // get establish tcp remote address and port
     addr_str[0] = 0;
-    ret = __get_sub_str(s, "|", "@", addr_str, IP_LEN);
+    ret = __get_sub_str(s, "|", "@", addr_str, IP_STR_LEN);
     ret |= __get_estab_addr(s, &(te->remote), addr_str);
     if (ret < 0)
         goto err;
 
     // get all comm, pid, fd of establish tcp
-    ret = __get_sub_str(s, "@users:(", NULL, comms_str, LEN_BUF);
+    ret = __get_sub_str(s, "@users:(", NULL, comms_str, LINE_BUF_LEN);
     if (ret < 0)
         goto err;
 
@@ -354,7 +352,7 @@ err:
 
 static int __get_estabs(struct tcp_estabs* tes)
 {
-    char line[LEN_BUF];
+    char line[LINE_BUF_LEN];
     FILE *f;
     const char *command = SS_ESTAB_COMMAND;
     struct tcp_estab* te;
@@ -365,8 +363,8 @@ static int __get_estabs(struct tcp_estabs* tes)
         return -1;
 
     while (!feof(f)) {
-        (void)memset(line, 0, LEN_BUF);
-        if (fgets(line, LEN_BUF, f) == NULL)
+        (void)memset(line, 0, LINE_BUF_LEN);
+        if (fgets(line, LINE_BUF_LEN, f) == NULL)
             break;
 
         te = __new_estab();
@@ -448,22 +446,46 @@ static int __get_listen_pid(const char *s, unsigned int *pid)
     return 0;
 }
 
+/*
+   s example: 127.0.0.1:38338users:(("lubanagent",pid=1709,fd=4))
+*/
+static int __get_listen_fd(const char *s, int *fd)
+{
+    int ret;
+    char fd_str[FID_LEN];
+
+    ret = __get_sub_str(s, "fd=", "))", fd_str, FID_LEN);
+    if (ret < 0)
+        return -1;
+
+    if (__is_digit_str((const char *)fd_str) == 0)
+        return -1;
+
+    *fd = atoi(fd_str);
+    return 0;
+}
+
 static struct tcp_listen_port* __new_tlp(const char *s)
 {
     int ret;
     unsigned int port, pid;
-    char comm[COMM_LEN];
+    int fd;
+    char comm[TASK_COMM_LEN];
     struct tcp_listen_port* tlp;
 
     ret = __get_listen_port(s, &port);
     if (ret < 0)
         return NULL;
 
-    ret = __get_listen_comm(s, comm, COMM_LEN);
+    ret = __get_listen_comm(s, comm, TASK_COMM_LEN);
     if (ret < 0)
         return NULL;
 
     ret = __get_listen_pid(s, &pid);
+    if (ret < 0)
+        return NULL;
+
+    ret = __get_listen_fd(s, &fd);
     if (ret < 0)
         return NULL;
 
@@ -473,7 +495,8 @@ static struct tcp_listen_port* __new_tlp(const char *s)
 
     tlp->pid = pid;
     tlp->port = port;
-    memcpy(tlp->comm, comm, COMM_LEN);
+    tlp->fd = fd;
+    memcpy(tlp->comm, comm, TASK_COMM_LEN);
     return tlp;
 }
 
@@ -514,14 +537,14 @@ static int __add_tlp(struct tcp_listen_ports* tlps, const struct tcp_listen_port
         return -1;
 
     tlps->tlp_hash[tlp->port] = 1;
-    tlps->tlp[tlps->tlp_num] = tlp;
+    tlps->tlp[tlps->tlp_num] = (struct tcp_listen_port *)tlp;
     tlps->tlp_num++;
     return 0;
 }
 
 static int __get_tlps(struct tcp_listen_ports* tlps)
 {
-    char line[LEN_BUF];
+    char line[LINE_BUF_LEN];
     FILE *f;
     const char *command = SS_LISTEN_PORTS_COMMAND;
     struct tcp_listen_port* tlp;
@@ -532,8 +555,8 @@ static int __get_tlps(struct tcp_listen_ports* tlps)
         return -1;
 
     while (feof(f) == 0) {
-        (void)memset(line, 0, LEN_BUF);
-        if (fgets(line, LEN_BUF, f) == NULL)
+        (void)memset(line, 0, LINE_BUF_LEN);
+        if (fgets(line, LINE_BUF_LEN, f) == NULL)
             break;
 
         tlp = __new_tlp((const char *)line);
@@ -612,7 +635,7 @@ static int __add_tcp_endpoint(struct tcp_endpoints *teps, const struct tcp_endpo
     if (teps->tep_num >= TCP_ENDPOINT_MAX)
         return -1;
 
-    teps->tep[teps->tep_num++] = tep;
+    teps->tep[teps->tep_num++] = (struct tcp_endpoint *)tep;
     return 0;
 }
 

@@ -82,10 +82,10 @@ static void update_ipvs_collect_map(const struct link_key *k, unsigned short pro
     key.v_port = k->v_port;
     key.s_port = k->s_port;
 
-    bpf_map_lookup_elem(map_fd, &key, &val);
+    (void)bpf_map_lookup_elem(map_fd, &key, &val);
     update_ipvs_collect_data(&val);
     val.protocol = protocol;
-    bpf_map_update_elem(map_fd, &key, &val, BPF_ANY);
+    (void)bpf_map_update_elem(map_fd, &key, &val, BPF_ANY);
 
     return;
 }
@@ -126,7 +126,7 @@ static void pull_probe_data(int fd, int collect_fd)
             update_ipvs_collect_map(&next_key, value.protocol, &value.l_addr, collect_fd);
         }
         if (value.state == IP_VS_TCP_S_CLOSE) {
-            bpf_map_delete_elem(fd, &next_key);
+            (void)bpf_map_delete_elem(fd, &next_key);
         } else {
             key = next_key;
         }
@@ -140,10 +140,10 @@ static void print_ipvs_collect(int map_fd)
     struct collect_key  next_key = {0};
     struct collect_value    value = {0};
 
-    unsigned char cli_ip_str[16];
-    unsigned char vir_ip_str[16];
-    unsigned char src_ip_str[16];
-    unsigned char loc_ip_str[16];
+    unsigned char cli_ip_str[INET6_ADDRSTRLEN];
+    unsigned char vir_ip_str[INET6_ADDRSTRLEN];
+    unsigned char loc_ip_str[INET6_ADDRSTRLEN];
+    unsigned char src_ip_str[INET6_ADDRSTRLEN];
 
     while (bpf_map_get_next_key(map_fd, &key, &next_key) != -1) {
         ret = bpf_map_lookup_elem(map_fd, &next_key, &value);
@@ -174,7 +174,7 @@ static void print_ipvs_collect(int map_fd)
                 ntohs(next_key.s_port),
                 value.link_count);
         }
-        bpf_map_delete_elem(map_fd, &next_key);
+        (void)bpf_map_delete_elem(map_fd, &next_key);
     }
     (void)fflush(stdout);
     return;
@@ -191,7 +191,8 @@ int main(int argc, char **argv)
 
     printf("arg parse interval time:%us\n", params.period);
 
-    LOAD(trace_lvs);
+    INIT_BPF_APP(trace_lvs);
+    LOAD(trace_lvs, err);
 
     if (signal(SIGINT, sig_int) == SIG_ERR) {
         fprintf(stderr, "can't set signal handler: %s\n", strerror(errno));
@@ -210,7 +211,7 @@ int main(int argc, char **argv)
     printf("Successfully started! \n");
 
     while (stop == 0) {
-        pull_probe_data(GET_MAP_FD(lvs_link_map), collect_map_fd);
+        pull_probe_data(GET_MAP_FD(trace_lvs, lvs_link_map), collect_map_fd);
         print_ipvs_collect(collect_map_fd);
         sleep(params.period);
     }

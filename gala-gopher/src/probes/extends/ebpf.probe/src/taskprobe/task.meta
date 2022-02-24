@@ -15,22 +15,22 @@ measurements:
                 type: "key",
                 name: "pid",
             },
-			{
+            {
                 description: "pid of process group",
                 type: "label",
                 name: "pgid",
             },
-			{
+            {
                 description: "comm of the task",
                 type: "label",
                 name: "comm",
             },
-			{
+            {
                 description: "exe_file of the task",
                 type: "label",
                 name: "exe_file",
             },
-			{
+            {
                 description: "exec_file of the task",
                 type: "label",
                 name: "exec_file",
@@ -39,6 +39,71 @@ measurements:
                 description: "fork count of the task",
                 type: "counter",
                 name: "fork_count",
+            },
+            {
+                description: "disk major of the task io operate",
+                type: "label",
+                name: "major",
+            },
+            {
+                description: "disk minor of the task io operate",
+                type: "label",
+                name: "minor",
+            },
+            {
+                description: "io waite time of task",
+                type: "counter",
+                name: "task_io_wait_time_us",
+            },
+            {
+                description: "count of task io operatation",
+                type: "counter",
+                name: "task_io_count",
+            },
+            {
+                description: "accumulated Time of task io operatation",
+                type: "counter",
+                name: "task_io_time_us",
+            },
+            {
+                description: "bytes of task system call I/O read operation",
+                type: "counter",
+                name: "task_rchar_bytes",
+            },
+            {
+                description: "bytes of task system call I/O write operation",
+                type: "counter",
+                name: "task_wchar_bytes",
+            },
+            {
+                description: "count of task system call I/O read operation",
+                type: "counter",
+                name: "task_syscr_count",
+            },
+            {
+                description: "count of task system call I/O write operation",
+                type: "counter",
+                name: "task_syscw_count",
+            },
+            {
+                description: "bytes of task read operation from disk",
+                type: "counter",
+                name: "task_read_bytes",
+            },
+            {
+                description: "bytes written to disk by task (expected)",
+                type: "counter",
+                name: "task_write_bytes",
+            },
+            {
+                description: "bytes written to disk cancelled by task",
+                type: "counter",
+                name: "task_cancelled_write_bytes",
+            },
+            {
+                description: "count of task I/O hang event",
+                type: "counter",
+                name: "task_hang_count",
             }
         )
     }

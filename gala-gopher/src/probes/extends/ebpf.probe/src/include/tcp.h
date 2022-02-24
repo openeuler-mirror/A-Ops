@@ -20,15 +20,11 @@
 #include <netinet/in.h>
 #include <arpa/inet.h>
 
-#ifdef COMM_LEN
-#undef COMM_LEN
-#endif
-#define COMM_LEN 64
-
 struct tcp_listen_port {
     unsigned int pid;
     unsigned int port;
-    char comm[COMM_LEN];
+    unsigned int fd;
+    char comm[TASK_COMM_LEN];
 };
 
 #define LTP_MAX_NUM 1024
@@ -39,19 +35,14 @@ struct tcp_listen_ports {
     unsigned int tlp_hash[PORT_MAX_NUM];
 };
 
-#ifdef IP_LEN
-#undef IP_LEN
-#endif
-#define IP_LEN 128
-
 struct ip_addr {
-    char ip[IP_LEN];
+    char ip[IP_STR_LEN];
     unsigned int port;
     int ipv4;
 };
 
 struct tcp_estab_comm {
-    char comm[COMM_LEN];
+    char comm[TASK_COMM_LEN];
     unsigned int pid;
     unsigned int fd;
 };

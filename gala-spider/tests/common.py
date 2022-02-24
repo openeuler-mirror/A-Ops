@@ -79,12 +79,29 @@ def gen_host_entity(observe_meta: ObserveMeta, machine_id='123', **kwargs) -> Ob
     return ObserveEntityCreator.create_observe_entity(entity_type, entity_data, observe_meta)
 
 
+def gen_app_instance_entity(observe_meta: ObserveMeta, pgid=0, machine_id='123', **kwargs) -> ObserveEntity:
+    entity_type = 'appinstance'
+    entity_data = {
+        'pgid': pgid,
+        'machine_id': machine_id,
+        'exe_file': kwargs.get('exe_file') or 'exe_file',
+        'exec_file': kwargs.get('exec_file') or 'exec_file',
+        'container_id': kwargs.get('container_id') or None,
+        'timestamp': kwargs.get('timestamp') or 0,
+        'tasks': kwargs.get('tasks') or [],
+    }
+    return ObserveEntityCreator.create_observe_entity(entity_type, entity_data, observe_meta)
+
+
 def gen_task_entity(observe_meta: ObserveMeta, pid=1, machine_id='123', **kwargs) -> ObserveEntity:
     entity_type = 'task'
     entity_data = {
         'pid': pid,
         'machine_id': machine_id,
-        'task_name': kwargs.get('task_name') or 'task0',
+        'pgid': kwargs.get('pgid') or 0,
+        'exe_file': kwargs.get('exe_file') or 'exe_file',
+        'exec_file': kwargs.get('exec_file') or 'exec_file',
+        'comm': kwargs.get('comm') or 'task0',
         'container_id': kwargs.get('container_id') or None,
         'fork_count': kwargs.get('fork_count') or 0,
         'timestamp': kwargs.get('timestamp') or 0,

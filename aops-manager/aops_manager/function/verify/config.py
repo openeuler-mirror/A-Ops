@@ -24,4 +24,3 @@ class CollectConfigSchema(Schema):
     validators for parameter of /manage/config/collect
     """
     infos = fields.List(fields.Dict(), required=True)
-

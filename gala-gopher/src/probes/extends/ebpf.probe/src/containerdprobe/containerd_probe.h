@@ -15,10 +15,7 @@
 #ifndef __TRACE_CONTAINERD__H
 #define __TRACE_CONTAINERD__H
 
-#define TASK_COMM_LEN             16
 #define CONTAINER_MAX_ENTRIES   1000
-#define CONTAINER_ID_LEN          64
-#define NAMESPACE_LEN             64
 #define SYMADDRS_MAP_KEY      0xacbd
 
 struct go_containerd_t {
@@ -48,7 +45,7 @@ struct container_key {
 struct container_value {
     char namespace[NAMESPACE_LEN];
     __u32 task_pid;
-    int containerd_pid;
+    int tgid;
     __u32 status;
     char comm[16];
     __u64 memory_usage_in_bytes;

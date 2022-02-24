@@ -61,7 +61,7 @@ static void bpf_copy_ip_addr(const struct sockaddr *addr, struct ip_addr *ip)
 
 static UPROBE(ngx_http_upstream_handler, pt_regs)
 {
-    __u64 tid = bpf_get_current_pid_tgid();
+    //__u64 tid = bpf_get_current_pid_tgid();
     struct ngx_event_s *evt = (struct ngx_event_s *)PT_REGS_PARM1(ctx);
 
     struct ngx_connection_s *c = (struct ngx_connection_s *)_(evt->data);
@@ -107,7 +107,7 @@ static UPROBE(ngx_http_upstream_handler, pt_regs)
 
 UPROBE(ngx_stream_proxy_init_upstream, pt_regs)
 {
-    struct ngx_stream_upstream_s *stream;
+    //struct ngx_stream_upstream_s *stream;
     __u64 tid = bpf_get_current_pid_tgid();
     struct ngx_stream_session_s *s = (struct ngx_stream_session_s *)PT_REGS_PARM1(ctx);
 
@@ -117,8 +117,8 @@ UPROBE(ngx_stream_proxy_init_upstream, pt_regs)
 URETPROBE(ngx_stream_proxy_init_upstream, pt_regs)
 {
     struct ngx_connection_s *conn;
-    struct ngx_connection_s *peer_conn;
-    struct sockaddr *client_addr;
+    //struct ngx_connection_s *peer_conn;
+    //struct sockaddr *client_addr;
     struct ngx_metric metric = {0};
     struct ngx_stream_upstream_s *stream;
     ngx_str_t *p_name;
@@ -131,7 +131,7 @@ URETPROBE(ngx_stream_proxy_init_upstream, pt_regs)
     __u64 tid = bpf_get_current_pid_tgid();
     t = (struct ngx_stream_session_s **)bpf_map_lookup_elem(&para_hs, &tid);
     if (t == (void *)0) {
-        bpf_printk("bpf_map_lookup_elem para_hs tid:%llu failed\n", tid);
+        bpf_printk("bpf_map_lookup_elem para_hs tid:%lu failed\n", tid);
         return;
     }
 

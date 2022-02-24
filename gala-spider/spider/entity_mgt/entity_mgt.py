@@ -1,6 +1,6 @@
 from typing import List, Dict, Tuple
 
-from spider.conf.observe_meta import ObserveMetaMgt, ObserveMeta
+from spider.conf.observe_meta import ObserveMetaMgt, ObserveMeta, EntityType
 from spider.conf.observe_meta import DirectRelationMeta, RelationSideType, RelationType, RelationLayerType
 from .models import ObserveEntity, Relation
 
@@ -30,6 +30,50 @@ class ObserveEntityCreator:
                                observe_meta=entity_meta)
 
         return None if not entity.id else entity
+
+    @staticmethod
+    def create_logical_observe_entities(observe_entities: List[ObserveEntity]) -> List[ObserveEntity]:
+        res: List[ObserveEntity] = []
+
+        observe_entity_map: Dict[str, List[ObserveEntity]] = {}
+        for entity in observe_entities:
+            val = observe_entity_map.setdefault(entity.type, [])
+            val.append(entity)
+
+        tasks = observe_entity_map.get(EntityType.TASK.value, [])
+        app_instances = ObserveEntityCreator._create_app_instance_observe_entities(tasks)
+        res.extend(app_instances)
+
+        return res
+
+    @staticmethod
+    def _create_app_instance_observe_entities(tasks: List[ObserveEntity]) -> List[ObserveEntity]:
+        app_inst_meta = ObserveMetaMgt().get_observe_meta(EntityType.APPINSTANCE.value)
+        entity_map: Dict[str, ObserveEntity] = {}
+
+        for task in tasks:
+            app_inst_data = {}
+            for app_inst_key in app_inst_meta.keys:
+                if app_inst_key in task.attrs:
+                    app_inst_data[app_inst_key] = task.attrs.get(app_inst_key)
+            for app_inst_label in app_inst_meta.labels:
+                if app_inst_label in task.attrs:
+                    app_inst_data[app_inst_label] = task.attrs.get(app_inst_label)
+
+            entity = ObserveEntity(type=EntityType.APPINSTANCE.value,
+                                   name="",
+                                   level=app_inst_meta.level,
+                                   timestamp=task.timestamp,
+                                   observe_data=app_inst_data,
+                                   observe_meta=app_inst_meta)
+            if not entity.id:
+                continue
+            entity_map.setdefault(entity.id, entity)
+            entity_attrs = entity_map.get(entity.id).attrs
+            entity_attrs.setdefault('tasks', [])
+            entity_attrs.get('tasks').append(task.id)
+
+        return list(entity_map.values())
 
 
 class DirectRelationCreator:
@@ -197,14 +241,23 @@ class IndirectRelationCreator:
                                                 belongs_to_map: Dict[str, Relation]) -> List[Relation]:
         res: List[Relation] = []
         for entity1, entity2 in connect_pairs:
-            belongs_to_relation1 = belongs_to_map.get(entity1.id)
-            belongs_to_relation2 = belongs_to_map.get(entity2.id)
-            if belongs_to_relation1 is None or belongs_to_relation2 is None:
-                continue
-            relation = IndirectRelationCreator.create_connect_relation(belongs_to_relation1.obj_entity,
-                                                                       belongs_to_relation2.obj_entity)
-            if relation is not None:
-                res.append(relation)
+            belongs_to_entities1 = []
+            belongs_to_entities2 = []
+
+            tmp = belongs_to_map.get(entity1.id)
+            while tmp is not None:
+                belongs_to_entities1.append(tmp.obj_entity)
+                tmp = belongs_to_map.get(tmp.obj_entity.id)
+            tmp = belongs_to_map.get(entity2.id)
+            while tmp is not None:
+                belongs_to_entities2.append(tmp.obj_entity)
+                tmp = belongs_to_map.get(tmp.obj_entity.id)
+
+            for _entity1 in belongs_to_entities1:
+                for _entity2 in belongs_to_entities2:
+                    relation = IndirectRelationCreator.create_connect_relation(_entity1, _entity2)
+                    if relation is not None:
+                        res.append(relation)
 
         return res
 

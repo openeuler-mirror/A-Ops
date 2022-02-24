@@ -23,8 +23,8 @@ import sqlalchemy
 from elasticsearch import Elasticsearch, ElasticsearchException, helpers, TransportError, \
     NotFoundError
 from prometheus_api_client import PrometheusConnect, PrometheusApiClientException
+
 from aops_utils.log.log import LOGGER
-from aops_utils.conf import proxy_configuration
 
 
 class DataBaseProxy(ABC):
@@ -55,18 +55,11 @@ class MysqlProxy(DataBaseProxy):
     Proxy of mysql
     """
 
-    def __init__(self, host=None, port=None):
+    def __init__(self):
         """
         Class instance initialization
-
-        Args:
-            host(str)
-            port(int)
         """
-        self.host = host
-        self.port = port
         self.session = None
-        super().__init__()
 
     def connect(self, session):  # pylint: disable=W0221
         """
@@ -165,21 +158,19 @@ class ElasticsearchProxy(DataBaseProxy):
     Elasticsearch proxy
     """
 
-    def __init__(self, host=None, port=None):
+    def __init__(self, configuration, host=None, port=None):
         """
         Instance initialization
 
         Args:
-            host(str)
-            port(int)
+            configuration (Config)
+            host (str)
+            port (int)
         """
-        self._host = host or proxy_configuration.elasticsearch.get(
-            'IP')  # pylint: disable=E1101
-        self._port = port or proxy_configuration.elasticsearch.get(
-            'PORT')  # pylint: disable=E1101
+        self._host = host or configuration.elasticsearch.get('IP')
+        self._port = port or configuration.elasticsearch.get('PORT')
         self.connected = False
         self._es_db = None
-        super().__init__()
 
     def connect(self):
         """
@@ -311,7 +302,7 @@ class ElasticsearchProxy(DataBaseProxy):
             return False
         return True
 
-    def insert(self, index, body, doc_type="_doc"):
+    def insert(self, index, body, doc_type="_doc", document_id=None):
         """
         Insert data to the index
 
@@ -319,6 +310,7 @@ class ElasticsearchProxy(DataBaseProxy):
             doc_type(str): doc_type of the document will be insert
             index(str): index will be operated
             body(dict): body will be insert
+            document_id (str): elasticsearch document id, like primary key
 
         Returns:
             bool
@@ -326,11 +318,34 @@ class ElasticsearchProxy(DataBaseProxy):
         try:
             self._es_db.index(index=index,
                               doc_type=doc_type,
-                              body=body)
+                              body=body,
+                              id=document_id)
             return True
         except ElasticsearchException as error:
             LOGGER.error(error)
             return False
+
+    def exists(self, index, document_id, doc_type="_doc"):
+        """
+        Insert data to the index
+
+        Args:
+            doc_type(str): doc_type of the document will be insert
+            index(str): index will be operated
+            document_id (str): elasticsearch document id
+
+        Returns:
+            bool: execute flag
+            bool/None: the document exist or not
+        """
+        try:
+            exist_flag = self._es_db.exists(index=index,
+                                            doc_type=doc_type,
+                                            id=document_id)
+            return True, exist_flag
+        except ElasticsearchException as error:
+            LOGGER.error(error)
+            return False, None
 
     def _bulk(self, action):
         """
@@ -431,7 +446,7 @@ class ElasticsearchProxy(DataBaseProxy):
 
     def update_settings(self, **kwargs):
         """
-        Update es proxy_configuration, e.g. the maximum number of modified queries
+        Update es configuration, e.g. the maximum number of modified queries
 
         Args:
             kwargs(dict)
@@ -474,12 +489,12 @@ class ElasticsearchProxy(DataBaseProxy):
         return total_page
 
     @staticmethod
-    def _general_body(data):
+    def _general_body(data=None):
         """
         Generate general body
 
         Args:
-            data(dict)
+            data(dict/None)
 
         Returns:
             dict
@@ -487,12 +502,13 @@ class ElasticsearchProxy(DataBaseProxy):
         query_body = {
             "query": {
                 "bool": {
-                    "must": [
-                        {"match": {"username": data.get("username")}}
-                    ]
+                    "must": []
                 }
             }
         }
+        if data is not None:
+            query_body["query"]["bool"]["must"].append(
+                {"term": {"username": data.get("username")}})
         return query_body
 
 
@@ -501,18 +517,18 @@ class PromDbProxy(DataBaseProxy):
     Proxy of prometheus time series database
     """
 
-    def __init__(self, host=None, port=None):
+    def __init__(self, configuration, host=None, port=None):
         """
         Init Prometheus time series database proxy
+
         Args:
+            configuration (Config)
             host (str)
             port (int)
         """
         DataBaseProxy.__init__(self)
-        self._host = host or proxy_configuration.prometheus.get(
-            'IP')  # pylint: disable=E1101
-        self._port = port or proxy_configuration.prometheus.get(
-            'PORT')  # pylint: disable=E1101
+        self._host = host or configuration.prometheus.get('IP')
+        self._port = port or configuration.prometheus.get('PORT')
         self.connected = False
         self._prom = None
 

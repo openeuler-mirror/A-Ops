@@ -15,21 +15,20 @@ Time:
 Author:
 Description:
 """
-import secrets
 import unittest
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.orm.scoping import scoped_session
 
-from aops_utils.database.table import User
-from aops_manager.account_manager.database.proxy.account import UserDatabase
-from aops_utils.database.helper import create_tables, drop_tables, create_database_engine
+from aops_utils.database.table import User, Base, create_utils_tables
+from aops_utils.database.helper import drop_tables, create_database_engine
 from aops_utils.restful.status import LOGIN_ERROR, REPEAT_PASSWORD, SUCCEED
+from aops_manager.database.proxy.account import UserProxy
 
 
 class TestAccountDatabase(unittest.TestCase):
     def setUp(self):
         # create engine to database
-        self.proxy = UserDatabase()
+        self.proxy = UserProxy()
         mysql_host = "127.0.0.1"
         mysql_port = 3306
         mysql_url_format = "mysql+pymysql://@%s:%s/%s"
@@ -40,11 +39,11 @@ class TestAccountDatabase(unittest.TestCase):
         session = scoped_session(sessionmaker(bind=self.engine))
         self.proxy.connect(session)
         # create all tables
-        create_tables(self.engine)
+        create_utils_tables(Base, self.engine)
 
     def tearDown(self):
         self.proxy.close()
-        drop_tables(self.engine)
+        drop_tables(Base, self.engine)
 
     def test_api_user(self):
         # ==============add user ===================
@@ -87,21 +86,6 @@ class TestAccountDatabase(unittest.TestCase):
             "password": "123456"
         }
         res = self.proxy.login(data)
-        self.assertEqual(res, SUCCEED)
-
-        # =============certificate password===================
-        data = {
-            "username": "admin",
-            "password": "changeme"
-        }
-        res = self.proxy.login(data)
-        self.assertEqual(res, SUCCEED)
-
-        data = {
-            "token":secrets.token_hex(16),
-            "key":secrets.token_hex(16)
-        }
-        res = self.proxy.certificate(data)
         self.assertEqual(res, SUCCEED)
 
         # =============change password===================

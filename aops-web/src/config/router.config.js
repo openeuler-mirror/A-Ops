@@ -341,6 +341,8 @@ export const asyncRouterMap = [
                                         routeMap.leaks.children.CVEsView
                                             .children.CVEsManagement.title,
                                     permission: ['leaks'],
+                                    // isUseCache: false,
+                                    keepAlive: true,
                                     diyBreadcrumb: [
                                         {
                                             breadcrumbName:
@@ -438,6 +440,7 @@ export const asyncRouterMap = [
                                         routeMap.leaks.children.HostView
                                             .children.HostLeakList.title,
                                     permission: ['leaks'],
+                                    keepAlive: true,
                                     diyBreadcrumb: [
                                         {
                                             breadcrumbName:
@@ -535,6 +538,7 @@ export const asyncRouterMap = [
                                         routeMap.leaks.children.leakTaskView
                                             .children.leakTaskList.title,
                                     permission: ['leaks'],
+                                    keepAlive: true,
                                     diyBreadcrumb: [
                                         {
                                             breadcrumbName:
@@ -571,7 +575,39 @@ export const asyncRouterMap = [
                                     title:
                                         routeMap.leaks.children.leakTaskView
                                             .children.leakTaskDetail.title,
-                                    permission: ['leaks']
+                                    permission: ['leaks'],
+                                    diyBreadcrumb: [
+                                        {
+                                            breadcrumbName:
+                                                routeMap.index.title,
+                                            path: routeMap.index.path
+                                        },
+                                        {
+                                            breadcrumbName:
+                                                routeMap.leaks.title,
+                                            path: routeMap.leaks.path
+                                        },
+                                        {
+                                            breadcrumbName:
+                                                routeMap.leaks.children
+                                                    .leakTaskView.children
+                                                    .leakTaskList.title,
+                                            path:
+                                                routeMap.leaks.children
+                                                    .leakTaskView.children
+                                                    .leakTaskList.path
+                                        },
+                                        {
+                                            breadcrumbName:
+                                                routeMap.leaks.children
+                                                    .leakTaskView.children
+                                                    .leakTaskDetail.title,
+                                            path:
+                                                routeMap.leaks.children
+                                                    .leakTaskView.children
+                                                    .leakTaskDetail.path
+                                        }
+                                    ]
                                 }
                             },
                             {

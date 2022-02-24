@@ -22,11 +22,11 @@
 #include <gelf.h>
 #include <sys/stat.h>
 #include <errno.h>
+
+#include "bpf.h"
 #include "elf_reader.h"
 #include "container.h"
 
-#define LEN_BUF 256
-#define COMMAND_LEN 512
 #define PATH_LEN 512
 #define SYSTEM_PATH_LEN 1024
 #define DEFAULT_PATH_LIST   "/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/root/bin"
@@ -53,7 +53,7 @@ static int __do_get_glibc_path_host(char *path, unsigned int len)
 {
     int ret;
     FILE *f = NULL;
-    char line[LEN_BUF];
+    char line[LINE_BUF_LEN];
 
     path[0] = 0;
     line[0] = 0;
@@ -62,7 +62,7 @@ static int __do_get_glibc_path_host(char *path, unsigned int len)
     if (f == NULL)
         return -1;
 
-    if (fgets(line, LEN_BUF, f) == NULL) {
+    if (fgets(line, LINE_BUF_LEN, f) == NULL) {
         (void)pclose(f);
         return -1;
     }
@@ -132,9 +132,12 @@ static int __do_get_path_from_host(const char *binary_file, char **res_buf, int 
     int r_len = 0;
     char *p = NULL;
     char *syspath_ptr = getenv("PATH");
+    char syspath[PATH_LEN];
 
-    if (syspath_ptr == NULL)
-        (void)snprintf(syspath_ptr, strlen(DEFAULT_PATH_LIST), "%s", DEFAULT_PATH_LIST);
+    if (syspath_ptr == NULL) {
+        (void)snprintf((void *)syspath, PATH_LEN, "%s", DEFAULT_PATH_LIST);
+        syspath_ptr = syspath;
+    }
 
     p = strtok(syspath_ptr, ":");
     while (p != NULL) {
@@ -176,7 +179,7 @@ static int __do_get_path_from_container(const char *binary_file, const char *con
     }
 
     if (syspath[0] == 0)
-        (void)snprintf((void *)syspath, strlen(DEFAULT_PATH_LIST), "%s", DEFAULT_PATH_LIST);
+        (void)snprintf((void *)syspath, PATH_LEN, "%s", DEFAULT_PATH_LIST);
 
     p = strtok((void *)syspath, ":");
     while (p != NULL) {
@@ -436,12 +439,14 @@ static int elf_reader_foreach_sym(const char *path, elf_symcb callback, void *op
     return __foreach_sym_core(path, callback, NULL, o, payload, IS_DEBUG_FILE);
 }
 
+#if 0
 static int elf_reader_foreach_sym_lazy(const char *path, elf_symcb_lazy callback, void *option, void *payload)
 {
     struct symbol_info_option *o = option;
     o->lazy_symbolize = 1;
     return __foreach_sym_core(path, NULL, callback, o, payload, IS_DEBUG_FILE);
 }
+#endif
 
 int resolve_symbol_infos(const char *bin_path, const char *sym_name,
                          struct symbol_info_option *option, uint64_t *sym_offset)
@@ -469,7 +474,7 @@ int resolve_symbol_infos(const char *bin_path, const char *sym_name,
     sym.name = strdup(sym_name);
     sym.offset = 0x0;
     if (sym.name) {
-        if (elf_reader_foreach_sym(sym.module, _find_sym, option, &sym) < 0) {
+        if (elf_reader_foreach_sym((const char *)sym.module, _find_sym, option, &sym) < 0) {
             printf(" foreach_sym module[%s] sym[%s] fail.\n", sym.module, sym.name);
             goto invalid_module;
         }
@@ -480,9 +485,9 @@ int resolve_symbol_infos(const char *bin_path, const char *sym_name,
     }
 
     /* 2. translate the virtual address to physical address in the binary file. */
-    module_type = __elf_get_type(sym.module);
+    module_type = __elf_get_type((const char *)sym.module);
     if (module_type == ET_EXEC || module_type == ET_DYN) {
-        if (__elf_foreach_load_section(sym.module, &load) < 0) {
+        if (__elf_foreach_load_section((const char *)sym.module, &load) < 0) {
             printf(" resolve_symbol_infos foreach_load_section fail.\n");
             goto invalid_module;
         }
@@ -493,7 +498,7 @@ int resolve_symbol_infos(const char *bin_path, const char *sym_name,
         *sym_offset = sym.offset - load.binary_vaddr + load.binary_offset;
         err = 0;
     } else {
-        printf(" resolve_symbol_infos err, sym_off(%lld) beyond (%lld ~ %lld).\n",
+        printf(" resolve_symbol_infos err, sym_off(%lu) beyond (%lu ~ %lu).\n",
                             sym.offset, load.binary_vaddr, load.binary_vaddr + load.binary_memsz);
         goto invalid_module;
     }

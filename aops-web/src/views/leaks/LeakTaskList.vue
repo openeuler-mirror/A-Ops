@@ -39,14 +39,11 @@
             <cut-text :text="text" :length="20"/>
           </span>
           <div slot="statuses" slot-scope="statuses">
-            <span><a-icon type="check-circle" class="status-icon color-check-circle" />{{ statuses && statuses['succeed'] }}</span>
-            <span><a-icon type="close-circle" class="status-icon color-close-circle" />{{ statuses && statuses['fail'] }}</span>
             <span>
+              {{ statuses && statuses['running'] === 1 ? '运行中' : '等待中' }}
               <a-icon v-if="statuses && statuses['running']" type="loading" class="status-icon color-running-circle" />
-              <a-icon v-else type="loading-3-quarters" />
-              {{ statuses && statuses['running'] }}
+              <a-icon v-else type="clock-circle" />
             </span>
-            <span><a-icon type="clock-circle" class="status-icon color-standby-circle" />{{ statuses && statuses['on standby'] }}</span>
           </div>
           <span slot="action" slot-scope="action, record">
             <a @click="downloadTask(record.task_id, record.task_type)">下载</a>
@@ -291,7 +288,11 @@ export default {
       if (!this.filters) {
         this.filters = {}
       }
-      this.filters.taskName = text
+      if (text !== '') {
+        this.filters.taskName = text
+      } else {
+        this.filters.taskName = undefined
+      }
       this.getTaskList()
     },
     // 轮训请求任务状态，当没有running状态时停止
@@ -361,5 +362,42 @@ export default {
 }
 /deep/ .ant-table-thead th {
   padding: 8px;
+}
+
+/deep/ .ant-table-thead th:last-child {
+  padding-left: 107px;
+}
+
+/deep/ .ant-table-tbody tr td:nth-child(1) {
+  width: 100px;
+}
+
+/deep/ .ant-table-tbody tr td:nth-child(2) {
+  width: 218px;
+}
+
+/deep/ .ant-table-tbody tr td:nth-child(3) {
+  width: 320px;
+}
+
+/deep/ .ant-table-tbody tr td:nth-child(4) {
+  width: 200px;
+  padding-left: 47px;
+}
+
+/deep/ .ant-table-tbody tr td:nth-child(5) {
+  width: 150px;
+}
+
+/deep/ .ant-table-tbody tr td:nth-child(6) {
+  width: 160px;
+}
+
+/deep/ .ant-table-tbody tr td:nth-child(7) {
+  width: 142px;
+}
+
+/deep/ .ant-table-tbody tr td:nth-child(8) {
+  padding-left: 63px;
 }
 </style>

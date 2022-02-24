@@ -367,8 +367,12 @@ int IMDB_DataBaseMgrAddRecord(IMDB_DataBaseMgr *mgr, char *recordStr, int len)
 
     // start analyse record string
     for (token = strsep(&buffer, delim); token != NULL; token = strsep(&buffer, delim)) {
-        if (strcmp(token, "") == 0)
-            continue;
+        if (strcmp(token, "") == 0) {
+            if (index == -1)
+                continue;
+            else
+                token = INVALID_METRIC_VALUE;
+        }
 
         if (strcmp(token, "\n") == 0)
             continue;
@@ -400,6 +404,10 @@ int IMDB_DataBaseMgrAddRecord(IMDB_DataBaseMgr *mgr, char *recordStr, int len)
             continue;
         }
 
+        // if index > metricNum, it's invalid
+        if (index >= table->meta->metricsNum) {
+            continue;
+        }
         // fill record by the rest substrings
         metric = IMDB_MetricCreate(table->meta->metrics[index]->name,
                                    table->meta->metrics[index]->description,
@@ -462,8 +470,8 @@ static int IMDB_MetricType2String(const IMDB_Metric *metric, char *buffer, uint3
     return snprintf(buffer, maxLen, "# TYPE gala_gopher_%s_%s %s\n", tableName, metric->name, metric->type);
 }
 
-static int IMDB_MetricValue2String(const IMDB_Metric *metric, const char *tableName, const char *labels,
-                                    char *buffer, uint32_t maxLen)
+static int IMDB_MetricValue2String(const IMDB_Metric *metric, char *buffer, uint32_t maxLen, 
+                                    const char *tableName, const char *labels)
 {
     time_t now;
     (void)time(&now);
@@ -789,7 +797,8 @@ static int IMDB_RecordEvent2Json(const IMDB_DataBaseMgr *mgr, IMDB_Table *table,
     return 0;
 }
 
-int IMDB_DataStr2Json(IMDB_DataBaseMgr *mgr, char *recordStr, int recordLen, char *jsonStr, uint32_t jsonStrLen)
+int IMDB_DataStr2Json(IMDB_DataBaseMgr *mgr, const char *recordStr, 
+                                  int recordLen, char *jsonStr, uint32_t jsonStrLen)
 {
     pthread_rwlock_wrlock(&mgr->rwlock);
 
@@ -812,8 +821,12 @@ int IMDB_DataStr2Json(IMDB_DataBaseMgr *mgr, char *recordStr, int recordLen, cha
 
     // start analyse record string
     for (token = strsep(&buffer, delim); token != NULL; token = strsep(&buffer, delim)) {
-        if (strcmp(token, "") == 0)
-            continue;
+        if (strcmp(token, "") == 0) {
+            if (index == -1)
+                continue;
+            else
+                token = INVALID_METRIC_VALUE;
+        }
 
         if (strcmp(token, "\n") == 0)
             continue;
@@ -838,6 +851,10 @@ int IMDB_DataStr2Json(IMDB_DataBaseMgr *mgr, char *recordStr, int recordLen, cha
             continue;
         }
 
+        // if index > metricNum, it's invalid
+        if (index >= table->meta->metricsNum) {
+            continue;
+        }
         // fill record by the rest substrings
         metric = IMDB_MetricCreate(table->meta->metrics[index]->name,
                                    table->meta->metrics[index]->description,

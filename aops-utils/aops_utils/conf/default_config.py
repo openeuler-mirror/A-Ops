@@ -24,4 +24,3 @@ log = {
     "MAX_BYTES": 31457280,
     "BACKUP_COUNT": 30
 }
-

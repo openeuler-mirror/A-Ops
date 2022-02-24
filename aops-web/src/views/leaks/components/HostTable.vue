@@ -523,7 +523,11 @@ export default {
       if (!this.filters) {
         this.filters = {}
       }
-      this.filters.hostName = text
+      if (text !== '') {
+        this.filters.hostName = text
+      } else {
+        this.filters.hostName = undefined
+      }
       this.getHostList()
       if (this.standalone) {
         this.getHostListAll()

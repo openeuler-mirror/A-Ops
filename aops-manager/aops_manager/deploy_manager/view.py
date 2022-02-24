@@ -17,22 +17,22 @@ Description:
 """
 import uuid
 import threading
-from flask import request
-from flask import jsonify,json
+from flask import jsonify
 
 from aops_utils.log.log import LOGGER
-from aops_utils.restful.status import StatusCode, SUCCEED, PARAM_ERROR, TASK_EXECUTION_FAIL
+from aops_utils.restful.status import SUCCEED, PARAM_ERROR, TASK_EXECUTION_FAIL
+from aops_utils.restful.response import BaseResponse
+from aops_utils.database.helper import operate
 from aops_manager.conf import configuration
 from aops_manager.deploy_manager.run_task import TaskRunner
 from aops_manager.account_manager.key import HostKey
 from aops_manager.deploy_manager.ansible_runner.inventory_builder import InventoryBuilder
-from aops_utils.restful.resource import BaseResource
-from aops_manager.deploy_manager.database.deploy import DeployDatabase
+from aops_manager.database.proxy.deploy import DeployProxy
 from aops_manager.function.verify.deploy import GenerateTaskSchema, DeleteTaskSchema, \
     GetTaskSchema, ExecuteTaskSchema, ImportTemplateSchema, DeleteTemplateSchema, GetTemplateSchema
 
 
-class DeleteTask(BaseResource):
+class DeleteTask(BaseResponse):
     """
     Interface for delete Task
     Restful API: DELETE
@@ -49,14 +49,25 @@ class DeleteTask(BaseResource):
         Returns:
             dict: response body
         """
-        return self.restful_result('delete_task', DeployDatabase(), DeleteTaskSchema)
+        return jsonify(self.handle_request_db(DeleteTaskSchema,
+                                              DeployProxy(configuration),
+                                              'delete_task'))
 
 
-class GenerateTask(BaseResource):
+class GenerateTask(BaseResponse):
     """
     Interface for generate Task
     Restful API: post
     """
+    @staticmethod
+    def _handle(args):
+        task_id = str(uuid.uuid1()).replace('-', '')
+        args['task_id'] = task_id
+        result = {"task_id": task_id}
+        status_code = operate(DeployProxy(configuration),
+                              args,
+                              'add_task')
+        return status_code, result
 
     def post(self):
         """
@@ -72,18 +83,10 @@ class GenerateTask(BaseResource):
             dict: response body
 
         """
-        # generate task id
-        args = self.request_data(request)
-        task_id = str(uuid.uuid1()).replace('-', '')
-        payload = {
-            'task_id': task_id,
-        }
-        args.update(payload)
-
-        return self.restful_result("add_task", DeployDatabase(), GenerateTaskSchema, args=args)
+        return jsonify(self.handle_request(GenerateTaskSchema, self))
 
 
-class GetTask(BaseResource):
+class GetTask(BaseResponse):
     """
     Interface for get Task
     Restful API: POST
@@ -103,14 +106,54 @@ class GetTask(BaseResource):
         Returns:
             dict: response body
         """
-        return self.restful_result("get_task", DeployDatabase(), GetTaskSchema)
+        return jsonify(self.handle_request_db(GetTaskSchema,
+                                              DeployProxy(configuration),
+                                              'get_task'))
 
 
-class ExecuteTask(BaseResource):
+class ExecuteTask(BaseResponse):
     """
     Interface for execute Task
     Restful API: post
     """
+    @staticmethod
+    def _handle(args):
+        """
+        Handle function
+
+        Args:
+            args (dict)
+
+        Returns:
+            int: status code
+        """
+        LOGGER.debug(args)
+        task_list = args.get('task_list')
+        LOGGER.info("Start run task %s", task_list)
+
+        status_code, response = operate(
+            DeployProxy(configuration), args, 'get_task')
+        if status_code != SUCCEED:
+            return status_code
+
+        inventory = InventoryBuilder()
+        for task_info in response['task_infos']:
+            task_id = task_info['task_id']
+            if not task_info.get('host_list'):
+                return PARAM_ERROR
+            for host in task_info['host_list']:
+                LOGGER.info("Move inventory files from :%s, host name is: %s",
+                            configuration.manager.get('HOST_VARS'),
+                            host['host_name'])
+                inventory.move_host_vars_to_inventory(configuration.manager.get('HOST_VARS'),
+                                                      host['host_name'])
+            task_thread = threading.Thread(target=ExecuteTask.task_with_remove,
+                                           args=(task_id, inventory))
+            task_thread.start()
+            if task_thread.is_alive():
+                return SUCCEED
+            LOGGER.error("Task %s execution failed.", task_id)
+            return TASK_EXECUTION_FAIL
 
     def post(self):
         """
@@ -122,32 +165,7 @@ class ExecuteTask(BaseResource):
         Returns:
             dict: response body
         """
-        args = self.request_data(request)
-        inventory = InventoryBuilder()
-        LOGGER.debug(args)
-        task_list = args.get('task_list')
-        LOGGER.info("Start run task %s", task_list)
-        response = json.loads(self.restful_result("get_task", DeployDatabase(), ExecuteTaskSchema))
-        if response['code'] != SUCCEED:
-            return jsonify(response)
-        for task_info in response['task_infos']:
-            task_id = task_info['task_id']
-            if not task_info.get('host_list'):
-                return StatusCode.make_response(PARAM_ERROR)
-            for host in task_info['host_list']:
-                LOGGER.info("Move inventory files from :%s, host name is: %s", configuration.manager.get('HOST_VARS'),
-                            host['host_name'])
-                inventory.move_host_vars_to_inventory(configuration.manager.get('HOST_VARS'),
-                                                      host['host_name'])
-            task_thread = threading.Thread(target=ExecuteTask.task_with_remove,
-                                           args=(task_id, inventory))
-            task_thread.start()
-            if task_thread.is_alive():
-                response = StatusCode.make_response(SUCCEED)
-                return jsonify(response)
-            response = StatusCode.make_response(TASK_EXECUTION_FAIL)
-            LOGGER.error("Task %s execution failed.", task_id)
-            return jsonify(response)
+        return jsonify(self.handle_request(ExecuteTaskSchema, self))
 
     @staticmethod
     def task_with_remove(task_id, inventory):
@@ -165,7 +183,7 @@ class ExecuteTask(BaseResource):
         LOGGER.error("Task %s execution failed.", task_id)
 
 
-class ImportTemplate(BaseResource):
+class ImportTemplate(BaseResponse):
     """
     Interface for import template
     Restful API: POST
@@ -183,10 +201,12 @@ class ImportTemplate(BaseResource):
         Returns:
             dict: response body
         """
-        return self.restful_result('add_template', DeployDatabase(), ImportTemplateSchema)
+        return jsonify(self.handle_request_db(ImportTemplateSchema,
+                                              DeployProxy(configuration),
+                                              'add_template'))
 
 
-class GetTemplate(BaseResource):
+class GetTemplate(BaseResponse):
     """
     Interface for get template info.
     Restful API: POST
@@ -207,14 +227,17 @@ class GetTemplate(BaseResource):
         Returns:
             dict: response body
         """
-        return self.restful_result('get_template', DeployDatabase(), GetTemplateSchema)
+        return jsonify(self.handle_request_db(GetTemplateSchema,
+                                              DeployProxy(configuration),
+                                              'get_template'))
 
 
-class DeleteTemplate(BaseResource):
+class DeleteTemplate(BaseResponse):
     """
     Interface for delete template.
     Restful API: DELETE
     """
+
     def delete(self):
         """
         Delete template
@@ -225,4 +248,6 @@ class DeleteTemplate(BaseResource):
         Returns:
             dict: response body
         """
-        return self.restful_result('delete_template', DeployDatabase(), DeleteTemplateSchema)
+        return jsonify(self.handle_request_db(DeleteTemplateSchema,
+                                              DeployProxy(configuration),
+                                              'delete_template'))
