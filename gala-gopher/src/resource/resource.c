@@ -351,13 +351,13 @@ ERR:
     return -1;
 }
 
-static int IMDBMgrDatabaseLoad(IMDB_DataBaseMgr *imdbMgr, MeasurementMgr *mmMgr)
+static int IMDBMgrDatabaseLoad(IMDB_DataBaseMgr *imdbMgr, MeasurementMgr *mmMgr, uint32_t capacity)
 {
     int ret = 0;
 
     IMDB_Table *table;
     for (int i = 0; i < mmMgr->measurementsNum; i++) {
-        table = IMDB_TableCreate(mmMgr->measurements[i]->name, MAX_IMDB_TABLE_CAPACITY);
+        table = IMDB_TableCreate(mmMgr->measurements[i]->name, capacity);
         if (table == NULL)
             return -1;
 
