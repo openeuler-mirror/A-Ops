@@ -20,9 +20,16 @@
 
 char g_linsence[] SEC("license") = "GPL";
 
-
 KPROBE(sas_task_abort, pt_regs)
 {
-    int tgid __maybe_unused;
-    tgid = bpf_get_current_pid_tgid() >> 32;
+    struct block_key* bkey = get_scsi_block();
+    if(!bkey) {
+        return;
+    }
+    struct block_data *bdata = get_block_entry(bkey);
+    if(!bdata) {
+        return;
+    }
+    
+    bdata->sas_stats.count_sas_abort++;
 }
