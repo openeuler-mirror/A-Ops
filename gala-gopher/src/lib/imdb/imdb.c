@@ -893,7 +893,7 @@ int IMDB_DataStr2Json(IMDB_DataBaseMgr *mgr, const char *recordStr,
     }
 
     free(buffer_head);
-
+    IMDB_RecordDestroy(record);
     pthread_rwlock_unlock(&mgr->rwlock);
     return 0;
 ERR:
