@@ -22,7 +22,17 @@ char g_linsence[] SEC("license") = "GPL";
 
 KPROBE(iscsi_conn_error_event, pt_regs)
 {
-    int tgid __maybe_unused;
-    tgid = bpf_get_current_pid_tgid() >> 32;
+    unsigned int err = (unsigned int)PT_REGS_PARM2(ctx);
+    struct block_key* bkey = get_scsi_block();
+    if(!bkey) {
+        return;
+    }
+    struct block_data *bdata = get_block_entry(bkey);
+    if(!bdata) {
+        return;
+    }
+    
+    if ((err > ISCSI_ERR_BASE) && ((err - ISCSI_ERR_BASE) < ISCSI_ERR_MAX))
+        bdata->conn_stats.conn_err[err - ISCSI_ERR_BASE]++;
 }
 

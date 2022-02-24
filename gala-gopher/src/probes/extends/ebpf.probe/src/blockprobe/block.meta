@@ -21,9 +21,9 @@ measurements:
                 name: "blk_type",
             },
             {
-                description: "Type of block driver, such as iscsi, virtio.",
+                description: "Name of block",
                 type: "label",
-                name: "drv_type",
+                name: "blk_name",
             },
             {
                 description: "Name of disk",
@@ -36,14 +36,24 @@ measurements:
                 name: "latency_req_max",
             },
             {
-                description: "Avg latency of request consumed, include block queued time",
-                type: "gauge",
-                name: "latency_req_avg",
-            },
-            {
                 description: "Last latency of request consumed, include block queued time",
                 type: "gauge",
                 name: "latency_req_last",
+            },
+            {
+                description: "Sum latency of request consumed, include block queued time",
+                type: "gauge",
+                name: "latency_req_sum",
+            },
+            {
+                description: "Jitter latency of request consumed, include block queued time",
+                type: "gauge",
+                name: "latency_req_jitter",
+            },
+            {
+                description: "Count of request consumed",
+                type: "gauge",
+                name: "count_latency_req",
             },
             {
                 description: "Max latency of flush operation consumed, include block queued time",
@@ -51,14 +61,24 @@ measurements:
                 name: "latency_flush_max",
             },
             {
-                description: "Avg latency of flush operation consumed, include block queued time",
-                type: "gauge",
-                name: "latency_flush_avg",
-            },
-            {
-                description: "Last latency of flush operation consumed, include block queued time",
+                description: "last latency of flush operation consumed, include block queued time",
                 type: "gauge",
                 name: "latency_flush_last",
+            },
+            {
+                description: "Sum latency of flush operation consumed, include block queued time",
+                type: "gauge",
+                name: "latency_flush_sum",
+            },
+            {
+                description: "Jitter latency of flush operation consumed, include block queued time",
+                type: "gauge",
+                name: "latency_flush_jitter",
+            },
+            {
+                description: "Count of flush operation",
+                type: "gauge",
+                name: "count_latency_flush",
             },
             {
                 description: "Max latency of iscsi operation consumed, include block queued time",
@@ -66,14 +86,24 @@ measurements:
                 name: "latency_iscsi_max",
             },
             {
-                description: "Avg latency of iscsi operation consumed, include block queued time",
-                type: "gauge",
-                name: "latency_iscsi_avg",
-            },
-            {
-                description: "Last latency of iscsi operation consumed, include block queued time",
+                description: "last latency of iscsi operation consumed, include block queued time",
                 type: "gauge",
                 name: "latency_iscsi_last",
+            },
+            {
+                description: "Sum latency of iscsi operation consumed, include block queued time",
+                type: "gauge",
+                name: "latency_iscsi_sum",
+            },
+            {
+                description: "Jitter latency of iscsi operation consumed, include block queued time",
+                type: "gauge",
+                name: "latency_iscsi_jitter",
+            },
+            {
+                description: "Count of iscsi operation",
+                type: "gauge",
+                name: "count_latency_iscsi",
             },
             {
                 description: "Count of iscsi operation time out",
@@ -84,11 +114,6 @@ measurements:
                 description: "Count of iscsi operation error",
                 type: "counter",
                 name: "count_iscsi_err",
-            },
-            {
-                description: "Count of iscsi transport bad op-code",
-                type: "counter",
-                name: "conn_err_bad_opcode",
             },
             {
                 description: "Count of iscsi transport bad op-code",
