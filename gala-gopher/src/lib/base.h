@@ -55,7 +55,6 @@ static inline int __debug_printf(const char *format, ...)
 #define MAX_DATA_STR_LEN      1024
 
 // imdb
-#define MAX_IMDB_TABLE_CAPACITY         64
 #define MAX_IMDB_RECORD_CAPACITY        64
 
 // kafka
