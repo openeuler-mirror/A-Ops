@@ -343,6 +343,10 @@ export default {
 .status-icon  {
   margin:0 2px;
 }
+.ant-table-wrapper {
+    zoom: 1;
+    min-width: 1480px;
+}
 .color {
   &-check-circle {
     color: #52c41a;

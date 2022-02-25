@@ -83,11 +83,9 @@ const vueConfig = {
         // development server port 8000
         port: 8000,
         // If you want to turn on the proxy, please remove the mockjs /src/main.jsL11
-        // external dev host ip：123.60.114.22
-        // inside dev host ip: 172.168.103.20
         proxy: {
             '/api/domain': {
-                target: 'http://172.168.103.20:11114',
+                target: 'http://127.0.0.1:11114',
                 ws: false,
                 changeOrigin: true,
                 pathRewrite: {
@@ -95,7 +93,7 @@ const vueConfig = {
                 }
             },
             '/api/host': {
-                target: 'http://172.168.103.20:11114',
+                target: 'http://127.0.0.1:11114',
                 ws: false,
                 changeOrigin: true,
                 pathRewrite: {
@@ -103,7 +101,7 @@ const vueConfig = {
                 }
             },
             '/api/confs': {
-                target: 'http://172.168.103.20:11114',
+                target: 'http://127.0.0.1:11114',
                 ws: false,
                 changeOrigin: true,
                 pathRewrite: {
@@ -111,7 +109,7 @@ const vueConfig = {
                 }
             },
             '/api/management': {
-                target: 'http://172.168.103.20:11114',
+                target: 'http://127.0.0.1:11114',
                 ws: false,
                 changeOrigin: true,
                 pathRewrite: {
@@ -119,7 +117,7 @@ const vueConfig = {
                 }
             },
             '/api/diag': {
-                target: 'http://172.168.103.20:11113',
+                target: 'http://127.0.0.1:11113',
                 ws: false,
                 changeOrigin: true,
                 pathRewrite: {
@@ -127,7 +125,7 @@ const vueConfig = {
                 }
             },
             '/api/check': {
-                target: 'http://172.168.103.20:11112',
+                target: 'http://127.0.0.1:11112',
                 ws: false,
                 changeOrigin: true,
                 pathRewrite: {
@@ -135,7 +133,7 @@ const vueConfig = {
                 }
             },
             '/api/vulnerability': {
-                target: 'http://172.168.103.20:11116',
+                target: 'http://127.0.0.1:11116',
                 ws: false,
                 changeOrigin: true,
                 pathRewrite: {
@@ -143,7 +141,7 @@ const vueConfig = {
                 }
             },
             '/api/gala-spider': {
-                target: 'http://172.168.103.20:11115',
+                target: 'http://127.0.0.1:11115',
                 ws: false,
                 changeOrigin: true,
                 pathRewrite: {
@@ -151,7 +149,7 @@ const vueConfig = {
                 }
             },
             '/api': {
-                target: 'http://172.168.103.20:11111',
+                target: 'http://127.0.0.1:11111',
                 ws: false,
                 changeOrigin: true,
                 pathRewrite: {

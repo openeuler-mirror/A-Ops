@@ -7,18 +7,21 @@
       :footer="null"
       @cancel="closeModal"
     >
-      <a-upload :file-list="fileList" :remove="handleRemove" :before-upload="beforeUpload">
-         <a-button> <a-icon type="upload" /> 选择文件 </a-button>
+      <a-upload :file-list="fileDataList" :remove="removeFile" :before-upload="preUpload">
+         <div style="flex">
+           <a-button> <a-icon type="upload" /> 选择文件 </a-button>
+           <span style="margin-left:50px;font-size:15px">支持类型:xml、zip、tar.gz、tar.bz2</span>
+         </div>
       </a-upload>
-       <a-button
-           type="primary"
-           :disabled="fileList.length === 0"
-           :loading="uploading"
-           style="margin-top: 16px;width: 111px;"
-           @click="handleUpload"
-       >
-          {{ uploading ? '上传中' : '开始上传' }}
-       </a-button>
+      <a-button
+          type="primary"
+          :disabled="fileDataList.length === 0"
+          :loading="uploading"
+          style="margin-top: 16px;width: 111px;"
+          @click="goUpload"
+      >
+         {{ uploading ? '上传中' : '开始上传' }}
+      </a-button>
     </a-modal>
   </div>
 </template>
@@ -35,7 +38,7 @@
     },
     data () {
       return {
-        fileList: [],
+        fileDataList: [],
         visible: false,
         uploading: false
       }
@@ -46,29 +49,37 @@
       },
       closeModal () {
         this.visible = false
-        this.fileList = []
+        this.fileDataList = []
       },
-      handleRemove(file) {
-      const index = this.fileList.indexOf(file);
-      const newFileList = this.fileList.slice();
-      newFileList.splice(index, 1);
-      this.fileList = newFileList;
+      removeFile(file) {
+      const index = this.fileDataList.indexOf(file);
+      const newfileDataList = this.fileDataList.slice();
+      newfileDataList.splice(index, 1);
+      this.fileDataList = newfileDataList;
       },
-      beforeUpload(file) {
-        this.fileList = [...this.fileList, file];
+      preUpload(file) {
+        this.fileDataList = [...this.fileDataList, file];
         // 文件类型
         var suffix = file.name.substring(file.name.lastIndexOf('.') + 1)
         var arr = ['xml', 'zip', 'tar.gz', 'tar.bz2']
         if (!arr.includes(suffix)) {
           this.$message.error('文件类型不符合规定!')
-          this.handleRemove(file)
+          this.removeFile(file)
+          return false;
         }
-        return false;
+
+        // 读取文件大小
+        var fileSize = file.size
+        if (fileSize / 1024 / 1024 / 10 > 1) {
+          this.$message.error('文件大于10M!')
+          this.removeFile(file)
+          return false
+        }
       },
-      handleUpload() {
-        const { fileList } = this;
+      goUpload() {
+        const { fileDataList } = this;
         const formData = new FormData();
-        fileList.forEach(file => {
+        fileDataList.forEach(file => {
           formData.append('file', file);
         });
         this.uploading = true
@@ -76,12 +87,13 @@
         upload(formData).then(function (res) {
                  _this.$message.success(res.msg)
                  _this.$emit('addSuccess')
-                 _this.fileList = []
+                 _this.fileDataList = []
                  _this.uploading = false
-                 _this.visible = false
                }).catch(function (err) {
                  _this.uploading = false
                  _this.$message.error(err.response.data.msg || err.response.data.detail)
+               }).finally(function () {
+                 _this.visible = false
                })
       }
     }
