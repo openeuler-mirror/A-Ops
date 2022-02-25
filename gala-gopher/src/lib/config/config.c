@@ -399,6 +399,7 @@ static int ConfigMgrLoadWebServerConfig(void *config, config_setting_t *settings
 {
     WebServerConfig *webServerConfig = (WebServerConfig *)config;
     uint32_t ret = 0;
+    const char *strVal = NULL;
     int intVal = 0;
 
     ret = config_setting_lookup_int(settings, "port", &intVal);
@@ -407,6 +408,17 @@ static int ConfigMgrLoadWebServerConfig(void *config, config_setting_t *settings
         return -1;
     }
     webServerConfig->port = (uint16_t)intVal;
+
+    ret = config_setting_lookup_string(settings, "switch", &strVal);
+    if (ret == 0) {
+        printf("[CONFIG] load config for webServerConfig swtich failed.\n");
+        return -1;
+    }
+    if (strcmp(strVal, "on") == 0) {
+        webServerConfig->on = 1;
+    } else {
+        webServerConfig->on = 0;
+    }
 
     return 0;
 }
