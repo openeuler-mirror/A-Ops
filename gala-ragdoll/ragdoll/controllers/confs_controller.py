@@ -18,7 +18,7 @@ from ragdoll.models.conf_synced_res import ConfSyncedRes
 from ragdoll.models.realconf_base_info import RealconfBaseInfo
 from ragdoll.models.host_sync_result import HostSyncResult
 from ragdoll.models.host_sync_status import HostSyncStatus
-from ragdoll.parses.ini_parse import IniJsonParse
+
 from ragdoll.models.real_conf import RealConf
 from ragdoll.controllers.format import Format
 from ragdoll.utils.git_tools import GitTools
@@ -138,10 +138,16 @@ def get_the_sync_status_of_domain(body=None):  # noqa: E501
         d_real_conf_base = d_real_conf.get("confBaseInfos")
         for d_conf in d_real_conf_base:
             d_conf_path = d_conf.get("filePath")
+
+            object_parse = ObjectParse()
+            conf_type = object_parse.get_conf_type_by_conf_path(d_conf_path)
+            conf_model = object_parse.create_conf_model_by_type(conf_type)
+
             comp_res = ""
             for d_man_conf in manage_confs:
                 if d_man_conf.get("filePath").split(":")[-1] == d_conf_path:
-                    comp_res = conf_tools.compareManAndReal(d_conf.get("confContents"), d_man_conf.get("contents"))
+                    # comp_res = conf_tools.compareManAndReal(d_conf.get("confContents"), d_man_conf.get("contents"))
+                    comp_res = conf_model.conf_compare(d_man_conf.get("contents"), d_conf.get("confContents"))
                     break
             conf_is_synced = ConfIsSynced(file_path=d_conf_path,
                                           is_synced=comp_res)
@@ -378,7 +384,7 @@ def query_real_confs(body=None):  # noqa: E501
             file_path = d_file.get("path")
             content = d_file.get("content")
             object_parse = ObjectParse()
-            content_string = object_parse.parse_content_to_json(file_path, content)
+            content_string = object_parse.parse_conf_to_json(file_path, content)
             file_atrr = d_file.get("file_attr").get("mode")
             file_owner = "({}, {})".format(d_file.get("file_attr").get("group"), d_file.get("file_attr").get("owner"))
             real_conf_base_info = RealconfBaseInfo(file_path=file_path,

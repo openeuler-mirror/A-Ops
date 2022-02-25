@@ -10,8 +10,7 @@ from six import BytesIO
 
 from ragdoll.test import BaseTestCase
 from ragdoll.utils.yang_module import YangModule
-from ragdoll.utils.object_parse import ObjectParse
-from ragdoll.test.test_analy import TestAnaly
+from ragdoll.test.test_conf_model import TestConfModel
 
 class TestReverseAnaly():
     """ Test reverse analy """
@@ -19,28 +18,28 @@ class TestReverseAnaly():
         self._module = module
         self._file = d_file
 
-    def create_object_with_content(self):
+    def create_conf_model_with_conf_info(self):
         """
-        desc: create the object with the content of the input file.
+        desc: create the object with the conf_info of the input file.
         """
-        test_analy = TestAnaly(self._module, self._file)
-        module, conf_type, d_object = test_analy.create_object_by_module()
-        rest_object = test_analy.check_analy_object(module, conf_type, d_object)
-        return rest_object
+        print("############ test: create_conf_model_with_conf_info ############")
+        test_analy = TestConfModel(self._module, self._file)
+        yang_module, conf_type, _conf_model = test_analy.create_config_model_by_yang_module()
+        conf_model = test_analy.check_config_model(yang_module, conf_type, _conf_model)
+        return conf_model
 
-    def check_reverse_analy_object(self, d_object):
+    def check_reverse_conf_model(self, d_object):
         """
-        desc: check the inverse analy from object
+        desc: check the deserialization from conf_model
         """
-        print("############ object -> content ############")
-        object_parse = ObjectParse()
-        content = object_parse.parse_object_to_ini_content(d_object)
-        if content:
-            print("The object is successfully converted to content!")
-            print("The content is : {}".format(content))
+        print("############ test: check_reverse_conf_model ############")
+        conf_info = d_object.write_conf()
+        if conf_info:
+            print("The conf_info is : {}".format(conf_info))
+            print("The object is successfully converted to conf_info!")
         else:
-            print("The object is failed converted to content, please check the analy script!")
-        return content
+            print("The object is failed converted to conf_info, please check the analy script!")
+        return conf_info
 
 def parse_command_line():
     """Parse the command line arguments."""
@@ -62,8 +61,8 @@ def main():
     """Entry point for test_analy"""
     config = parse_command_line()
     test_reverse_analy = TestReverseAnaly(config.module, config.file)
-    d_object = test_reverse_analy.create_object_with_content()
-    content = test_reverse_analy.check_reverse_analy_object(d_object)
+    d_object = test_reverse_analy.create_conf_model_with_conf_info()
+    content = test_reverse_analy.check_reverse_conf_model(d_object)
 
 if __name__ == '__main__':
     main()
