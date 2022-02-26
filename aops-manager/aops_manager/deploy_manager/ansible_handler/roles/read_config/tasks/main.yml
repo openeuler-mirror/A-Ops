@@ -1,4 +1,12 @@
 ---
+- name: Install python3-libselinux
+  become: true
+  become_user: root
+  dnf:
+    state: latest
+    name:
+      - python3-libselinux
+
 - name: Check that if the file exists
   stat:
     path: "{{ item.src }}"
