@@ -18,17 +18,24 @@
 #include <stdint.h>
 #include <rdkafka.h>
 #include "base.h"
+#include "config.h"
 
 typedef struct {
     char kafkaBroker[MAX_KAFKA_BROKER_LEN];
     char kafkaTopic[MAX_KAFKA_TOPIC_LEN];
+    uint32_t batchNumMessages;
+    uint32_t batchSize;
+    char compressionCodec[KAFKA_COMPRESSION_CODEC_LEN];
+    uint32_t queueBufferingMaxMessages;
+    uint32_t queueBufferingMaxKbytes;
+    uint32_t queueBufferingMaxMs;
 
     rd_kafka_t *rk;
     rd_kafka_topic_t *rkt;
     rd_kafka_conf_t *conf;
 } KafkaMgr;
 
-KafkaMgr *KafkaMgrCreate(const char *broker, const char *topic);
+KafkaMgr *KafkaMgrCreate(const ConfigMgr *configMgr);
 void KafkaMgrDestroy(KafkaMgr *mgr);
 
 int KafkaMsgProduce(const KafkaMgr *mgr, const char *msg, const uint32_t msgLen);
