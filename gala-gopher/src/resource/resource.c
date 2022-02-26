@@ -298,7 +298,7 @@ static int KafkaMgrInit(ResourceMgr *resourceMgr)
         return 0;
     }
 
-    kafkaMgr = KafkaMgrCreate(configMgr->kafkaConfig->broker, configMgr->kafkaConfig->topic);
+    kafkaMgr = KafkaMgrCreate(configMgr);
     if (kafkaMgr == NULL) {
         printf("[RESOURCE] create kafkaMgr failed.\n");
         return -1;

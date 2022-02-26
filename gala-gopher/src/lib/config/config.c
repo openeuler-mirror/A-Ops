@@ -194,6 +194,7 @@ static int ConfigMgrLoadKafkaConfig(void *config, config_setting_t *settings)
     KafkaConfig *kafkaConfig = (KafkaConfig *)config;
     uint32_t ret = 0;
     const char *strVal = NULL;
+    uint32_t intVal = 0;
 
     ret = config_setting_lookup_string(settings, "kafka_broker", &strVal);
     if (ret == 0) {
@@ -208,6 +209,48 @@ static int ConfigMgrLoadKafkaConfig(void *config, config_setting_t *settings)
         return -1;
     }
     memcpy(kafkaConfig->topic, strVal, strlen(strVal));
+
+    ret = config_setting_lookup_int(settings, "batch_num_messages", &intVal);
+    if (ret == 0) {
+        printf("[CONFIG] load config for batch.num.messages failed.\n");
+        return -1;
+    }
+    kafkaConfig->batchNumMessages = intVal;
+
+    ret = config_setting_lookup_int(settings, "batch_size", &intVal);
+    if (ret == 0) {
+        printf("[CONFIG] load config for batch.size failed.\n");
+        return -1;
+    }
+    kafkaConfig->batchSize = intVal;
+
+    ret = config_setting_lookup_string(settings, "compression_codec", &strVal);
+    if (ret == 0) {
+        printf("[CONFIG] load config for compression.codec failed.\n");
+        return -1;
+    }
+    memcpy(kafkaConfig->compressionCodec, strVal, strlen(strVal));
+
+    ret = config_setting_lookup_int(settings, "queue_buffering_max_messages", &intVal);
+    if (ret == 0) {
+        printf("[CONFIG] load config for queue.buffering.max.messages failed.\n");
+        return -1;
+    }
+    kafkaConfig->queueBufferingMaxMessages = intVal;
+
+    ret = config_setting_lookup_int(settings, "queue_buffering_max_kbytes", &intVal);
+    if (ret == 0) {
+        printf("[CONFIG] load config for queue.buffering.max.kbytes failed.\n");
+        return -1;
+    }
+    kafkaConfig->queueBufferingMaxKbytes = intVal;
+
+    ret = config_setting_lookup_int(settings, "queue_buffering_max_ms", &intVal);
+    if (ret == 0) {
+        printf("[CONFIG] load config for queue.buffering.max.ms failed.\n");
+        return -1;
+    }
+    kafkaConfig->queueBufferingMaxMs = intVal;
 
     ret = config_setting_lookup_string(settings, "switch", &strVal);
     if (ret == 0) {

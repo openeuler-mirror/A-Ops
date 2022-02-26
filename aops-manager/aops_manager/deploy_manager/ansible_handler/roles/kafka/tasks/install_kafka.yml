@@ -18,6 +18,7 @@
   dnf:
     state: latest
     name:
+      - python3-libselinux
       - kafka
 
 - name: Copy kafka.service file

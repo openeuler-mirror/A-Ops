@@ -71,6 +71,7 @@ static inline int __debug_printf(const char *format, ...)
 // kafka config
 #define MAX_KAFKA_BROKER_LEN  32
 #define MAX_KAFKA_TOPIC_LEN   32
+#define KAFKA_COMPRESSION_CODEC_LEN   32
 
 // probe config
 #define MAX_PROBE_NAME_LEN    32

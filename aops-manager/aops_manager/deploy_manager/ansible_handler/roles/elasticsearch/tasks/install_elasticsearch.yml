@@ -18,4 +18,5 @@
   dnf:
     state: latest
     name:
+      - python3-libselinux
       - elasticsearch 

@@ -27,7 +27,7 @@ static void dr_msg_cb(rd_kafka_t *rk, const rd_kafka_message_t *rkmessage, void 
     } /* rkmessage被librdkafka自动销毁 */
 }
 
-KafkaMgr *KafkaMgrCreate(const char *broker, const char *topic)
+KafkaMgr *KafkaMgrCreate(const ConfigMgr *configMgr)
 {
     rd_kafka_conf_res_t ret;
     KafkaMgr *mgr = NULL;
@@ -40,13 +40,67 @@ KafkaMgr *KafkaMgrCreate(const char *broker, const char *topic)
     }
 
     memset(mgr, 0, sizeof(KafkaMgr));
-    memcpy(mgr->kafkaBroker, broker, strlen(broker));
-    memcpy(mgr->kafkaTopic, topic, strlen(topic));
+    memcpy(mgr->kafkaBroker, configMgr->kafkaConfig->broker, strlen(mgr->kafkaBroker));
+    memcpy(mgr->kafkaTopic, configMgr->kafkaConfig->topic, strlen(mgr->kafkaTopic));
+    mgr->batchNumMessages = configMgr->kafkaConfig->batchNumMessages;
+    mgr->batchSize = configMgr->kafkaConfig->batchSize;
+    memcpy(mgr->compressionCodec, configMgr->kafkaConfig->compressionCodec, strlen(mgr->compressionCodec));
+    mgr->queueBufferingMaxKbytes = configMgr->kafkaConfig->queueBufferingMaxKbytes;
+    mgr->queueBufferingMaxMessages = configMgr->kafkaConfig->queueBufferingMaxMessages;
+    mgr->queueBufferingMaxMs = configMgr->kafkaConfig->queueBufferingMaxMs;
 
     mgr->conf = rd_kafka_conf_new();
     ret = rd_kafka_conf_set(mgr->conf, "bootstrap.servers", mgr->kafkaBroker, errstr, sizeof(errstr));
     if (ret != RD_KAFKA_CONF_OK) {
         DEBUG("set rdkafka bootstrap.servers failed.\n");
+        free(mgr);
+        return NULL;
+    }
+    rd_kafka_conf_set_dr_msg_cb(mgr->conf, dr_msg_cb);
+
+    ret = rd_kafka_conf_set(mgr->conf, "batch.num.messages", mgr->batchNumMessages, errstr, sizeof(errstr));
+    if (ret != RD_KAFKA_CONF_OK) {
+        DEBUG("set rdkafka batch.num.messages failed.\n");
+        free(mgr);
+        return NULL;
+    }
+    rd_kafka_conf_set_dr_msg_cb(mgr->conf, dr_msg_cb);
+
+    ret = rd_kafka_conf_set(mgr->conf, "batch.size", mgr->batchSize, errstr, sizeof(errstr));
+    if (ret != RD_KAFKA_CONF_OK) {
+        DEBUG("set rdkafka batch.size failed.\n");
+        free(mgr);
+        return NULL;
+    }
+    rd_kafka_conf_set_dr_msg_cb(mgr->conf, dr_msg_cb);
+
+    ret = rd_kafka_conf_set(mgr->conf, "compression.codec", mgr->compressionCodec, errstr, sizeof(errstr));
+    if (ret != RD_KAFKA_CONF_OK) {
+        DEBUG("set rdkafka compression.codec failed.\n");
+        free(mgr);
+        return NULL;
+    }
+    rd_kafka_conf_set_dr_msg_cb(mgr->conf, dr_msg_cb);
+
+    ret = rd_kafka_conf_set(mgr->conf, "queue.buffering.max.messages", mgr->queueBufferingMaxMessages, errstr, sizeof(errstr));
+    if (ret != RD_KAFKA_CONF_OK) {
+        DEBUG("set rdkafka queue.buffering.max.messages failed.\n");
+        free(mgr);
+        return NULL;
+    }
+    rd_kafka_conf_set_dr_msg_cb(mgr->conf, dr_msg_cb);
+
+    ret = rd_kafka_conf_set(mgr->conf, "queue.buffering.max.kbytes", mgr->queueBufferingMaxKbytes, errstr, sizeof(errstr));
+    if (ret != RD_KAFKA_CONF_OK) {
+        DEBUG("set rdkafka queue.buffering.max.kbytes failed.\n");
+        free(mgr);
+        return NULL;
+    }
+    rd_kafka_conf_set_dr_msg_cb(mgr->conf, dr_msg_cb);
+
+    ret = rd_kafka_conf_set(mgr->conf, "queue.buffering.max.ms", mgr->queueBufferingMaxMs, errstr, sizeof(errstr));
+    if (ret != RD_KAFKA_CONF_OK) {
+        DEBUG("set rdkafka queue.buffering.max.ms failed.\n");
         free(mgr);
         return NULL;
     }
