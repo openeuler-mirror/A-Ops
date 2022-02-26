@@ -461,6 +461,10 @@ static int WebServerInit(ResourceMgr *resourceMgr)
 {
     ConfigMgr *configMgr = resourceMgr->configMgr;
     WebServer *webServer = NULL;
+
+    if (configMgr->webServerConfig->on == 0) {
+        return 0;
+    }
     webServer = WebServerCreate(configMgr->webServerConfig->port);
     if (webServer == NULL) {
         printf("[RESOURCE] create webServer failed.\n");

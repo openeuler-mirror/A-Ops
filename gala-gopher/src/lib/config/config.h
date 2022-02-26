@@ -81,6 +81,7 @@ typedef struct  {
 
 typedef struct {
     uint16_t port;
+    uint16_t on;
 } WebServerConfig;
 
 typedef struct {

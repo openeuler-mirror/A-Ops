@@ -146,13 +146,15 @@ int DaemonRun(const ResourceMgr *mgr)
     }
     printf("[DAEMON] create egress thread success.\n");
 
-    // 3. start web_server thread
-    ret = WebServerStartDaemon(mgr->webServer);
-    if (ret != 0) {
-        printf("[DAEMON] create web_server daemon failed. errno: %d\n", errno);
-        return -1;
+    if (mgr->webServer) {
+        // 3. start web_server thread
+        ret = WebServerStartDaemon(mgr->webServer);
+        if (ret != 0) {
+            printf("[DAEMON] create web_server daemon failed. errno: %d\n", errno);
+            return -1;
+        }
+        printf("[DAEMON] create web_server daemon success.\n");
     }
-    printf("[DAEMON] create web_server daemon success.\n");
 
     // 4. start probe thread
     for (int i = 0; i < mgr->probeMgr->probesNum; i++) {
