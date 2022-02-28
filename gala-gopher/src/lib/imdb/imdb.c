@@ -345,6 +345,114 @@ IMDB_Table *IMDB_DataBaseMgrFindTable(IMDB_DataBaseMgr *mgr, char *tableName)
     return NULL;
 }
 
+static int IMDB_DataBaseMgrParseContent(IMDB_DataBaseMgr *mgr, IMDB_Table *table,
+                                                IMDB_Record *record, char *content, char needKey)
+{
+    int ret = 0;
+    IMDB_Metric *metric;
+
+    char *token, *buffer;
+    char delim[] = "|";
+    char *buffer_head = NULL;
+
+    uint32_t keyIdx = 0, index = 0;
+
+    buffer = strdup(content);
+    if (buffer == NULL) {
+        goto ERR;
+    }
+    buffer_head = buffer;
+
+    // start analyse record string
+    for (token = strsep(&buffer, delim); token != NULL; token = strsep(&buffer, delim)) {
+        if (strcmp(token, "\n") == 0)
+            break;
+
+        if (strcmp(token, "") == 0) {
+            if (index == 0)
+                continue;   // first metrics
+            else
+                token = INVALID_METRIC_VALUE;
+        }
+
+        // if index > metricNum, it's invalid
+        if (index >= table->meta->metricsNum) {
+            break;
+        }
+        // fill record by the rest substrings
+        metric = IMDB_MetricCreate(table->meta->metrics[index]->name,
+                                   table->meta->metrics[index]->description,
+                                   table->meta->metrics[index]->type);
+        if (metric == NULL) {
+            DEBUG("[IMDB] Can't create metrics.\n");
+            goto ERR;
+        }
+
+        ret = IMDB_MetricSetValue(metric, token);
+        if (ret != 0) {
+            IMDB_MetricDestroy(metric);
+            goto ERR;
+        }
+
+        ret = IMDB_RecordAddMetric(record, metric);
+        if (ret != 0) {
+            IMDB_MetricDestroy(metric);
+            goto ERR;
+        }
+
+        if (needKey && strcmp(METRIC_TYPE_KEY, table->meta->metrics[index]->type) == 0) {
+            ret = IMDB_RecordAppendKey(record, keyIdx, token);
+            if (ret < 0) {
+                DEBUG("[IMDB] Can not set record key.\n");
+                goto ERR;
+            }
+            keyIdx++;
+        }
+
+        index += 1;
+    }
+    return 0;
+
+ERR:
+    if (buffer_head != NULL)
+        free(buffer_head);
+    return -1;
+}
+
+
+IMDB_Record* IMDB_DataBaseMgrCreateRec(IMDB_DataBaseMgr *mgr, IMDB_Table *table, char *content)
+{
+    pthread_rwlock_wrlock(&mgr->rwlock);
+
+    int ret = 0;
+    IMDB_Record *record;
+
+    record = IMDB_RecordCreateWithKey(table->meta->metricsCapacity, table->recordKeySize);
+    if (record == NULL) {
+        goto ERR;
+    }
+
+    ret = IMDB_DataBaseMgrParseContent(mgr, table, record, content, 1);
+    if (ret != 0) {
+        DEBUG("[IMDB]Raw ingress data to rec failed(CREATEREC).\n");
+        goto ERR;
+    }
+    ret = IMDB_TableAddRecord(table, record);
+    if (ret != 0) {
+        goto ERR;
+    }
+
+    pthread_rwlock_unlock(&mgr->rwlock);
+    return record;
+
+ERR:
+    pthread_rwlock_unlock(&mgr->rwlock);
+    if (record != NULL)
+        IMDB_RecordDestroy(record);
+
+    return NULL;
+}
+
 int IMDB_DataBaseMgrAddRecord(IMDB_DataBaseMgr *mgr, char *recordStr)
 {
     pthread_rwlock_wrlock(&mgr->rwlock);
@@ -814,6 +922,49 @@ static int IMDB_RecordEvent2Json(const IMDB_DataBaseMgr *mgr, IMDB_Table *table,
     
     return 0;
 }
+
+int IMDB_Rec2Json(IMDB_DataBaseMgr *mgr, IMDB_Table *table,
+                        IMDB_Record* rec, const char *dataStr, char *jsonStr, uint32_t jsonStrLen)
+{
+    int ret = 0;
+    int createRecFlag = 0;
+    IMDB_Record *record = rec;
+
+    if (record == NULL) {
+        record = IMDB_RecordCreate(table->meta->metricsCapacity);
+        if (record == NULL) {
+            goto ERR;
+        }
+        createRecFlag = 1;
+        ret = IMDB_DataBaseMgrParseContent(mgr, table, record, dataStr, 0);
+        if (ret != 0) {
+            DEBUG("[IMDB]Raw ingress data to rec failed(REC2JSON).\n");
+            goto ERR;
+        }
+    }
+
+    // ‘event’ log to json
+    if (strcmp(table->name, "event") == 0) {
+        ret = IMDB_RecordEvent2Json(mgr, table, record, jsonStr, jsonStrLen);
+    } else {
+        ret = IMDB_Record2Json(mgr, table, record, jsonStr, jsonStrLen);
+    }
+
+    if (ret != 0) {
+        DEBUG("[IMDB]Rec to json failed.\n");
+        goto ERR;
+    }
+
+    if (createRecFlag)
+        IMDB_RecordDestroy(record);
+
+    return 0;
+ERR:
+    if (createRecFlag)
+        IMDB_RecordDestroy(record);
+    return -1;
+}
+
 
 int IMDB_DataStr2Json(IMDB_DataBaseMgr *mgr, const char *recordStr, char *jsonStr, uint32_t jsonStrLen)
 {

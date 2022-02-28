@@ -86,7 +86,7 @@ static int IngressInit(IngressMgr *mgr)
     return 0;
 }
 
-static int IngressData2Egress(IngressMgr *mgr, const char *dataStr)
+static int IngressData2Egress(IngressMgr *mgr, IMDB_Table *table, IMDB_Record* rec, const char *dataStr)
 {
     int ret = 0;
 
@@ -95,7 +95,7 @@ static int IngressData2Egress(IngressMgr *mgr, const char *dataStr)
     if (jsonStr == NULL) {
         printf("[INGRESS] alloc jsonStr failed.\n");
     }
-    ret = IMDB_DataStr2Json(mgr->imdbMgr, dataStr, jsonStr, MAX_DATA_STR_LEN);
+    ret = IMDB_Rec2Json(mgr->imdbMgr, table, rec, dataStr, jsonStr, MAX_DATA_STR_LEN);
     if (ret != 0) {
         DEBUG("[INGRESS] reformat dataStr to json failed.\n");
         free(jsonStr);
@@ -116,11 +116,41 @@ static int IngressData2Egress(IngressMgr *mgr, const char *dataStr)
     return 0;
 }
 
+static int GetTableNameAndContent(const char* buf, char *tblName, size_t size, char **content)
+{
+    size_t len;
+    const char *p1, *p2;
+
+	*content = NULL;
+    if ((buf == NULL) || (buf[0] != '|'))
+        return -1;
+
+    p1 = buf + 1;
+    p2 = (const char *)strchr(p1, '|');
+    if (p2 == NULL)
+        return -1;
+
+    if (p2 <= p1)
+        return -1;
+
+    len = (size_t)(p2 - p1);
+    if (len >= size)
+        return -1;
+
+    (void)memcpy(tblName, p1, len);
+    tblName[len] = 0;
+    *content = p2
+    return 0;
+}
+
 static int IngressDataProcesssInput(Fifo *fifo, IngressMgr *mgr)
 {
     // read data from fifo
-    char *dataStr = NULL;
+    char *dataStr, *content;
     int ret = 0;
+    char tblName[MAX_IMDB_TABLE_NAME_LEN];
+    IMDB_Table* table;
+    IMDB_Record* rec;
 
     uint64_t val = 0;
     ret = read(fifo->triggerFd, &val, sizeof(val));
@@ -131,20 +161,26 @@ static int IngressDataProcesssInput(Fifo *fifo, IngressMgr *mgr)
 
     while (FifoGet(fifo, (void **)&dataStr) == 0) {
         // skip string not start with '|'
-        if (strncmp(dataStr, "|", 1) != 0) {
+        ret = GetTableNameAndContent((const char*)dataStr, tblName, MAX_IMDB_TABLE_NAME_LEN, &content);
+        if (ret < 0 || (content == NULL)) {
             DEBUG("[INGRESS] Get dirty data str: %s\n", dataStr);
             goto next;
         }
 
-        // save data to imdb
-        ret = IMDB_DataBaseMgrAddRecord(mgr->imdbMgr, dataStr);
-        if (ret != 0) {
-            DEBUG("[INGRESS] insert data into imdb failed.\n");
-            goto next;
+        table = IMDB_DataBaseMgrFindTable(mgr->imdbMgr, tblName);
+        rec = NULL;
+
+        if (table && table->recordKeySize > 0) {
+            // save data to imdb
+            rec = IMDB_DataBaseMgrCreateRec(mgr->imdbMgr, table, content);
+            if (rec == NULL) {
+                DEBUG("[INGRESS] insert data into imdb failed.\n");
+                goto next;
+            }
         }
 
         // send data to egress
-        ret = IngressData2Egress(mgr, dataStr);
+        ret = IngressData2Egress(mgr, table, rec, content);
         if (ret != 0) {
             DEBUG("[INGRESS] send data to egress failed.\n");
         }
