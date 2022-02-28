@@ -28,7 +28,7 @@ static void TestMeasurementMgrCreate(void)
     CU_ASSERT(mgr != NULL);
     CU_ASSERT(mgr->measurements != NULL);
     CU_ASSERT(mgr->measurementsNum == 0);
-    CU_ASSERT(mgr->size == MEASUREMENT_MGR_SIZE);
+    CU_ASSERT(mgr->measurementsCapability == MEASUREMENT_MGR_SIZE);
     MeasurementMgrDestroy(mgr);
 }
 
