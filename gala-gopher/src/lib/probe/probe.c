@@ -176,7 +176,7 @@ int __wrap_fprintf(FILE *stream, const char *format, ...)
     char ch = 0;
     char *pc = NULL;
     uint32_t ret = 0;
-    char *curFormat = format;
+    char *curFormat = (char *)format;
     uint32_t index = 0;
     char *dataStr = (char *)malloc(MAX_DATA_STR_LEN);
     if (dataStr == NULL)

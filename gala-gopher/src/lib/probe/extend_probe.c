@@ -58,40 +58,41 @@ int RunExtendProbe(ExtendProbe *probe)
     uint32_t index = 0;
 
     char command[MAX_COMMAND_LEN];
+    command[0] = 0;
     (void)snprintf(command, MAX_COMMAND_LEN - 1, "%s %s", probe->executeCommand, probe->executeParam);
     f = popen(command, "r");
 
     while (feof(f) == 0 && ferror(f) == 0) {
-        (void)fgets(buffer, sizeof(buffer), f);
-        bufferSize = strlen(buffer);
-        if (bufferSize && buffer[0] != '|') {
-            /* Filtering non metric data */
+        if (fgets(buffer, sizeof(buffer), f) == NULL)
             continue;
-        }
+        
+        if (buffer[0] != '|')
+            continue;
 
-        for (int i = 0; i < bufferSize; i++) {
+        bufferSize = strlen(buffer);
+        for (int i = 0; ((i < bufferSize) && (index < MAX_DATA_STR_LEN)); i++) {
             if (dataStr == NULL) {
                 dataStr = (char *)malloc(MAX_DATA_STR_LEN);
                 if (dataStr == NULL) {
-                    goto ERR2;
+                    break;
                 }
-                memset(dataStr, 0, sizeof(MAX_DATA_STR_LEN));
+                // memset(dataStr, 0, sizeof(MAX_DATA_STR_LEN));
                 index = 0;
-            }
+            }           
 
             if (buffer[i] == '\n') {
                 dataStr[index] = '\0';
                 ret = FifoPut(probe->fifo, (void *)dataStr);
                 if (ret != 0) {
                     DEBUG("[EXTEND PROBE %s] fifo full.\n", probe->name);
-                    goto ERR1;
+                    break;
                 }
 
                 uint64_t msg = 1;
                 ret = write(probe->fifo->triggerFd, &msg, sizeof(uint64_t));
                 if (ret != sizeof(uint64_t)) {
                     DEBUG("[EXTEND PROBE %s] send trigger msg to eventfd failed.\n", probe->name);
-                    goto ERR1;
+                    break;
                 }
 
                 // reset dataStr
@@ -105,11 +106,6 @@ int RunExtendProbe(ExtendProbe *probe)
 
     pclose(f);
     return 0;
-ERR1:
-    free(dataStr);
-ERR2:
-    pclose(f);
-    return -1;
 }
 
 ExtendProbeMgr *ExtendProbeMgrCreate(uint32_t size)

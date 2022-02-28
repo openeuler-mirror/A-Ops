@@ -63,7 +63,7 @@ typedef struct {
     uint32_t keySize;
     char *key;
     time_t updateTime;     // Unit: second
-    uint32_t capacity;
+    uint32_t metricsCapacity;		// Capability for metrics count in one record
     uint32_t metricsNum;
     IMDB_Metric **metrics;
     UT_hash_handle hh;
@@ -73,13 +73,13 @@ typedef struct {
     char name[MAX_IMDB_TABLE_NAME_LEN];
     IMDB_Record *meta;
 
-    uint32_t recordsCapacity;      // capacity for records in one table
+    uint32_t recordsCapability;     // Capability for records count in one table
     uint32_t recordKeySize;
     IMDB_Record **records;
 } IMDB_Table;
 
 typedef struct {
-    uint32_t capacity;      // capacity for tables in one database
+    uint32_t tblsCapability;      	// Capability for tables count in one database
     uint32_t tablesNum;
 
     IMDB_Table **tables;
@@ -99,8 +99,8 @@ void IMDB_RecordUpdateTime(IMDB_Record *record, time_t seconds);
 void IMDB_RecordDestroy(IMDB_Record *record);
 
 IMDB_Record *HASH_findRecord(const IMDB_Record **records, const IMDB_Record *record);
-void HASH_deleteRecord(const IMDB_Record **records, const IMDB_Record *record);
-void HASH_deleteAndFreeRecords(const IMDB_Record **records);
+void HASH_deleteRecord(IMDB_Record **records, IMDB_Record *record);
+void HASH_deleteAndFreeRecords(IMDB_Record **records);
 void HASH_addRecord(IMDB_Record **records, IMDB_Record *record);
 uint32_t HASH_recordCount(const IMDB_Record **records);
 
@@ -117,11 +117,10 @@ void IMDB_DataBaseMgrDestroy(IMDB_DataBaseMgr *mgr);
 int IMDB_DataBaseMgrAddTable(IMDB_DataBaseMgr *mgr, IMDB_Table* table);
 IMDB_Table *IMDB_DataBaseMgrFindTable(IMDB_DataBaseMgr *mgr, char *tableName);
 
-int IMDB_DataBaseMgrAddRecord(IMDB_DataBaseMgr *mgr, char *recordStr, int len);
+int IMDB_DataBaseMgrAddRecord(IMDB_DataBaseMgr *mgr, char *recordStr);
 int IMDB_DataBaseMgrData2String(IMDB_DataBaseMgr *mgr, char *buffer, uint32_t maxLen);
 
-int IMDB_DataStr2Json(IMDB_DataBaseMgr *mgr, const char *recordStr, 
-	                           int recordLen, char *jsonStr, uint32_t jsonStrLen);
+int IMDB_DataStr2Json(IMDB_DataBaseMgr *mgr, const char *recordStr, char *jsonStr, uint32_t jsonStrLen);
 
 #endif
 

@@ -207,10 +207,10 @@ static int ExtendProbeMgrInit(ResourceMgr *resourceMgr)
             return -1;
         }
 
-        memcpy(_extendProbe->name, _extendProbeConfig->name, strlen(_extendProbeConfig->name));
-        memcpy(_extendProbe->executeCommand, _extendProbeConfig->command, strlen(_extendProbeConfig->command));
-        memcpy(_extendProbe->executeParam, _extendProbeConfig->param, strlen(_extendProbeConfig->param));
-        memcpy(_extendProbe->startChkCmd, _extendProbeConfig->startChkCmd, strlen(_extendProbeConfig->startChkCmd));
+        (void)strncpy(_extendProbe->name, _extendProbeConfig->name, MAX_PROBE_NAME_LEN - 1);
+        (void)strncpy(_extendProbe->executeCommand, _extendProbeConfig->command, MAX_EXTEND_PROBE_COMMAND_LEN - 1);
+        (void)strncpy(_extendProbe->executeParam, _extendProbeConfig->param, MAX_EXTEND_PROBE_PARAM_LEN - 1);
+        (void)strncpy(_extendProbe->startChkCmd, _extendProbeConfig->startChkCmd, MAX_EXTEND_PROBE_COMMAND_LEN - 1);
 
         _extendProbe->probeSwitch = _extendProbeConfig->probeSwitch;
         _extendProbe->chkType = _extendProbeConfig->startChkType;
@@ -318,11 +318,11 @@ static void KafkaMgrDeinit(ResourceMgr *resourceMgr)
 static int IMDBMgrTableLoad(IMDB_Table *table, Measurement *mm)
 {
     int ret = 0;
-    IMDB_Record *meta = IMDB_RecordCreate(MAX_IMDB_RECORD_CAPACITY);
+    IMDB_Record *meta = IMDB_RecordCreate(mm->fieldsNum);
     if (meta == NULL)
         return -1;
 
-    IMDB_Metric *metric;
+    IMDB_Metric *metric = NULL;
     uint32_t keyNum = 0;
     for (int i = 0; i < mm->fieldsNum; i++) {
         metric = IMDB_MetricCreate(mm->fields[i].name, mm->fields[i].description, mm->fields[i].type);
@@ -333,6 +333,7 @@ static int IMDBMgrTableLoad(IMDB_Table *table, Measurement *mm)
         if (ret != 0)
             goto ERR;
 
+        metric = NULL;
         if (strcmp(mm->fields[i].type, METRIC_TYPE_KEY) == 0)
             keyNum++;
     }
@@ -348,16 +349,17 @@ static int IMDBMgrTableLoad(IMDB_Table *table, Measurement *mm)
     return 0;
 ERR:
     IMDB_RecordDestroy(meta);
+    IMDB_MetricDestroy(metric);
     return -1;
 }
 
-static int IMDBMgrDatabaseLoad(IMDB_DataBaseMgr *imdbMgr, MeasurementMgr *mmMgr, uint32_t capacity)
+static int IMDBMgrDatabaseLoad(IMDB_DataBaseMgr *imdbMgr, MeasurementMgr *mmMgr, uint32_t recordsCapability)
 {
     int ret = 0;
 
     IMDB_Table *table;
     for (int i = 0; i < mmMgr->measurementsNum; i++) {
-        table = IMDB_TableCreate(mmMgr->measurements[i]->name, capacity);
+        table = IMDB_TableCreate(mmMgr->measurements[i]->name, recordsCapability);
         if (table == NULL)
             return -1;
 
