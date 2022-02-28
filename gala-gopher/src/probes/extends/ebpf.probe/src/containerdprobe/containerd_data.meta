@@ -2,7 +2,7 @@ version = "1.0.0"
 measurements:
 (
     {
-        name: "container_data",
+        name: "container",
         fields:
         (
             {
@@ -22,37 +22,37 @@ measurements:
             },
             {
                 description: "memory.usage_in_bytes",
-                type: "label",
+                type: "gauge",
                 name: "memory.usage_in_bytes",
             },
             {
                 description: "memory.limit_in_bytes",
-                type: "label",
+                type: "gauge",
                 name: "memory.limit_in_byte",
             },
             {
                 description: "memory.stat.cache",
-                type: "label",
+                type: "gauge",
                 name: "memory.stat.cache",
             },
             {
                 description: "cpuacct.usage",
-                type: "label",
+                type: "gauge",
                 name: "cpuacct.usage",
             },
             {
                 description: "pids.current",
-                type: "label",
+                type: "gauge",
                 name: "pids.current",
             },
             {
                 description: "pids.limit",
-                type: "label",
+                type: "gauge",
                 name: "pids.limit",
             },
             {
                 description: "status",
-                type: "label",
+                type: "gauge",
                 name: "status",
             }
         )

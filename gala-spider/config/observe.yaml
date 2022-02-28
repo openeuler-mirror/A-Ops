@@ -23,13 +23,17 @@ observe_entities:
       - machine_id
     labels:
       - &container_name container_name
-      - netns
-      - mntns
-      - netcgrp
-      - memcgrp
-      - cpucgrp
+      - ns
+      - pid
     name: *container_name
-    metrics: []
+    metrics:
+      - memory.usage_in_bytes
+      - memory.limit_in_byte
+      - memory.stat.cache
+      - cpuacct.usage
+      - pids.current
+      - pids.limit
+      - status
     level: CONTAINER
     dependingitems:
       -
@@ -56,8 +60,6 @@ observe_entities:
     labels:
       - exe_file
       - exec_file
-      - java_classpath
-      - container_id
       - tasks
     level: APPLICATION
     dependingitems:
@@ -69,8 +71,8 @@ observe_entities:
             type: container
             matches:
               -
-                from: container_id
-                to: container_id
+                from: pgid
+                to: pid
               -
                 from: machine_id
                 to: machine_id
@@ -80,11 +82,6 @@ observe_entities:
               -
                 from: machine_id
                 to: machine_id
-            requires:
-              -
-                side: from
-                label: container_id
-                value: null
       -
         id: connect
         layer: indirect
@@ -102,12 +99,22 @@ observe_entities:
       - &task_name comm
       - exe_file
       - exec_file
-      - java_classpath
-      - pidns
-      - container_id
+      - major
+      - minor
     name: *task_name
     metrics:
       - fork_count
+      - task_io_wait_time_us
+      - task_io_count
+      - task_io_time_us
+      - task_rchar_bytes
+      - task_wchar_bytes
+      - task_syscr_count
+      - task_syscw_count
+      - task_read_bytes
+      - task_write_bytes
+      - task_cancelled_write_bytes
+      - task_hang_count
     level: PROCESS
     dependingitems:
       -
@@ -132,13 +139,28 @@ observe_entities:
   -
     type: endpoint
     keys:
-      - type
-      - ip
-      - port
-      - pid
+      - endpoint_type
+      - s_addr
+      - s_port
+      - tgid
       - machine_id
     labels:
-      - netns
+      - process_name
+      - user_id
+      - family
+      - socket_type
+      - protocol
+    metrics:
+      - listendrop
+      - listen_overflow
+      - passive_open
+      - active_open
+      - attempt_fail
+      - abort_close
+      - request_fail
+      - rmem_schedule
+      - tcp_oom
+      - tcp_keepalive_timeout
     dependingitems:
       -
         id: belongs_to
@@ -148,7 +170,10 @@ observe_entities:
             type: task
             matches:
               -
-                from: pid
+                from: tgid
+                to: tgid
+              -
+                from: tgid
                 to: pid
               -
                 from: machine_id
@@ -159,10 +184,10 @@ observe_entities:
       - server_ip
       - server_port
       - client_ip
-      - pid
+      - tgid
+      - role
       - machine_id
     labels:
-      - role
       - protocol
     metrics:
       - rx_bytes
@@ -171,8 +196,12 @@ observe_entities:
       - packets_in
       - retran_packets
       - lost_packets
-      - rtt
       - link_count
+      - tmout_count
+      - rcv_que_full_count
+      - snd_buf_limit_count
+      - send_rsts
+      - receive_rsts
     level: RPC
     dependingitems:
       -
@@ -183,7 +212,10 @@ observe_entities:
             type: task
             matches:
               -
-                from: pid
+                from: tgid
+                to: tgid
+              -
+                from: tgid
                 to: pid
               -
                 from: machine_id

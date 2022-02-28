@@ -40,6 +40,9 @@ class ObserveEntityCreator:
             val = observe_entity_map.setdefault(entity.type, [])
             val.append(entity)
 
+        hosts = ObserveEntityCreator._create_host_observe_entities(observe_entities)
+        res.extend(hosts)
+
         tasks = observe_entity_map.get(EntityType.TASK.value, [])
         app_instances = ObserveEntityCreator._create_app_instance_observe_entities(tasks)
         res.extend(app_instances)
@@ -47,33 +50,52 @@ class ObserveEntityCreator:
         return res
 
     @staticmethod
+    def _create_host_observe_entities(observe_entities: List[ObserveEntity]) -> List[ObserveEntity]:
+        host_meta = ObserveMetaMgt().get_observe_meta(EntityType.HOST.value)
+        entity_map: Dict[str, ObserveEntity] = {}
+
+        for entity in observe_entities:
+            host = ObserveEntityCreator._create_entity_from(entity, host_meta)
+            if not host.id:
+                continue
+            entity_map.setdefault(host.id, host)
+
+        return list(entity_map.values())
+
+    @staticmethod
     def _create_app_instance_observe_entities(tasks: List[ObserveEntity]) -> List[ObserveEntity]:
         app_inst_meta = ObserveMetaMgt().get_observe_meta(EntityType.APPINSTANCE.value)
         entity_map: Dict[str, ObserveEntity] = {}
 
         for task in tasks:
-            app_inst_data = {}
-            for app_inst_key in app_inst_meta.keys:
-                if app_inst_key in task.attrs:
-                    app_inst_data[app_inst_key] = task.attrs.get(app_inst_key)
-            for app_inst_label in app_inst_meta.labels:
-                if app_inst_label in task.attrs:
-                    app_inst_data[app_inst_label] = task.attrs.get(app_inst_label)
-
-            entity = ObserveEntity(type=EntityType.APPINSTANCE.value,
-                                   name="",
-                                   level=app_inst_meta.level,
-                                   timestamp=task.timestamp,
-                                   observe_data=app_inst_data,
-                                   observe_meta=app_inst_meta)
+            entity = ObserveEntityCreator._create_entity_from(task, app_inst_meta)
             if not entity.id:
                 continue
+
             entity_map.setdefault(entity.id, entity)
             entity_attrs = entity_map.get(entity.id).attrs
             entity_attrs.setdefault('tasks', [])
             entity_attrs.get('tasks').append(task.id)
 
         return list(entity_map.values())
+
+    @staticmethod
+    def _create_entity_from(src_entity: ObserveEntity, target_entity_meta: ObserveMeta) -> ObserveEntity:
+        target_attrs = {}
+        for key in target_entity_meta.keys:
+            if key in src_entity.attrs:
+                target_attrs[key] = src_entity.attrs.get(key)
+        for label in target_entity_meta.labels:
+            if label in src_entity.attrs:
+                target_attrs[label] = src_entity.attrs.get(label)
+
+        target_entity = ObserveEntity(type=target_entity_meta.type,
+                                      name=target_attrs.get(target_entity_meta.name),
+                                      level=target_entity_meta.level,
+                                      timestamp=src_entity.timestamp,
+                                      observe_data=target_attrs,
+                                      observe_meta=target_entity_meta)
+        return target_entity
 
 
 class DirectRelationCreator:

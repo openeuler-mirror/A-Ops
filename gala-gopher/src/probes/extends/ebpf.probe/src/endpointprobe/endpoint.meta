@@ -7,9 +7,9 @@ measurements:
         fields:
         (
             {
-                description: "pid of the process",
+                description: "tgid of the process",
                 type: "key",
-                name: "pid",
+                name: "tgid",
             },
 	        {
                 description: "name of the process",

@@ -1,6 +1,5 @@
 global:
     data_source: "prometheus"
-    ui_source: "neo4j"
     observe_conf_path: /etc/spider/observe.yaml
 
 kafka:
@@ -13,23 +12,6 @@ prometheus:
     instant_api: "/api/v1/query"
     range_api: "/api/v1/query_range"
     step: 1
-
-table_info:
-    base_table_name: ["tcp_link", "ipvs_link"]
-    other_table_name: ["nginx_link", "ipvs_link", "haproxy_link", "dnsmasq_link"]
-
-option:
-    exclude_addr: ["1.2.3.4"]
-
-neo4j:
-    address: http://localhost:7474
-    username: 
-    password: 
-    timer: 5
-
-temp_path:
-    temp_tcp_file: "/var/tmp/spider/tcpline.txt"
-    temp_other_file: "/var/tmp/spider/otherline.txt"
 
 spider:
     port: 11115
