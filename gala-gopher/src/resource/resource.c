@@ -16,6 +16,7 @@
 #include <string.h>
 #include <stdlib.h>
 #include "base.h"
+#include "config.h"
 #include "resource.h"
 
 #if GALA_GOPHER_INFO("inner func")
@@ -239,7 +240,8 @@ static int MeasurementMgrInit(ResourceMgr *resourceMgr)
     ProbeMgr *probeMgr = NULL;
     MeasurementMgr *mmMgr = NULL;
 
-    mmMgr = MeasurementMgrCreate(MAX_MEASUREMENTS_NUM);
+    mmMgr = MeasurementMgrCreate(resourceMgr->configMgr->imdbConfig->maxTablesNum, 
+                                    resourceMgr->configMgr->imdbConfig->maxMetricsNum);
     if (mmMgr == NULL) {
         printf("[RESOURCE] create mmMgr failed.\n");
         return -1;

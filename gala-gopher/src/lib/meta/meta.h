@@ -32,12 +32,15 @@ typedef struct {
 } Measurement;
 
 typedef struct {
-    uint32_t size;
+    uint32_t measurementsCapability;
     uint32_t measurementsNum;
+
+    uint32_t fields_num_max;
+
     Measurement **measurements;
 } MeasurementMgr;
 
-MeasurementMgr *MeasurementMgrCreate(uint32_t size);
+MeasurementMgr *MeasurementMgrCreate(uint32_t measurementsCapability, uint32_t fields_num_max);
 void MeasurementMgrDestroy(MeasurementMgr *mgr);
 
 int MeasurementMgrLoad(const MeasurementMgr *mgr, const char *metaDir);

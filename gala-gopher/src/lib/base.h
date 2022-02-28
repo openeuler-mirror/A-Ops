@@ -43,9 +43,8 @@ static inline int __debug_printf(const char *format, ...)
 #define MAX_FIELD_DESCRIPTION_LEN   256
 #define MAX_FIELD_TYPE_LEN          64
 #define MAX_FIELD_NAME_LEN          64
-#define MAX_MEASUREMENTS_NUM        64
 #define MAX_MEASUREMENT_NAME_LEN    64
-#define MAX_FIELDS_NUM              64
+#define MAX_FIELDS_NUM              128
 
 // ingress
 #define MAX_EPOLL_SIZE        1024

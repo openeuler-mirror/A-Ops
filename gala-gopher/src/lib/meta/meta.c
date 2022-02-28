@@ -48,7 +48,7 @@ static void MeasurementDestroy(Measurement *mm)
     return;
 }
 
-MeasurementMgr *MeasurementMgrCreate(uint32_t size)
+MeasurementMgr *MeasurementMgrCreate(uint32_t measurementsCapability, uint32_t fields_num_max)
 {
     MeasurementMgr *mgr = NULL;
     mgr = (MeasurementMgr *)malloc(sizeof(MeasurementMgr));
@@ -57,13 +57,14 @@ MeasurementMgr *MeasurementMgrCreate(uint32_t size)
     }
     memset(mgr, 0, sizeof(MeasurementMgr));
 
-    mgr->measurements = (Measurement **)malloc(sizeof(Measurement *) * size);
+    mgr->measurements = (Measurement **)malloc(sizeof(Measurement *) * measurementsCapability);
     if (mgr->measurements == NULL) {
         free(mgr);
         return NULL;
     }
-    memset(mgr->measurements, 0, sizeof(Measurement *) * size);
-    mgr->size = size;
+    memset(mgr->measurements, 0, sizeof(Measurement *) * measurementsCapability);
+    mgr->measurementsCapability = measurementsCapability;
+    mgr->fields_num_max = fields_num_max < MAX_FIELDS_NUM ? fields_num_max : MAX_FIELDS_NUM;
 
     return mgr;
 }
@@ -90,7 +91,7 @@ static int MeasurementMgrAdd(MeasurementMgr *mgr, Measurement *measurement)
     if (mm != NULL)
         return -1;
 
-    if (mgr->measurementsNum == mgr->size) {
+    if (mgr->measurementsNum == mgr->measurementsCapability) {
         return -1;
     }
     mgr->measurements[mgr->measurementsNum] = measurement;
@@ -138,7 +139,7 @@ static int FieldLoad(Field *field, config_setting_t *fieldConfig)
     return 0;
 }
 
-static int MeasurementLoad(Measurement *mm, config_setting_t *mmConfig)
+static int MeasurementLoad(MeasurementMgr *mgr, Measurement *mm, config_setting_t *mmConfig)
 {
     int ret = 0;
     const char *name;
@@ -152,7 +153,7 @@ static int MeasurementLoad(Measurement *mm, config_setting_t *mmConfig)
     (void)strncpy(mm->name, name, MAX_MEASUREMENT_NAME_LEN - 1);
     config_setting_t *fields = config_setting_lookup(mmConfig, "fields");
     int fieldsCount = config_setting_length(fields);
-    if (fieldsCount > MAX_FIELDS_NUM) {
+    if (fieldsCount > mgr->fields_num_max) {
         printf("Too many fields.\n");
         return -1;
     }
@@ -207,7 +208,7 @@ int MeasurementMgrLoadSingleMeta(MeasurementMgr *mgr, const char *metaPath)
             return -1;
         }
 
-        ret = MeasurementLoad(mm, measurement);
+        ret = MeasurementLoad(mgr, mm, measurement);
         if (ret != 0) {
             DEBUG("[META] load_measurement failed.\n");
             config_destroy(&cfg);
