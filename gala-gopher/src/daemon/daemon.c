@@ -64,7 +64,7 @@ static void *DaemonRunSingleExtendProbe(void *arg)
     ExtendProbe *probe = (ExtendProbe *)arg;
 
     char thread_name[MAX_THREAD_NAME_LEN];
-    snprintf(thread_name, MAX_THREAD_NAME_LEN - 1, "[EXTEND PROBE]%s", probe->name);
+    snprintf(thread_name, MAX_THREAD_NAME_LEN - 1, "[EPROBE]%s", probe->name);
     prctl(PR_SET_NAME, thread_name);
 
     (void)RunExtendProbe(probe);

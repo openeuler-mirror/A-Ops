@@ -16,6 +16,7 @@
 #include <string.h>
 #include <stdlib.h>
 #include <stdio.h>
+#include <errno.h>
 #include <unistd.h>
 #include "ingress.h"
 
@@ -85,7 +86,7 @@ static int IngressInit(IngressMgr *mgr)
     return 0;
 }
 
-static int IngressData2Egress(IngressMgr *mgr, const char *dataStr, int dataStrLen)
+static int IngressData2Egress(IngressMgr *mgr, const char *dataStr)
 {
     int ret = 0;
 
@@ -94,14 +95,15 @@ static int IngressData2Egress(IngressMgr *mgr, const char *dataStr, int dataStrL
     if (jsonStr == NULL) {
         printf("[INGRESS] alloc jsonStr failed.\n");
     }
-    ret = IMDB_DataStr2Json(mgr->imdbMgr, dataStr, strlen(dataStr), jsonStr, MAX_DATA_STR_LEN);
+    ret = IMDB_DataStr2Json(mgr->imdbMgr, dataStr, jsonStr, MAX_DATA_STR_LEN);
     if (ret != 0) {
         DEBUG("[INGRESS] reformat dataStr to json failed.\n");
+        free(jsonStr);
+        return -1;
     }
     ret = FifoPut(mgr->egressMgr->fifo, (void *)jsonStr);
     if (ret != 0) {
         DEBUG("[INGRESS] egress fifo full.\n");
-        return -1;
     }
 
     uint64_t msg = 1;
@@ -131,21 +133,22 @@ static int IngressDataProcesssInput(Fifo *fifo, IngressMgr *mgr)
         // skip string not start with '|'
         if (strncmp(dataStr, "|", 1) != 0) {
             DEBUG("[INGRESS] Get dirty data str: %s\n", dataStr);
-            continue;
+            goto next;
         }
 
         // save data to imdb
-        ret = IMDB_DataBaseMgrAddRecord(mgr->imdbMgr, dataStr, strlen(dataStr));
+        ret = IMDB_DataBaseMgrAddRecord(mgr->imdbMgr, dataStr);
         if (ret != 0) {
             DEBUG("[INGRESS] insert data into imdb failed.\n");
+            goto next;
         }
 
         // send data to egress
-        ret = IngressData2Egress(mgr, dataStr, strlen(dataStr));
+        ret = IngressData2Egress(mgr, dataStr);
         if (ret != 0) {
             DEBUG("[INGRESS] send data to egress failed.\n");
         }
-
+next:
         free(dataStr);
     }
 
@@ -161,7 +164,12 @@ static int IngressDataProcesss(IngressMgr *mgr)
 
     events_num = epoll_wait(mgr->epoll_fd, events, MAX_EPOLL_EVENTS_NUM, -1);
     if (events_num < 0) {
-        return -1;
+        DEBUG("Ingress Msg wait failed: %s.\n", strerror(errno));
+        if (errno == EINTR)
+            // if receive the debugging signal(-1) when debugging, please ignore it
+            events_num = 0;
+
+        return events_num;
     }
 
     for (int i = 0; i < events_num; i++) {

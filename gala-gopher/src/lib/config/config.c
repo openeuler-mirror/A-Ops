@@ -138,7 +138,7 @@ static int ConfigMgrLoadGlobalConfig(void *config, config_setting_t *settings)
         return -1;
     }
 
-    memcpy(globalConfig->logDirectory, strVal, strlen(strVal));
+    (void)strncpy(globalConfig->logDirectory, strVal, MAX_LOG_DIRECTORY_LEN - 1);
 
     ret = config_setting_lookup_string(settings, "pin_path", &strVal);
     if (ret == 0) {
@@ -146,7 +146,7 @@ static int ConfigMgrLoadGlobalConfig(void *config, config_setting_t *settings)
         return -1;
     }
 
-    memcpy(globalConfig->bpfPinPath, strVal, strlen(strVal));
+    (void)strncpy(globalConfig->bpfPinPath, strVal, MAX_PIN_PATH_LEN - 1);
     return 0;
 }
 
@@ -295,7 +295,7 @@ static int ConfigMgrLoadProbesConfig(void *config, config_setting_t *settings)
             printf("[CONFIG] load config for probe name failed.\n");
             return -1;
         }
-        memcpy(_probeConfig->name, strVal, strlen(strVal));
+        (void)strncpy(_probeConfig->name, strVal, MAX_PROBE_NAME_LEN - 1);
 
         ret = config_setting_lookup_string(_probe, "switch", &strVal);
         if (ret == 0) {
@@ -351,21 +351,21 @@ static int ConfigMgrLoadExtendProbesConfig(void *config, config_setting_t *setti
             printf("[CONFIG] load config for extend probe name failed.\n");
             return -1;
         }
-        memcpy(_probeConfig->name, strVal, strlen(strVal));
+        (void)strncpy(_probeConfig->name, strVal, MAX_PROBE_NAME_LEN - 1);
 
         ret = config_setting_lookup_string(_probe, "command", &strVal);
         if (ret == 0) {
             printf("[CONFIG] load config for extend probe command failed.\n");
             return -1;
         }
-        memcpy(_probeConfig->command, strVal, strlen(strVal));
+        (void)strncpy(_probeConfig->command, strVal, MAX_EXTEND_PROBE_COMMAND_LEN - 1);
 
         ret = config_setting_lookup_string(_probe, "param", &strVal);
         if (ret == 0) {
             printf("[CONFIG] load config for extend probe param failed.\n");
             return -1;
         }
-        memcpy(_probeConfig->param, strVal, strlen(strVal));
+        (void)strncpy(_probeConfig->param, strVal, MAX_EXTEND_PROBE_PARAM_LEN - 1);
 
         ret = config_setting_lookup_string(_probe, "switch", &strVal);
         if (ret == 0) {
@@ -389,7 +389,7 @@ static int ConfigMgrLoadExtendProbesConfig(void *config, config_setting_t *setti
         if (ret == 0) {
             continue;
         }
-        memcpy(_probeConfig->startChkCmd, strVal, strlen(strVal));
+        (void)strncpy(_probeConfig->startChkCmd, strVal, MAX_EXTEND_PROBE_COMMAND_LEN - 1);
 
         ret = config_setting_lookup_string(_probe, "check_type", &strVal);
         if (ret != 0 && strcmp(strVal, "count") == 0) {

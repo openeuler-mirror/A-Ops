@@ -119,21 +119,21 @@ static int FieldLoad(Field *field, config_setting_t *fieldConfig)
         DEBUG("load field description failed.\n");
         return -1;
     }
-    memcpy(field->description, token, strlen(token));
+    (void)strncpy(field->description, token, MAX_FIELD_DESCRIPTION_LEN - 1);
 
     ret = config_setting_lookup_string(fieldConfig, "type", &token);
     if (ret == 0) {
         DEBUG("load field type failed.\n");
         return -1;
     }
-    memcpy(field->type, token, strlen(token));
+    (void)strncpy(field->type, token, MAX_FIELD_TYPE_LEN - 1);
 
     ret = config_setting_lookup_string(fieldConfig, "name", &token);
     if (ret == 0) {
         DEBUG("load field name failed.\n");
         return -1;
     }
-    memcpy(field->name, token, strlen(token));
+    (void)strncpy(field->name, token, MAX_FIELD_NAME_LEN - 1);
 
     return 0;
 }
@@ -149,11 +149,11 @@ static int MeasurementLoad(Measurement *mm, config_setting_t *mmConfig)
         return -1;
     }
 
-    memcpy(mm->name, name, strlen(name));
+    (void)strncpy(mm->name, name, MAX_MEASUREMENT_NAME_LEN - 1);
     config_setting_t *fields = config_setting_lookup(mmConfig, "fields");
     int fieldsCount = config_setting_length(fields);
     if (fieldsCount > MAX_FIELDS_NUM) {
-        DEBUG("Too many fields.\n");
+        printf("Too many fields.\n");
         return -1;
     }
 
@@ -211,6 +211,7 @@ int MeasurementMgrLoadSingleMeta(MeasurementMgr *mgr, const char *metaPath)
         if (ret != 0) {
             DEBUG("[META] load_measurement failed.\n");
             config_destroy(&cfg);
+            MeasurementDestroy(mm);
             return -1;
         }
 
@@ -218,6 +219,7 @@ int MeasurementMgrLoadSingleMeta(MeasurementMgr *mgr, const char *metaPath)
         if (ret != 0) {
             DEBUG("[META] Add measurements failed.\n");
             config_destroy(&cfg);
+            MeasurementDestroy(mm);
             return -1;
         }
     }
@@ -248,9 +250,9 @@ int MeasurementMgrLoad(const MeasurementMgr *mgr, const char *metaDir)
 
         memset(metaPath, 0, sizeof(metaPath));
         (void)snprintf(metaPath, MAX_META_PATH_LEN - 1, "%s/%s", metaDir, file->d_name);
-        ret = MeasurementMgrLoadSingleMeta(mgr, metaPath);
+        ret = MeasurementMgrLoadSingleMeta((MeasurementMgr *)mgr, metaPath);
         if (ret != 0) {
-            DEBUG("[META] load single meta file failed. meta file: %s\n", metaPath);
+            printf("[META] load single meta file failed. meta file: %s\n", metaPath);
             closedir(d);
             return -1;
         }

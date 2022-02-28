@@ -67,7 +67,7 @@ static void TestIMDB_RecordCreate(void)
     IMDB_Record *record = IMDB_RecordCreate(1024);
     CU_ASSERT(record != NULL);
     CU_ASSERT(record->metrics != NULL);
-    CU_ASSERT(record->capacity == 1024);
+    CU_ASSERT(record->metricsCapacity == 1024);
     CU_ASSERT(record->metricsNum == 0);
     CU_ASSERT(record->key == NULL);
     CU_ASSERT(record->keySize == 0);
@@ -80,7 +80,7 @@ static void TestIMDB_RecordCreateWithKey(void)
     IMDB_Record *record = IMDB_RecordCreateWithKey(1024, MAX_IMDB_METRIC_VAL_LEN * 1);
     CU_ASSERT(record != NULL);
     CU_ASSERT(record->metrics != NULL);
-    CU_ASSERT(record->capacity == 1024);
+    CU_ASSERT(record->metricsCapacity == 1024);
     CU_ASSERT(record->metricsNum == 0);
     CU_ASSERT(record->key != NULL);
     CU_ASSERT(record->keySize == MAX_IMDB_METRIC_VAL_LEN * 1);
@@ -112,7 +112,7 @@ static void TestIMDB_TableCreate(void)
     CU_ASSERT(table->records != NULL);
     CU_ASSERT(*table->records == NULL);
     CU_ASSERT(table->recordKeySize == 0);
-    CU_ASSERT(table->recordsCapacity == 1024);
+    CU_ASSERT(table->recordsCapability == 1024);
     CU_ASSERT(strcmp(table->name, "table1") == 0);
     CU_ASSERT(table->meta == NULL);
 
@@ -172,7 +172,7 @@ static void TestIMDB_DataBaseMgrCreate(void)
     IMDB_DataBaseMgr *mgr = IMDB_DataBaseMgrCreate(1024);
     CU_ASSERT(mgr != NULL);
     CU_ASSERT(mgr->tables != NULL);
-    CU_ASSERT(mgr->capacity == 1024);
+    CU_ASSERT(mgr->tblsCapability == 1024);
     CU_ASSERT(mgr->tablesNum == 0);
 
     IMDB_DataBaseMgrDestroy(mgr);
@@ -247,7 +247,7 @@ static void TestIMDB_DataBaseMgrAddRecord(void)
     CU_ASSERT(ret == 0);
 
     char recordStr[] = "|table1|value1|value2|value3|";
-    ret = IMDB_DataBaseMgrAddRecord(mgr, recordStr, strlen(recordStr));
+    ret = IMDB_DataBaseMgrAddRecord(mgr, recordStr);
     CU_ASSERT(ret == 0);
     CU_ASSERT(table->records[0]->metricsNum == 3);
     CU_ASSERT(strcmp(table->records[0]->metrics[0]->name, "metric1") == 0);
@@ -298,7 +298,7 @@ static void TestIMDB_DataBaseMgrData2String(void)
     CU_ASSERT(ret == 0);
 
     char recordStr[] = "|table1|value1|value2|\n";
-    ret = IMDB_DataBaseMgrAddRecord(mgr, recordStr, strlen(recordStr));
+    ret = IMDB_DataBaseMgrAddRecord(mgr, recordStr);
     CU_ASSERT(ret == 0);
 
     char buffer[2048] = {0};
