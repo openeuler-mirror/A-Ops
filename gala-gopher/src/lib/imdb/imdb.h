@@ -63,7 +63,7 @@ typedef struct {
     uint32_t keySize;
     char *key;
     time_t updateTime;     // Unit: second
-    uint32_t metricsCapacity;		// Capability for metrics count in one record
+    uint32_t metricsCapacity;       // Capability for metrics count in one record
     uint32_t metricsNum;
     IMDB_Metric **metrics;
     UT_hash_handle hh;
@@ -79,7 +79,7 @@ typedef struct {
 } IMDB_Table;
 
 typedef struct {
-    uint32_t tblsCapability;      	// Capability for tables count in one database
+    uint32_t tblsCapability;        // Capability for tables count in one database
     uint32_t tablesNum;
 
     IMDB_Table **tables;
@@ -118,9 +118,12 @@ int IMDB_DataBaseMgrAddTable(IMDB_DataBaseMgr *mgr, IMDB_Table* table);
 IMDB_Table *IMDB_DataBaseMgrFindTable(IMDB_DataBaseMgr *mgr, char *tableName);
 
 int IMDB_DataBaseMgrAddRecord(IMDB_DataBaseMgr *mgr, char *recordStr);
+IMDB_Record* IMDB_DataBaseMgrCreateRec(IMDB_DataBaseMgr *mgr, IMDB_Table *table, char *content);
 int IMDB_DataBaseMgrData2String(IMDB_DataBaseMgr *mgr, char *buffer, uint32_t maxLen);
 
 int IMDB_DataStr2Json(IMDB_DataBaseMgr *mgr, const char *recordStr, char *jsonStr, uint32_t jsonStrLen);
+int IMDB_Rec2Json(IMDB_DataBaseMgr *mgr, IMDB_Table *table,
+                        IMDB_Record* rec, const char *dataStr, char *jsonStr, uint32_t jsonStrLen);
 
 #endif
 
