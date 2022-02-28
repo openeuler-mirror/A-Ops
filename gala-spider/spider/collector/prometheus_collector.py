@@ -1,6 +1,7 @@
 from typing import List
 
 import requests
+from flask import current_app
 
 from spider.util.singleton import Singleton
 from spider.collector.data_collector import DataCollector
@@ -54,7 +55,7 @@ class PrometheusCollector(DataCollector, metaclass=Singleton):
         try:
             rsp = requests.get(url, params).json()
         except requests.RequestException:
-            print("An error happened when requesting {}".format(url))
+            current_app.logger.error("An error happened when requesting {}".format(url))
             return data_list
 
         if rsp is not None and rsp.get("status") == "success":
@@ -103,7 +104,7 @@ class PrometheusCollector(DataCollector, metaclass=Singleton):
         try:
             rsp = requests.get(url, params).json()
         except requests.RequestException:
-            print("An error happened when requesting {}".format(url))
+            current_app.logger.error("An error happened when requesting {}".format(url))
             return data_list
 
         if rsp is not None and rsp.get("status") == "success":

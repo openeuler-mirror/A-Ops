@@ -1,5 +1,7 @@
 from dataclasses import dataclass, field, InitVar
 
+from flask import current_app
+
 from spider.conf.observe_meta import ObserveMeta
 
 ENTITYID_CONCATE_SIGN = '_'
@@ -38,7 +40,7 @@ class ObserveEntity:
         ids = [self.type.upper()]
         for key in observe_meta.keys:
             if key not in self.attrs:
-                print("which key not exist: {}".format(key))
+                current_app.logger.debug("Required key {} of observe type {} not exist.".format(key, self.type))
                 return
             ids.append(str(self.attrs.get(key)))
 
