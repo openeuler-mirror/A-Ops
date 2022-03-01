@@ -158,6 +158,8 @@ struct link_data {
         (data).total_retrans = _(__tcp_sock->total_retrans); \
         (data).lost_out = _(__tcp_sock->lost_out); \
         (data).rcv_wnd = _(__tcp_sock->rcv_wnd); \
+        atomic_t __sk_drops = _((sk)->sk_drops); \
+        (data).sk_drops = __sk_drops.counter; \
     } while (0)
 
 #define __TCPPROBE_INC_EVT_BACKLOG_DROPS(data) __sync_fetch_and_add(&((data).backlog_drops), 1)
