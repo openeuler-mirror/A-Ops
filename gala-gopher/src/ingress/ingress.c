@@ -93,23 +93,23 @@ static int IngressData2Egress(IngressMgr *mgr, IMDB_Table *table, IMDB_Record* r
     // format data to json
     char *jsonStr = malloc(MAX_DATA_STR_LEN);
     if (jsonStr == NULL) {
-        printf("[INGRESS] alloc jsonStr failed.\n");
+        ERROR("[INGRESS] alloc jsonStr failed.\n");
     }
     ret = IMDB_Rec2Json(mgr->imdbMgr, table, rec, dataStr, jsonStr, MAX_DATA_STR_LEN);
     if (ret != 0) {
-        DEBUG("[INGRESS] reformat dataStr to json failed.\n");
+        ERROR("[INGRESS] reformat dataStr to json failed.\n");
         free(jsonStr);
         return -1;
     }
     ret = FifoPut(mgr->egressMgr->fifo, (void *)jsonStr);
     if (ret != 0) {
-        DEBUG("[INGRESS] egress fifo full.\n");
+        ERROR("[INGRESS] egress fifo full.\n");
     }
 
     uint64_t msg = 1;
     ret = write(mgr->egressMgr->fifo->triggerFd, &msg, sizeof(uint64_t));
     if (ret != sizeof(uint64_t)) {
-        DEBUG("[INGRESS] send trigger msg to egress eventfd failed.\n");
+        ERROR("[INGRESS] send trigger msg to egress eventfd failed.\n");
         return -1;
     }
 
@@ -121,7 +121,7 @@ static int GetTableNameAndContent(const char* buf, char *tblName, size_t size, c
     size_t len;
     const char *p1, *p2;
 
-	*content = NULL;
+    *content = NULL;
     if ((buf == NULL) || (buf[0] != '|'))
         return -1;
 
@@ -139,7 +139,7 @@ static int GetTableNameAndContent(const char* buf, char *tblName, size_t size, c
 
     (void)memcpy(tblName, p1, len);
     tblName[len] = 0;
-    *content = p2;
+    *content = (char *)p2;
     return 0;
 }
 
@@ -155,26 +155,32 @@ static int IngressDataProcesssInput(Fifo *fifo, IngressMgr *mgr)
     uint64_t val = 0;
     ret = read(fifo->triggerFd, &val, sizeof(val));
     if (ret < 0) {
-        DEBUG("[INGRESS] Read event from triggerfd failed.\n");
+        ERROR("[INGRESS] Read event from triggerfd failed.\n");
         return -1;
     }
 
     while (FifoGet(fifo, (void **)&dataStr) == 0) {
+        if (dataStr == NULL)
+            continue;
+
         // skip string not start with '|'
         ret = GetTableNameAndContent((const char*)dataStr, tblName, MAX_IMDB_TABLE_NAME_LEN, &content);
         if (ret < 0 || (content == NULL)) {
-            DEBUG("[INGRESS] Get dirty data str: %s\n", dataStr);
+            ERROR("[INGRESS] Get dirty data str: %s\n", dataStr);
             goto next;
         }
 
         table = IMDB_DataBaseMgrFindTable(mgr->imdbMgr, tblName);
+        if (table == NULL)
+            goto next;
+
         rec = NULL;
 
-        if (table && table->recordKeySize > 0) {
+        if (table->recordKeySize > 0) {
             // save data to imdb
             rec = IMDB_DataBaseMgrCreateRec(mgr->imdbMgr, table, content);
             if (rec == NULL) {
-                DEBUG("[INGRESS] insert data into imdb failed.\n");
+                ERROR("[INGRESS] insert data into imdb failed.\n");
                 goto next;
             }
         }
@@ -182,7 +188,9 @@ static int IngressDataProcesssInput(Fifo *fifo, IngressMgr *mgr)
         // send data to egress
         ret = IngressData2Egress(mgr, table, rec, content);
         if (ret != 0) {
-            DEBUG("[INGRESS] send data to egress failed.\n");
+            ERROR("[INGRESS] send data to egress failed.\n");
+        } else {
+            DEBUG("[INGRESS] send data to egress succeed.(tbl=%s,content=%s)\n", table->name, content);
         }
 next:
         free(dataStr);
@@ -200,7 +208,7 @@ static int IngressDataProcesss(IngressMgr *mgr)
 
     events_num = epoll_wait(mgr->epoll_fd, events, MAX_EPOLL_EVENTS_NUM, -1);
     if (events_num < 0) {
-        DEBUG("Ingress Msg wait failed: %s.\n", strerror(errno));
+        ERROR("Ingress Msg wait failed: %s.\n", strerror(errno));
         if (errno == EINTR)
             // if receive the debugging signal(-1) when debugging, please ignore it
             events_num = 0;
@@ -223,15 +231,15 @@ void IngressMain(IngressMgr *mgr)
     int ret = 0;
     ret = IngressInit(mgr);
     if (ret != 0) {
-        printf("[INGRESS] ingress init failed.\n");
+        ERROR("[INGRESS] ingress init failed.\n");
         return;
     }
-    printf("[INGRESS] ingress init success.\n");
+    DEBUG("[INGRESS] ingress init success.\n");
 
     for (;;) {
         ret = IngressDataProcesss(mgr);
         if (ret != 0) {
-            printf("[INGRESS] ingress data process failed.\n");
+            ERROR("[INGRESS] ingress data process failed.\n");
             return;
         }
     }

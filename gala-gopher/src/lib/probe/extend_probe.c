@@ -84,18 +84,19 @@ int RunExtendProbe(ExtendProbe *probe)
                 dataStr[index] = '\0';
                 ret = FifoPut(probe->fifo, (void *)dataStr);
                 if (ret != 0) {
-                    DEBUG("[EXTEND PROBE %s] fifo full.\n", probe->name);
+                    ERROR("[E-PROBE %s] fifo full.\n", probe->name);
                     break;
                 }
 
                 uint64_t msg = 1;
                 ret = write(probe->fifo->triggerFd, &msg, sizeof(uint64_t));
                 if (ret != sizeof(uint64_t)) {
-                    DEBUG("[EXTEND PROBE %s] send trigger msg to eventfd failed.\n", probe->name);
+                    ERROR("[E-PROBE %s] send trigger msg to eventfd failed.\n", probe->name);
                     break;
                 }
 
                 // reset dataStr
+                DEBUG("[E-PROBE %s] send data to ingresss succeed.(content=%s)\n", probe->name, dataStr);
                 dataStr = NULL;
             } else {
                 dataStr[index] = buffer[i];

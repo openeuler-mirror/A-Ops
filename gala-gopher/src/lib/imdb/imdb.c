@@ -208,7 +208,7 @@ int IMDB_TableAddRecord(IMDB_Table *table, IMDB_Record *record)
     }
 
     if (HASH_recordCount((const IMDB_Record **)table->records) >= table->recordsCapability) {
-        DEBUG("[IMDB] Can not add new record to table %s: table full.\n", table->name);
+        ERROR("[IMDB] Can not add new record to table %s: table full.\n", table->name);
         return -1;
     }
     IMDB_RecordUpdateTime(record, (time_t)time(NULL));
@@ -265,7 +265,7 @@ IMDB_DataBaseMgr *IMDB_DataBaseMgrCreate(uint32_t capacity)
 
     ret = IMDB_GetMachineId(mgr->nodeInfo.machineId, sizeof(mgr->nodeInfo.machineId));
     if (ret != 0) {
-        DEBUG("[IMDB] Can not get machine id.\n");
+        ERROR("[IMDB] Can not get machine id.\n");
         free(mgr);
         return NULL;
     }
@@ -384,7 +384,7 @@ static int IMDB_DataBaseMgrParseContent(IMDB_DataBaseMgr *mgr, IMDB_Table *table
                                    table->meta->metrics[index]->description,
                                    table->meta->metrics[index]->type);
         if (metric == NULL) {
-            DEBUG("[IMDB] Can't create metrics.\n");
+            ERROR("[IMDB] Can't create metrics.\n");
             goto ERR;
         }
 
@@ -403,7 +403,7 @@ static int IMDB_DataBaseMgrParseContent(IMDB_DataBaseMgr *mgr, IMDB_Table *table
         if (needKey && strcmp(METRIC_TYPE_KEY, table->meta->metrics[index]->type) == 0) {
             ret = IMDB_RecordAppendKey(record, keyIdx, token);
             if (ret < 0) {
-                DEBUG("[IMDB] Can not set record key.\n");
+                ERROR("[IMDB] Can not set record key.\n");
                 goto ERR;
             }
             keyIdx++;
@@ -434,7 +434,7 @@ IMDB_Record* IMDB_DataBaseMgrCreateRec(IMDB_DataBaseMgr *mgr, IMDB_Table *table,
 
     ret = IMDB_DataBaseMgrParseContent(mgr, table, record, content, 1);
     if (ret != 0) {
-        DEBUG("[IMDB]Raw ingress data to rec failed(CREATEREC).\n");
+        ERROR("[IMDB]Raw ingress data to rec failed(CREATEREC).\n");
         goto ERR;
     }
     ret = IMDB_TableAddRecord(table, record);
@@ -493,20 +493,20 @@ int IMDB_DataBaseMgrAddRecord(IMDB_DataBaseMgr *mgr, char *recordStr)
         if (index == -1) {
             table = IMDB_DataBaseMgrFindTable(mgr, token);
             if (table == NULL) {
-                DEBUG("[IMDB] Can not find table named %s.\n", token);
+                ERROR("[IMDB] Can not find table named %s.\n", token);
                 free(buffer_head);
                 goto ERR;
             }
 
             if (table->recordKeySize == 0) {
-                DEBUG("[IMDB] Can not add record to table %s: no key type of metric set.\n", token);
+                ERROR("[IMDB] Can not add record to table %s: no key type of metric set.\n", token);
                 free(buffer_head);
                 goto ERR;
             }
 
             record = IMDB_RecordCreateWithKey(table->meta->metricsCapacity, table->recordKeySize);
             if (record == NULL) {
-                DEBUG("[IMDB] Can not create record.\n");
+                ERROR("[IMDB] Can not create record.\n");
                 free(buffer_head);
                 goto ERR;
             }
@@ -524,7 +524,7 @@ int IMDB_DataBaseMgrAddRecord(IMDB_DataBaseMgr *mgr, char *recordStr)
                                    table->meta->metrics[index]->description,
                                    table->meta->metrics[index]->type);
         if (metric == NULL) {
-            DEBUG("[IMDB] Can't create metrics.\n");
+            ERROR("[IMDB] Can't create metrics.\n");
             free(buffer_head);
             goto ERR;
         }
@@ -546,7 +546,7 @@ int IMDB_DataBaseMgrAddRecord(IMDB_DataBaseMgr *mgr, char *recordStr)
         if (strcmp(METRIC_TYPE_KEY, table->meta->metrics[index]->type) == 0) {
             ret = IMDB_RecordAppendKey(record, keyIdx, token);
             if (ret < 0) {
-                DEBUG("[IMDB] Can not set record key.\n");
+                ERROR("[IMDB] Can not set record key.\n");
                 free(buffer_head);
                 goto ERR;
             }
@@ -938,7 +938,7 @@ int IMDB_Rec2Json(IMDB_DataBaseMgr *mgr, IMDB_Table *table,
         createRecFlag = 1;
         ret = IMDB_DataBaseMgrParseContent(mgr, table, record, (char *)dataStr, 0);
         if (ret != 0) {
-            DEBUG("[IMDB]Raw ingress data to rec failed(REC2JSON).\n");
+            ERROR("[IMDB]Raw ingress data to rec failed(REC2JSON).\n");
             goto ERR;
         }
     }
@@ -951,7 +951,7 @@ int IMDB_Rec2Json(IMDB_DataBaseMgr *mgr, IMDB_Table *table,
     }
 
     if (ret != 0) {
-        DEBUG("[IMDB]Rec to json failed.\n");
+        ERROR("[IMDB]Rec to json failed.\n");
         goto ERR;
     }
 
@@ -1004,7 +1004,7 @@ int IMDB_DataStr2Json(IMDB_DataBaseMgr *mgr, const char *recordStr, char *jsonSt
         if (index == -1) {
             table = IMDB_DataBaseMgrFindTable(mgr, token);
             if (table == NULL) {
-                DEBUG("[IMDB] Can not find table named %s.\n", token);
+                ERROR("[IMDB] Can not find table named %s.\n", token);
                 free(buffer_head);
                 goto ERR;
             }
@@ -1028,7 +1028,7 @@ int IMDB_DataStr2Json(IMDB_DataBaseMgr *mgr, const char *recordStr, char *jsonSt
                                    table->meta->metrics[index]->description,
                                    table->meta->metrics[index]->type);
         if (metric == NULL) {
-            DEBUG("[IMDB] Can't create metrics.\n");
+            ERROR("[IMDB] Can't create metrics.\n");
             free(buffer_head);
             goto ERR;
         }

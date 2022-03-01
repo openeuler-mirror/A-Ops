@@ -134,7 +134,7 @@ static int ConfigMgrLoadGlobalConfig(void *config, config_setting_t *settings)
     const char *strVal;
     ret = config_setting_lookup_string(settings, "log_directory", &strVal);
     if (ret == 0) {
-        printf("[CONFIG] load config for log_directory failed.\n");
+        ERROR("[CONFIG] load config for log_directory failed.\n");
         return -1;
     }
 
@@ -142,7 +142,7 @@ static int ConfigMgrLoadGlobalConfig(void *config, config_setting_t *settings)
 
     ret = config_setting_lookup_string(settings, "pin_path", &strVal);
     if (ret == 0) {
-        printf("[CONFIG] load config for pin path failed.\n");
+        ERROR("[CONFIG] load config for pin path failed.\n");
         return -1;
     }
 
@@ -158,7 +158,7 @@ static int ConfigMgrLoadIngressConfig(void *config, config_setting_t *settings)
     uint32_t intVal = 0;
     ret = config_setting_lookup_int(settings, "interval", &intVal);
     if (ret == 0) {
-        printf("[CONFIG] load config for ingress interval failed.\n");
+        ERROR("[CONFIG] load config for ingress interval failed.\n");
         return -1;
     }
     ingressConfig->interval = intVal;
@@ -174,7 +174,7 @@ static int ConfigMgrLoadEgressConfig(void *config, config_setting_t *settings)
     uint32_t intVal = 0;
     ret = config_setting_lookup_int(settings, "interval", &intVal);
     if (ret == 0) {
-        printf("[CONFIG] load config for egress interval failed.\n");
+        ERROR("[CONFIG] load config for egress interval failed.\n");
         return -1;
     }
     egressConfig->interval = intVal;
@@ -198,63 +198,63 @@ static int ConfigMgrLoadKafkaConfig(void *config, config_setting_t *settings)
 
     ret = config_setting_lookup_string(settings, "kafka_broker", &strVal);
     if (ret == 0) {
-        printf("[CONFIG] load config for kafka_broker failed.\n");
+        ERROR("[CONFIG] load config for kafka_broker failed.\n");
         return -1;
     }
     memcpy(kafkaConfig->broker, strVal, strlen(strVal));
 
     ret = config_setting_lookup_string(settings, "kafka_topic", &strVal);
     if (ret == 0) {
-        printf("[CONFIG] load config for kafka_topic failed.\n");
+        ERROR("[CONFIG] load config for kafka_topic failed.\n");
         return -1;
     }
     memcpy(kafkaConfig->topic, strVal, strlen(strVal));
 
     ret = config_setting_lookup_int(settings, "batch_num_messages", &intVal);
     if (ret == 0) {
-        printf("[CONFIG] load config for batch.num.messages failed.\n");
+        ERROR("[CONFIG] load config for batch.num.messages failed.\n");
         return -1;
     }
     kafkaConfig->batchNumMessages = intVal;
 
     ret = config_setting_lookup_int(settings, "batch_size", &intVal);
     if (ret == 0) {
-        printf("[CONFIG] load config for batch.size failed.\n");
+        ERROR("[CONFIG] load config for batch.size failed.\n");
         return -1;
     }
     kafkaConfig->batchSize = intVal;
 
     ret = config_setting_lookup_string(settings, "compression_codec", &strVal);
     if (ret == 0) {
-        printf("[CONFIG] load config for compression.codec failed.\n");
+        ERROR("[CONFIG] load config for compression.codec failed.\n");
         return -1;
     }
     memcpy(kafkaConfig->compressionCodec, strVal, strlen(strVal));
 
     ret = config_setting_lookup_int(settings, "queue_buffering_max_messages", &intVal);
     if (ret == 0) {
-        printf("[CONFIG] load config for queue.buffering.max.messages failed.\n");
+        ERROR("[CONFIG] load config for queue.buffering.max.messages failed.\n");
         return -1;
     }
     kafkaConfig->queueBufferingMaxMessages = intVal;
 
     ret = config_setting_lookup_int(settings, "queue_buffering_max_kbytes", &intVal);
     if (ret == 0) {
-        printf("[CONFIG] load config for queue.buffering.max.kbytes failed.\n");
+        ERROR("[CONFIG] load config for queue.buffering.max.kbytes failed.\n");
         return -1;
     }
     kafkaConfig->queueBufferingMaxKbytes = intVal;
 
     ret = config_setting_lookup_int(settings, "queue_buffering_max_ms", &intVal);
     if (ret == 0) {
-        printf("[CONFIG] load config for queue.buffering.max.ms failed.\n");
+        ERROR("[CONFIG] load config for queue.buffering.max.ms failed.\n");
         return -1;
     }
     kafkaConfig->queueBufferingMaxMs = intVal;
 
     ret = config_setting_lookup_string(settings, "switch", &strVal);
     if (ret == 0) {
-        printf("[CONFIG] load config for kafka switch failed.\n");
+        ERROR("[CONFIG] load config for kafka switch failed.\n");
         return -1;
     }
     if (strcmp(strVal, "on") == 0) {
@@ -276,14 +276,14 @@ static int ConfigMgrLoadProbesConfig(void *config, config_setting_t *settings)
     count = config_setting_length(settings);
     for (int i = 0; i < count; i++) {
         if (probesConfig->probesNum == MAX_PROBES_NUM) {
-            printf("[CONFIG] probesConfig list full.\n");
+            ERROR("[CONFIG] probesConfig list full.\n");
             return -1;
         }
         config_setting_t *_probe = config_setting_get_elem(settings, i);
 
         ProbeConfig *_probeConfig = (ProbeConfig *)malloc(sizeof(ProbeConfig));
         if (_probeConfig == NULL) {
-            printf("[CONFIG] failed to malloc memory for ProbeConfig \n");
+            ERROR("[CONFIG] failed to malloc memory for ProbeConfig \n");
             return -1;
         }
         memset(_probeConfig, 0, sizeof(ProbeConfig));
@@ -292,14 +292,14 @@ static int ConfigMgrLoadProbesConfig(void *config, config_setting_t *settings)
 
         ret = config_setting_lookup_string(_probe, "name", &strVal);
         if (ret == 0) {
-            printf("[CONFIG] load config for probe name failed.\n");
+            ERROR("[CONFIG] load config for probe name failed.\n");
             return -1;
         }
         (void)strncpy(_probeConfig->name, strVal, MAX_PROBE_NAME_LEN - 1);
 
         ret = config_setting_lookup_string(_probe, "switch", &strVal);
         if (ret == 0) {
-            printf("[CONFIG] load config for probe switch failed.\n");
+            ERROR("[CONFIG] load config for probe switch failed.\n");
             return -1;
         }
         if (strcmp(strVal, "auto") == 0) {
@@ -312,7 +312,7 @@ static int ConfigMgrLoadProbesConfig(void *config, config_setting_t *settings)
 
         ret = config_setting_lookup_int(_probe, "interval", &intVal);
         if (ret == 0) {
-            printf("[CONFIG] load config for probe interval failed.\n");
+            ERROR("[CONFIG] load config for probe interval failed.\n");
             return -1;
         }
         _probeConfig->interval = intVal;
@@ -332,14 +332,14 @@ static int ConfigMgrLoadExtendProbesConfig(void *config, config_setting_t *setti
     count = config_setting_length(settings);
     for (int i = 0; i < count; i++) {
         if (probesConfig->probesNum == MAX_EXTEND_PROBES_NUM) {
-            printf("[CONFIG] extendProbesConfig list full.\n");
+            ERROR("[CONFIG] extendProbesConfig list full.\n");
             return -1;
         }
         config_setting_t *_probe = config_setting_get_elem(settings, i);
 
         ExtendProbeConfig *_probeConfig = (ExtendProbeConfig *)malloc(sizeof(ExtendProbeConfig));
         if (_probeConfig == NULL) {
-            printf("[CONFIG] failed to malloc memory for ExtendProbeConfig \n");
+            ERROR("[CONFIG] failed to malloc memory for ExtendProbeConfig \n");
             return -1;
         }
         memset(_probeConfig, 0, sizeof(ExtendProbeConfig));
@@ -348,28 +348,28 @@ static int ConfigMgrLoadExtendProbesConfig(void *config, config_setting_t *setti
 
         ret = config_setting_lookup_string(_probe, "name", &strVal);
         if (ret == 0) {
-            printf("[CONFIG] load config for extend probe name failed.\n");
+            ERROR("[CONFIG] load config for extend probe name failed.\n");
             return -1;
         }
         (void)strncpy(_probeConfig->name, strVal, MAX_PROBE_NAME_LEN - 1);
 
         ret = config_setting_lookup_string(_probe, "command", &strVal);
         if (ret == 0) {
-            printf("[CONFIG] load config for extend probe command failed.\n");
+            ERROR("[CONFIG] load config for extend probe command failed.\n");
             return -1;
         }
         (void)strncpy(_probeConfig->command, strVal, MAX_EXTEND_PROBE_COMMAND_LEN - 1);
 
         ret = config_setting_lookup_string(_probe, "param", &strVal);
         if (ret == 0) {
-            printf("[CONFIG] load config for extend probe param failed.\n");
+            ERROR("[CONFIG] load config for extend probe param failed.\n");
             return -1;
         }
         (void)strncpy(_probeConfig->param, strVal, MAX_EXTEND_PROBE_PARAM_LEN - 1);
 
         ret = config_setting_lookup_string(_probe, "switch", &strVal);
         if (ret == 0) {
-            printf("[CONFIG] load config for extend probe switch failed.\n");
+            ERROR("[CONFIG] load config for extend probe switch failed.\n");
             return -1;
         }
         if (strcmp(strVal, "auto") == 0) {
@@ -409,28 +409,28 @@ static int ConfigMgrLoadIMDBConfig(void *config, config_setting_t *settings)
 
     ret = config_setting_lookup_int(settings, "max_tables_num", &intVal);
     if (ret == 0) {
-        printf("[CONFIG] load config for imdbConfig max_tables_num failed.\n");
+        ERROR("[CONFIG] load config for imdbConfig max_tables_num failed.\n");
         return -1;
     }
     imdbConfig->maxTablesNum = intVal;
 
     ret = config_setting_lookup_int(settings, "max_records_num", &intVal);
     if (ret == 0) {
-        printf("[CONFIG] load config for imdbConfig max_records_num failed.\n");
+        ERROR("[CONFIG] load config for imdbConfig max_records_num failed.\n");
         return -1;
     }
     imdbConfig->maxRecordsNum = intVal;
 
     ret = config_setting_lookup_int(settings, "max_metrics_num", &intVal);
     if (ret == 0) {
-        printf("[CONFIG] load config for imdbConfig max_metrics_num failed.\n");
+        ERROR("[CONFIG] load config for imdbConfig max_metrics_num failed.\n");
         return -1;
     }
     imdbConfig->maxMetricsNum = intVal;
 
     ret = config_setting_lookup_int(settings, "record_timeout", &intVal);
     if (ret == 0) {
-        printf("[CONFIG] load config for imdbConfig record_timeout failed, use default setting instead.\n");
+        ERROR("[CONFIG] load config for imdbConfig record_timeout failed, use default setting instead.\n");
     } else {
         imdbConfig->recordTimeout = intVal;
     }
@@ -447,14 +447,14 @@ static int ConfigMgrLoadWebServerConfig(void *config, config_setting_t *settings
 
     ret = config_setting_lookup_int(settings, "port", &intVal);
     if (ret == 0) {
-        printf("[CONFIG] load config for webServerConfig port failed.\n");
+        ERROR("[CONFIG] load config for webServerConfig port failed.\n");
         return -1;
     }
     webServerConfig->port = (uint16_t)intVal;
 
     ret = config_setting_lookup_string(settings, "switch", &strVal);
     if (ret == 0) {
-        printf("[CONFIG] load config for webServerConfig swtich failed.\n");
+        ERROR("[CONFIG] load config for webServerConfig swtich failed.\n");
         return -1;
     }
     if (strcmp(strVal, "on") == 0) {
@@ -494,7 +494,7 @@ int ConfigMgrLoad(const ConfigMgr *mgr, const char *confPath)
     config_init(&cfg);
     ret = config_read_file(&cfg, confPath);
     if (ret == 0) {
-        printf("[CONFIG] config read %s failed.\n", confPath);
+        ERROR("[CONFIG] config read %s failed.\n", confPath);
         goto ERR;
     }
 
@@ -502,13 +502,13 @@ int ConfigMgrLoad(const ConfigMgr *mgr, const char *confPath)
     for (int i = 0; i < configUnitNum; i++) {
         settings = config_lookup(&cfg, configLoadHandles[i].sectionName);
         if (settings == NULL) {
-            printf("[CONFIG] config lookup %s failed.\n", configLoadHandles[i].sectionName);
+            ERROR("[CONFIG] config lookup %s failed.\n", configLoadHandles[i].sectionName);
             goto ERR;
         }
 
         ret = configLoadHandles[i].func(configLoadHandles[i].config, settings);
         if (ret != 0) {
-            printf("[CONFIG] config load handle %s failed.\n", configLoadHandles[i].sectionName);
+            ERROR("[CONFIG] config load handle %s failed.\n", configLoadHandles[i].sectionName);
             goto ERR;
         }
     }

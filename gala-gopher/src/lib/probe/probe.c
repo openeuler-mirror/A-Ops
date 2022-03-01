@@ -156,12 +156,12 @@ int ProbeMgrLoadProbes(ProbeMgr *mgr)
     if (hdl == NULL)
         return -1;
 
-    printf("[PROBE] get probes_num: %u\n", mgr->probesNum);
+    INFO("[PROBE] get probes_num: %u\n", mgr->probesNum);
     for (int i = 0; i < mgr->probesNum; i++) {
         (void)snprintf(probeMainStr, MAX_PROBE_NAME_LEN - 1, "probe_main_%s", mgr->probes[i]->name);
         mgr->probes[i]->func = dlsym(hdl, (char *)probeMainStr);
         if (mgr->probes[i]->func == NULL) {
-            printf("[PROBE] Unknown func: %s\n", probeMainStr);
+            ERROR("[PROBE] Unknown func: %s\n", probeMainStr);
             dlclose(hdl);
             return -1;
         }
@@ -217,14 +217,14 @@ int __wrap_fprintf(FILE *stream, const char *format, ...)
 
     ret = FifoPut(g_probe->fifo, (void *)dataStr);
     if (ret != 0) {
-        DEBUG("[PROBE %s] fifo full.\n", g_probe->name);
+        ERROR("[PROBE %s] fifo full.\n", g_probe->name);
         return -1;
     }
 
     uint64_t msg = 1;
     ret = write(g_probe->fifo->triggerFd, &msg, sizeof(uint64_t));
     if (ret != sizeof(uint64_t)) {
-        DEBUG("[PROBE %s] send trigger msg to eventfd failed.\n", g_probe->name);
+        ERROR("[PROBE %s] send trigger msg to eventfd failed.\n", g_probe->name);
         return -1;
     }
 
