@@ -35,31 +35,8 @@
 
 #define OO_NAME "tcp_link"  // Observation Object name
 
-#define FILTER_LISTEN_PORT 22
-#define FILTER_COMM "sshd"
-#define FILTER_COMM2 "broker"
-
 static volatile sig_atomic_t g_stop;
 static struct probe_params params = {.period = DEFAULT_PERIOD};
-
-static int __is_filter_listen_port(int port)
-{
-    if (port == FILTER_LISTEN_PORT)
-        return 1;
-
-    return 0;
-}
-
-static int __is_filter_comm(char *comm)
-{
-    if (strstr(comm, FILTER_COMM))
-        return 1;
-
-    if (strstr(comm, FILTER_COMM2))
-        return 1;
-
-    return 0;
-}
 
 static void sig_int(int signo)
 {
@@ -133,10 +110,6 @@ static void update_link_metric_map(const struct link_key *k, struct link_data *d
     struct metric_key key = {0};
     struct metric_data data = {0};
 
-    /* Filtering redundant data */
-    if (__is_filter_comm((char *)(d->comm)))
-        return;
-
     /* build key */
     if (d->role == LINK_ROLE_CLIENT) {
         memcpy((char *)&key.c_ip, (char *)&k->src_addr, sizeof(struct ip));
@@ -148,7 +121,7 @@ static void update_link_metric_map(const struct link_key *k, struct link_data *d
         key.s_port = k->src_port;
     }
     key.proto = k->family;
-    key.tgid = d->tgid;
+    key.tgid = k->tgid;
     data.role = d->role;
 
     bpf_map_lookup_elem(map_fd, &key, &data);
@@ -290,9 +263,9 @@ static void bpf_update_long_link_info_to_map(int long_link_map_fd, int listen_po
 {
     int i, j;
     __u8 role;
-    unsigned short listen_port;
     struct tcp_listen_ports* tlps = NULL;
     struct tcp_estabs* tes = NULL;
+    struct listen_port_key lpk;
 
     tlps = get_listen_ports();
     if (tlps == NULL)
@@ -300,11 +273,9 @@ static void bpf_update_long_link_info_to_map(int long_link_map_fd, int listen_po
 
     /* insert listen ports into map */
     for (i = 0; i < tlps->tlp_num; i++) {
-        listen_port = (unsigned short)tlps->tlp[i]->port;
-        if (!__is_filter_listen_port((int)listen_port)) {
-            printf("Update listen port:%u\n", listen_port);
-            bpf_map_update_elem(listen_port_map_fd, &listen_port, &listen_port, BPF_ANY);
-        }
+        lpk.port = tlps->tlp[i]->port;
+        lpk.tgid = tlps->tlp[i]->pid;
+        bpf_map_update_elem(listen_port_map_fd, &lpk, &lpk, BPF_ANY);
     }
 
     tes = get_estab_tcps(tlps);
@@ -315,13 +286,11 @@ static void bpf_update_long_link_info_to_map(int long_link_map_fd, int listen_po
     for (i = 0; i < tes->te_num; i++) {
         role = tes->te[i]->is_client == 1 ? LINK_ROLE_CLIENT : LINK_ROLE_SERVER;
         for (j = 0; j < tes->te[i]->te_comm_num; j++) {
-            if (!__is_filter_comm((char *)(tes->te[i]->te_comm[j]->comm))) {
-                bpf_add_long_link_info_to_map(long_link_map_fd,
-                    (__u32)tes->te[i]->te_comm[j]->pid, (int)tes->te[i]->te_comm[j]->fd, role);
-
-                printf("Update establish(pid = %u, fd = %d, role = %u)\n",
-                    (__u32)tes->te[i]->te_comm[j]->pid, (int)tes->te[i]->te_comm[j]->fd, role);
-            }
+            bpf_add_long_link_info_to_map(long_link_map_fd,
+                (__u32)tes->te[i]->te_comm[j]->pid, (int)tes->te[i]->te_comm[j]->fd, role);
+            
+            printf("Update establish(pid = %u, fd = %d, role = %u)\n",
+                (__u32)tes->te[i]->te_comm[j]->pid, (int)tes->te[i]->te_comm[j]->fd, role);
         }
     }
 

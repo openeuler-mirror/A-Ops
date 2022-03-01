@@ -139,7 +139,7 @@ static int GetTableNameAndContent(const char* buf, char *tblName, size_t size, c
 
     (void)memcpy(tblName, p1, len);
     tblName[len] = 0;
-    *content = p2
+    *content = p2;
     return 0;
 }
 
