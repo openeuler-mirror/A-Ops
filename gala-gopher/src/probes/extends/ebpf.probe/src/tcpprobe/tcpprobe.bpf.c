@@ -25,7 +25,7 @@ char g_linsence[] SEC("license") = "GPL";
 // Temporary MAP. Data exists only in the startup phase.
 struct bpf_map_def SEC("maps") long_link_map = {
     .type = BPF_MAP_TYPE_HASH,
-    .key_size = sizeof(u32),	// tgid
+    .key_size = sizeof(u32),    // tgid
     .value_size = sizeof(struct long_link_info),
     .max_entries = MAX_LONG_LINK_PROCS,
 };
@@ -51,8 +51,8 @@ struct bpf_map_def SEC("maps") sock_map = {
 // Used to identifies the TCP listen port.
 struct bpf_map_def SEC("maps") listen_port_map = {
     .type = BPF_MAP_TYPE_HASH,
-    .key_size = sizeof(unsigned short),
-    .value_size = sizeof(unsigned short),
+    .key_size = sizeof(struct listen_port_key),
+    .value_size = sizeof(struct listen_port_key),
     .max_entries = MAX_LONG_LINK_FDS_PER_PROC * MAX_LONG_LINK_PROCS,
 };
 
@@ -68,7 +68,7 @@ static __always_inline void __get_link_key_by_sock(struct link_key *key, struct 
 
     key->src_port = _(sk->sk_num);
     key->dst_port = _(sk->sk_dport);
-
+    key->tgid = bpf_get_current_pid_tgid() >> INT_LEN;
     return;
 }
 
@@ -90,6 +90,11 @@ static __always_inline void __create_link_entry_by_sock(struct link_key *key,
     struct proc_info *p;
     // struct tcp_sock *tcp = (struct tcp_sock *)sk;
 
+    // FILTER by task
+    if (!is_task_exist(bpf_get_current_pid_tgid() >> INT_LEN)) {
+        return;
+    }
+
     p = __get_sock_data(sk);
     if (!p) {
         return;
@@ -105,9 +110,9 @@ static void __update_link_stats(struct sock *sk, u16 new_state)
     struct link_data *data;
     struct link_key key = {0};
 
-    __get_link_key_by_sock(&key, sk);
     data = __get_link_entry_by_sock(sk);
     if (!data) {
+        __get_link_key_by_sock(&key, sk);
         __create_link_entry_by_sock(&key, sk, new_state);
         return;
     }
@@ -120,9 +125,9 @@ static void update_link_event(const struct sock *sk, enum TCPPROBE_EVT_E type)
     struct link_data *data;
     struct link_key key = {0};
 
-    __get_link_key_by_sock(&key, (struct sock *)sk);
     data = __get_link_entry_by_sock((struct sock *)sk);
     if (!data) {
+        __get_link_key_by_sock(&key, (struct sock *)sk);
         __create_link_entry_by_sock(&key, (struct sock *)sk, _(sk->sk_state));
         return;
     }
@@ -142,18 +147,11 @@ static void bpf_add_link(const struct sock *sk, int role)
         return;
 
     // FILTER by task
-    if (!is_task_exist((int)bpf_get_current_pid_tgid())) {
+    if (!is_task_exist(bpf_get_current_pid_tgid() >> INT_LEN)) {
         return;
     }
-    
-    /* skip ssh sshd proc 
-    if (proc.comm[0] == 's' && proc.comm[1] == 's' && proc.comm[2] == 'h' &&
-        (proc.comm[3] == '\0' || (proc.comm[3] == 'd' && proc.comm[4] == '\0')))
-        return;
-    */
 
     bpf_get_current_comm(&proc.comm, sizeof(proc.comm));
-    proc.tgid = bpf_get_current_pid_tgid() >> INT_LEN;
     proc.ts = bpf_ktime_get_ns();
     proc.role = role;
 
@@ -271,9 +269,12 @@ KPROBE(tcp_set_state, pt_regs)
 
 static inline int bpf_get_sk_role(const struct sock *sk)
 {
-    unsigned short sk_src_port = _(sk->sk_num);
-    unsigned short *port = bpf_map_lookup_elem(&listen_port_map, &sk_src_port);
-    if (port)
+    struct listen_port_key lpk;
+
+    lpk.port = (__u32)_(sk->sk_num);
+    lpk.tgid = bpf_get_current_pid_tgid() >> INT_LEN;
+    
+    if (bpf_map_lookup_elem(&listen_port_map, &lpk))
         return LINK_ROLE_SERVER;
 
     return LINK_ROLE_CLIENT;

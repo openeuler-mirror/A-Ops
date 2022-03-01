@@ -936,7 +936,7 @@ int IMDB_Rec2Json(IMDB_DataBaseMgr *mgr, IMDB_Table *table,
             goto ERR;
         }
         createRecFlag = 1;
-        ret = IMDB_DataBaseMgrParseContent(mgr, table, record, dataStr, 0);
+        ret = IMDB_DataBaseMgrParseContent(mgr, table, record, (char *)dataStr, 0);
         if (ret != 0) {
             DEBUG("[IMDB]Raw ingress data to rec failed(REC2JSON).\n");
             goto ERR;
