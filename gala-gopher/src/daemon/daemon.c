@@ -82,7 +82,7 @@ static int DaemonCheckProbeNeedStart(char *check_cmd, ProbeStartCheckType chkTyp
     char data[MAX_COMMAND_LEN] = {0};
     fp = popen(check_cmd, "r");
     if (fp == NULL) {
-        printf("popen error!\n");
+        ERROR("popen error!(cmd = %s)\n", check_cmd);
         return 0;
     }
 
@@ -120,7 +120,7 @@ static void CleanData(const ResourceMgr *mgr)
     (void)snprintf(cmd, MAX_COMMAND_LEN, "/usr/bin/rm -rf %s/*", pinPath);
     (void)popen(cmd, "r");
     
-    printf("[DAEMON] clean data success[%s].\n", cmd);
+    DEBUG("[DAEMON] clean data success[%s].\n", cmd);
 }
 
 int DaemonRun(const ResourceMgr *mgr)
@@ -133,76 +133,76 @@ int DaemonRun(const ResourceMgr *mgr)
     // 1. start ingress thread
     ret = pthread_create(&mgr->ingressMgr->tid, NULL, DaemonRunIngress, mgr->ingressMgr);
     if (ret != 0) {
-        printf("[DAEMON] create ingress thread failed. errno: %d\n", errno);
+        ERROR("[DAEMON] create ingress thread failed. errno: %d\n", errno);
         return -1;
     }
-    printf("[DAEMON] create ingress thread success.\n");
+    INFO("[DAEMON] create ingress thread success.\n");
 
     // 2. start egress thread
     ret = pthread_create(&mgr->egressMgr->tid, NULL, DaemonRunEgress, mgr->egressMgr);
     if (ret != 0) {
-        printf("[DAEMON] create egress thread failed. errno: %d\n", errno);
+        ERROR("[DAEMON] create egress thread failed. errno: %d\n", errno);
         return -1;
     }
-    printf("[DAEMON] create egress thread success.\n");
+    INFO("[DAEMON] create egress thread success.\n");
 
     if (mgr->webServer) {
         // 3. start web_server thread
         ret = WebServerStartDaemon(mgr->webServer);
         if (ret != 0) {
-            printf("[DAEMON] create web_server daemon failed. errno: %d\n", errno);
+            ERROR("[DAEMON] create web_server daemon failed. errno: %d\n", errno);
             return -1;
         }
-        printf("[DAEMON] create web_server daemon success.\n");
+        INFO("[DAEMON] create web_server daemon success.\n");
     }
 
     // 4. start probe thread
     for (int i = 0; i < mgr->probeMgr->probesNum; i++) {
         Probe *_probe = mgr->probeMgr->probes[i];
         if (_probe->probeSwitch != PROBE_SWITCH_ON) {
-            printf("[DAEMON] probe %s switch is off, skip create thread for it.\n", _probe->name);
+            ERROR("[DAEMON] probe %s switch is off, skip create thread for it.\n", _probe->name);
             continue;
         }
         ret = pthread_create(&mgr->probeMgr->probes[i]->tid, NULL, DaemonRunSingleProbe, _probe);
         if (ret != 0) {
-            printf("[DAEMON] create probe thread failed. probe name: %s errno: %d\n", _probe->name, errno);
+            ERROR("[DAEMON] create probe thread failed. probe name: %s errno: %d\n", _probe->name, errno);
             return -1;
         }
-        printf("[DAEMON] create probe %s thread success.\n", mgr->probeMgr->probes[i]->name);
+        INFO("[DAEMON] create probe %s thread success.\n", mgr->probeMgr->probes[i]->name);
     }
 
     // 5. start extend probe thread
-    printf("[DAEMON] start extend probe(%u) thread.\n", mgr->extendProbeMgr->probesNum);
+    INFO("[DAEMON] start extend probe(%u) thread.\n", mgr->extendProbeMgr->probesNum);
     for (int i = 0; i < mgr->extendProbeMgr->probesNum; i++) {
         ExtendProbe *_extendProbe = mgr->extendProbeMgr->probes[i];
         if (_extendProbe->probeSwitch == PROBE_SWITCH_OFF) {
-            printf("[DAEMON] extend probe %s switch is off, skip create thread for it.\n", _extendProbe->name);
+            ERROR("[DAEMON] extend probe %s switch is off, skip create thread for it.\n", _extendProbe->name);
             continue;
         }
 
         if (_extendProbe->probeSwitch == PROBE_SWITCH_AUTO) {
             ret = DaemonCheckProbeNeedStart(_extendProbe->startChkCmd, _extendProbe->chkType);
             if (ret != 1) {
-                printf("[DAEMON] extend probe %s start check failed, skip create thread for it.\n", _extendProbe->name);
+                ERROR("[DAEMON] extend probe %s start check failed, skip create thread for it.\n", _extendProbe->name);
                 continue;
             }
         }
 
         ret = pthread_create(&mgr->extendProbeMgr->probes[i]->tid, NULL, DaemonRunSingleExtendProbe, _extendProbe);
         if (ret != 0) {
-            printf("[DAEMON] create extend probe thread failed. probe name: %s errno: %d\n", _extendProbe->name, errno);
+            ERROR("[DAEMON] create extend probe thread failed. probe name: %s errno: %d\n", _extendProbe->name, errno);
             return -1;
         }
-        printf("[DAEMON] create extend probe %s thread success.\n", mgr->extendProbeMgr->probes[i]->name);
+        INFO("[DAEMON] create extend probe %s thread success.\n", mgr->extendProbeMgr->probes[i]->name);
     }
 
     //6. start CmdServer thread
     ret = pthread_create(&mgr->ctl_tid, NULL, CmdServer, NULL);
     if (ret != 0) {
-        printf("[DAEMON] create cmd_server thread failed. errno: %d\n", errno);
+        ERROR("[DAEMON] create cmd_server thread failed. errno: %d\n", errno);
         return -1;
     }
-    printf("[DAEMON] create cmd_server thread success.\n");
+    INFO("[DAEMON] create cmd_server thread success.\n");
 
     return 0;
 }

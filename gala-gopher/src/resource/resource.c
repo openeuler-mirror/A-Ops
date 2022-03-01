@@ -120,14 +120,14 @@ static int ConfigMgrInit(ResourceMgr *resourceMgr)
 
     configMgr = ConfigMgrCreate();
     if (configMgr == NULL) {
-        printf("[RESOURCE] create config mgr failed.\n");
+        ERROR("[RESOURCE] create config mgr failed.\n");
         return -1;
     }
 
     ret = ConfigMgrLoad(configMgr, g_galaConfPath);
     if (ret != 0) {
         ConfigMgrDestroy(configMgr);
-        printf("[RESOURCE] load gala configuration failed.\n");
+        ERROR("[RESOURCE] load gala configuration failed.\n");
         return -1;
     }
 
@@ -150,7 +150,7 @@ static int ProbeMgrInit(ResourceMgr *resourceMgr)
 
     probeMgr = ProbeMgrCreate(MAX_PROBES_NUM);
     if (probeMgr == NULL) {
-        printf("[RESOURCE] create probe mgr failed.\n");
+        ERROR("[RESOURCE] create probe mgr failed.\n");
         return -1;
     }
 
@@ -158,10 +158,10 @@ static int ProbeMgrInit(ResourceMgr *resourceMgr)
     ret = ProbeMgrLoadProbes(probeMgr);
     if (ret != 0) {
         ProbeMgrDestroy(probeMgr);
-        printf("[RESOURCE] load probes failed.\n");
+        ERROR("[RESOURCE] load probes failed.\n");
         return -1;
     }
-    printf("[RESOURCE] load probes info success.\n");
+    INFO("[RESOURCE] load probes info success.\n");
 
     // 2. refresh probe configuration
     configMgr = resourceMgr->configMgr;
@@ -175,7 +175,7 @@ static int ProbeMgrInit(ResourceMgr *resourceMgr)
         probe->interval = _probeConfig->interval;
         probe->probeSwitch = _probeConfig->probeSwitch;
     }
-    printf("[RESOURCE] refresh probes configuration success.\n");
+    INFO("[RESOURCE] refresh probes configuration success.\n");
 
     resourceMgr->probeMgr = probeMgr;
     return 0;
@@ -196,7 +196,7 @@ static int ExtendProbeMgrInit(ResourceMgr *resourceMgr)
 
     extendProbeMgr = ExtendProbeMgrCreate(MAX_EXTEND_PROBES_NUM);
     if (extendProbeMgr == NULL) {
-        printf("[RESOURCE] create extend probe mgr failed. \n");
+        ERROR("[RESOURCE] create extend probe mgr failed. \n");
         return -1;
     }
 
@@ -204,7 +204,7 @@ static int ExtendProbeMgrInit(ResourceMgr *resourceMgr)
         ExtendProbeConfig *_extendProbeConfig = configMgr->extendProbesConfig->probesConfig[i];
         ExtendProbe *_extendProbe = ExtendProbeCreate();
         if (_extendProbe == NULL) {
-            printf("[RESOURCE] create extend probe failed. \n");
+            ERROR("[RESOURCE] create extend probe failed. \n");
             return -1;
         }
 
@@ -218,11 +218,11 @@ static int ExtendProbeMgrInit(ResourceMgr *resourceMgr)
 
         ret = ExtendProbeMgrPut(extendProbeMgr, _extendProbe);
         if (ret != 0) {
-            printf("[RESOURCE] Add extend probe into extend probe mgr failed. \n");
+            ERROR("[RESOURCE] Add extend probe into extend probe mgr failed. \n");
             return -1;
         }
     }
-    printf("[RESOURCE] load extend probes success.\n");
+    INFO("[RESOURCE] load extend probes success.\n");
     resourceMgr->extendProbeMgr = extendProbeMgr;
     return 0;
 }
@@ -243,7 +243,7 @@ static int MeasurementMgrInit(ResourceMgr *resourceMgr)
     mmMgr = MeasurementMgrCreate(resourceMgr->configMgr->imdbConfig->maxTablesNum, 
                                     resourceMgr->configMgr->imdbConfig->maxMetricsNum);
     if (mmMgr == NULL) {
-        printf("[RESOURCE] create mmMgr failed.\n");
+        ERROR("[RESOURCE] create mmMgr failed.\n");
         return -1;
     }
 
@@ -251,10 +251,10 @@ static int MeasurementMgrInit(ResourceMgr *resourceMgr)
     ret = MeasurementMgrLoad(mmMgr, GALA_META_DIR_PATH);
     if (ret != 0) {
         MeasurementMgrDestroy(mmMgr);
-        printf("[RESOURCE] load meta dir failed.\n");
+        ERROR("[RESOURCE] load meta dir failed.\n");
         return -1;
     }
-    printf("[RESOURCE] load meta directory success.\n");
+    INFO("[RESOURCE] load meta directory success.\n");
 
     resourceMgr->mmMgr = mmMgr;
     return 0;
@@ -273,7 +273,7 @@ static int FifoMgrInit(ResourceMgr *resourceMgr)
 
     fifoMgr = FifoMgrCreate(MAX_FIFO_NUM);
     if (fifoMgr == NULL) {
-        printf("[RESOURCE] create fifoMgr failed.\n");
+        ERROR("[RESOURCE] create fifoMgr failed.\n");
         return -1;
     }
 
@@ -296,13 +296,13 @@ static int KafkaMgrInit(ResourceMgr *resourceMgr)
     configMgr = resourceMgr->configMgr;
 
     if (configMgr->kafkaConfig->kafkaSwitch == KAFKA_SWITCH_OFF) {
-        printf("[RESOURCE] kafka switch off, skip kafka mgr create.\n");
+        ERROR("[RESOURCE] kafka switch off, skip kafka mgr create.\n");
         return 0;
     }
 
     kafkaMgr = KafkaMgrCreate(configMgr);
     if (kafkaMgr == NULL) {
-        printf("[RESOURCE] create kafkaMgr failed.\n");
+        ERROR("[RESOURCE] create kafkaMgr failed.\n");
         return -1;
     }
 
@@ -384,7 +384,7 @@ static int IMDBMgrInit(ResourceMgr *resourceMgr)
     IMDB_DataBaseMgr *imdbMgr = NULL;
     imdbMgr = IMDB_DataBaseMgrCreate(configMgr->imdbConfig->maxTablesNum);
     if (imdbMgr == NULL) {
-        printf("[RESOURCE] create IMDB database mgr failed.\n");
+        ERROR("[RESOURCE] create IMDB database mgr failed.\n");
         return -1;
     }
 
@@ -413,7 +413,7 @@ static int IngressMgrInit(ResourceMgr *resourceMgr)
 
     ingressMgr = IngressMgrCreate();
     if (ingressMgr == NULL) {
-        printf("[RESOURCE] create ingressMgr failed.\n");
+        ERROR("[RESOURCE] create ingressMgr failed.\n");
         return -1;
     }
 
@@ -442,7 +442,7 @@ static int EgressMgrInit(ResourceMgr *resourceMgr)
 
     egressMgr = EgressMgrCreate();
     if (egressMgr == NULL) {
-        printf("[RESOURCE] create egressMgr failed.\n");
+        ERROR("[RESOURCE] create egressMgr failed.\n");
         return -1;
     }
 
@@ -471,7 +471,7 @@ static int WebServerInit(ResourceMgr *resourceMgr)
     }
     webServer = WebServerCreate(configMgr->webServerConfig->port);
     if (webServer == NULL) {
-        printf("[RESOURCE] create webServer failed.\n");
+        ERROR("[RESOURCE] create webServer failed.\n");
         return -1;
     }
 
