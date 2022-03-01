@@ -176,7 +176,7 @@ static int IngressDataProcesssInput(Fifo *fifo, IngressMgr *mgr)
 
         rec = NULL;
 
-        if (table->recordKeySize > 0) {
+        if (table->recordKeySize > 0 && mgr->imdbMgr->webServerOn) {
             // save data to imdb
             rec = IMDB_DataBaseMgrCreateRec(mgr->imdbMgr, table, content);
             if (rec == NULL) {

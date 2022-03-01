@@ -477,6 +477,8 @@ static int WebServerInit(ResourceMgr *resourceMgr)
 
     webServer->imdbMgr = resourceMgr->imdbMgr;
     resourceMgr->webServer = webServer;
+    if (resourceMgr->imdbMgr)
+        resourceMgr->imdbMgr->webServerOn = 1;
     return 0;
 }
 
