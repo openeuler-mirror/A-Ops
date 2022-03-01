@@ -142,7 +142,7 @@ const rowKeyMap = {
 
 const statusTextMap = {
   'succeed': '修复成功',
-  'fail': '修复失败',
+  'fail': '待修复',
   'running': '运行中',
   'unknown': '未知',
   'set': '已设置',
@@ -173,6 +173,7 @@ export default {
   },
   data () {
     return {
+      timer: '',
       taskId: this.$route.params.taskId,
       taskType: this.$route.params.taskType,
       detail: { statuses: {} },
@@ -268,10 +269,9 @@ export default {
           filteredValue: filters.status || null,
           filters: [
             { text: '修复成功', value: 'succeed' },
-            { text: '修复失败', value: 'fail' },
+            { text: '待修复', value: 'fail' },
             { text: '运行中', value: 'running' },
-            { text: '未知', value: 'unknown' },
-            { text: '已设置', value: 'set' }
+            { text: '未知', value: 'unknown' }
           ]
         }
       ]
@@ -300,8 +300,7 @@ export default {
           scopedSlots: { customRender: 'status' },
           filteredValue: filters.status || null,
           filters: [
-            { text: '修复成功', value: 'succeed' },
-            { text: '修复失败', value: 'fail' },
+            { text: '未设置', value: 'fail' },
             { text: '运行中', value: 'running' },
             { text: '未知', value: 'unknown' },
             { text: '已设置', value: 'set' }
@@ -355,7 +354,7 @@ export default {
       this.progressLoading = true
       getTaskProgress({ taskList }).then(function (res) {
         _this.detail.statuses = res.result && res.result[_this.taskId]
-        _this.detail = Object.assign({}, _this.detail)
+        // _this.detail = Object.assign({}, _this.detail)
 
         if (!_this.prgressFinishedCheck(res.result)) {
           _this.progressUpdateCaller = setTimeout(function () {
@@ -517,7 +516,10 @@ export default {
           return executeTask(_this.taskId).then(function (res) {
             _this.$message.success(res.msg)
             // 执行任务成功后刷新
-            _this.getInitalData()
+            setTimeout(function () {
+               _this.getInitalData()
+            }, 3000)
+            // _this.getInitalData()
           }).catch(function (err) {
             _this.$message.error(err.response.data.msg)
           })

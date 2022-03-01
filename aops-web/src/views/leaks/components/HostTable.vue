@@ -1,8 +1,8 @@
 <template>
   <div>
-    <a-row v-if="standalone && (scanningHostIds.length > 0 || scanStatusloading)" type="flex" justify="end" align="middle">
+    <a-row v-if="standalone && (scanningHostIds.length > 0 && scanStatusloading)" type="flex" justify="end" align="middle">
       <a-icon type="loading" />
-      <p class="scan-result-message">{{ `目前有${scanningHostIds.length || 0}台机器正在扫描` }}</p>
+      <p class="scan-result-message">{{ `目前有${scanningHostIds.length}台机器正在扫描` }}</p>
     </a-row>
     <a-row class="aops-app-table-control-row" type="flex" justify="space-between">
       <a-col>
@@ -396,11 +396,11 @@ export default {
         _this.scanStatusData = res.result || {}
         if (_this.standalone) {
           _this.scanningHostIds = _this.getScanningHostAll(res.result)
-          if (_this.scanningHostIds.length > 0) {
-            _this.scanStatueAllTimeout = setTimeout(function () {
-              _this.getScanStatusAll(_this.scanningHostIds)
-            }, configs.scanProgressInterval)
-          }
+          // if (_this.scanningHostIds.length > 0) {
+          _this.scanStatueAllTimeout = setTimeout(function () {
+            _this.getScanStatusAll(_this.scanningHostIds)
+          }, configs.scanProgressInterval)
+          // }
         }
       }).catch(function (err) {
         _this.$message.error(err.response.data.msg)

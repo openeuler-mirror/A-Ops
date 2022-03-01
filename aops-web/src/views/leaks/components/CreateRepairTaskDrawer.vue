@@ -156,7 +156,7 @@
           <a-col>
             <h3>{{ jumpModalTitle || '成功' }}</h3>
             <p>
-              <router-link :to="`/leaks/task/${taskType}/${jumpTaskId}`">点击跳转到该任务页面</router-link>
+              <a @click="jumpToPage">点击跳转到该任务页面</a>
             </p>
             <p>{{ countDown }}秒后回到原页面</p>
           </a-col>
@@ -342,6 +342,12 @@ export default {
     watch: {
     },
     methods: {
+      jumpToPage () {
+        clearTimeout(this.jumpModalInterval)
+        this.jumpModalVisible = false
+        this.$emit('createSuccess')
+        this.$router.push(`/leaks/task/${this.taskType}/${this.jumpTaskId}`)
+      },
       handleCancel () {
         this.$emit('close')
         // clear status

@@ -90,7 +90,7 @@ import { dateFormat } from '@/views/utils/Utils'
 
 const cveStatusTextMap = {
   'succeed': '修复成功',
-  'fail': '修复失败',
+  'fail': '待修复',
   'running': '运行中',
   'on standby': '等待',
   'set': '已设置'
