@@ -201,14 +201,14 @@ static int ConfigMgrLoadKafkaConfig(void *config, config_setting_t *settings)
         ERROR("[CONFIG] load config for kafka_broker failed.\n");
         return -1;
     }
-    memcpy(kafkaConfig->broker, strVal, strlen(strVal));
+    (void)strncpy(kafkaConfig->broker, strVal, MAX_KAFKA_BROKER_LEN - 1);
 
     ret = config_setting_lookup_string(settings, "kafka_topic", &strVal);
     if (ret == 0) {
         ERROR("[CONFIG] load config for kafka_topic failed.\n");
         return -1;
     }
-    memcpy(kafkaConfig->topic, strVal, strlen(strVal));
+    (void)strncpy(kafkaConfig->topic, strVal, MAX_KAFKA_TOPIC_LEN - 1);
 
     ret = config_setting_lookup_int(settings, "batch_num_messages", &intVal);
     if (ret == 0) {
@@ -217,19 +217,12 @@ static int ConfigMgrLoadKafkaConfig(void *config, config_setting_t *settings)
     }
     kafkaConfig->batchNumMessages = intVal;
 
-    ret = config_setting_lookup_int(settings, "batch_size", &intVal);
-    if (ret == 0) {
-        ERROR("[CONFIG] load config for batch.size failed.\n");
-        return -1;
-    }
-    kafkaConfig->batchSize = intVal;
-
     ret = config_setting_lookup_string(settings, "compression_codec", &strVal);
     if (ret == 0) {
         ERROR("[CONFIG] load config for compression.codec failed.\n");
         return -1;
     }
-    memcpy(kafkaConfig->compressionCodec, strVal, strlen(strVal));
+    (void)strncpy(kafkaConfig->compressionCodec, strVal, KAFKA_COMPRESSION_CODEC_LEN - 1);
 
     ret = config_setting_lookup_int(settings, "queue_buffering_max_messages", &intVal);
     if (ret == 0) {

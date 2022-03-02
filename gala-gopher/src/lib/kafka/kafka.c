@@ -36,16 +36,15 @@ KafkaMgr *KafkaMgrCreate(const ConfigMgr *configMgr)
 
     mgr = (KafkaMgr *)malloc(sizeof(KafkaMgr));
     if (mgr == NULL) {
-        DEBUG("malloc memory for egress_kafka_mgr failed.\n");
+        ERROR("malloc memory for egress_kafka_mgr failed.\n");
         return NULL;
     }
 
     memset(mgr, 0, sizeof(KafkaMgr));
-    memcpy(mgr->kafkaBroker, configMgr->kafkaConfig->broker, strlen(mgr->kafkaBroker));
-    memcpy(mgr->kafkaTopic, configMgr->kafkaConfig->topic, strlen(mgr->kafkaTopic));
+    (void)strncpy(mgr->kafkaBroker, configMgr->kafkaConfig->broker, MAX_KAFKA_BROKER_LEN - 1);
+    (void)strncpy(mgr->kafkaTopic, configMgr->kafkaConfig->topic, MAX_KAFKA_TOPIC_LEN - 1);
+    (void)strncpy(mgr->compressionCodec, configMgr->kafkaConfig->compressionCodec, KAFKA_COMPRESSION_CODEC_LEN - 1);
     mgr->batchNumMessages = configMgr->kafkaConfig->batchNumMessages;
-    mgr->batchSize = configMgr->kafkaConfig->batchSize;
-    memcpy(mgr->compressionCodec, configMgr->kafkaConfig->compressionCodec, strlen(mgr->compressionCodec));
     mgr->queueBufferingMaxKbytes = configMgr->kafkaConfig->queueBufferingMaxKbytes;
     mgr->queueBufferingMaxMessages = configMgr->kafkaConfig->queueBufferingMaxMessages;
     mgr->queueBufferingMaxMs = configMgr->kafkaConfig->queueBufferingMaxMs;
@@ -53,7 +52,7 @@ KafkaMgr *KafkaMgrCreate(const ConfigMgr *configMgr)
     mgr->conf = rd_kafka_conf_new();
     ret = rd_kafka_conf_set(mgr->conf, "bootstrap.servers", mgr->kafkaBroker, errstr, sizeof(errstr));
     if (ret != RD_KAFKA_CONF_OK) {
-        DEBUG("set rdkafka bootstrap.servers failed.\n");
+        ERROR("set rdkafka bootstrap.servers failed(%s).\n", errstr);
         free(mgr);
         return NULL;
     }
@@ -63,17 +62,7 @@ KafkaMgr *KafkaMgrCreate(const ConfigMgr *configMgr)
     (void)snprintf(batchNumMessages, sizeof(batchNumMessages), "%u", mgr->batchNumMessages);
     ret = rd_kafka_conf_set(mgr->conf, "batch.num.messages", batchNumMessages, errstr, sizeof(errstr));
     if (ret != RD_KAFKA_CONF_OK) {
-        DEBUG("set rdkafka batch.num.messages failed.\n");
-        free(mgr);
-        return NULL;
-    }
-    rd_kafka_conf_set_dr_msg_cb(mgr->conf, dr_msg_cb);
-
-    char batchSize[10] = {0};
-    (void)snprintf(batchSize, sizeof(batchSize), "%u", mgr->batchSize);
-    ret = rd_kafka_conf_set(mgr->conf, "batch.size", batchSize, errstr, sizeof(errstr));
-    if (ret != RD_KAFKA_CONF_OK) {
-        DEBUG("set rdkafka batch.size failed.\n");
+        ERROR("set rdkafka batch.num.messages failed(%s).\n", errstr);
         free(mgr);
         return NULL;
     }
@@ -81,7 +70,7 @@ KafkaMgr *KafkaMgrCreate(const ConfigMgr *configMgr)
 
     ret = rd_kafka_conf_set(mgr->conf, "compression.codec", mgr->compressionCodec, errstr, sizeof(errstr));
     if (ret != RD_KAFKA_CONF_OK) {
-        DEBUG("set rdkafka compression.codec failed.\n");
+        ERROR("set rdkafka compression.codec failed(%s).\n", errstr);
         free(mgr);
         return NULL;
     }
@@ -91,7 +80,7 @@ KafkaMgr *KafkaMgrCreate(const ConfigMgr *configMgr)
     (void)snprintf(queueBufferingMaxMessages, sizeof(queueBufferingMaxMessages), "%u", mgr->queueBufferingMaxMessages);
     ret = rd_kafka_conf_set(mgr->conf, "queue.buffering.max.messages", queueBufferingMaxMessages, errstr, sizeof(errstr));
     if (ret != RD_KAFKA_CONF_OK) {
-        DEBUG("set rdkafka queue.buffering.max.messages failed.\n");
+        ERROR("set rdkafka queue.buffering.max.messages failed(%s).\n", errstr);
         free(mgr);
         return NULL;
     }
@@ -101,7 +90,7 @@ KafkaMgr *KafkaMgrCreate(const ConfigMgr *configMgr)
     (void)snprintf(queueBufferingMaxKbytes, sizeof(queueBufferingMaxKbytes), "%u", mgr->queueBufferingMaxKbytes);
     ret = rd_kafka_conf_set(mgr->conf, "queue.buffering.max.kbytes", queueBufferingMaxKbytes, errstr, sizeof(errstr));
     if (ret != RD_KAFKA_CONF_OK) {
-        DEBUG("set rdkafka queue.buffering.max.kbytes failed.\n");
+        ERROR("set rdkafka queue.buffering.max.kbytes failed(%s).\n", errstr);
         free(mgr);
         return NULL;
     }
@@ -111,7 +100,7 @@ KafkaMgr *KafkaMgrCreate(const ConfigMgr *configMgr)
     (void)snprintf(queueBufferingMaxMs, sizeof(queueBufferingMaxMs), "%u", mgr->queueBufferingMaxMs);
     ret = rd_kafka_conf_set(mgr->conf, "queue.buffering.max.ms", queueBufferingMaxMs, errstr, sizeof(errstr));
     if (ret != RD_KAFKA_CONF_OK) {
-        DEBUG("set rdkafka queue.buffering.max.ms failed.\n");
+        ERROR("set rdkafka queue.buffering.max.ms failed(%s).\n", errstr);
         free(mgr);
         return NULL;
     }
@@ -119,7 +108,7 @@ KafkaMgr *KafkaMgrCreate(const ConfigMgr *configMgr)
 
     mgr->rk = rd_kafka_new(RD_KAFKA_PRODUCER, mgr->conf, errstr, sizeof(errstr));
     if (mgr->rk == NULL) {
-        DEBUG("failed to create new kafka_producer.\n");
+        ERROR("failed to create new kafka_producer, errstr(%s).\n", errstr);
         rd_kafka_conf_destroy(mgr->conf);
         free(mgr);
         return NULL;
@@ -127,7 +116,7 @@ KafkaMgr *KafkaMgrCreate(const ConfigMgr *configMgr)
 
     mgr->rkt = rd_kafka_topic_new(mgr->rk, mgr->kafkaTopic,  NULL);
     if (mgr->rkt == NULL) {
-        DEBUG("failed to create new kafka topic object.\n");
+        ERROR("failed to create new kafka topic object.\n");
         rd_kafka_destroy(mgr->rk);
         rd_kafka_conf_destroy(mgr->conf);
         free(mgr);
@@ -160,7 +149,7 @@ int KafkaMsgProduce(const KafkaMgr *mgr, const char *msg, const uint32_t msgLen)
     int ret = 0;
     ret = rd_kafka_produce(mgr->rkt, RD_KAFKA_PARTITION_UA, RD_KAFKA_MSG_F_COPY, (void *)msg, msgLen, NULL, 0, NULL);
     if (ret == -1) {
-        DEBUG("Failed to produce msg to topic %s: %s.\n", rd_kafka_topic_name(mgr->rkt),
+        ERROR("Failed to produce msg to topic %s: %s.\n", rd_kafka_topic_name(mgr->rkt),
                                                            rd_kafka_err2str(rd_kafka_last_error()));
         return -1;
     }

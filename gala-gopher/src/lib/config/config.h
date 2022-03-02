@@ -45,7 +45,6 @@ typedef struct {
     char broker[MAX_KAFKA_BROKER_LEN];
     char topic[MAX_KAFKA_TOPIC_LEN];
     uint32_t batchNumMessages;
-    uint32_t batchSize;
     char compressionCodec[KAFKA_COMPRESSION_CODEC_LEN];
     uint32_t queueBufferingMaxMessages;
     uint32_t queueBufferingMaxKbytes;
