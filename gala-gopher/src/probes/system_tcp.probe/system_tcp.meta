@@ -7,35 +7,45 @@ measurements:
         fields:
         (
             {
-                description: "local_address",
-                type: "Unknown",
-                name: "local_address",
+                description: "origin",
+                type: "key",
+                name: "origin",
             },
             {
-                description: "local_port",
-                type: "Unknown",
-                name: "local_port",
+                description: "tcp_curr_estab",
+                type: "gause",
+                name: "tcp_curr_estab",
             },
             {
-                description: "rem_address",
-                type: "Unknown",
-                name: "rem_address",
+                description: "tcp_in_segs",
+                type: "counter",
+                name: "tcp_in_segs",
             },
             {
-                description: "rem_port",
-                type: "Unknown",
-                name: "rem_port",
+                description: "tcp_out_segs",
+                type: "counter",
+                name: "tcp_out_segs",
             },
             {
-                description: "st",
-                type: "Unknown",
-                name: "st",
+                description: "tcp_retrans_segs",
+                type: "counter",
+                name: "tcp_retrans_segs",
             },
             {
-                description: "retrnsmt",
-                type: "Unknown",
-                name: "retrnsmt",
+                description: "tcp_in_errs",
+                type: "counter",
+                name: "tcp_in_errs",
             },
+            {
+                description: "udp_indata_grams",
+                type: "counter",
+                name: "udp_indata_grams",
+            },
+            {
+                description: "udp_outdata_grams",
+                type: "counter",
+                name: "udp_outdata_grams",
+            }
         )
     }
 )
