@@ -31,6 +31,7 @@
 #include "args.h"
 #include "taskprobe.skel.h"
 #include "taskprobe_io.skel.h"
+#include "taskprobe_net.skel.h"
 #include "taskprobe.h"
 
 #define TASK_COMM "/proc/%d/comm"
@@ -344,6 +345,13 @@ static void get_task_bin_data(int bin_fd, struct task_bin* bin, struct task_key*
     return;
 }
 
+#define ADDR_STR_LEN 32
+static inline void u642addr(__u64 addr, char *buf, size_t s)
+{
+    buf[0] = 0;
+    (void)snprintf(buf, s, "0x%llx", addr);
+}
+
 int get_task_io(struct task_io_data *io_data, int pid);
 
 static void task_probe_pull_probe_data(int task_map_fd, int task_bin_map_fd)
@@ -353,6 +361,7 @@ static void task_probe_pull_probe_data(int task_map_fd, int task_bin_map_fd)
     struct task_key nkey = {0};
     struct task_data data;
     struct task_bin bin;
+    char addr_str[ADDR_STR_LEN];
 
     while (bpf_map_get_next_key(task_map_fd, &ckey, &nkey) != -1) {
         ret = bpf_map_lookup_elem(task_map_fd, &nkey, &data);
@@ -369,8 +378,10 @@ static void task_probe_pull_probe_data(int task_map_fd, int task_bin_map_fd)
 
         get_task_bin_data(task_bin_map_fd, &bin, &nkey);
         (void)get_task_io(&data.io, nkey.pid);
+
+        u642addr(data.net.kfree_skb_ret_addr, addr_str, ADDR_STR_LEN);
         
-        fprintf(stdout, "|%s|%d|%d|%d|%s|%s|%s|%d|%d|%d|%llu|%llu|%llu|%llu|%llu|%u|%u|%llu|%llu|%llu|%u|\n",
+        fprintf(stdout, "|%s|%d|%d|%d|%s|%s|%s|%d|%d|%d|%llu|%llu|%llu|%llu|%llu|%u|%u|%llu|%llu|%llu|%u|%llu|%s|\n",
                 OO_NAME_TASK,
                 data.id.tgid,
                 nkey.pid,
@@ -391,11 +402,13 @@ static void task_probe_pull_probe_data(int task_map_fd, int task_bin_map_fd)
                 data.io.task_read_bytes,
                 data.io.task_write_bytes,
                 data.io.task_cancelled_write_bytes,
-                data.io.task_hang_count);
+                data.io.task_hang_count,
+                data.net.kfree_skb_cnt,
+                addr_str);
 
         DEBUG("tgid[%d] pid[%d] ppid[%d] pgid[%d] comm[%s] exe_file[%s] exec_file[%s] fork_count[%d] major[%d] minor[%d] "
                 "iowait[%llu] iocount[%llu] iotime[%llu] rchar[%llu] wchar[%llu] sysr[%u] sysw[%u] rbytes[%llu] wbytes[%llu] "
-                "cancelbytes[%llu] hang[%u]\n",
+                "cancelbytes[%llu] hang[%u] skb_free[%llu] addr[%s]\n",
                 data.id.tgid,
                 nkey.pid,
                 data.id.ppid,
@@ -416,7 +429,9 @@ static void task_probe_pull_probe_data(int task_map_fd, int task_bin_map_fd)
                 data.io.task_read_bytes,
                 data.io.task_write_bytes,
                 data.io.task_cancelled_write_bytes,
-                data.io.task_hang_count);
+                data.io.task_hang_count,
+                data.net.kfree_skb_cnt,
+                addr_str);
 
         ckey = nkey;
     }
@@ -446,8 +461,9 @@ int main(int argc, char **argv)
 
     INIT_BPF_APP(taskprobe);
 
-    LOAD(taskprobe, err2);
-    LOAD(taskprobe_io, err);
+    LOAD(taskprobe, err3);
+    LOAD(taskprobe_io, err2);
+    LOAD(taskprobe_net, err);
 
     pmap_fd = GET_MAP_FD(taskprobe, probe_proc_map);
     task_map_fd = GET_MAP_FD(taskprobe, __task_map);
@@ -466,8 +482,10 @@ int main(int argc, char **argv)
     }
 
 err:
-    UNLOAD(taskprobe_io);
+    UNLOAD(taskprobe_net);
 err2:
+    UNLOAD(taskprobe_io);
+err3:
     UNLOAD(taskprobe);
     return ret;
 }
