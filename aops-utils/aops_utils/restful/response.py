@@ -380,7 +380,7 @@ class BaseResponse(Resource):
 
         return args, verify_res
 
-    def handle_request(self, schema, obj, func='_handle', debug=True):
+    def handle_request(self, schema, obj, func='_handle', need_token=True, debug=True):
         """
         Get args and verify the args, then call the specific handle function.
 
@@ -388,12 +388,13 @@ class BaseResponse(Resource):
             schema (class): schema for verifying args.
             obj (class): class which used to get the handle function, which is a reflection.
             func (str, optional): name of handle function. Defaults to '_handle'.
+            need_token (bool, optional): whether need to verify the token. Defaults to True.
             debug (bool, optional): whether need to print args and interface info. Defaults to True.
 
         Returns:
             dict: response body
         """
-        args, status = self.verify_request(schema, debug=debug)
+        args, status = self.verify_request(schema, need_token=need_token, debug=debug)
         if status == SUCCEED:
             status = getattr(obj, func)(args)
 

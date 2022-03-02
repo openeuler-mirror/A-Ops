@@ -78,7 +78,10 @@ class Login(BaseResponse):
         Returns:
             dict: response body
         """
-        return jsonify(self.handle_request(LoginSchema, self, debug=False))
+        return jsonify(self.handle_request(LoginSchema,
+                                           self,
+                                           need_token=False,
+                                           debug=False))
 
 
 class ChangePassword(BaseResponse):
