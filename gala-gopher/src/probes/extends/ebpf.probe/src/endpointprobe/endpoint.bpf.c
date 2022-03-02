@@ -741,9 +741,3 @@ KPROBE(tcp_write_wakeup, pt_regs)
     return;
 }
 
-KPROBE_RET(init_conntrack, pt_regs)
-{
-    u32 pid __maybe_unused = bpf_get_current_pid_tgid() >> 32;
-    return;
-}
-

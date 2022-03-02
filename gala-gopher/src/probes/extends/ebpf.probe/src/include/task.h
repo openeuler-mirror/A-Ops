@@ -69,10 +69,16 @@ struct task_base_data {
     __u32 fork_count;
 };
 
+struct task_net_data {
+    __u64 kfree_skb_cnt;
+    __u64 kfree_skb_ret_addr;
+};
+
 struct task_data {
     struct task_id id;
     struct task_base_data base;
     struct task_io_data io;
+    struct task_net_data net;
 };
 
 #endif
