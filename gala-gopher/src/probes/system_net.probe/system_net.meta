@@ -1,0 +1,57 @@
+version = "1.0.0"
+
+measurements:
+(
+    {
+        name: "system_net",
+        fields:
+        (
+            {
+                description: "dev_name",
+                type: "key",
+                name: "dev_name",
+            },
+            {
+                description: "rx_bytes",
+                type: "counter",
+                name: "rx_bytes",
+            },
+            {
+                description: "rx_packets",
+                type: "counter",
+                name: "rx_packets",
+            },
+            {
+                description: "rx_errs",
+                type: "counter",
+                name: "rx_errs",
+            },
+            {
+                description: "rx_dropped",
+                type: "counter",
+                name: "rx_dropped",
+            },
+            {
+                description: "tx_bytes",
+                type: "counter",
+                name: "tx_bytes",
+            },
+            {
+                description: "tx_packets",
+                type: "counter",
+                name: "tx_packets",
+            },
+            {
+                description: "tx_errs",
+                type: "counter",
+                name: "tx_errs",
+            },
+            {
+                description: "tx_dropped",
+                type: "counter",
+                name: "tx_dropped",
+            },
+        )
+    }
+)
+

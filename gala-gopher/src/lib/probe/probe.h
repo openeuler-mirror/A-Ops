@@ -21,6 +21,14 @@
 #include "base.h"
 #include "fifo.h"
 
+#define ZEROPAD 1       /* pad with zero */
+#define SIGN    2       /* unsigned/signed long */
+#define PLUS    4       /* show plus */
+#define SPACE   8       /* space if plus */
+#define LEFT    16      /* left justified */
+#define SMALL   32      /* Must be 32 == 0x20 */
+#define SPECIAL 64      /* 0x */
+
 typedef int (*ProbeMain)(void);
 
 typedef struct {
