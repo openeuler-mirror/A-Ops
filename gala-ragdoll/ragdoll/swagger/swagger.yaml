@@ -13,6 +13,8 @@ tags:
   description: "management configuration"
 - name: "confs"
   description: "query the configuration"
+- name: "demo"
+  description: "project demo server"
 paths:
   /domain/createDomain:
     post:
@@ -305,6 +307,48 @@ paths:
           schema:
             $ref: "#/definitions/SyncStatus"
       x-swagger-router-controller: "ragdoll.controllers.confs_controller"
+  /demo/collectConf:
+    post:
+      summary: "get real configuration value in host by conf_path"
+      description: "get real configuration value in host by conf_path"
+      operationId: "collect_conf"
+      parameters:
+      - in: "body"
+        name: "body"
+        required: false
+        schema:
+          $ref: "#/definitions/CollectInfo"
+      responses:
+        "200":
+          description: "get real configuration value in host by conf_path successfully"
+          schema:
+            type: object
+            properties:
+              status:
+                type: boolean
+      x-swagger-router-controller: "ragdoll.demo.demo_server"
+  /demo/syncConf:
+    put:
+      summary: "synchronize the configuration information to the host"
+      description: "synchronize the configuration information to the host"
+      operationId: "sync_conf"
+      parameters:
+      - in: "body"
+        name: "body"
+        required: false
+        schema:
+          $ref: "#/definitions/SyncInfo"
+      responses:
+        "200":
+          description: "Configuration synchronization succeeded."
+          schema:
+            type: object
+            properties:
+              status:
+                type: boolean
+      x-swagger-router-controller: "ragdoll.demo.demo_server"
+
+
 definitions:
   Domain:
     type: "object"
@@ -678,7 +722,35 @@ definitions:
         description: "the result of host"
         enum:
         - "SUCCESS"
-        - "FILED"
+        - "FAILED"
     example:
       hostId: "hostId"
       syncStatus: "SUCCESS"
+  CollectInfo:
+    type: "object"
+    properties:
+      infos:
+        type: "array"
+        items:
+          $ref: "#/definitions/ConfInfo"
+  ConfInfo:
+    type: "object"
+    properties:
+      host_id:
+        type: "string"
+      config_list:
+        type: "array"
+        items: 
+          $ref: "#/definitions/ConfPath"
+  ConfPath:
+    type: string
+  SyncInfo:
+    type: "object"
+    properties:
+      code:
+        type: "integer"
+        format: "int32"
+      msg:
+        type: "string"
+      status:
+        type: "boolean"

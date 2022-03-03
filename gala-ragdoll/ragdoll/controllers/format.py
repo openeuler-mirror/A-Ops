@@ -32,8 +32,8 @@ class Format(object):
         """
         docstring
         """
-        codeString = """All {obj} {oper} successfully, {succ} {obj} in total.
-                    """.format(obj=obj, oper=operation, succ=len(succDomain))
+        codeString = "All {obj} {oper} successfully, {succ} {obj} in total.".format( \
+            obj=obj, oper=operation, succ=len(succDomain))
         return codeString
 
     @staticmethod
@@ -41,9 +41,8 @@ class Format(object):
         """
         docstring
         """
-        codeString = """{succ} {obj} {oper} successfully, \
-                        {fail} {obj} {oper} failed. """.format(succ=len(succDomain), \
-                        obj=obj, oper=operation, fail=len(failDomain))
+        codeString = "{succ} {obj} {oper} successfully, {fail} {obj} {oper} failed.".format( \
+            succ=len(succDomain), obj=obj, oper=operation, fail=len(failDomain))
 
         succString = "\n"
         if len(succDomain) > 0:
@@ -53,7 +52,7 @@ class Format(object):
             succString += "."
 
         if len(failDomain) > 0:
-            failString = "\n These are failed: "
+            failString = "These are failed: "
             for failName in failDomain:
                 failString += failName + " "
             return codeString + succString + failString
@@ -191,7 +190,7 @@ class Format(object):
                 return _str[0:-idx - 1], _str[-idx:]
 
     @staticmethod
-    def _arch_sep(package_string):
+    def arch_sep(package_string):
         """
         Helper method for finding if arch separator is '.' or '-'
 

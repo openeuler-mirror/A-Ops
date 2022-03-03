@@ -15,7 +15,7 @@ class ConfSyncedRes(Model):
     Do not edit the class manually.
     """
 
-    def __init__(self, file_path: str=None, result: str=None):  # noqa: E501
+    def __init__(self, file_path, result):  # noqa: E501
         """ConfSyncedRes - a model defined in Swagger
 
         :param file_path: The file_path of this ConfSyncedRes.  # noqa: E501
@@ -37,7 +37,7 @@ class ConfSyncedRes(Model):
         self._result = result
 
     @classmethod
-    def from_dict(cls, dikt) -> 'ConfSyncedRes':
+    def from_dict(cls, dikt):
         """Returns the dict as a model
 
         :param dikt: A dict.
@@ -48,7 +48,7 @@ class ConfSyncedRes(Model):
         return util.deserialize_model(dikt, cls)
 
     @property
-    def file_path(self) -> str:
+    def file_path(self):
         """Gets the file_path of this ConfSyncedRes.
 
 
@@ -58,7 +58,7 @@ class ConfSyncedRes(Model):
         return self._file_path
 
     @file_path.setter
-    def file_path(self, file_path: str):
+    def file_path(self, file_path):
         """Sets the file_path of this ConfSyncedRes.
 
 
@@ -69,7 +69,7 @@ class ConfSyncedRes(Model):
         self._file_path = file_path
 
     @property
-    def result(self) -> str:
+    def result(self):
         """Gets the result of this ConfSyncedRes.
 
         the result of host  # noqa: E501
@@ -80,7 +80,7 @@ class ConfSyncedRes(Model):
         return self._result
 
     @result.setter
-    def result(self, result: str):
+    def result(self, result):
         """Sets the result of this ConfSyncedRes.
 
         the result of host  # noqa: E501
@@ -88,7 +88,7 @@ class ConfSyncedRes(Model):
         :param result: The result of this ConfSyncedRes.
         :type result: str
         """
-        allowed_values = ["SUCCESS", "FILED"]  # noqa: E501
+        allowed_values = ["SUCCESS", "FAILED"]  # noqa: E501
         if result not in allowed_values:
             raise ValueError(
                 "Invalid value for `result` ({0}), must be one of {1}"

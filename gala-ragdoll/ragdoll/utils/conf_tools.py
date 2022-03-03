@@ -54,12 +54,12 @@ CONFIG = "/etc/ragdoll/gala-ragdoll.conf"
 
 class SyncRes(Enum):
     SUCCESS = "SUCCESS"
-    FILED = "FILED"
+    FAILED = "FAILED"
 
 class ConfTools(object):
 
     """
-    desc：convert the configuration items controlled in the domain into dict storage
+    desc: convert the configuration items controlled in the domain into dict storage
     """
 
     def __init__(self):
@@ -95,7 +95,6 @@ class ConfTools(object):
             d_res0 = {}
             d_res0[level[len(level) - 1]] = value
 
-            # 输出res中存在相同的xpath路径的level和object
             returnObject = res
             returnCount = 0
             for count in range(0, len(level)):
@@ -105,14 +104,14 @@ class ConfTools(object):
                 else:
                     returnCount = count
                     break
-            # 拼接成对应的dict
+            # to dict
             for count in range(len(level) - 2, returnCount, -1):
                 d_res = {}
                 key = level[count]
                 d_res[key] = d_res0
                 d_res0 = d_res
 
-            # 层次为2层，所以当层次小于2层时
+            # level less than 2
             if d_res0.get(level[returnCount]):
                 returnObject[level[returnCount]] = d_res0.get(level[returnCount])
             else:
@@ -270,12 +269,12 @@ class ConfTools(object):
         # res = lines[0]
         if 'not owned by any package' in package_string:
             return None, None, None
-        pkg, arch = Format.rsplit(package_string, Format._arch_sep(package_string))
+        pkg, arch = Format.rsplit(package_string, Format.arch_sep(package_string))
         if arch not in KNOWN_ARCHITECTURES:
             pkg, arch = (package_string, None)
         pkg, release = Format.rsplit(pkg, '-')
         name, version = Format.rsplit(pkg, '-')
-        # 如果需要单独返回epoch的值，可以解除注释：
+        # If the value of epoch needs to be returned separately,
         # epoch, version = version.split(':', 1) if ":" in version else ['0', version]
         return name, release, version
 
@@ -295,7 +294,7 @@ class ConfTools(object):
                         Modify: 2020-12-21 23:16:08.000000000 +0800
                         Change: 2021-01-13 16:50:31.257896622 +0800
                         Birth: 2021-01-13 16:50:31.257896622 +0800
-              else, we use the case2：
+              else, we use the case2:
                     command: ls -l filename
                     output:
                         [root@openeuler-development-2-pafcm demo]# ls -l /etc/tcsd.conf
@@ -347,10 +346,9 @@ class ConfTools(object):
                 [root@openeuler-development-2-pafcm demo]# ls -l /etc/tcsd.conf
                 -rw-------. 1 tss tss 6.9K Dec 21 23:16 /etc/tcsd.conf
         calculate score:
-            共10位，
-                其中第一位代表类型：d为目录，-为文件；
-                接下来的9位是3个一组，分别为read/write/execute 权限，用数字来代表各个权限分数，
-                分数对照表为：r:4 w:2 x:1
+                the first digit indicates the type: [d]->directory, [-]->files
+                then every 3 are grouped, indicates read/write/execute
+                score: r->4 w->2 x->1
         """
         if not os.path.exists(LS):
             return None, None
@@ -361,7 +359,6 @@ class ConfTools(object):
         print("ll_res is : {}".format(ll_res))
         ll_res_list = ll_res.split(SPACE)
         
-        # 计算属性值
         fileType = ll_res_list[0]
         permssions = "0"
         for perm in range(0, PERMISSION):
@@ -373,7 +370,6 @@ class ConfTools(object):
             permssions = permssions + str(value)
         print("the perssion is : {}".format(permssions))
 
-        # 获取属主信息
         fileOwner = LeftParen + ll_res_list[2] + SPACE + ll_res_list[3] + RightParen
         print("the fileOwner is : {}".format(fileOwner))
 
@@ -391,7 +387,7 @@ class ConfTools(object):
 
     def getXpathInManagerConfs(self, manageConfs):
         """
-        desc: 对获取到的配置项进行整合，生成配置项的xpath列表
+        desc: generate the xpath list of configuration items.
         """
         confXpath = []
         for d_conf in manageConfs:
@@ -495,13 +491,13 @@ class ConfTools(object):
 
         return index, value
 
-    def realConfToConfContents(self, realConf) -> "":
+    def realConfToConfContents(self, realConf):
         """
         desc: Converts real_conf to contents in realConfInfo
         params:
             input:
                 realConf: the type of RealConfPath
-            output：
+            output:
                 confContents: The return value of the /confs/QueryRealconfs interface, the type is confContents in RealconfBaseInfo
         example:
             realConf:[
@@ -521,7 +517,7 @@ class ConfTools(object):
                         }"
 
         """
-        # 由于path中前3个字段固定为：域、特性、配置，所以直接将开始的index定为3
+        # Path format: domain/feature/conf
         STARTINDEX = 3
         res_string = ""
         res = {}
@@ -532,7 +528,6 @@ class ConfTools(object):
             d_res0 = {}
             d_res0[level[len(level) - 1]] = value
 
-            # 输出res中存在相同的xpath路径的level和object
             returnObject = res
             returnCount = 0
             for count in range(STARTINDEX, len(level)):
@@ -542,13 +537,13 @@ class ConfTools(object):
                 else:
                     returnCount = count
                     break
-            # 拼接成对应的dict
+            # to dict
             for count in range(len(level) - 2, returnCount, -1):
                 d_res = {}
                 key = level[count]
                 d_res[key] = d_res0
                 d_res0 = d_res
-            # 层次为2层，所以当层次小于2层时
+            # level less than 2
             if d_res0.get(level[returnCount]):
                 returnObject[level[returnCount]] = d_res0.get(level[returnCount])
             else:
@@ -604,7 +599,7 @@ class ConfTools(object):
 
         return res
 
-    def load_collect_by_conf(self):
+    def load_url_by_conf(self):
         """
         desc: get the url of collect conf
         """
@@ -615,9 +610,19 @@ class ConfTools(object):
             parent = os.path.dirname(os.path.realpath(__file__))
             conf_path = os.path.join(parent, "../../config/gala-ragdoll.conf")
             cf.read(conf_path, encoding="utf-8")
-        git_dir = ast.literal_eval(cf.get("collect", "collect_address"))
-        git_user_name = ast.literal_eval(cf.get("collect", "collect_api"))
-        return git_dir + git_user_name
+
+        collect_address = ast.literal_eval(cf.get("collect", "collect_address"))
+        collect_api = ast.literal_eval(cf.get("collect", "collect_api"))
+        collect_port = str(cf.get("collect", "collect_port"))
+        collect_url = "{address}:{port}{api}".format(address=collect_address, api=collect_api, port=collect_port)
+
+        sync_address = ast.literal_eval(cf.get("sync", "sync_address"))
+        sync_api = ast.literal_eval(cf.get("sync", "sync_api"))
+        sync_port = str(cf.get("sync", "sync_port"))
+        sync_url = "{address}:{port}{api}".format(address=sync_address, api=sync_api, port=sync_port)
+
+        url = {"collect_url": collect_url, "sync_url": sync_url}
+        return url
 
     def load_port_by_conf(self):
         """
