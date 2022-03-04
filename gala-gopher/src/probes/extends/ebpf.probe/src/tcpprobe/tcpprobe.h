@@ -57,41 +57,6 @@ struct ip {
     };
 };
 
-struct metric_key {
-    struct ip c_ip;
-    struct ip s_ip;
-    __u16 s_port;
-    __u16 proto;
-    __u32 tgid;     // process id
-};
-
-struct metric_data {
-    char comm[TASK_COMM_LEN];
-    __u32 link_num;
-    __u64 rx;
-    __u64 tx;
-    __u32 segs_in;
-    __u32 segs_out;
-    __u32 total_retrans;
-    __u32 lost;
-    __u32 srtt;
-    __u32 srtt_max;
-    __u32 rcv_wnd_min;
-    __u32 rcv_wnd_avg;
-    __u32 rcv_wnd_max;
-    __u32 backlog_drops;
-    __u32 sk_drops;
-    __u32 md5_hash_drops;
-    __u32 filter_drops;
-    __u32 ofo_count;
-    __u32 tmout;
-    __u32 rcvque_full;
-    __u32 sndbuf_limit;
-    __u32 send_rsts;
-    __u32 receive_rsts;
-    char role;
-};
-
 struct proc_info {
     char comm[TASK_COMM_LEN];
     __u64 role : 1;
