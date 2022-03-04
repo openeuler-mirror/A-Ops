@@ -19,6 +19,8 @@
 
 #include "extend_probe.h"
 
+#define PROBE_START_DELAY 5
+
 ExtendProbe *ExtendProbeCreate(void)
 {
     ExtendProbe *probe = NULL;
@@ -47,6 +49,24 @@ void ExtendProbeDestroy(ExtendProbe *probe)
     return;
 }
 
+FILE* __DoRunExtProbe(ExtendProbe *probe)
+{
+    char command[MAX_COMMAND_LEN];
+    FILE *f = NULL;
+
+    command[0] = 0;
+    (void)snprintf(command, MAX_COMMAND_LEN - 1, "%s %s", probe->executeCommand, probe->executeParam);
+repeat:
+    f = popen(command, "r");
+    if (feof(f) != 0 || ferror(f) != 0) {
+        pclose(f);
+        f = NULL;
+        sleep(PROBE_START_DELAY);
+        goto repeat;
+    }
+    return f;
+}
+
 int RunExtendProbe(ExtendProbe *probe)
 {
     int ret = 0;
@@ -57,10 +77,7 @@ int RunExtendProbe(ExtendProbe *probe)
     char *dataStr = NULL;
     uint32_t index = 0;
 
-    char command[MAX_COMMAND_LEN];
-    command[0] = 0;
-    (void)snprintf(command, MAX_COMMAND_LEN - 1, "%s %s", probe->executeCommand, probe->executeParam);
-    f = popen(command, "r");
+    f = __DoRunExtProbe(probe);
 
     while (feof(f) == 0 && ferror(f) == 0) {
         if (fgets(buffer, sizeof(buffer), f) == NULL)

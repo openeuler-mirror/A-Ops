@@ -32,8 +32,10 @@
 #include "args.h"
 #include "tcpprobe.skel.h"
 #include "tcpprobe.h"
+#include "tcplink.h"
 
 #define OO_NAME "tcp_link"  // Observation Object name
+#define TCP_LINK_TMOUT  (5 * 60)    // 5 min
 
 static volatile sig_atomic_t g_stop;
 static struct probe_params params = {.period = DEFAULT_PERIOD};
@@ -41,6 +43,14 @@ static struct probe_params params = {.period = DEFAULT_PERIOD};
 static void sig_int(int signo)
 {
     g_stop = 1;
+}
+
+static inline char is_invalid_tcp_link(struct metric_data *dd)
+{
+    if (dd->last_active_tm + TCP_LINK_TMOUT < time(NULL))
+        return 1;
+
+    return 0;
 }
 
 static void update_link_metric_data(struct metric_data *dd, struct link_data *d)
@@ -103,6 +113,7 @@ static void update_link_metric_data(struct metric_data *dd, struct link_data *d)
     dd->sndbuf_limit += d->sndbuf_limit;
     dd->send_rsts += d->send_rsts;
     dd->receive_rsts += d->receive_rsts;
+    dd->last_active_tm = (time_t)time(NULL); // last active time of tcp link 
 }
 
 static void update_link_metric_map(const struct link_key *k, struct link_data *d, int map_fd)
@@ -242,7 +253,12 @@ static void print_link_metric(int map_fd)
                 data.send_rsts,
                 data.receive_rsts);
         }
-        bpf_map_delete_elem(map_fd, &next_key);
+
+        if (is_invalid_tcp_link(&data)) {
+            bpf_map_delete_elem(map_fd, &next_key);
+        } else {
+            key = next_key;
+        }
     }
     (void)fflush(stdout);
     return;
@@ -303,7 +319,6 @@ err:
 
     return;
 }
-
 
 int main(int argc, char **argv)
 {
