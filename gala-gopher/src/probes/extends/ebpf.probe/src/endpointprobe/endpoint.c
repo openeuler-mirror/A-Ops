@@ -182,14 +182,12 @@ static void _output_endpoint_data(struct endpoint_val_t *data)
 static void _print_endpoint_data(struct endpoint_val_t *data)
 {
     unsigned char s_addr[INET6_ADDRSTRLEN];
-    char *time_fmt = get_cur_time();
 
     ip_str(data->s_addr.family, (unsigned char *)&data->s_addr.ip, s_addr, INET6_ADDRSTRLEN);
-    DEBUG("%s [%d-%s] ep_type:%d, ep_uid:%u, ep_family:%d, ep_s_type:%d, ep_protocol:%d, "
+    DEBUG("[%d-%s] ep_type:%d, ep_uid:%u, ep_family:%d, ep_s_type:%d, ep_protocol:%d, "
             "ep_addr:%s, ep_port:%u, ep_listen_drops:%lu, ep_listen_overflows:%lu, "
             "ep_passive_opens:%lu, ep_active_opens:%lu, ep_attempt_fails:%lu, ep_abort_close:%lu, "
             "ep_request_fails:%lu, ep_rmem_schedule:%lu, ep_tcp_oom:%lu, ep_keepalive_timeout:%lu\n",
-            time_fmt,
             data->tgid,
             data->comm,
             data->type,

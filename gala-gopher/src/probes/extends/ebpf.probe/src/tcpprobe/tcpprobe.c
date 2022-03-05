@@ -179,7 +179,6 @@ static void print_link_metric(int map_fd)
     unsigned char src_ip_str[INET6_ADDRSTRLEN];
     unsigned char dst_ip_str[INET6_ADDRSTRLEN];
 
-    char *tm = get_cur_time();
     while (bpf_map_get_next_key(map_fd, &key, &next_key) != -1) {
         ret = bpf_map_lookup_elem(map_fd, &next_key, &data);
         if (ret == 0) {
@@ -218,12 +217,11 @@ static void print_link_metric(int map_fd)
                 data.send_rsts,
                 data.receive_rsts);
 
-            DEBUG("%s [%u-%s]: c_ip:%s, s_ip:%s:%u, proto:%u, link_num:%u, rx:%llu, tx:%llu, "
+            DEBUG("[%u-%s]: c_ip:%s, s_ip:%s:%u, proto:%u, link_num:%u, rx:%llu, tx:%llu, "
                    "segs_in:%u, segs_out:%u, total_retrans:%u, lost:%u, srtt:%uus, srtt_max:%uus, "
                    "rcv_wnd_min:%u, rcv_wnd_avg:%u, rcv_wnd_max:%u, backlog:%u, sk_drop:%u, "
                    "md5:%u, filter:%u, ofo:%u, tmout:%u, rcvque_full:%u, sndbuf_limit:%u, "
                    "send_rsts:%u, receive_rsts:%u\n",
-                tm,
                 next_key.tgid,
                 data.comm,
                 src_ip_str,

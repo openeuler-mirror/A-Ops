@@ -54,9 +54,9 @@ static void get_netdev_fileds(const char *net_dev_info, net_dev_stat *stats)
     int ret;
 
     ret = sscanf(net_dev_info,
-        "%6s: %llu %llu %llu %llu %*Lu %*Lu %*Lu %*Lu %llu %llu %llu %llu %*Lu %*Lu %*Lu %*Lu",
+        "%s: %llu %llu %llu %llu %*Lu %*Lu %*Lu %*Lu %llu %llu %llu %llu %*Lu %*Lu %*Lu %*Lu",
         &stats->dev_name,
-	&stats->rx_bytes, &stats->rx_packets, &stats->rx_errs, &stats->rx_dropped,
+        &stats->rx_bytes, &stats->rx_packets, &stats->rx_errs, &stats->rx_dropped,
         &stats->tx_bytes, &stats->tx_packets, &stats->tx_errs, &stats->tx_dropped);
 
     if (ret < 9) {
@@ -81,11 +81,11 @@ int main()
             fclose(f);
             return -1;
         }
-	if (strstr(line, "Inter") != NULL ||
-	    strstr(line, "face") != NULL ||
-	    strstr(line, "lo") != NULL) {
-	    continue;
-	}
+    if (strstr(line, "Inter") != NULL ||
+        strstr(line, "face") != NULL ||
+        strstr(line, "lo") != NULL) {
+        continue;
+    }
         get_netdev_fileds(line, &stats);
         fprintf(stdout,
             "|%6s|%s|%llu|%llu|%llu|%llu|%llu|%llu|%llu|%llu|\n",
