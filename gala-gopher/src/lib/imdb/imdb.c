@@ -600,25 +600,25 @@ static int IMDB_Metric2String(IMDB_Metric *metric, char *buffer, uint32_t maxLen
     uint32_t curMaxLen = maxLen;
 
     ret = IMDB_MetricDesc2String(metric, curBuffer, curMaxLen, tableName);
-    if (ret < 0)
+    if (ret < 0 || ret >= curMaxLen) {
         return -1;
-
+    }
     curBuffer += ret;
-    curMaxLen -= (uint32_t)ret;
+    curMaxLen -= ret;
     total += ret;
 
     ret = IMDB_MetricType2String(metric, curBuffer, curMaxLen, tableName);
-    if (ret < 0)
+    if (ret < 0 || ret >= curMaxLen){
         return -1;
-
+    }
     curBuffer += ret;
-    curMaxLen -= (uint32_t)ret;
+    curMaxLen -= ret;
     total += ret;
 
     ret = IMDB_MetricValue2String(metric, curBuffer, curMaxLen, tableName, labels);
-    if (ret < 0)
+    if (ret < 0 || ret >= curMaxLen) {
         return -1;
-
+    }
     total += ret;
 
     return total;
@@ -671,36 +671,35 @@ static int IMDB_Prometheus_BuildLabel(const IMDB_DataBaseMgr *mgr, IMDB_Record *
 
         if (write_comma != 0) {
             ret = snprintf(labels + total, labell, "%s", ",");
-            if (ret < 0)
+            if (ret < 0 || ret >= labell) {
                 goto ERR;
-
+            }
             total += ret;
-            labell -= (uint32_t)ret;
+            labell -= ret;
         }
 
         ret = snprintf(labels + total, labell, "%s=\"%s\"", record->metrics[i]->name, record->metrics[i]->val);
-        if (ret <= 0)
+        if (ret < 0 || ret >= labell) {
             goto ERR;
-
+        }
         total += ret;
-        labell -= (uint32_t)ret;
+        labell -= ret;
         write_comma = 1;
     }
 
-    if (total > 0) {
-        // append machine_id and hostname
-        ret = snprintf(labels + total, labell, ",%s=\"%s\",%s=\"%s\"",
-                       "machine_id", mgr->nodeInfo.machineId,
-                       "hostname", mgr->nodeInfo.hostName);
-        if (ret <= 0)
-            goto ERR;
-
-        ret = snprintf(buffer, curMaxLen, "{%s}", labels);
-        if (ret < 0)
-            goto ERR;
-
-        curMaxLen -= (uint32_t)ret;
+    // append machine_id and hostname
+    ret = snprintf(labels + total, labell, ",%s=\"%s\",%s=\"%s\"",
+                    "machine_id", mgr->nodeInfo.machineId,
+                    "hostname", mgr->nodeInfo.hostName);
+    if (ret < 0 || ret >= labell) {
+        goto ERR;
     }
+
+    ret = snprintf(buffer, curMaxLen, "{%s}", labels);
+    if (ret < 0 || ret >= curMaxLen) {
+        goto ERR;
+    }
+    curMaxLen -= ret;
 
 ERR:
     return ret;
@@ -715,20 +714,25 @@ static int IMDB_Record2String(IMDB_DataBaseMgr *mgr, IMDB_Record *record, char *
 
     char labels[MAX_LABELS_BUFFER_SIZE] = {0};
     ret = IMDB_Prometheus_BuildLabel(mgr, record, labels, MAX_LABELS_BUFFER_SIZE);
-    if (ret < 0)
+    if (ret < 0) {
         goto ERR;
+    }
 
     for (int i = 0; i < record->metricsNum; i++) {
         ret = MetricTypeSatisfyPrometheus(record->metrics[i]);
-        if (ret != 0)
+        if (ret != 0) {
             continue;
+        }
 
         ret = IMDB_Metric2String(record->metrics[i], curBuffer, curMaxLen, tableName, labels);
-        if (ret < 0)
+        if (ret < 0 || ret >= curMaxLen) {
+            ERROR("[IMDB] table(%s)'s metric(%s) to string fail, because buffer is full.\n",
+                            tableName, record->metrics[i]);
             return -1;
+        }
 
         curBuffer += ret;
-        curMaxLen -= (uint32_t)ret;
+        curMaxLen -= ret;
         total += ret;
     }
 
@@ -757,8 +761,10 @@ static int IMDB_Table2String(IMDB_DataBaseMgr *mgr, IMDB_Table *table, char *buf
         }
 
         ret = IMDB_Record2String(mgr, record, curBuffer, curMaxLen, table->name);
-        if (ret < 0)
+        if (ret < 0 || ret >= curMaxLen) {
+            ERROR("[IMDB] table(%s) record to string fail.\n", table->name);
             return -1;
+        }
 
         curBuffer += ret;
         curMaxLen -= ret;
@@ -766,8 +772,9 @@ static int IMDB_Table2String(IMDB_DataBaseMgr *mgr, IMDB_Table *table, char *buf
     }
 
     ret = snprintf(curBuffer, curMaxLen, "\n");
-    if (ret < 0)
+    if (ret < 0) {
         return -1;
+    }
     curBuffer += 1;
     curMaxLen -= 1;
     total += 1;
@@ -786,11 +793,12 @@ int IMDB_DataBaseMgrData2String(IMDB_DataBaseMgr *mgr, char *buffer, uint32_t ma
 
     for (int i = 0; i < mgr->tablesNum; i++) {
         ret = IMDB_Table2String(mgr, mgr->tables[i], cursor, curMaxLen);
-        if (ret < 0)
+        if (ret < 0 || ret >= curMaxLen) {
             goto ERR;
+        }
 
         cursor += ret;
-        curMaxLen -= (uint32_t)ret;
+        curMaxLen -= ret;
     }
 
     pthread_rwlock_unlock(&mgr->rwlock);
