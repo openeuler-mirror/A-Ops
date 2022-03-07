@@ -354,8 +354,7 @@ export default {
       this.progressLoading = true
       getTaskProgress({ taskList }).then(function (res) {
         _this.detail.statuses = res.result && res.result[_this.taskId]
-        // _this.detail = Object.assign({}, _this.detail)
-
+        _this.detail = Object.assign({}, _this.detail)
         if (!_this.prgressFinishedCheck(res.result)) {
           _this.progressUpdateCaller = setTimeout(function () {
             _this.updateProgress(taskList)
