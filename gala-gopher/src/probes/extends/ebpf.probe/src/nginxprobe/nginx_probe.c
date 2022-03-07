@@ -154,6 +154,13 @@ int main(int argc, char **argv)
 
     printf("arg parse interval time:%us  \n", params.period);
 
+    /* Find elf's abs_path */
+    ELF_REAL_PATH(nginx, params.elf_path, NULL, elf, elf_num);
+    if (elf_num <= 0) {
+        printf("get proc:nginx abs_path error \n");
+        return -1;
+    }
+
     INIT_BPF_APP(nginx_probe);
     LOAD(nginx_probe, err);
 
@@ -161,12 +168,6 @@ int main(int argc, char **argv)
     signal(SIGINT, sig_handler);
     signal(SIGTERM, sig_handler);
 
-    /* Find elf's abs_path */
-    ELF_REAL_PATH(nginx, params.elf_path, NULL, elf, elf_num);
-    if (elf_num <= 0) {
-        printf("get proc:nginx abs_path error \n");
-        return -1;
-    }
     /* Attach tracepoint handler for each elf_path */
     for (int i = 0; i < elf_num; i++) {
         int ret = 0;

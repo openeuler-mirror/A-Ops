@@ -17,6 +17,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <errno.h>
+#include <sys/eventfd.h>
 #include <unistd.h>
 #include "ingress.h"
 
@@ -202,22 +203,24 @@ next:
 static int IngressDataProcesss(IngressMgr *mgr)
 {
     struct epoll_event events[MAX_EPOLL_EVENTS_NUM];
-    uint32_t events_num = 0;
+    int events_num;
     Fifo *fifo = NULL;
     uint32_t ret = 0;
 
     events_num = epoll_wait(mgr->epoll_fd, events, MAX_EPOLL_EVENTS_NUM, -1);
-    if (events_num < 0) {
+    if ((events_num < 0) && (errno != EINTR)) {
         ERROR("Ingress Msg wait failed: %s.\n", strerror(errno));
-        if (errno == EINTR)
-            // if receive the debugging signal(-1) when debugging, please ignore it
-            events_num = 0;
-
         return events_num;
     }
 
-    for (int i = 0; i < events_num; i++) {
+    for (int i = 0; ((i < events_num) && (i < MAX_EPOLL_EVENTS_NUM)); i++) {
+        if (events[i].events != EPOLLIN)
+            continue;
+
         fifo = (Fifo *)events[i].data.ptr;
+        if (fifo == NULL)
+            continue;
+
         ret = IngressDataProcesssInput(fifo, mgr);
         if (ret != 0) {
             return -1;
@@ -245,3 +248,49 @@ void IngressMain(IngressMgr *mgr)
     }
 }
 
+#if 0
+int IngressRemovePorbe(IngressMgr *mgr, ExtendProbe *probe)
+{
+    int ret;
+
+    if (probe->fifo == NULL)
+        return 0;
+
+    ret = epoll_ctl(mgr->epoll_fd, EPOLL_CTL_DEL, probe->fifo->triggerFd, NULL);
+    if (ret != 0) {
+        ERROR("[INGRESS] remove probe(%s) trigger fd failed(fd=%d, ret=%d).\n", probe->name,
+                        probe->fifo->triggerFd, ret);
+        return -1;
+    }
+    ret = close(probe->fifo->triggerFd);
+    if (ret != 0) {
+        ERROR("[INGRESS] close probe(%s) trigger fd failed(fd=%d, ret=%d).\n", probe->name,
+                        probe->fifo->triggerFd, ret);
+        return -1;
+    }
+    probe->fifo->triggerFd = 0;
+    return 0;
+}
+
+int IngressAddPorbe(IngressMgr *mgr, ExtendProbe *probe)
+{
+    int ret;
+    struct epoll_event event;
+
+    if (probe->fifo == NULL)
+        return 0;
+
+    probe->fifo->triggerFd = eventfd(0, 0);
+
+    event.events = EPOLLIN;
+    event.data.ptr = probe->fifo;
+    ret = epoll_ctl(mgr->epoll_fd, EPOLL_CTL_ADD, probe->fifo->triggerFd, &event);
+    if (ret != 0) {
+        ERROR("[INGRESS] add probe(%s) trigger fd failed(fd=%d, ret=%d).\n", probe->name,
+                            probe->fifo->triggerFd, ret);
+        return -1;
+    }
+
+    return 0;
+}
+#endif

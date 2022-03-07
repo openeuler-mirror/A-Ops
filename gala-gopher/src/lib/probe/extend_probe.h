@@ -32,6 +32,8 @@ typedef struct {
     ProbeSwitch probeSwitch;
     Fifo *fifo;
     pthread_t tid;
+    char is_running;
+    char rsvd[3];
 } ExtendProbe;
 
 typedef struct {

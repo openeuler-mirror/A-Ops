@@ -15,6 +15,7 @@
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
+#include <time.h>
 #include "base.h"
 #include "config.h"
 #include "resource.h"
@@ -100,10 +101,27 @@ int ResourceMgrInit(ResourceMgr *resourceMgr)
     return 0;
 }
 
+static void ResourceMgrDeleteTimer(ResourceMgr *mgr)
+{
+    struct itimerspec its;
+
+    if (mgr->keeplive_timer == 0)
+        return;
+
+    (void)memset(&its, 0, sizeof(its));
+
+    (void)timer_settime(mgr->keeplive_timer, 0, &its, NULL);
+
+    (void)timer_delete(mgr->keeplive_timer);
+    mgr->keeplive_timer = 0;
+}
+
 void ResourceMgrDeinit(ResourceMgr *resourceMgr)
 {
     if (resourceMgr == NULL)
         return;
+
+    ResourceMgrDeleteTimer(resourceMgr);
 
     uint32_t initTblSize = sizeof(gSubModuleInitorTbl) / sizeof(gSubModuleInitorTbl[0]);
     for (int i = 0; i < initTblSize; i++)

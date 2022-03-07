@@ -63,6 +63,19 @@ static inline int __debug_printf(const char *format, ...)
 #define DEBUG printf
 #endif
 
+#ifdef ERROR
+#undef ERROR
+#endif
+    
+#define ERROR printf
+    
+#ifdef INFO
+#undef INFO
+#endif
+
+#define INFO printf
+
+
 #define SPLIT_NEWLINE_SYMBOL(s) \
     do { \
         int __len = strlen(s); \
