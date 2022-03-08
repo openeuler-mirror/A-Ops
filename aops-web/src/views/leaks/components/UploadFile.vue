@@ -7,12 +7,16 @@
       :footer="null"
       @cancel="closeModal"
     >
-      <a-upload :file-list="fileDataList" :remove="removeFile" :before-upload="preUpload">
-         <div style="flex">
-           <a-button> <a-icon type="upload" /> 选择文件 </a-button>
-           <span style="margin-left:50px;font-size:15px">支持类型:xml、zip、tar.gz、tar.bz2</span>
-         </div>
-      </a-upload>
+      <div>
+        <a-upload :file-list="fileDataList" :remove="removeFile" :before-upload="preUpload">
+          <div style="display:flex;">
+            <div style="flex">
+              <a-button> <a-icon type="upload" /> 选择文件 </a-button>
+            </div>
+            <div style="margin-left: 35px;margin-top: 3px;font-size:15px;">支持类型: xml、zip、tar.gz、tar.bz2</div>
+          </div>
+        </a-upload>
+      </div>
       <a-button
           type="primary"
           :disabled="fileDataList.length === 0"
@@ -58,7 +62,7 @@
       this.fileDataList = newfileDataList;
       },
       preUpload(file) {
-        this.fileDataList = [...this.fileDataList, file];
+        this.fileDataList = [file];
         // 文件类型
         var suffix = file.name.substring(file.name.lastIndexOf('.') + 1)
         var arr = ['xml', 'zip', 'tar.gz', 'tar.bz2']
@@ -94,6 +98,7 @@
                  _this.$message.error(err.response.data.msg || err.response.data.detail)
                }).finally(function () {
                  _this.visible = false
+                 _this.fileDataList = []
                })
       }
     }
