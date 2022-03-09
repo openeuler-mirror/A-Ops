@@ -17,6 +17,8 @@
 #include <stdlib.h>
 #include <string.h>
 #include <sys/eventfd.h>
+#include <unistd.h>
+
 #include "fifo.h"
 
 #define IS_POWER_OF_TWO(n) ((n) != 0 && (((n) & ((n) - 1)) == 0))
@@ -66,6 +68,11 @@ void FifoDestroy(Fifo *fifo)
 
     if (fifo->buffer != NULL) {
         free(fifo->buffer);
+    }
+
+    if (fifo->triggerFd != 0) {
+        (void)close(fifo->triggerFd);
+        fifo->triggerFd = 0;
     }
 
     free(fifo);

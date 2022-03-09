@@ -83,8 +83,10 @@ int RunExtendProbe(ExtendProbe *probe)
         if (fgets(buffer, sizeof(buffer), f) == NULL)
             continue;
         
-        if (buffer[0] != '|')
+        if (buffer[0] != '|') {
+            INFO("[%s]: %s", probe->name, buffer);
             continue;
+        }
 
         bufferSize = strlen(buffer);
         for (int i = 0; ((i < bufferSize) && (index < MAX_DATA_STR_LEN)); i++) {
@@ -95,13 +97,15 @@ int RunExtendProbe(ExtendProbe *probe)
                 }
                 // memset(dataStr, 0, sizeof(MAX_DATA_STR_LEN));
                 index = 0;
-            }           
+            }
 
             if (buffer[i] == '\n') {
                 dataStr[index] = '\0';
                 ret = FifoPut(probe->fifo, (void *)dataStr);
                 if (ret != 0) {
                     ERROR("[E-PROBE %s] fifo full.\n", probe->name);
+                    (void)free(dataStr);
+                    dataStr = NULL;
                     break;
                 }
 

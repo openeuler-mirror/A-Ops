@@ -149,31 +149,33 @@ int main(int argc, char **argv)
         return -1;
 
     printf("arg parse interval time:%us  elf's path:%s\n", params.period, params.elf_path);
-    /* Cleaner handling of Ctrl-C */
-    signal(SIGINT, sig_handler);
-    signal(SIGTERM, sig_handler);
-    /* load bpf prog */
-	INIT_BPF_APP(containerd_probe);
-    LOAD(containerd_probe, err);
-    /* Update already running container */
-    update_current_containers_info(GET_MAP_FD(containerd_probe, containers_map));
-    /* Update BPF symaddrs for this binary */
-    bpf_update_containerd_symaddrs(GET_MAP_FD(containerd_probe, containerd_symaddrs_map));
+
     /* Find elf's abs_path */
     ELF_REAL_PATH(containerd, params.elf_path, NULL, elf, elf_num);
     if (elf_num <= 0)
         return -1;
 
+    /* Cleaner handling of Ctrl-C */
+    signal(SIGINT, sig_handler);
+    signal(SIGTERM, sig_handler);
+    /* load bpf prog */
+    INIT_BPF_APP(containerd_probe);
+    LOAD(containerd_probe, err);
+    /* Update already running container */
+    update_current_containers_info(GET_MAP_FD(containerd_probe, containers_map));
+    /* Update BPF symaddrs for this binary */
+    bpf_update_containerd_symaddrs(GET_MAP_FD(containerd_probe, containerd_symaddrs_map));
+
     /* Attach tracepoint handler for each elf_path */
     for (int i = 0; i < elf_num; i++) {
         int ret = 0;
         UBPF_ATTACH(containerd_probe, linux_Task_Start, elf[i], 
-        		github.com/containerd/containerd/runtime/v1/linux.(*Task).Start, ret);
+                github.com/containerd/containerd/runtime/v1/linux.(*Task).Start, ret);
         if (ret <= 0) {
             continue;
         }
         UBPF_ATTACH(containerd_probe, linux_Task_Delete, elf[i], 
-        		github.com/containerd/containerd/runtime/v1/linux.(*Task).Delete, ret);
+                github.com/containerd/containerd/runtime/v1/linux.(*Task).Delete, ret);
         if (ret <= 0) {
             continue;
         }

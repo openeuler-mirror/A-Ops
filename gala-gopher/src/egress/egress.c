@@ -93,8 +93,6 @@ static int EgressDataProcesssInput(Fifo *fifo, const EgressMgr *mgr)
         if (kafkaMgr != NULL) {
             KafkaMsgProduce(kafkaMgr, dataStr, strlen(dataStr));
             DEBUG("[EGRESS] kafka produce one data: %s\n", dataStr);
-        } else {
-            ERROR("[EGRESS] find no avaliable egress resource, just drop input data str.\n");
         }
         free(dataStr);
     }
@@ -105,22 +103,24 @@ static int EgressDataProcesssInput(Fifo *fifo, const EgressMgr *mgr)
 static int EgressDataProcess(const EgressMgr *mgr)
 {
     struct epoll_event events[MAX_EPOLL_EVENTS_NUM];
-    int32_t events_num = 0;
+    int events_num;
     Fifo *fifo = NULL;
     uint32_t ret = 0;
 
     events_num = epoll_wait(mgr->epoll_fd, events, MAX_EPOLL_EVENTS_NUM, -1);
-    if (events_num < 0) {
+    if ((events_num < 0) && (errno != EINTR)) {
         ERROR("Egress Msg wait failed: %s.\n", strerror(errno));
-        if (errno == EINTR)
-            // if receive the debugging signal(-1) when debugging, please ignore it
-            events_num = 0;
-
         return events_num;
     }
 
-    for (int i = 0; i < events_num; i++) {
+    for (int i = 0; ((i < events_num) && (i < MAX_EPOLL_EVENTS_NUM)); i++) {
+        if (events[i].events != EPOLLIN)
+            continue;
+
         fifo = (Fifo *)events[i].data.ptr;
+        if (fifo == NULL)
+            continue;
+
         ret = EgressDataProcesssInput(fifo, mgr);
         if (ret != 0)
             return -1;

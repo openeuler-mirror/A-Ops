@@ -17,6 +17,7 @@
 
 #include <stdint.h>
 #include <stdio.h>
+#include <time.h>
 
 #include "base.h"
 #include "config.h"
@@ -60,6 +61,9 @@ typedef struct {
 
     // ctl server
     pthread_t ctl_tid;
+
+    // keep-live timer id
+    timer_t keeplive_timer;
 } ResourceMgr;
 
 ResourceMgr *ResourceMgrCreate(void);

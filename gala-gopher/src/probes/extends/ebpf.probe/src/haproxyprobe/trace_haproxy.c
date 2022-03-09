@@ -185,19 +185,18 @@ int main(int argc, char **argv)
 
     printf("arg parse interval time:%us\n", params.period);
 
-    INIT_BPF_APP(trace_haproxy);
-    LOAD(trace_haproxy, err);
-
-    /* Cleaner handling of Ctrl-C */
-    signal(SIGINT, sig_handler);
-    signal(SIGTERM, sig_handler);
-
     /* Find elf's abs_path */
     ELF_REAL_PATH(haproxy, params.elf_path, NULL, elf, elf_num);
     if (elf_num <= 0) {
         printf("get proc:haproxy abs_path error \n");
         return -1;
     }
+    INIT_BPF_APP(trace_haproxy);
+    LOAD(trace_haproxy, err);
+
+    /* Cleaner handling of Ctrl-C */
+    signal(SIGINT, sig_handler);
+    signal(SIGTERM, sig_handler);
 
     /* Attach tracepoint handler for each elf_path */
     for (int i = 0; i < elf_num; i++) {

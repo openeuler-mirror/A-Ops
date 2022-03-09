@@ -29,7 +29,9 @@
 
 static __always_inline int libbpf_print_fn(enum libbpf_print_level level, const char *format, va_list args)
 {
-    return vfprintf(stderr, format, args);
+    if (level == LIBBPF_WARN)
+        return ERROR(format, args);
+    return 0;
 }
 
 static __always_inline int set_memlock_rlimit(void)
@@ -57,7 +59,7 @@ static __always_inline int set_memlock_rlimit(void)
         \
         __map = GET_MAP_OBJ(probe_name, map_name); \
         ret = bpf_map__set_pin_path(__map, map_path); \
-        (void)printf("======>SHARE map(" #map_name ") set pin path \"%s\"(ret=%d).\n", map_path, ret); \
+        DEBUG("======>SHARE map(" #map_name ") set pin path \"%s\"(ret=%d).\n", map_path, ret); \
     } while (0)
 
 #define __PIN_SHARE_MAP_ALL(probe_name) \
@@ -75,7 +77,7 @@ static __always_inline int set_memlock_rlimit(void)
             \
             /* Bump RLIMIT_MEMLOCK  allow BPF sub-system to do anything */ \
             if (set_memlock_rlimit() == 0) { \
-                (void)fprintf(stderr, "BPF app(" #app_name ") failed to set mem limit.\n"); \
+                ERROR("BPF app(" #app_name ") failed to set mem limit.\n"); \
                 return -1; \
             } \
             __init = 1; \
@@ -91,23 +93,23 @@ static __always_inline int set_memlock_rlimit(void)
         /* Open load and verify BPF application */ \
         probe_name##_skel = probe_name##_bpf__open(); \
         if (!probe_name##_skel) { \
-            (void)fprintf(stderr, "Failed to open BPF " #probe_name "skeleton\n"); \
+            ERROR("Failed to open BPF " #probe_name " skeleton\n"); \
             goto end; \
         } \
         __PIN_SHARE_MAP_ALL(probe_name); \
         if (probe_name##_bpf__load(probe_name##_skel)) { \
-            (void)fprintf(stderr, "Failed to load BPF " #probe_name "skeleton\n"); \
+            ERROR("Failed to load BPF " #probe_name " skeleton\n"); \
             goto end; \
         } \
         /* Attach tracepoint handler */ \
         err = probe_name##_bpf__attach(probe_name##_skel); \
         if (err) { \
-            (void)fprintf(stderr, "Failed to attach BPF " #probe_name " skeleton\n"); \
+            ERROR("Failed to attach BPF " #probe_name " skeleton\n"); \
             probe_name##_bpf__destroy(probe_name##_skel); \
             probe_name##_skel = NULL; \
             goto end; \
         } \
-        (void)fprintf(stdout, "Succeed to load and attach BPF " #probe_name " skeleton\n"); \
+        INFO("Succeed to load and attach BPF " #probe_name " skeleton\n"); \
     } while (0)
 
 #define OPEN(probe_name, end, load) \
@@ -120,7 +122,7 @@ static __always_inline int set_memlock_rlimit(void)
             /* Open load and verify BPF application */ \
             probe_name##_skel = probe_name##_bpf__open(); \
             if (!probe_name##_skel) { \
-                (void)fprintf(stderr, "Failed to open BPF " #probe_name "skeleton\n"); \
+                ERROR("Failed to open BPF " #probe_name " skeleton\n"); \
                 goto end; \
             } \
         }\
@@ -141,18 +143,18 @@ static __always_inline int set_memlock_rlimit(void)
             int err; \
             __PIN_SHARE_MAP_ALL(probe_name); \
             if (probe_name##_bpf__load(probe_name##_skel)) { \
-                (void)fprintf(stderr, "Failed to load BPF " #probe_name "skeleton\n"); \
+                ERROR("Failed to load BPF " #probe_name " skeleton\n"); \
                 goto end; \
             } \
             /* Attach tracepoint handler */ \
             err = probe_name##_bpf__attach(probe_name##_skel); \
             if (err) { \
-                (void)fprintf(stderr, "Failed to attach BPF " #probe_name " skeleton\n"); \
+                ERROR("Failed to attach BPF " #probe_name " skeleton\n"); \
                 probe_name##_bpf__destroy(probe_name##_skel); \
                 probe_name##_skel = NULL; \
                 goto end; \
             } \
-            (void)fprintf(stdout, "Succeed to load and attach BPF " #probe_name " skeleton\n"); \
+            INFO("Succeed to load and attach BPF " #probe_name " skeleton\n"); \
         }\
     } while (0)
 
@@ -165,7 +167,7 @@ static __always_inline int set_memlock_rlimit(void)
         for (int i = 0; i < probe_name##_link_current; i++) { \
             err = bpf_link__destroy(probe_name##_link[i]); \
             if (err < 0) { \
-                fprintf(stderr, "Failed to detach BPF " #probe_name " %d\n", err); \
+                ERROR("Failed to detach BPF " #probe_name " %d\n", err); \
                 break; \
             } \
         } \
@@ -175,7 +177,7 @@ static __always_inline int set_memlock_rlimit(void)
     do { \
         path_num = get_exec_file_path( #binary_file, (const char *)elf_abs_path, #container_id, elf_path, PATH_NUM); \
         if ((path_num) <= 0) { \
-            (void)fprintf(stderr, "Failed to get proc(" #binary_file ") abs_path.\n"); \
+            ERROR("Failed to get proc(" #binary_file ") abs_path.\n"); \
             free_exec_path_buf(elf_path, path_num); \
             break; \
         } \
@@ -187,7 +189,7 @@ static __always_inline int set_memlock_rlimit(void)
         uint64_t symbol_offset; \
         err = resolve_symbol_infos((const char *)elf_path, #func_name, NULL, &symbol_offset); \
         if (err < 0) { \
-            (void)fprintf(stderr, "Failed to get func(" #func_name ") in(%s) offset.\n", elf_path); \
+            ERROR("Failed to get func(" #func_name ") in(%s) offset.\n", elf_path); \
             succeed = 0; \
             break; \
         } \
@@ -197,11 +199,11 @@ static __always_inline int set_memlock_rlimit(void)
             probe_name##_skel->progs.ubpf_##sec, false /* not uretprobe */, -1, elf_path, (size_t)symbol_offset); \
         err = libbpf_get_error(probe_name##_link[probe_name##_link_current]); \
         if (err) { \
-            (void)fprintf(stderr, "Failed to attach uprobe(" #sec "): %d\n", err); \
+            ERROR("Failed to attach uprobe(" #sec "): %d\n", err); \
             succeed = 0; \
             break; \
         } \
-        (void)fprintf(stdout, "Success to attach uprobe(" #probe_name "): to elf: %s\n", elf_path); \
+        INFO("Success to attach uprobe(" #probe_name "): to elf: %s\n", elf_path); \
         probe_name##_link_current += 1; \
         succeed = 1; \
     } while (0)
@@ -212,7 +214,7 @@ static __always_inline int set_memlock_rlimit(void)
         uint64_t symbol_offset; \
         err = resolve_symbol_infos((const char *)elf_path, #func_name, NULL, &symbol_offset); \
         if (err < 0) { \
-            (void)fprintf(stderr, "Failed to get func(" #func_name ") in(%s) offset.\n", elf_path); \
+            ERROR("Failed to get func(" #func_name ") in(%s) offset.\n", elf_path); \
             succeed = 0; \
             break; \
         } \
@@ -222,11 +224,11 @@ static __always_inline int set_memlock_rlimit(void)
             probe_name##_skel->progs.ubpf_ret_##sec, true /* uretprobe */, -1, elf_path, (size_t)symbol_offset); \
         err = libbpf_get_error(probe_name##_link[probe_name##_link_current]); \
         if (err) { \
-            (void)fprintf(stderr, "Failed to attach uprobe(" #sec "): %d\n", err); \
+            ERROR("Failed to attach uprobe(" #sec "): %d\n", err); \
             succeed = 0; \
             break; \
         } \
-        (void)fprintf(stdout, "Success to attach uretprobe(" #probe_name ") to elf: %s\n", elf_path); \
+        INFO("Success to attach uretprobe(" #probe_name ") to elf: %s\n", elf_path); \
         probe_name##_link_current += 1; \
         succeed = 1; \
     } while (0)

@@ -19,8 +19,13 @@
 #include <unistd.h>
 #include <sys/un.h>
 #include <sys/socket.h>
+#include <time.h>
+#include <signal.h>
+
 #include "server.h"
 #include "daemon.h"
+
+static const ResourceMgr *resouce_msg;
 
 #if GALA_GOPHER_INFO("inner func declaration")
 static void *DaemonRunIngress(void *arg);
@@ -123,12 +128,104 @@ static void CleanData(const ResourceMgr *mgr)
     DEBUG("[DAEMON] clean data success[%s].\n", cmd);
 }
 
+static void DaemonKeeplive(int sig)
+{
+    int ret;
+    ExtendProbe *probe;
+    const ResourceMgr *mgr = resouce_msg;
+
+    for (int i = 0; i < mgr->extendProbeMgr->probesNum; i++) {
+        probe = mgr->extendProbeMgr->probes[i];
+        if (probe->is_running == 0) {
+            continue;
+        }
+
+        ret = pthread_kill(probe->tid, 0);
+        if (ret == ESRCH) {
+#if 0
+            ret = IngressRemovePorbe(mgr->ingressMgr, probe);
+            if (ret != 0) {
+                ERROR("[DAEMON] keeplive probe(%s) failed.\n", probe->name);
+                continue;
+            }
+            ret = IngressAddPorbe(mgr->ingressMgr, probe);
+            if (ret != 0) {
+                ERROR("[DAEMON] keeplive probe(%s) failed.\n", probe->name);
+                continue;
+            }
+#endif
+            (void)pthread_create(&probe->tid, NULL, DaemonRunSingleExtendProbe, probe);
+            (void)pthread_join(probe->tid, NULL);
+
+            INFO("[DAEMON] keeplive probe(%s) success.\n", probe->name);
+            break;
+        }
+    }
+    return;
+}
+
+#define KEEPLIVE_DELAY_START  60	// 1min
+#define KEEPLIVE_PERIOD		  120	// 2min
+static int DaemonCreateTimer(ResourceMgr *mgr)
+{
+    int ret;
+    struct sigevent se;
+    struct itimerspec its;
+    struct sigaction sa;
+
+    // Set signal handler.
+    sa.sa_handler = DaemonKeeplive;
+    (void)sigemptyset(&sa.sa_mask);
+    sa.sa_flags = 0;
+    sa.sa_flags |= SA_INTERRUPT;
+    
+    ret = sigaction(SIGUSR1, &sa, NULL);
+    if (ret != 0) {
+        ERROR("[DAEMON] set sig action failed(%d)\n", ret);
+        goto err;
+    }
+
+    // Set Timer signal notification mode
+    (void)memset(&se, 0, sizeof(se));
+    se.sigev_notify = SIGEV_SIGNAL;
+    se.sigev_signo = SIGUSR1;
+    se.sigev_value.sival_ptr = CLOCK_REALTIME;
+
+    ret = timer_create(CLOCK_REALTIME, &se, &(mgr->keeplive_timer));
+    if (ret != 0) {
+        ERROR("[DAEMON] create timer failed(%d)\n", ret);
+        goto err;
+    }
+
+    (void)memset(&its, 0, sizeof(its));
+
+    its.it_value.tv_sec = KEEPLIVE_DELAY_START;
+    its.it_value.tv_nsec = 0;
+    its.it_interval.tv_sec = KEEPLIVE_PERIOD;
+    its.it_interval.tv_nsec = 0;
+
+    ret = timer_settime(mgr->keeplive_timer, 0, &its, NULL);
+    if (ret != 0) {
+        ERROR("[DAEMON] set timer failed(%d)\n", ret);
+        goto err;
+    }
+
+    return 0;
+err:
+    if (mgr->keeplive_timer != 0) {
+        (void)timer_delete(mgr->keeplive_timer);
+        mgr->keeplive_timer = 0;
+    }
+    return ret;
+}
+
 int DaemonRun(const ResourceMgr *mgr)
 {
     int ret;
 
     // 0. clean data
     CleanData(mgr);
+    resouce_msg = mgr;
 
     // 1. start ingress thread
     ret = pthread_create(&mgr->ingressMgr->tid, NULL, DaemonRunIngress, mgr->ingressMgr);
@@ -193,6 +290,7 @@ int DaemonRun(const ResourceMgr *mgr)
             ERROR("[DAEMON] create extend probe thread failed. probe name: %s errno: %d\n", _extendProbe->name, errno);
             return -1;
         }
+        mgr->extendProbeMgr->probes[i]->is_running = 1;
         INFO("[DAEMON] create extend probe %s thread success.\n", mgr->extendProbeMgr->probes[i]->name);
     }
 
@@ -203,6 +301,14 @@ int DaemonRun(const ResourceMgr *mgr)
         return -1;
     }
     INFO("[DAEMON] create cmd_server thread success.\n");
+
+    //7. create keeplive timer
+    ret = DaemonCreateTimer((ResourceMgr *)mgr);
+    if (ret != 0) {
+        ERROR("[DAEMON] create keeplive timer failed. errno: %d\n", ret);
+        return -1;
+    }
+    INFO("[DAEMON] create keeplive timer success.\n");
 
     return 0;
 }
