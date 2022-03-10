@@ -154,6 +154,10 @@ static int IngressDataProcesssInput(Fifo *fifo, IngressMgr *mgr)
     IMDB_Record* rec;
 
     uint64_t val = 0;
+    if (fifo == NULL) {
+        ERROR("[INGRESS] Read event fifo is null.\n");
+        return -1;
+    }
     ret = read(fifo->triggerFd, &val, sizeof(val));
     if (ret < 0) {
         ERROR("[INGRESS] Read event from triggerfd failed.\n");

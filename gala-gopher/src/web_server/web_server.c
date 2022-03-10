@@ -20,6 +20,7 @@
 #include "web_server.h"
 
 #define MAX_WEBPAGE_BUFFER_SIZE (8 * 1024 * 64)     // 64 KB
+char g_buffer[MAX_WEBPAGE_BUFFER_SIZE];
 
 #if GALA_GOPHER_INFO("inner func")
 static int WebRequestCallback(void *cls,
@@ -60,12 +61,12 @@ static int WebRequestCallback(void *cls,
         return MHD_NO;
     }
 
-    char buffer[MAX_WEBPAGE_BUFFER_SIZE];
-    ret = IMDB_DataBaseMgrData2String(imdbMgr, buffer, MAX_WEBPAGE_BUFFER_SIZE);
+    g_buffer[0] = 0;
+    ret = IMDB_DataBaseMgrData2String(imdbMgr, g_buffer, MAX_WEBPAGE_BUFFER_SIZE);
     if (ret < 0) {
         return MHD_NO;
     }
-    response = MHD_create_response_from_buffer(strlen(buffer), (void *)buffer, MHD_RESPMEM_PERSISTENT);
+    response = MHD_create_response_from_buffer(strlen(g_buffer), (void *)g_buffer, MHD_RESPMEM_PERSISTENT);
     if (response == NULL) {
         return MHD_NO;
     }

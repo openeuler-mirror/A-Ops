@@ -598,7 +598,7 @@ static int IMDB_Metric2String(IMDB_Metric *metric, char *buffer, uint32_t maxLen
     int total = 0;
     char *curBuffer = buffer;
     uint32_t curMaxLen = maxLen;
-
+#if 0
     ret = IMDB_MetricDesc2String(metric, curBuffer, curMaxLen, tableName);
     if (ret < 0 || ret >= curMaxLen) {
         return -1;
@@ -614,7 +614,7 @@ static int IMDB_Metric2String(IMDB_Metric *metric, char *buffer, uint32_t maxLen
     curBuffer += ret;
     curMaxLen -= ret;
     total += ret;
-
+#endif
     ret = IMDB_MetricValue2String(metric, curBuffer, curMaxLen, tableName, labels);
     if (ret < 0 || ret >= curMaxLen) {
         return -1;
@@ -747,11 +747,20 @@ static int IMDB_Table2String(IMDB_DataBaseMgr *mgr, IMDB_Table *table, char *buf
     IMDB_Record *record, *tmp;
     char *curBuffer = buffer;
     uint32_t curMaxLen = maxLen;
+    uint32_t period_records = DEFAULT_PERIOD_RECORD_NUM;
+    uint32_t index = 0;
 
-    if (HASH_recordCount((const IMDB_Record **)table->records) == 0)
+    if (HASH_recordCount((const IMDB_Record **)table->records) == 0) {
         return 0;
-
+    }
+    if (strcmp(table->name, "task") == 0 || strcmp(table->name, "tcp_link") == 0) {
+        period_records = 30;
+    }
     HASH_ITER(hh, *table->records, record, tmp) {
+        // check record num
+        if (index >= period_records) {
+            break;
+        }
         // check timeout
         if (record->updateTime + g_recordTimeout < time(NULL)) {
             // remove invalid record
@@ -769,6 +778,12 @@ static int IMDB_Table2String(IMDB_DataBaseMgr *mgr, IMDB_Table *table, char *buf
         curBuffer += ret;
         curMaxLen -= ret;
         total += ret;
+
+        // delete record after to string
+        HASH_deleteRecord(table->records, record);
+        IMDB_RecordDestroy(record);
+
+        index++;
     }
 
     ret = snprintf(curBuffer, curMaxLen, "\n");

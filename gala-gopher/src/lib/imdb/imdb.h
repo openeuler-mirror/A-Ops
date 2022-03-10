@@ -46,6 +46,9 @@
 
 #define INVALID_METRIC_VALUE "(null)"
 
+// NUMS OF RECORD TO STRING EVERY PERIOD
+#define DEFAULT_PERIOD_RECORD_NUM       100
+
 typedef struct {
     char machineId[MAX_IMDB_MACHINEID_LEN];
     char hostName[MAX_IMDB_HOSTNAME_LEN];
