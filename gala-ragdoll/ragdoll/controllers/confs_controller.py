@@ -343,7 +343,7 @@ def query_real_confs(body=None):  # noqa: E501
         get_real_conf_body_infos["config_list"] = conf_list
         get_real_conf_body_info.append(get_real_conf_body_infos)
     get_real_conf_body["infos"] = get_real_conf_body_info
-    url = conf_tools.load_collect_by_conf()
+    url = conf_tools.load_url_by_conf().get("collect_url")
     headers = {"Content-Type": "application/json"}
     response = requests.post(url, data=json.dumps(get_real_conf_body), headers=headers)  # post request
     resp = json.loads(response.text).get("resp")
@@ -491,15 +491,20 @@ def sync_conf_to_host_from_domain(body=None):  # noqa: E501
             file_path = d_man_conf.get("filePath").split(":")[-1]
             contents = d_man_conf.get("contents")
             object_parse = ObjectParse()
-            content = object_parse.parse_json_to_content(file_path, contents)
+            content = object_parse.parse_json_to_conf(file_path, contents)
             # Configuration to the host
-            result = conf_tools.wirteFileInPath(file_path, content)
+            sync_conf_url = conf_tools.load_url_by_conf().get("sync_url")
+            headers = {"Content-Type": "application/json"}
+            data = {"host_id": d_host, "file_path": file_path, "content": content}
+            sync_response = requests.put(sync_conf_url, data=json.dumps(data), headers=headers)
+
+            resp_status = json.loads(sync_response.text).get("status")
             conf_sync_res = ConfSyncedRes(file_path=file_path,
                                           result="")
-            if result:
+            if resp_status:
                 conf_sync_res.result = "SUCCESS"
             else:
-                conf_sync_res.result = "FILED"
+                conf_sync_res.result = "FAILED"
             host_sync_result.sync_result.append(conf_sync_res)
         sync_res.append(host_sync_result)
 

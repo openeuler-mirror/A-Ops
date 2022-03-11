@@ -127,9 +127,10 @@ def add_management_confs_in_domain(body=None):  # noqa: E501
             get_real_conf_body_info.append(confs)
         get_real_conf_body["infos"] = get_real_conf_body_info
 
-        url = conf_tools.load_collect_by_conf()
+        url = conf_tools.load_url_by_conf().get("collect_url")
         headers = {"Content-Type": "application/json"}
         response = requests.post(url, data=json.dumps(get_real_conf_body), headers=headers)  # post request
+        
         response_code = json.loads(response.text).get("code")
         if response_code == None:
             codeNum = 500
