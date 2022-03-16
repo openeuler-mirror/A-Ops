@@ -616,9 +616,16 @@ static int IMDB_Metric2String(IMDB_Metric *metric, char *buffer, uint32_t maxLen
     total += ret;
 #endif
     ret = IMDB_MetricValue2String(metric, curBuffer, curMaxLen, tableName, labels);
-    if (ret < 0 || ret >= curMaxLen) {
+    if (ret < 0) {
+        /* snprintf error */
         return -1;
     }
+    if (ret >= curMaxLen) {
+        /* record's len > curMaxLen, delete record in buffer */
+        *curBuffer = '\0';
+        return 0;
+    }
+    /* record to buffer success */
     total += ret;
 
     return total;
@@ -725,10 +732,12 @@ static int IMDB_Record2String(IMDB_DataBaseMgr *mgr, IMDB_Record *record, char *
         }
 
         ret = IMDB_Metric2String(record->metrics[i], curBuffer, curMaxLen, tableName, labels);
-        if (ret < 0 || ret >= curMaxLen) {
-            ERROR("[IMDB] table(%s)'s metric(%s) to string fail, because buffer is full.\n",
-                            tableName, record->metrics[i]);
+        if (ret < 0) {
+            ERROR("[IMDB] table(%s)'s metric(%s) to string fail.\n", tableName, record->metrics[i]);
             return -1;
+        }
+        if (ret == 0) {
+            break;  /* buffer is full, break loop */
         }
 
         curBuffer += ret;
@@ -753,9 +762,6 @@ static int IMDB_Table2String(IMDB_DataBaseMgr *mgr, IMDB_Table *table, char *buf
     if (HASH_recordCount((const IMDB_Record **)table->records) == 0) {
         return 0;
     }
-    if (strcmp(table->name, "task") == 0 || strcmp(table->name, "tcp_link") == 0) {
-        period_records = 30;
-    }
     HASH_ITER(hh, *table->records, record, tmp) {
         // check record num
         if (index >= period_records) {
@@ -770,9 +776,12 @@ static int IMDB_Table2String(IMDB_DataBaseMgr *mgr, IMDB_Table *table, char *buf
         }
 
         ret = IMDB_Record2String(mgr, record, curBuffer, curMaxLen, table->name);
-        if (ret < 0 || ret >= curMaxLen) {
+        if (ret < 0) {
             ERROR("[IMDB] table(%s) record to string fail.\n", table->name);
             return -1;
+        }
+        if (ret == 0) {
+            break;  /* buffer is full, break loop */
         }
 
         curBuffer += ret;
@@ -797,14 +806,13 @@ static int IMDB_Table2String(IMDB_DataBaseMgr *mgr, IMDB_Table *table, char *buf
     return total;
 }
 
-int IMDB_DataBaseMgrData2String(IMDB_DataBaseMgr *mgr, char *buffer, uint32_t maxLen)
+int IMDB_DataBaseMgrData2String(IMDB_DataBaseMgr *mgr, char *buffer, uint32_t maxLen, uint32_t *buf_len)
 {
     pthread_rwlock_rdlock(&mgr->rwlock);
 
     int ret = 0;
     char *cursor = buffer;
     uint32_t curMaxLen = maxLen;
-    memset(cursor, 0, maxLen);
 
     for (int i = 0; i < mgr->tablesNum; i++) {
         ret = IMDB_Table2String(mgr, mgr->tables[i], cursor, curMaxLen);
@@ -815,7 +823,7 @@ int IMDB_DataBaseMgrData2String(IMDB_DataBaseMgr *mgr, char *buffer, uint32_t ma
         cursor += ret;
         curMaxLen -= ret;
     }
-
+    *buf_len = maxLen - curMaxLen;
     pthread_rwlock_unlock(&mgr->rwlock);
     return 0;
 ERR:

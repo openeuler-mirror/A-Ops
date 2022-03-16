@@ -274,15 +274,16 @@ class YangModule(object):
         """
         res = {}
         for d_mod in modules:
-            feature_list = self.getFeatureInModule(d_mod)
-            module_name = d_mod.name()
-            xpath = ""
-            for d_feature in feature_list:
-                xpath = xpath + "/" + module_name + ":" + d_feature
-            node = next(self._ctx.find_path(xpath))
-            extension = node.get_extension('type')
-            d_type = extension.argument()
-            res[module_name] = d_type
+            if d_mod:
+                feature_list = self.getFeatureInModule(d_mod)
+                module_name = d_mod.name()
+                xpath = ""
+                for d_feature in feature_list:
+                    xpath = xpath + "/" + module_name + ":" + d_feature
+                node = next(self._ctx.find_path(xpath))
+                extension = node.get_extension('type')
+                d_type = extension.argument()
+                res[module_name] = d_type
         return res
 
     def getSpacerInModdule(self, modules):

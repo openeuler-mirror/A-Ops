@@ -81,10 +81,6 @@ static int EgressDataProcesssInput(Fifo *fifo, const EgressMgr *mgr)
     KafkaMgr *kafkaMgr = mgr->kafkaMgr;
 
     uint64_t val = 0;
-    if (fifo == NULL) {
-        ERROR("[EGRESS] Read event fifo is null.\n");
-        return -1;
-    }
     ret = read(fifo->triggerFd, &val, sizeof(val));
     if (ret < 0) {
         ERROR("[EGRESS] Read event from triggerfd failed.\n");
