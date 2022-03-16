@@ -10,12 +10,7 @@ measurements:
                 type: "key",
                 name: "tgid",
             },
-            {
-                description: "process name",
-                type: "label",
-                name: "process_name",
-            },
-	    {
+	        {
                 description: "role",
                 type: "key",
                 name: "role",
@@ -37,7 +32,7 @@ measurements:
             },
             {
                 description: "protocol",
-                type: "label",
+                type: "key",
                 name: "protocol",
             },
             {
@@ -47,107 +42,107 @@ measurements:
             },
             {
                 description: "rx bytes",
-                type: "counter",
+                type: "gauge",
                 name: "rx_bytes",
             },
             {
                 description: "tx bytes",
-                type: "counter",
+                type: "gauge",
                 name: "tx_bytes",
             },
             {
                 description: "packets in",
-                type: "counter",
+                type: "gauge",
                 name: "packets_in",
             },
             {
                 description: "packets out",
-                type: "counter",
+                type: "gauge",
                 name: "packets_out",
             },
             {
                 description: "retran packets",
-                type: "counter",
+                type: "gauge",
                 name: "retran_packets",
             },
             {
                 description: "lost packets",
-                type: "counter",
+                type: "gauge",
                 name: "lost_packets",
             },
             {
                 description: "rtt(us)",
-                type: "Unknown",
+                type: "gauge",
                 name: "rtt",
             },
             {
                 description: "rtt_max(us)",
-                type: "Unknown",
+                type: "gauge",
                 name: "rtt_max",
             },
             {
                 description: "rcv_wnd_min",
-                type: "Unknown",
+                type: "gauge",
                 name: "rcv_wnd_min",
             },
             {
                 description: "rcv_wnd_avg",
-                type: "Unknown",
+                type: "gauge",
                 name: "rcv_wnd_avg",
             },
             {
                 description: "rcv_wnd_max",
-                type: "Unknown",
+                type: "gauge",
                 name: "rcv_wnd_max",
             },
             {
                 description: "backlog_drops",
-                type: "Unknown",
+                type: "gauge",
                 name: "backlog_drops",
             },
             {
                 description: "sk_drops",
-                type: "Unknown",
+                type: "gauge",
                 name: "sk_drops",
             },
             {
                 description: "md5_hash_drops",
-                type: "Unknown",
+                type: "gauge",
                 name: "md5_hash_drops",
             },
             {
                 description: "filter_drops",
-                type: "Unknown",
+                type: "gauge",
                 name: "filter_drops",
             },
             {
                 description: "ofo_count",
-                type: "Unknown",
+                type: "gauge",
                 name: "ofo_count",
             },
             {
                 description: "tmout_count",
-                type: "counter",
+                type: "gauge",
                 name: "tmout_count",
             },
             {
                 description: "rcv_que_full",
-                type: "counter",
+                type: "gauge",
                 name: "rcv_que_full_count",
             },
             {
                 description: "snd_buf_limit",
-                type: "counter",
+                type: "gauge",
                 name: "snd_buf_limit_count",
             },
             {
                 description: "send_rsts",
-                type: "counter",
+                type: "gauge",
                 name: "send_rsts",
             },
             {
                 description: "receive_rsts",
-                type: "counter",
+                type: "gauge",
                 name: "receive_rsts",
             }
         )
