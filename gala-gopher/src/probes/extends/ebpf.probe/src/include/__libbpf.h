@@ -29,9 +29,7 @@
 
 static __always_inline int libbpf_print_fn(enum libbpf_print_level level, const char *format, va_list args)
 {
-    if (level == LIBBPF_WARN)
-        return ERROR(format, args);
-    return 0;
+    return vfprintf(stderr, format, args);
 }
 
 static __always_inline int set_memlock_rlimit(void)
