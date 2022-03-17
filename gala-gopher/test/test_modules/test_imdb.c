@@ -302,7 +302,8 @@ static void TestIMDB_DataBaseMgrData2String(void)
     CU_ASSERT(ret == 0);
 
     char buffer[2048] = {0};
-    ret = IMDB_DataBaseMgrData2String(mgr, buffer, 2048);
+    int buf_len;
+    ret = IMDB_DataBaseMgrData2String(mgr, buffer, 2048, &buf_len);
     CU_ASSERT(ret >= 0);
     printf("DatabaseMgr2String: \n");
     printf(buffer);
