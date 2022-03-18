@@ -284,7 +284,7 @@ int __wrap_fprintf(FILE *stream, const char *format, ...)
     int i, base;
     char *str;
     const char *s;
-    char *curFormat = format;
+    char *curFormat = (char *)format;
 
     int flags;          /* flags to number */
     int field_width;    /* width of output field */
@@ -388,6 +388,27 @@ int __wrap_fprintf(FILE *stream, const char *format, ...)
                     *str++ = ' ';
                 }
                 continue;
+            case 'f':
+            {
+                char buf[64];
+                char buf_format[16];
+                buf[0] = 0;
+                buf_format[0] = 0;
+                if (precision > 0) {
+                    if (field_width > 0) {
+                        (void)snprintf((char *)buf_format, 16, "%%%d.%df", field_width, precision);
+                    } else {
+                        (void)snprintf((char *)buf_format, 16, "%%.%df", precision);
+                    }
+                } else {
+                    (void)snprintf((char *)buf_format, 16, "%%f");
+                }
+                (void)snprintf((char *)buf, 64, buf_format, (double)va_arg(args, double));
+                for (i = 0; buf[i] != '\0'; ++i) {
+                    *str++ = buf[i];
+                }
+                continue;
+            }
             case 'p':
                 if (field_width == -1) {
                     field_width = 2 * sizeof(void *);
