@@ -482,6 +482,7 @@ int __wrap_fprintf(FILE *stream, const char *format, ...)
     int ret = FifoPut(g_probe->fifo, (void *)dataStr);
     if (ret != 0) {
         ERROR("[PROBE %s] fifo full.\n", g_probe->name);
+        (void)free(dataStr);
         return -1;
     }
 

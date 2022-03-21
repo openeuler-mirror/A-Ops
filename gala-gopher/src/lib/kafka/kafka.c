@@ -21,11 +21,8 @@
 static void dr_msg_cb(rd_kafka_t *rk, const rd_kafka_message_t *rkmessage, void *opaque)
 {
     if (rkmessage->err) {
-        fprintf(stderr, "%% Message delivery failed: %s\n", rd_kafka_err2str(rkmessage->err));
-    } else {
-        fprintf(stderr, "%% Message delivered (%zd bytes, ""partition %"PRId32")\n",
-                        rkmessage->len, rkmessage->partition);
-    } /* rkmessage被librdkafka自动销毁 */
+        ERROR("Message delivery failed: %s\n", rd_kafka_err2str(rkmessage->err));
+    }/* rkmessage被librdkafka自动销毁 */
 }
 
 KafkaMgr *KafkaMgrCreate(const ConfigMgr *configMgr)
@@ -144,15 +141,30 @@ void KafkaMgrDestroy(KafkaMgr *mgr)
     return;
 }
 
-int KafkaMsgProduce(const KafkaMgr *mgr, const char *msg, const uint32_t msgLen)
+#define __RETRY_MAX 3
+int KafkaMsgProduce(const KafkaMgr *mgr, char *msg, const uint32_t msgLen)
 {
     int ret = 0;
-    ret = rd_kafka_produce(mgr->rkt, RD_KAFKA_PARTITION_UA, RD_KAFKA_MSG_F_COPY, (void *)msg, msgLen, NULL, 0, NULL);
+    int retry_index = 0, retry_max = __RETRY_MAX;
+
+retry:
+    ret = rd_kafka_produce(mgr->rkt,
+                           RD_KAFKA_PARTITION_UA,
+                           RD_KAFKA_MSG_F_FREE,
+                           (void *)msg, msgLen,
+                           NULL, 0, NULL);
     if (ret == -1) {
+        retry_index++;
+        if ((retry_index < retry_max) && (rd_kafka_last_error() == RD_KAFKA_RESP_ERR__QUEUE_FULL)) {
+            (void)rd_kafka_poll(mgr->rk, 10);
+            goto retry;
+        }
         ERROR("Failed to produce msg to topic %s: %s.\n", rd_kafka_topic_name(mgr->rkt),
                                                            rd_kafka_err2str(rd_kafka_last_error()));
+        (void)free(msg);
         return -1;
     }
+    (void)rd_kafka_poll(mgr->rk, 0);
     return 0;
 }
 

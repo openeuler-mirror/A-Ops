@@ -37,7 +37,7 @@ typedef struct {
 KafkaMgr *KafkaMgrCreate(const ConfigMgr *configMgr);
 void KafkaMgrDestroy(KafkaMgr *mgr);
 
-int KafkaMsgProduce(const KafkaMgr *mgr, const char *msg, const uint32_t msgLen);
+int KafkaMsgProduce(const KafkaMgr *mgr, char *msg, const uint32_t msgLen);
 
 #endif
 

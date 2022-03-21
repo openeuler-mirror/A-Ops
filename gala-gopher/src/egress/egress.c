@@ -94,7 +94,6 @@ static int EgressDataProcesssInput(Fifo *fifo, const EgressMgr *mgr)
             KafkaMsgProduce(kafkaMgr, dataStr, strlen(dataStr));
             DEBUG("[EGRESS] kafka produce one data: %s\n", dataStr);
         }
-        free(dataStr);
     }
 
     return 0;
