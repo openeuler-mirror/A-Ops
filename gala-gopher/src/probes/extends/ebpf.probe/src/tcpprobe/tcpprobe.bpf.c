@@ -166,11 +166,11 @@ static __always_inline void report(struct pt_regs *ctx, struct tcp_metrics_s *me
     } else {
         u64 ts = bpf_ktime_get_ns();
         u64 period = get_period();
-        if ((ts - metrics->ts) < period) {
+        if ((ts > metrics->ts) && ((ts - metrics->ts) < period)) {
             return;
         }
-        (void)bpf_perf_event_output(ctx, &output, 0, metrics, sizeof(struct tcp_metrics_s));
         metrics->ts = ts;
+        (void)bpf_perf_event_output(ctx, &output, 0, metrics, sizeof(struct tcp_metrics_s));
     }
 
     __builtin_memset(&(metrics->data), 0x0, sizeof(metrics->data));
@@ -219,7 +219,7 @@ static void load_tcp_fd(u32 tgid)
 
 #pragma clang loop unroll(full)
     for (int i = 0; i < TCP_FD_PER_PROC_MAX; i++) {
-        do_load_tcp_fd(tgid, tcp_fd_s->fds[0], tcp_fd_s->fd_role[0]);
+        do_load_tcp_fd(tgid, tcp_fd_s->fds[i], tcp_fd_s->fd_role[i]);
     }
 
     (void)bpf_map_delete_elem(&tcp_fd_map, &tgid);
@@ -272,7 +272,7 @@ KPROBE(tcp_sendmsg, pt_regs)
     u32 new_entry = 0;
     struct tcp_metrics_s *metrics;
     struct sock *sk = (struct sock *)PT_REGS_PARM1(ctx);
-    size_t size = (size_t)PT_REGS_PARM2(ctx);
+    size_t size = (size_t)PT_REGS_PARM3(ctx);
 
     /* create tcp sock from tcp fd */
     u32 tgid = bpf_get_current_pid_tgid() >> INT_LEN;
