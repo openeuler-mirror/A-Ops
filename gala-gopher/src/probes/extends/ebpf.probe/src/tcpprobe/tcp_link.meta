@@ -36,11 +36,6 @@ measurements:
                 name: "protocol",
             },
             {
-                description: "link count",
-                type: "gauge",
-                name: "link_count",
-            },
-            {
                 description: "rx bytes",
                 type: "gauge",
                 name: "rx_bytes",
@@ -51,49 +46,39 @@ measurements:
                 name: "tx_bytes",
             },
             {
-                description: "packets in",
-                type: "gauge",
-                name: "packets_in",
-            },
-            {
-                description: "packets out",
-                type: "gauge",
-                name: "packets_out",
-            },
-            {
                 description: "retran packets",
                 type: "gauge",
                 name: "retran_packets",
             },
             {
-                description: "lost packets",
+                description: "srtt_last(us)",
                 type: "gauge",
-                name: "lost_packets",
+                name: "srtt_last",
             },
             {
-                description: "rtt(us)",
+                description: "srtt_max(us)",
                 type: "gauge",
-                name: "rtt",
+                name: "srtt_max",
             },
             {
-                description: "rtt_max(us)",
+                description: "srtt_min(us)",
                 type: "gauge",
-                name: "rtt_max",
+                name: "srtt_min",
             },
             {
-                description: "rcv_wnd_min",
+                description: "rcv_wnd_last(us)",
                 type: "gauge",
-                name: "rcv_wnd_min",
+                name: "rcv_wnd_last",
             },
             {
-                description: "rcv_wnd_avg",
-                type: "gauge",
-                name: "rcv_wnd_avg",
-            },
-            {
-                description: "rcv_wnd_max",
+                description: "rcv_wnd_max(us)",
                 type: "gauge",
                 name: "rcv_wnd_max",
+            },
+            {
+                description: "rcv_wnd_min(us)",
+                type: "gauge",
+                name: "rcv_wnd_min",
             },
             {
                 description: "backlog_drops",
@@ -116,11 +101,6 @@ measurements:
                 name: "filter_drops",
             },
             {
-                description: "ofo_count",
-                type: "gauge",
-                name: "ofo_count",
-            },
-            {
                 description: "tmout_count",
                 type: "gauge",
                 name: "tmout_count",
@@ -131,7 +111,7 @@ measurements:
                 name: "rcv_que_full_count",
             },
             {
-                description: "snd_buf_limit",
+                description: "sndbuf_limit",
                 type: "gauge",
                 name: "snd_buf_limit_count",
             },
@@ -144,6 +124,16 @@ measurements:
                 description: "receive_rsts",
                 type: "gauge",
                 name: "receive_rsts",
+            },
+            {
+                description: "sk_err",
+                type: "gauge",
+                name: "sk_err",
+            },
+            {
+                description: "sk_err_soft",
+                type: "gauge",
+                name: "sk_err_soft",
             }
         )
     }
