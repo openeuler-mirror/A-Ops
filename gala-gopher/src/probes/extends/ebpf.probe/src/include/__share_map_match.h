@@ -115,7 +115,7 @@ static __maybe_unused int __do_pop_match_map_entry(const struct __probe_key *key
         if (ret < 0) { \
             bpf_printk("---PROBE_GET_PARMS[" #func "] pop failed.\n"); \
         } else { \
-        __builtin_memcpy(&probe_val.val, &__val, sizeof(struct __probe_val)); \
+            __builtin_memcpy(&probe_val.val, &__val, sizeof(struct __probe_val)); \
         } \
         ret;\
     })
