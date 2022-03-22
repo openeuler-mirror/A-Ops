@@ -105,6 +105,8 @@ static int IngressData2Egress(IngressMgr *mgr, IMDB_Table *table, IMDB_Record* r
     ret = FifoPut(mgr->egressMgr->fifo, (void *)jsonStr);
     if (ret != 0) {
         ERROR("[INGRESS] egress fifo full.\n");
+        (void)free(jsonStr);
+        return -1;
     }
 
     uint64_t msg = 1;
