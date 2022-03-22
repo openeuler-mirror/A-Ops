@@ -135,9 +135,9 @@ static __always_inline struct tcp_metrics_s *get_tcp_metrics(struct sock *sk, u3
 
 static __always_inline int create_sock_obj(u32 tgid, struct sock *sk, u32 role)
 {
-    if (!is_task_exist(tgid)) {
-        return -1;
-    }
+    //if (!is_task_exist(tgid)) {
+    //    return -1;
+    //}
     return bpf_map_update_elem(&sock_map, &sk, &role, BPF_ANY);
 }
 
