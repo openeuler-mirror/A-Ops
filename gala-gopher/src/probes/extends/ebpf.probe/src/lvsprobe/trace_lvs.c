@@ -191,7 +191,7 @@ int main(int argc, char **argv)
 
     printf("arg parse interval time:%us\n", params.period);
 
-    INIT_BPF_APP(trace_lvs);
+    INIT_BPF_APP(trace_lvs, EBPF_RLIM_LIMITED);
     LOAD(trace_lvs, err);
 
     if (signal(SIGINT, sig_int) == SIG_ERR) {

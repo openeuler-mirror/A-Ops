@@ -459,7 +459,7 @@ int main(int argc, char **argv)
 
     DEBUG("Task probe starts with period: %us.\n", tp_params.period);
 
-    INIT_BPF_APP(taskprobe);
+    INIT_BPF_APP(taskprobe, EBPF_RLIM_LIMITED);
 
     LOAD(taskprobe, err3);
     LOAD(taskprobe_io, err2);
@@ -474,7 +474,7 @@ int main(int argc, char **argv)
     load_task_wl(pmap_fd);
 
     load_daemon_task(pmap_fd, task_map_fd);
-
+    printf("Successfully started!\n");
     while (stop == 0) {
         pull_probe_data(task_map_fd, task_bin_map_fd);
         task_probe_pull_probe_data(task_map_fd, task_bin_map_fd);

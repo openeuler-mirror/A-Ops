@@ -159,7 +159,7 @@ int main(int argc, char **argv)
     signal(SIGINT, sig_handler);
     signal(SIGTERM, sig_handler);
     /* load bpf prog */
-    INIT_BPF_APP(containerd_probe);
+    INIT_BPF_APP(containerd_probe, EBPF_RLIM_LIMITED);
     LOAD(containerd_probe, err);
     /* Update already running container */
     update_current_containers_info(GET_MAP_FD(containerd_probe, containers_map));
@@ -191,6 +191,7 @@ int main(int argc, char **argv)
         printf("Failed to pin containers_map to the file system: %d, err: %d\n", pinned, errno);
         goto err;
     }
+    printf("Successfully started!\n");
     while (!g_stop) {
         print_container_metric(GET_MAP_FD(containerd_probe, containers_map));
         sleep(params.period);

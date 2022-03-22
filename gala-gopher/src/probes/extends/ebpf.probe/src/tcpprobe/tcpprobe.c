@@ -151,7 +151,7 @@ int main(int argc, char **argv)
 
     printf("arg parse interval time:%us\n", params.period);
 
-    INIT_BPF_APP(tcpprobe);
+    INIT_BPF_APP(tcpprobe, EBPF_RLIM_LIMITED);
     LOAD(tcpprobe, err);
 
     out_put_fd = GET_MAP_FD(tcpprobe, output);

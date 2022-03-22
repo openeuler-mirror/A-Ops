@@ -259,7 +259,7 @@ int main(int argc, char **argv)
     }
     printf("arg parse interval time:%us\n", params.period);
 
-	INIT_BPF_APP(endpoint);
+	INIT_BPF_APP(endpoint, EBPF_RLIM_INFINITY);
     LOAD(endpoint, err);
 
     if (signal(SIGINT, sig_int) == SIG_ERR) {
@@ -267,12 +267,10 @@ int main(int argc, char **argv)
         goto err;
     }
 
-    printf("Endpoint probe successfully started!\n");
-
     _update_tcp_endpoint_to_map(GET_MAP_FD(endpoint, c_endpoint_map),
                                 GET_MAP_FD(endpoint, listen_port_map),
                                 GET_MAP_FD(endpoint, listen_sockfd_map));
-
+    printf("Successfully started!\n");
     while (!stop) {
         pull_endpoint_data(GET_MAP_FD(endpoint, s_endpoint_map));
         pull_client_endpoint_data(GET_MAP_FD(endpoint, c_endpoint_map));
