@@ -325,9 +325,10 @@ KPROBE_RET(tcp_add_backlog, pt_regs)
     struct probe_val val;
     struct tcp_metrics_s *metrics;
 
+    if (PROBE_GET_PARMS(tcp_add_backlog, ctx, val) < 0)
+        return;
+
     if (discard) {
-        if (PROBE_GET_PARMS(tcp_add_backlog, ctx, val) < 0)
-            return;
         sk = (struct sock *)PROBE_PARM1(val);
 
         metrics = get_tcp_metrics(sk, tgid, &new_entry);
@@ -347,10 +348,11 @@ KPROBE_RET(tcp_v4_inbound_md5_hash, pt_regs)
     struct probe_val val;
     struct tcp_metrics_s *metrics;
 
+    if (PROBE_GET_PARMS(tcp_v4_inbound_md5_hash, ctx, val) < 0)
+        return;
+
     if (discard) {
 
-        if (PROBE_GET_PARMS(tcp_v4_inbound_md5_hash, ctx, val) < 0)
-            return;
         sk = (struct sock *)PROBE_PARM1(val);
 
         metrics = get_tcp_metrics(sk, tgid, &new_entry);
@@ -370,10 +372,11 @@ KPROBE_RET(tcp_filter, pt_regs)
     struct probe_val val;
     struct tcp_metrics_s *metrics;
 
+    if (PROBE_GET_PARMS(tcp_filter, ctx, val) < 0)
+        return;
+
     if (discard) {
 
-        if (PROBE_GET_PARMS(tcp_filter, ctx, val) < 0)
-            return;
         sk = (struct sock *)PROBE_PARM1(val);
         metrics = get_tcp_metrics(sk, tgid, &new_entry);
         if (metrics) {

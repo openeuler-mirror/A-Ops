@@ -207,12 +207,13 @@ KPROBE_RET(inet_bind, pt_regs)
     u32 tgid = bpf_get_current_pid_tgid() >> INT_LEN;
     long err;
 
+    if (PROBE_GET_PARMS(inet_bind, ctx, val) < 0)
+        return;
+
     if (ret != 0) {
         return;
     }
 
-    if (PROBE_GET_PARMS(inet_bind, ctx, val) < 0)
-        return;
     sock = (struct socket *)PROBE_PARM1(val);
     sk = _(sock->sk);
     if (sk == (void *)0) {
@@ -254,12 +255,13 @@ KPROBE_RET(inet_listen, pt_regs)
     u32 tgid = bpf_get_current_pid_tgid() >> INT_LEN;
     long err;
 
+    if (PROBE_GET_PARMS(inet_listen, ctx, val) < 0)
+        return;
+
     if (ret != 0) {
         return;
     }
 
-    if (PROBE_GET_PARMS(inet_listen, ctx, val) < 0)
-        return;
     sock = (struct socket *)PROBE_PARM1(val);
     sk = _(sock->sk);
     if (sk == (void *)0) {
@@ -368,6 +370,7 @@ KPROBE_RET(tcp_v4_connect, pt_regs)
 
     if (PROBE_GET_PARMS(tcp_v4_connect, ctx, val) < 0)
         return;
+
     sk = (struct sock *)PROBE_PARM1(val);
     _tcp_connect(ctx, sk);
 
@@ -381,6 +384,7 @@ KPROBE_RET(tcp_v6_connect, pt_regs)
 
     if (PROBE_GET_PARMS(tcp_v6_connect, ctx, val) < 0)
         return;
+
     sk = (struct sock *)PROBE_PARM1(val);
     _tcp_connect(ctx, sk);
 
@@ -398,12 +402,13 @@ KPROBE_RET(udp_sendmsg, pt_regs)
     u32 tgid = bpf_get_current_pid_tgid() >> INT_LEN;
     long err;
 
+    if (PROBE_GET_PARMS(udp_sendmsg, ctx, val) < 0)
+        return;
+
     if (ret < 0) {
         return;
     }
 
-    if (PROBE_GET_PARMS(udp_sendmsg, ctx, val) < 0)
-        return;
     sk = (struct sock *)PROBE_PARM1(val);
     if (sk == (void *)0) {
         bpf_printk("====[tgid=%u]: sock is null.\n", tgid);
@@ -563,12 +568,13 @@ KPROBE_RET(tcp_create_openreq_child, pt_regs)
     struct endpoint_val_t *ep_val;
     u32 pid __maybe_unused = bpf_get_current_pid_tgid();
 
+    if (PROBE_GET_PARMS(tcp_create_openreq_child, ctx, val) < 0)
+        return;
+
     if (ret == (void *)0) {
         return;
     }
 
-    if (PROBE_GET_PARMS(tcp_create_openreq_child, ctx, val) < 0)
-        return;
     sk = (struct sock *)PROBE_PARM1(val);
     if (sk == (void *)0) {
         return;
@@ -594,12 +600,13 @@ KPROBE_RET(tcp_connect, pt_regs)
     u32 tgid = bpf_get_current_pid_tgid() >> INT_LEN;
     long err;
 
+    if (PROBE_GET_PARMS(tcp_connect, ctx, val) < 0)
+        return;
+
     if (ret != 0) {
         return;
     }
 
-    if (PROBE_GET_PARMS(tcp_connect, ctx, val) < 0)
-        return;
     sk = (struct sock *)PROBE_PARM1(val);
     if (sk == (void *)0) {
         return;
@@ -650,6 +657,7 @@ KPROBE_RET(tcp_check_req, pt_regs)
 
     if (PROBE_GET_PARMS(tcp_check_req, ctx, val) < 0)
         return;
+
     sk = (struct sock *)PROBE_PARM1(val);
     if (sk == (void *)0) {
         return;
@@ -685,12 +693,13 @@ KPROBE_RET(tcp_try_rmem_schedule, pt_regs)
     struct endpoint_val_t *ep_val;
     u32 pid __maybe_unused = bpf_get_current_pid_tgid();
 
+    if (PROBE_GET_PARMS(tcp_try_rmem_schedule, ctx, val) < 0)
+        return;
+
     if (ret == 0) {
         return;
     }
 
-    if (PROBE_GET_PARMS(tcp_try_rmem_schedule, ctx, val) < 0)
-        return;
     sk = (struct sock *)PROBE_PARM1(val);
     if (sk == (void *)0) {
         return;
@@ -713,12 +722,13 @@ KPROBE_RET(tcp_check_oom, pt_regs)
     struct endpoint_val_t *ep_val;
     u32 pid __maybe_unused = bpf_get_current_pid_tgid();
 
+    if (PROBE_GET_PARMS(tcp_check_oom, ctx, val) < 0)
+        return;
+
     if (!ret) {
         return;
     }
 
-    if (PROBE_GET_PARMS(tcp_check_oom, ctx, val) < 0)
-        return;
     sk = (struct sock *)PROBE_PARM1(val);
     if (sk == (void *)0) {
         return;
