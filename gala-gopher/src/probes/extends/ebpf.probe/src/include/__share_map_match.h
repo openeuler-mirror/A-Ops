@@ -105,7 +105,7 @@ static __maybe_unused int __do_pop_match_map_entry(const struct __probe_key *key
 }
                                     
 #define PROBE_GET_PARMS(func, ctx, probe_val) \
-    do { \
+    ({\
         int ret; \
         struct __probe_key __key = {0}; \
         struct __probe_val __val = {0}; \
@@ -117,8 +117,8 @@ static __maybe_unused int __do_pop_match_map_entry(const struct __probe_key *key
         } else { \
         __builtin_memcpy(&probe_val.val, &__val, sizeof(struct __probe_val)); \
         } \
-        \
-    } while (0)
+        ret;\
+    })
                                     
 #define PROBE_PARM1(probe_val) (probe_val).val.params[__PROBE_PARAM1]
 #define PROBE_PARM2(probe_val) (probe_val).val.params[__PROBE_PARAM2]
