@@ -393,7 +393,7 @@ int main(int argc, char **argv)
     iscsi_tp = is_exist_iscsi_tp_mod();
     iscsi_sas = is_exist_iscsi_sas_mod();
 
-    INIT_BPF_APP(blockprobe);
+    INIT_BPF_APP(blockprobe, EBPF_RLIM_LIMITED);
     
     __LOAD_PROBE(blockprobe, err4, 1);
     __LOAD_PROBE(blockprobe_iscsi, err3, iscsi);

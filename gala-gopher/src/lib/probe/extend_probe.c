@@ -82,9 +82,9 @@ int RunExtendProbe(ExtendProbe *probe)
     while (feof(f) == 0 && ferror(f) == 0) {
         if (fgets(buffer, sizeof(buffer), f) == NULL)
             continue;
-        
+
         if (buffer[0] != '|') {
-            INFO("[%s]: %s", probe->name, buffer);
+            //INFO("[%s]: %s", probe->name, buffer);
             continue;
         }
 

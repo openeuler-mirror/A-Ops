@@ -25,18 +25,21 @@
 #include "elf_reader.h"
 #include "util.h"
 
-#define EBPF_RLIM_INFINITY  100*1024*1024 // 100M
-
+#define EBPF_RLIM_LIMITED  100*1024*1024 // 100M
+#define EBPF_RLIM_INFINITY (~0UL)
 static __always_inline int libbpf_print_fn(enum libbpf_print_level level, const char *format, va_list args)
 {
-    return vfprintf(stderr, format, args);
+    if (level == LIBBPF_WARN)
+        return vfprintf(stderr, format, args);
+
+    return 0;
 }
 
-static __always_inline int set_memlock_rlimit(void)
+static __always_inline int set_memlock_rlimit(unsigned long limit)
 {
     struct rlimit rlim_new = {
-        .rlim_cur   = EBPF_RLIM_INFINITY,
-        .rlim_max   = EBPF_RLIM_INFINITY,
+        .rlim_cur   = limit,
+        .rlim_max   = limit,
     };
 
     if (setrlimit(RLIMIT_MEMLOCK, (const struct rlimit *)&rlim_new) != 0) {
@@ -66,7 +69,7 @@ static __always_inline int set_memlock_rlimit(void)
             __MAP_SET_PIN_PATH(probe_name, __task_map, SHARE_MAP_TASK_PATH); \
         } while (0)
 
-#define INIT_BPF_APP(app_name) \
+#define INIT_BPF_APP(app_name, limit) \
     static char __init = 0; \
     do { \
         if (!__init) { \
@@ -74,7 +77,7 @@ static __always_inline int set_memlock_rlimit(void)
             (void)libbpf_set_print(libbpf_print_fn); \
             \
             /* Bump RLIMIT_MEMLOCK  allow BPF sub-system to do anything */ \
-            if (set_memlock_rlimit() == 0) { \
+            if (set_memlock_rlimit(limit) == 0) { \
                 ERROR("BPF app(" #app_name ") failed to set mem limit.\n"); \
                 return -1; \
             } \
