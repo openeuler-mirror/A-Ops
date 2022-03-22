@@ -79,6 +79,7 @@ static void print_link_metrics(void *ctx, int cpu, void *data, __u32 size)
         metrics->data.receive_rsts,
         metrics->data.sk_err,
         metrics->data.sk_err_soft);
+    (void)fflush(stdout);
 }
 
 static void load_period(int period_fd, __u32 value)
