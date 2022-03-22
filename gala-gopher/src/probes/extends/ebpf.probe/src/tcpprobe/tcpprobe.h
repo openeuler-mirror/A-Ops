@@ -22,6 +22,9 @@
 
 #define TCP_FD_PER_PROC_MAX (10)
 
+#define BPF_F_INDEX_MASK    0xffffffffULL
+#define BPF_F_CURRENT_CPU   BPF_F_INDEX_MASK
+
 struct tcp_fd_info {
     int fds[TCP_FD_PER_PROC_MAX];
     __u8 fd_role[TCP_FD_PER_PROC_MAX];
