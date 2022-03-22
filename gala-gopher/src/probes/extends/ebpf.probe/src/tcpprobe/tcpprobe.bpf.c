@@ -162,7 +162,7 @@ static __always_inline u64 get_period()
 static __always_inline void report(struct pt_regs *ctx, struct tcp_metrics_s *metrics, u32 new_entry)
 {
     if (new_entry) {
-        (void)bpf_perf_event_output(ctx, &output, 0, metrics, sizeof(struct tcp_metrics_s));
+        (void)bpf_perf_event_output(ctx, &output, BPF_F_CURRENT_CPU, metrics, sizeof(struct tcp_metrics_s));
     } else {
         u64 ts = bpf_ktime_get_ns();
         u64 period = get_period();
@@ -170,7 +170,7 @@ static __always_inline void report(struct pt_regs *ctx, struct tcp_metrics_s *me
             return;
         }
         metrics->ts = ts;
-        (void)bpf_perf_event_output(ctx, &output, 0, metrics, sizeof(struct tcp_metrics_s));
+        (void)bpf_perf_event_output(ctx, &output, BPF_F_CURRENT_CPU, metrics, sizeof(struct tcp_metrics_s));
     }
 
     __builtin_memset(&(metrics->data), 0x0, sizeof(metrics->data));
