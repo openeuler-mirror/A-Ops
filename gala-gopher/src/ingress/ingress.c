@@ -188,12 +188,14 @@ static int IngressDataProcesssInput(Fifo *fifo, IngressMgr *mgr)
             }
         }
 
-        // send data to egress
-        ret = IngressData2Egress(mgr, table, rec, content);
-        if (ret != 0) {
-            ERROR("[INGRESS] send data to egress failed.\n");
-        } else {
-            DEBUG("[INGRESS] send data to egress succeed.(tbl=%s,content=%s)\n", table->name, content);
+        if (mgr->egressMgr && mgr->egressMgr->kafkaMgr) {
+            // send data to egress
+            ret = IngressData2Egress(mgr, table, rec, content);
+            if (ret != 0) {
+                ERROR("[INGRESS] send data to egress failed.\n");
+            } else {
+                DEBUG("[INGRESS] send data to egress succeed.(tbl=%s,content=%s)\n", table->name, content);
+            }
         }
 next:
         free(dataStr);
