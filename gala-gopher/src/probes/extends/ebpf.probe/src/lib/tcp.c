@@ -617,9 +617,11 @@ struct tcp_estabs* get_estab_tcps(struct tcp_listen_ports* tlps)
     }
 
     for (int i = 0; i < tes->te_num; i++) {
-        if (is_listen_port(tes->te[i]->local.port, tlps))
+        if (is_listen_port(tes->te[i]->local.port, tlps)) {
             tes->te[i]->is_client = 0;
-        tes->te[i]->is_client = 1;
+        } else {
+            tes->te[i]->is_client = 1;
+        }
     }
     return tes;
 }
