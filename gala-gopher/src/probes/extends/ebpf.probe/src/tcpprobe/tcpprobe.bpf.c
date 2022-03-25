@@ -225,33 +225,27 @@ static void load_tcp_fd(u32 tgid)
     (void)bpf_map_delete_elem(&tcp_fd_map, &tgid);
 }
 
-// Creating a Sock Object of the Service Type
-KRETPROBE(inet_csk_accept, pt_regs)
-{
-    int ret;
-    struct sock *sk = (struct sock *)PT_REGS_RC(ctx);
-    u32 tgid = bpf_get_current_pid_tgid() >> INT_LEN;
-
-    /* server: add new link */
-    ret = create_sock_obj(tgid, sk, LINK_ROLE_SERVER);
-    if (ret < 0)
-        return;
-
-    /* add long link sock map */
-    load_tcp_fd(tgid);
-    return;
-}
-
 KPROBE(tcp_set_state, pt_regs)
 {
     int ret;
     u16 new_state = (u16)PT_REGS_PARM2(ctx);
     struct sock *sk = (struct sock *)PT_REGS_PARM1(ctx);
     u32 tgid = bpf_get_current_pid_tgid() >> INT_LEN;
+    u16 old_state = _(sk->sk_state);
 
-    if (new_state == TCP_SYN_SENT) {
+    if (old_state == TCP_SYN_SENT && new_state == TCP_ESTABLISHED) {
         /* create sock object */
         ret = create_sock_obj(tgid, sk, LINK_ROLE_CLIENT);
+        if (ret < 0)
+            return;
+
+        /* create tcp sock from tcp fd */
+        load_tcp_fd(tgid);
+    }
+
+    if (old_state == TCP_SYN_RECV && new_state == TCP_ESTABLISHED) {
+        /* create sock object */
+        ret = create_sock_obj(tgid, sk, LINK_ROLE_SERVER);
         if (ret < 0)
             return;
 
