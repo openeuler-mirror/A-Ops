@@ -45,22 +45,29 @@
     bpf_section("uretprobe/" #func) \
     void ubpf_ret_##func(struct type *ctx)
 
-#define UPROBE_RET(func, type) \
-    bpf_section("uprobe/" #func) \
-    void __uprobe_bpf_##func(struct type *ctx) { \
+#define UPROBE_PARMS_STASH(func, ctx, prog_id) \
+    do { \
         int ret; \
         struct __probe_key __key = {0}; \
         struct __probe_val __val = {0}; \
-        __get_probe_key(&__key, (const long)PT_REGS_FP(ctx)); \
+        __get_probe_key(&__key, prog_id); \
         __get_probe_val(&__val, (const long)PT_REGS_PARM1(ctx), \
                                (const long)PT_REGS_PARM2(ctx), \
                                (const long)PT_REGS_PARM3(ctx), \
                                (const long)PT_REGS_PARM4(ctx), \
-                               (const long)PT_REGS_PARM5(ctx)); \
+                               (const long)PT_REGS_PARM5(ctx), \
+                               (const long)PT_REGS_PARM6(ctx)); \
         ret = __do_push_match_map(&__key, &__val); \
         if (ret < 0) { \
             bpf_printk("---UPROBE_RET[" #func "] push failed.\n"); \
         } \
+    } while (0)
+
+
+#define UPROBE_RET(func, type, prog_id) \
+    bpf_section("uprobe/" #func) \
+    void __uprobe_bpf_##func(struct type *ctx) { \
+        UPROBE_PARMS_STASH(func, ctx, prog_id); \
     } \
     \
     bpf_section("uretprobe/" #func) \

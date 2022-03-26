@@ -15,7 +15,6 @@
 #ifndef __GOPHER_BPF_H__
 #define __GOPHER_BPF_H__
 
-#define __PROBE_MATCH_MAP_PIN_PATH  "/sys/fs/bpf/probe/match_map"
 #define SHARE_MAP_TASK_PATH         "/sys/fs/bpf/probe/task_map"
 
 #ifndef AF_INET
