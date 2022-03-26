@@ -65,7 +65,6 @@ static __always_inline int set_memlock_rlimit(unsigned long limit)
 
 #define __PIN_SHARE_MAP_ALL(probe_name) \
         do { \
-            __MAP_SET_PIN_PATH(probe_name, __probe_match_map, __PROBE_MATCH_MAP_PIN_PATH); \
             __MAP_SET_PIN_PATH(probe_name, __task_map, SHARE_MAP_TASK_PATH); \
         } while (0)
 

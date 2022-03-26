@@ -103,7 +103,24 @@ static __maybe_unused int __do_pop_match_map_entry(const struct __probe_key *key
     val->params[__PROBE_PARAM6] = tmp->params[__PROBE_PARAM6];
     return bpf_map_delete_elem(&__probe_match_map, (const void *)key);
 }
-                                    
+
+#ifdef BPF_PROG_USER
+#define PROBE_GET_PARMS(func, ctx, probe_val, prog_id) \
+    ({\
+        int ret; \
+        struct __probe_key __key = {0}; \
+        struct __probe_val __val = {0}; \
+        __get_probe_key(&__key, prog_id); \
+        ret = __do_pop_match_map_entry((const struct __probe_key *)&__key, \
+                                        &__val); \
+        if (ret >= 0) { \
+            __builtin_memcpy(&probe_val.val, &__val, sizeof(struct __probe_val)); \
+        } \
+        ret;\
+    })
+#endif
+
+#ifdef BPF_PROG_KERN
 #define PROBE_GET_PARMS(func, ctx, probe_val) \
     ({\
         int ret; \
@@ -112,13 +129,12 @@ static __maybe_unused int __do_pop_match_map_entry(const struct __probe_key *key
         __get_probe_key(&__key, (const long)PT_REGS_FP(ctx)); \
         ret = __do_pop_match_map_entry((const struct __probe_key *)&__key, \
                                         &__val); \
-        if (ret < 0) { \
-            bpf_printk("---PROBE_GET_PARMS[" #func "] pop failed.\n"); \
-        } else { \
+        if (ret >= 0) { \
             __builtin_memcpy(&probe_val.val, &__val, sizeof(struct __probe_val)); \
         } \
         ret;\
     })
+#endif
                                     
 #define PROBE_PARM1(probe_val) (probe_val).val.params[__PROBE_PARAM1]
 #define PROBE_PARM2(probe_val) (probe_val).val.params[__PROBE_PARAM2]

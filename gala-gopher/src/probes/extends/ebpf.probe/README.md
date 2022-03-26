@@ -280,11 +280,11 @@ cp tcpprobe/tcpprobe killprobe/killprobe  /usr/bin/extends/ebpf.probe
       PT_REGS_PARM1/2/3...6
       
       // 内核同一个观测点，同时完成uprobe/uretprobe的API
-      #define UPROBE_RET(func, type)
+      #define UPROBE_RET(func, type, prog_id)
       这种API一般用于观测点需要同时观测入参、返回值。
       
       // 同时观测uprobe/uretprobe对应的读参API
-      #define PROBE_GET_PARMS(func, ctx, probe_val)
+      #define PROBE_GET_PARMS(func, ctx, probe_val, prog_id)
       #define PROBE_PARM1(probe_val)
       ...
       ...
