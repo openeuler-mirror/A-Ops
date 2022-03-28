@@ -1,0 +1,41 @@
+
+version = "1.0.0"
+measurements:
+(
+    {
+        name: "listen",
+        fields:
+        (
+            {
+                description: "tgid of the process",
+                type: "key",
+                name: "tgid",
+            },
+	        {
+                description: "socket port of the endpoint",
+                type: "key",
+                name: "s_port",
+            },
+	        {
+                description: "listen drops of the endpoint",
+                type: "gauge",
+                name: "listendrop",
+            },
+	        {
+                description: "listen overflows of the endpoint",
+                type: "gauge",
+                name: "listen_overflow",
+            },
+	        {
+                description: "passive opens of the endpoint",
+                type: "gauge",
+                name: "passive_open",
+            },
+	        {
+                description: "failed passive opens of the endpoint",
+                type: "gauge",
+                name: "passive_open_failed",
+            }
+        )
+    }
+)

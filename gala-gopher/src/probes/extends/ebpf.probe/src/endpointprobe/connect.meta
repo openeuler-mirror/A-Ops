@@ -1,0 +1,31 @@
+
+version = "1.0.0"
+measurements:
+(
+    {
+        name: "connect",
+        fields:
+        (
+            {
+                description: "tgid of the process",
+                type: "key",
+                name: "tgid",
+            },
+	        {
+                description: "socket address of the endpoint",
+                type: "key",
+                name: "s_addr",
+            },
+	        {
+                description: "active opens of the endpoint",
+                type: "gauge",
+                name: "active_open",
+            },
+	        {
+                description: "failed active opens of the endpoint",
+                type: "gauge",
+                name: "active_open_failed",
+            }
+        )
+    }
+)

@@ -30,255 +30,180 @@
 #include <bpf/bpf.h>
 #include "bpf.h"
 #include "args.h"
-#include "endpoint.skel.h"
+#include "tcp.skel.h"
+#include "udp.skel.h"
 #include "endpoint.h"
 #include "tcp.h"
 
-#define OO_NAME "endpoint"
+#define LISTEN_NAME "listen"
+#define CONNECT_NAME "connect"
+#define UDP_BIND_NAME "bind"
+#define UDP_NAME "udp"
 
-static volatile sig_atomic_t stop;
+#define ENDPOINT_PATH "/sys/fs/bpf/probe/__endpoint_sock"
+#define OUTPUT_PATH "/sys/fs/bpf/probe/__endpoint_output"
+#define PERIOD_PATH "/sys/fs/bpf/probe/__endpoint_period"
+#define RM_BPF_PATH "/usr/bin/rm -rf /sys/fs/bpf/probe/__endpoint*"
+
+#define __LOAD_ENDPOINT_PROBE(probe_name, end, load) \
+    OPEN(probe_name, end, load); \
+    MAP_SET_PIN_PATH(probe_name, endpoint_map, ENDPOINT_PATH, load); \
+    MAP_SET_PIN_PATH(probe_name, output, OUTPUT_PATH, load); \
+    MAP_SET_PIN_PATH(probe_name, period_map, PERIOD_PATH, load); \
+    LOAD_ATTACH(probe_name, end, load)
+
 static struct probe_params params = {.period = DEFAULT_PERIOD};
 
-static void sig_int(int signo)
+static void print_tcp_listen_metrics(struct endpoint_val_t *value)
 {
-    stop = 1;
+    fprintf(stdout,
+            "|%s|%d|%d|%lu|%lu|%lu|%lu|\n",
+            LISTEN_NAME,
+            value->key.key.tcp_listen_key.tgid,
+            value->key.key.tcp_listen_key.port,
+            value->ep_stats.stats[EP_STATS_LISTEN_DROPS],
+            value->ep_stats.stats[EP_STATS_LISTEN_OVERFLOW],
+            value->ep_stats.stats[EP_STATS_PASSIVE_OPENS],
+            value->ep_stats.stats[EP_STATS_PASSIVE_FAILS]);
 }
 
-static int _init_ipaddr(struct ip *ip, const struct ip_addr *ip_addr)
+static void print_tcp_connect_metrics(struct endpoint_val_t *value)
 {
-    struct in_addr iaddr;
-    struct in6_addr iaddr6;
-    int ret;
+    unsigned char s_addr[INET6_ADDRSTRLEN];
+    ip_str(value->key.key.tcp_connect_key.ip_addr.family, 
+           (unsigned char *)&(value->key.key.tcp_connect_key.ip_addr.ip), 
+           s_addr, 
+           INET6_ADDRSTRLEN);
+    fprintf(stdout,
+            "|%s|%d|%s|%lu|%lu|\n",
+            CONNECT_NAME,
+            value->key.key.tcp_connect_key.tgid,
+            s_addr,
+            value->ep_stats.stats[EP_STATS_ACTIVE_OPENS],
+            value->ep_stats.stats[EP_STATS_ACTIVE_FAILS]);
+}
 
-    if (ip_addr->ipv4) {
-        ret = inet_aton(ip_addr->ip, &iaddr);
-        if (ret == 0) {
-            return -1;
-        }
-        ip->ip.ip4 = (unsigned int)iaddr.s_addr;
-        ip->family = AF_INET;
+static void print_bind_metrics(struct endpoint_val_t *value)
+{
+    unsigned char s_addr[INET6_ADDRSTRLEN];
+    ip_str(value->key.key.udp_server_key.ip_addr.family, 
+           (unsigned char *)&(value->key.key.udp_server_key.ip_addr.ip), 
+           s_addr, 
+           INET6_ADDRSTRLEN);
+    fprintf(stdout,
+            "|%s|%d|%s|%lu|%lu|%lu|%d|\n",
+            UDP_BIND_NAME,
+            value->key.key.udp_server_key.tgid,
+            s_addr,
+            value->ep_stats.stats[EP_STATS_QUE_RCV_FAILED],
+            value->ep_stats.stats[EP_STATS_UDP_SENDS],
+            value->ep_stats.stats[EP_STATS_UDP_RCVS],
+            value->udp_err_code);
+}
+
+static void print_udp_metrics(struct endpoint_val_t *value)
+{
+    unsigned char s_addr[INET6_ADDRSTRLEN];
+    ip_str(value->key.key.udp_client_key.ip_addr.family, 
+           (unsigned char *)&(value->key.key.udp_client_key.ip_addr.ip), 
+           s_addr, 
+           INET6_ADDRSTRLEN);
+    fprintf(stdout,
+            "|%s|%d|%s|%lu|%lu|%lu|%d|\n",
+            UDP_NAME,
+            value->key.key.udp_client_key.tgid,
+            s_addr,
+            value->ep_stats.stats[EP_STATS_QUE_RCV_FAILED],
+            value->ep_stats.stats[EP_STATS_UDP_SENDS],
+            value->ep_stats.stats[EP_STATS_UDP_RCVS],
+            value->udp_err_code);
+}
+
+static void print_endpoint_metrics(void *ctx, int cpu, void *data, __u32 size)
+{
+    struct endpoint_val_t *value  = (struct endpoint_val_t *)data;
+    if (value->key.type == SK_TYPE_LISTEN_TCP) {
+        print_tcp_listen_metrics(value);
+    } else if (value->key.type == SK_TYPE_CLIENT_TCP) {
+        print_tcp_connect_metrics(value);
+    } else if (value->key.type == SK_TYPE_LISTEN_UDP) {
+        print_bind_metrics(value);
     } else {
-        ret = inet_pton(AF_INET6, ip_addr->ip, &iaddr6);
-        if (ret < 1) {
-            return -1;
-        }
-        memcpy(ip->ip.ip6, &iaddr6, sizeof(ip->ip.ip6));
-        ip->family = AF_INET6;
+        print_udp_metrics(value);
     }
-
-    return 0;
+    (void)fflush(stdout);
 }
 
-static void _update_tcp_endpoint_to_map(int c_endpoint_map_fd, int listen_port_map_fd, int listen_sockfd_map_fd)
+static void load_period(int period_fd, __u32 value)
 {
-    int err;
+    __u32 key = 0;
+    __u64 period = (__u64)value * 1000000000;
+    (void)bpf_map_update_elem(period_fd, &key, &period, BPF_ANY);
+}
+
+static void load_listen_fd(int fd)
+{
     struct tcp_listen_ports *tlps = NULL;
     struct tcp_listen_port *tlp = NULL;
-    struct listen_port_key_t listen_port_key = {0};
     struct listen_sockfd_key_t listen_sockfd_key = {0};
-    unsigned short listen_port;
-
-    struct tcp_estabs *tes = NULL;
-    struct tcp_estab *te = NULL;
-    struct tcp_estab_comm *tec = NULL;
-
-    struct c_endpoint_key_t c_ep_key;
-    struct endpoint_val_t ep_val;
 
     tlps = get_listen_ports();
     if (tlps == NULL) {
-        goto err;
+        return;
     }
 
     for (int i = 0; i < tlps->tlp_num; i++) {
         tlp = tlps->tlp[i];
-        listen_port = (unsigned short)tlp->port;
-        listen_port_key.tgid = tlp->pid;
-        listen_port_key.protocol = IPPROTO_TCP;
-        listen_port_key.port = listen_port;
-        bpf_map_update_elem(listen_port_map_fd, &listen_port_key, &listen_port, BPF_ANY);
         listen_sockfd_key.tgid = tlp->pid;
         listen_sockfd_key.fd = tlp->fd;
-        bpf_map_update_elem(listen_sockfd_map_fd, &listen_sockfd_key, &(tlp->fd), BPF_ANY);
+        (void)bpf_map_update_elem(fd, &listen_sockfd_key, &(tlp->fd), BPF_ANY);
     }
 
-    tes = get_estab_tcps(tlps);
-    if (tes == NULL) {
-        goto err;
-    }
-
-    /* insert tcp client info into map */
-    for (int i = 0; i < tes->te_num; i++) {
-        te = tes->te[i];
-        if (te->is_client != 1) {
-            continue;
-        }
-        for (int j = 0; j < te->te_comm_num; j++) {
-            tec = te->te_comm[j];
-            memset(&c_ep_key, 0, sizeof(c_ep_key));
-            memset(&ep_val, 0, sizeof(ep_val));
-
-            // init endpoint key
-            c_ep_key.tgid = tec->pid;
-            err = _init_ipaddr(&c_ep_key.ip_addr, &te->local);
-            if (err < 0) {
-                break;
-            }
-            c_ep_key.protocol = IPPROTO_TCP;
-
-            // init endpoint value
-            ep_val.type = SK_TYPE_CLIENT_TCP;
-            ep_val.tgid = c_ep_key.tgid;
-            snprintf(ep_val.comm, sizeof(ep_val.comm), "%s", tec->comm);
-            ep_val.s_type = SOCK_STREAM;
-            ep_val.protocol = c_ep_key.protocol;
-            memcpy(&ep_val.s_addr, &c_ep_key.ip_addr, sizeof(struct ip));
-
-            bpf_map_update_elem(c_endpoint_map_fd, &c_ep_key, &ep_val, BPF_ANY);
-        }
-    }
-
-err:
-    if (tlps != NULL) {
-        free_listen_ports(&tlps);
-    }
-
-    if (tes != NULL) {
-        free_estab_tcps(&tes);
-    }
-}
-
-static void _output_endpoint_data(struct endpoint_val_t *data)
-{
-    unsigned char s_addr[INET6_ADDRSTRLEN];
-
-    ip_str(data->s_addr.family, (unsigned char *)&data->s_addr.ip, s_addr, INET6_ADDRSTRLEN);
-    fprintf(stdout,
-            "|%s|%d|%s|%d|%u|%d|%d|%d|%s|%u|%lu|%lu|%lu|%lu|%lu|%lu|%lu|%lu|%lu|%lu|\n",
-            OO_NAME,
-            data->tgid,
-            data->comm,
-            data->type,
-            data->uid,
-            data->s_addr.family,
-            data->s_type,
-            data->protocol,
-            s_addr,
-            data->s_port,
-            data->ep_stats.stats[EP_STATS_LISTEN_DROPS],
-            data->ep_stats.stats[EP_STATS_LISTEN_OVERFLOW],
-            data->ep_stats.stats[EP_STATS_PASSIVE_OPENS],
-            data->ep_stats.stats[EP_STATS_ACTIVE_OPENS],
-            data->ep_stats.stats[EP_STATS_ATTEMPT_FAILS],
-            data->ep_stats.stats[EP_STATS_ABORT_CLOSE],
-            data->ep_stats.stats[EP_STATS_REQUEST_FAILS],
-            data->ep_stats.stats[EP_STATS_RMEM_SCHEDULE],
-            data->ep_stats.stats[EP_STATS_TCP_OOM],
-            data->ep_stats.stats[EP_STATS_KEEPLIVE_TIMEOUT]);
-
+    free_listen_ports(&tlps);
     return;
 }
-
-static void _print_endpoint_data(struct endpoint_val_t *data)
-{
-    unsigned char s_addr[INET6_ADDRSTRLEN];
-
-    ip_str(data->s_addr.family, (unsigned char *)&data->s_addr.ip, s_addr, INET6_ADDRSTRLEN);
-    DEBUG("[%d-%s] ep_type:%d, ep_uid:%u, ep_family:%d, ep_s_type:%d, ep_protocol:%d, "
-            "ep_addr:%s, ep_port:%u, ep_listen_drops:%lu, ep_listen_overflows:%lu, "
-            "ep_passive_opens:%lu, ep_active_opens:%lu, ep_attempt_fails:%lu, ep_abort_close:%lu, "
-            "ep_request_fails:%lu, ep_rmem_schedule:%lu, ep_tcp_oom:%lu, ep_keepalive_timeout:%lu\n",
-            data->tgid,
-            data->comm,
-            data->type,
-            data->uid,
-            data->s_addr.family,
-            data->s_type,
-            data->protocol,
-            s_addr,
-            data->s_port,
-            data->ep_stats.stats[EP_STATS_LISTEN_DROPS],
-            data->ep_stats.stats[EP_STATS_LISTEN_OVERFLOW],
-            data->ep_stats.stats[EP_STATS_PASSIVE_OPENS],
-            data->ep_stats.stats[EP_STATS_ACTIVE_OPENS],
-            data->ep_stats.stats[EP_STATS_ATTEMPT_FAILS],
-            data->ep_stats.stats[EP_STATS_ABORT_CLOSE],
-            data->ep_stats.stats[EP_STATS_REQUEST_FAILS],
-            data->ep_stats.stats[EP_STATS_RMEM_SCHEDULE],
-            data->ep_stats.stats[EP_STATS_TCP_OOM],
-            data->ep_stats.stats[EP_STATS_KEEPLIVE_TIMEOUT]);
-
-    return;
-}
-
-static void pull_endpoint_data(int s_ep_map_fd)
-{
-    int ret = 0;
-    struct s_endpoint_key_t key = {0};
-    struct s_endpoint_key_t next_key = {0};
-    struct endpoint_val_t data = {0};
-
-    while (bpf_map_get_next_key(s_ep_map_fd, &key, &next_key) != -1) {
-        ret = bpf_map_lookup_elem(s_ep_map_fd, &next_key, &data);
-        if (ret == 0) {
-            _output_endpoint_data(&data);
-            _print_endpoint_data(&data);
-        }
-        key = next_key;
-    }
-
-    return;
-}
-
-static void pull_client_endpoint_data(int c_ep_map_fd)
-{
-    int ret = 0;
-    struct c_endpoint_key_t key = {0};
-    struct c_endpoint_key_t next_key = {0};
-    struct endpoint_val_t data = {0};
-
-    while (bpf_map_get_next_key(c_ep_map_fd, &key, &next_key) != -1) {
-        ret = bpf_map_lookup_elem(c_ep_map_fd, &next_key, &data);
-        if (ret == 0) {
-            _output_endpoint_data(&data);
-            _print_endpoint_data(&data);
-        }
-        key = next_key;
-    }
-
-    return;
-}
-
 
 int main(int argc, char **argv)
 {
     int err = -1;
+    int out_put_fd;
+    const int load_udp = 1;
+    struct perf_buffer* pb = NULL;
+
     err = args_parse(argc, argv, "t:", &params);
     if (err != 0) {
         return -1;
     }
     printf("arg parse interval time:%us\n", params.period);
+    (void)popen(RM_BPF_PATH, "r");
 
-	INIT_BPF_APP(endpoint, EBPF_RLIM_INFINITY);
-    LOAD(endpoint, err);
+    INIT_BPF_APP(endpoint, EBPF_RLIM_LIMITED);
 
-    if (signal(SIGINT, sig_int) == SIG_ERR) {
-        fprintf(stderr, "Can't set signal handler: %d\n", errno);
+    __LOAD_ENDPOINT_PROBE(tcp, err2, 1);
+    __LOAD_ENDPOINT_PROBE(udp, err, load_udp);
+
+    out_put_fd = GET_MAP_FD(tcp, output);
+    pb = create_pref_buffer(out_put_fd, print_endpoint_metrics);
+    if (pb == NULL) {
+        fprintf(stderr, "ERROR: crate perf buffer failed\n");
         goto err;
     }
 
-    _update_tcp_endpoint_to_map(GET_MAP_FD(endpoint, c_endpoint_map),
-                                GET_MAP_FD(endpoint, listen_port_map),
-                                GET_MAP_FD(endpoint, listen_sockfd_map));
-    printf("Successfully started!\n");
-    while (!stop) {
-        pull_endpoint_data(GET_MAP_FD(endpoint, s_endpoint_map));
-        pull_client_endpoint_data(GET_MAP_FD(endpoint, c_endpoint_map));
+    load_listen_fd(GET_MAP_FD(tcp, listen_sockfd_map));
+    load_period(GET_MAP_FD(tcp, period_map), params.period);
 
-        sleep(params.period);
-    }
+    printf("Successfully started!\n");
+    poll_pb(pb, THOUSAND);
 
 err:
-    UNLOAD(endpoint);
+    if (load_udp) {
+        UNLOAD(udp);
+    }
+err2:
+    UNLOAD(tcp);
+
+    if (pb)
+        perf_buffer__free(pb);
+
     return -err;
 }

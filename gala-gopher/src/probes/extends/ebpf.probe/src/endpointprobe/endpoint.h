@@ -4,27 +4,27 @@
 #ifndef __ENDPOINT_H__
 #define __ENDPOINT_H__
 
-#define MAX_ENDPOINT_LEN (0xffff)
-#define MAX_ENDPOINT_STATS_LEN 20
-
-#define MAX_ENTRIES 8192
-
-
 enum {
+    // tcp listen statistic value
     EP_STATS_LISTEN_DROPS = 0,
     EP_STATS_LISTEN_OVERFLOW,
-    EP_STATS_ACTIVE_OPENS,
     EP_STATS_PASSIVE_OPENS,
-    EP_STATS_ATTEMPT_FAILS,
-    EP_STATS_ABORT_CLOSE,
-    EP_STATS_REQUEST_FAILS,
-    EP_STATS_RMEM_SCHEDULE,
-    EP_STATS_TCP_OOM,
-    EP_STATS_KEEPLIVE_TIMEOUT,
+    EP_STATS_PASSIVE_FAILS,
+
+    // tcp connect statistic value
+    EP_STATS_ACTIVE_OPENS,
+    EP_STATS_ACTIVE_FAILS,
+
+    // udp statistic value
+    EP_STATS_QUE_RCV_FAILED,
+    EP_STATS_UDP_SENDS,
+    EP_STATS_UDP_RCVS,
+
+    EP_STATS_MAX
 };
 
 struct endpoint_stats {
-    unsigned long stats[MAX_ENDPOINT_STATS_LEN];
+    unsigned long stats[EP_STATS_MAX];
 };
 
 enum endpoint_t {
@@ -38,14 +38,8 @@ struct ip {
     union {
         unsigned int ip4;               /* IPv4 地址 */
         unsigned char ip6[IP6_LEN];     /* IPv6 地址 */
-    }ip;
+    } ip;
     int family;                         /* 地址族 */
-};
-
-struct listen_port_key_t {
-    int tgid;               /* 用户进程 ID */
-    int protocol;           /* 协议族 */
-    unsigned short port;    /* 监听端口号 */
 };
 
 struct listen_sockfd_key_t {
@@ -53,27 +47,42 @@ struct listen_sockfd_key_t {
     int fd;                 /* socket的文件描述符 */
 };
 
-struct s_endpoint_key_t {
-    unsigned long sock_p;   /* socket 地址 */
+struct udp_client_key_t {
+    int tgid;                   // process id
+    struct ip ip_addr;          // udp source address
 };
 
+struct udp_server_key_t {
+    int tgid;                   // process id
+    struct ip ip_addr;          // udp source address
+};
 
-struct c_endpoint_key_t {
-    int tgid;               /* 用户进程 ID */
-    struct ip ip_addr;      /* 端口绑定的地址 */
-    int protocol;           /* 协议族 */
+struct tcp_listen_key_t {
+    int tgid;                   // process id
+    int port;                   // tcp listen port
+};
+
+struct tcp_connect_key_t {
+    int tgid;                   // process id
+    struct ip ip_addr;          // tcp listen ip address
+};
+
+struct endpoint_key_t {
+    enum endpoint_t type;
+    union {
+        struct udp_client_key_t udp_client_key;
+        struct udp_server_key_t udp_server_key;
+        struct tcp_listen_key_t tcp_listen_key;
+        struct tcp_connect_key_t tcp_connect_key;
+    } key;
 };
 
 struct endpoint_val_t {
-    enum endpoint_t type;       /* endpoint 类型 */
-    unsigned int uid;           /* 用户 ID */
-    int tgid;                   /* 用户进程 ID */
-    char comm[TASK_COMM_LEN];   /* 进程名 */
-    int s_type;                 /* socket 类型 */
-    int protocol;               /* 协议族 */
-    struct ip s_addr;           /* socket 绑定的地址 */
-    unsigned short s_port;      /* socket 绑定的端口号 */
-    struct endpoint_stats ep_stats; /* endpoint 观测指标 */
+    __u64 ts;
+    int udp_err_code;
+    struct endpoint_key_t key;
+    struct endpoint_stats ep_stats;
 };
+
 
 #endif
