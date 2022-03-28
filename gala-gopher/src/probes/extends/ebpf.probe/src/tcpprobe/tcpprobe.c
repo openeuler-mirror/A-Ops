@@ -51,7 +51,7 @@ static void print_link_metrics(void *ctx, int cpu, void *data, __u32 size)
     ip_str(link->family, (unsigned char *)&(link->c_ip), src_ip_str, INET6_ADDRSTRLEN);
     ip_str(link->family, (unsigned char *)&(link->s_ip), dst_ip_str, INET6_ADDRSTRLEN);
     fprintf(stdout,
-        "|%s|%u|%u|%s|%s|%u|%u|%llu|%llu|%u|%u|%u|%u|%u|%u|%u|%u|%u|%u|%u|%u|%u|%u|%u|%u|%d|%d|\n",
+        "|%s|%u|%u|%s|%s|%u|%u|%llu|%llu|%u|%u|%u|%u|%u|%u|%u|%u|%u|%u|%u|%u|%u|%u|%u|%u|%d|%d|%u|%u|%u|\n",
         OO_NAME,
         link->tgid,
         link->role,
@@ -78,7 +78,10 @@ static void print_link_metrics(void *ctx, int cpu, void *data, __u32 size)
         metrics->data.send_rsts,
         metrics->data.receive_rsts,
         metrics->data.sk_err,
-        metrics->data.sk_err_soft);
+        metrics->data.sk_err_soft,
+        metrics->data.attempt_fails,
+        metrics->data.rmem_scheduls,
+        metrics->data.tcp_oom);
     (void)fflush(stdout);
 }
 

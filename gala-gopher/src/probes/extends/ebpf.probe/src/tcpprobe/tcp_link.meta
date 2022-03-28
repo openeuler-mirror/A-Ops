@@ -134,6 +134,21 @@ measurements:
                 description: "sk_err_soft",
                 type: "gauge",
                 name: "sk_err_soft",
+            },
+            {
+                description: "attempt failed",
+                type: "gauge",
+                name: "attempt_fails",
+            },
+            {
+                description: "rmem schedule",
+                type: "gauge",
+                name: "rmem_scheduls",
+            },
+            {
+                description: "tcp oom",
+                type: "gauge",
+                name: "tcp_oom",
             }
         )
     }
