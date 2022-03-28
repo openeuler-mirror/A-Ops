@@ -490,3 +490,82 @@ KRAWTRACE(tcp_retransmit_skb, bpf_raw_tracepoint_args)
     }
 }
 
+KPROBE(tcp_done, pt_regs)
+{
+    u32 new_entry = 0;
+    struct sock *sk = (struct sock *)PT_REGS_PARM1(ctx);
+    unsigned char state = _(sk->sk_state);
+    struct tcp_metrics_s *metrics;
+    u32 tgid = bpf_get_current_pid_tgid() >> INT_LEN;
+
+    if ((state == TCP_SYN_SENT || state == TCP_SYN_RECV)) {
+        metrics = get_tcp_metrics(sk, tgid, &new_entry);
+        if (metrics) {
+            TCP_ATTEMPT_FAILED_INC(metrics->data);
+            report(ctx, metrics, new_entry);
+        }
+    }
+}
+
+KPROBE_RET(tcp_try_rmem_schedule, pt_regs)
+{
+    u32 new_entry = 0;
+    int ret = (int)PT_REGS_RC(ctx);
+    struct sock *sk;
+    struct probe_val val;
+    struct tcp_metrics_s *metrics;
+    u32 tgid = bpf_get_current_pid_tgid();
+
+    if (PROBE_GET_PARMS(tcp_try_rmem_schedule, ctx, val) < 0)
+        return;
+
+    if (ret == 0) {
+        return;
+    }
+
+    sk = (struct sock *)PROBE_PARM1(val);
+    if (sk == (void *)0) {
+        return;
+    }
+
+    metrics = get_tcp_metrics(sk, tgid, &new_entry);
+    if (metrics) {
+        TCP_RMEM_SCHEDULS_INC(metrics->data);
+        report(ctx, metrics, new_entry);
+    }
+
+    return;
+}
+
+KPROBE_RET(tcp_check_oom, pt_regs)
+{
+    u32 new_entry = 0;
+    bool ret = (bool)PT_REGS_RC(ctx);
+    struct sock *sk;
+    struct probe_val val;
+
+    struct tcp_metrics_s *metrics;
+    u32 tgid = bpf_get_current_pid_tgid();
+
+    if (PROBE_GET_PARMS(tcp_check_oom, ctx, val) < 0)
+        return;
+
+    if (!ret) {
+        return;
+    }
+
+    sk = (struct sock *)PROBE_PARM1(val);
+    if (sk == (void *)0) {
+        return;
+    }
+
+    metrics = get_tcp_metrics(sk, tgid, &new_entry);
+    if (metrics) {
+        TCP_OOM_INC(metrics->data);
+        report(ctx, metrics, new_entry);
+    }
+
+    return;
+}
+
+

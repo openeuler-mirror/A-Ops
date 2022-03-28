@@ -49,6 +49,11 @@ struct tcp_statistics {
     __u32 sndbuf_limit;     // FROM sock_exceed_buf_limit event
     __u32 send_rsts;        // FROM tcp_send_reset event
     __u32 receive_rsts;     // FROM tcp_receive_reset event
+
+    __u32 attempt_fails;    // FROM tcp_done event
+    __u32 rmem_scheduls;    // FROM tcp_try_rmem_schedule event
+    __u32 tcp_oom;          // FROM tcp_check_oom event
+
     __u64 rx;               // FROM tcp_cleanup_rbuf
     __u64 tx;               // FROM tcp_sendmsg
     int sk_err;             // FROM sock.sk_err
@@ -92,6 +97,10 @@ struct tcp_statistics {
 #define TCP_SEND_RSTS_INC(data) __sync_fetch_and_add(&((data).send_rsts), 1)
 #define TCP_RECEIVE_RSTS_INC(data) __sync_fetch_and_add(&((data).receive_rsts), 1)
 #define TCP_RETRANS_INC(data) __sync_fetch_and_add(&((data).total_retrans), 1)
+
+#define TCP_ATTEMPT_FAILED_INC(data) __sync_fetch_and_add(&((data).attempt_fails), 1)
+#define TCP_RMEM_SCHEDULS_INC(data) __sync_fetch_and_add(&((data).rmem_scheduls), 1)
+#define TCP_OOM_INC(data) __sync_fetch_and_add(&((data).tcp_oom), 1)
 
 #define TCP_RX_XADD(data, delta) __sync_fetch_and_add(&((data).rx), (__u64)delta)
 #define TCP_TX_XADD(data, delta) __sync_fetch_and_add(&((data).tx), (__u64)delta)
