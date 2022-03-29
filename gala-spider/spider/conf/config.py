@@ -7,13 +7,20 @@ from spider.util.singleton import Singleton
 
 class SpiderConfig(metaclass=Singleton):
     def __init__(self):
-        print('config init')
+        print('Spider config init')
         super().__init__()
         self.db_agent = None
         self.observe_conf_path = None
 
         self.spider_server = None
         self.spider_port = None
+
+        self.log_conf = {
+            'log_path': '/var/log/gala-spider/spider.log',
+            'log_level': 'INFO',
+            'max_size': 10,
+            'backup_count': 10,
+        }
 
         self.kafka_conf = {
             'topic': None,
@@ -47,6 +54,7 @@ class SpiderConfig(metaclass=Singleton):
         self.spider_server = spider_conf.get('server')
         self.spider_port = spider_conf.get('port')
 
+        self.log_conf.update(spider_conf.get('log_conf', {}))
         self.kafka_conf.update(result.get('kafka', {}))
         self.prometheus_conf.update(result.get('prometheus', {}))
         self.anomaly_detection_conf.update(result.get('anomaly_detection', {}))

@@ -1,5 +1,7 @@
 #!/usr/bin/env python3
 import os
+import logging
+from logging.handlers import RotatingFileHandler
 
 import connexion
 
@@ -18,6 +20,30 @@ def create_app():
     return app
 
 
+def init_logger(app, spider_config: SpiderConfig):
+    log_path = spider_config.log_conf.get('log_path')
+    max_bytes = spider_config.log_conf.get('max_size') * 1000 * 1000
+    backup_count = spider_config.log_conf.get('backup_count')
+
+    log_path = os.path.realpath(log_path)
+    log_dir = os.path.dirname(log_path)
+    if not os.path.exists(log_dir):
+        os.makedirs(log_dir)
+
+    formatter = logging.Formatter("%(asctime)s - %(name)s - %(levelname)s - "
+                                  "%(filename)s:%(lineno)d - %(message)s")
+    handler = RotatingFileHandler(filename=log_path, maxBytes=max_bytes, backupCount=backup_count)
+    handler.setFormatter(formatter)
+    app.app.logger.addHandler(handler)
+
+    log_level = spider_config.log_conf.get('log_level', '')
+    numeric_level = getattr(logging, log_level.upper())
+    if not isinstance(numeric_level, int):
+        print("Invalid log level: %s, use default info level alternatively.", log_level)
+        numeric_level = logging.INFO
+    app.app.logger.setLevel(numeric_level)
+
+
 def main():
     # init spider config
     spider_conf_path = os.environ.get('SPIDER_CONFIG_PATH') or SPIDER_CONFIG_PATH
@@ -34,6 +60,7 @@ def main():
     print('Load observe metadata success.')
 
     app = create_app()
+    init_logger(app, spider_config)
     app.run(port=spider_config.spider_port, host=spider_config.spider_server)
 
 

@@ -1,5 +1,7 @@
 from typing import Dict, List
 
+from flask import current_app
+
 from spider.conf import SpiderConfig
 from spider.data_process.prometheus_processor import PrometheusProcessor
 from spider.models import BaseResponse, EntitiesResponse, Entity, Dependenceitem, Attr
@@ -13,11 +15,8 @@ def _get_observe_entities(timestamp=None) -> List[ObserveEntity]:
 
     if db_agent == "prometheus":
         entities = PrometheusProcessor().get_observe_entities(timestamp)
-    elif db_agent == "kafka":
-        # TODO: get entities from kafka
-        pass
     else:
-        print("Unknown data source:{}, please check!".format(db_agent))
+        current_app.logger.warning("Unknown data source:{}, please check!".format(db_agent))
 
     return entities
 
@@ -80,13 +79,9 @@ def get_observed_entity_list(timestamp=None):  # noqa: E501
     observe_entities = _get_observe_entities(timestamp)
     relations = _get_entity_relations(observe_entities)
 
-    # TODO: anomaly detect
-
     # transfer observe entities to response format
     resp_entity_map = _get_response_entities(observe_entities)
     _append_dependence_info(resp_entity_map, relations)
-
-    # TODO: add anomaly info
 
     if len(resp_entity_map) == 0:
         code = 500

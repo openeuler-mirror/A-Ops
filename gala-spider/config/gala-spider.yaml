@@ -15,10 +15,10 @@ prometheus:
 
 spider:
     port: 11115
-
-anomaly_detection:
-    tcp_link:
-        detection_model_type: EXPERT_MODEL
-        detection_attributes:
-            retran_packets: {detection_interval: 5, threshold: 0, method: ">="}
-            lost_packets: {detection_interval: 5, threshold: 0, method: ">="}
+    log_conf:
+        log_path: "/var/log/gala-spider/spider.log"
+        # log level: DEBUG/INFO/WARNING/ERROR/CRITICAL
+        log_level: INFO
+        # unit: MB
+        max_size: 10
+        backup_count: 10

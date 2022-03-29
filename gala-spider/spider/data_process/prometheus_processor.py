@@ -1,6 +1,8 @@
 from typing import List, Dict
 import time
 
+from flask import current_app
+
 from spider.util.singleton import Singleton
 from spider.conf.observe_meta import ObserveMetaMgt, ObserveMeta
 from spider.data_process.processor import DataProcessor
@@ -25,6 +27,7 @@ def _id_of_keys(keys: Dict[str, str], entity_keys: List[str]) -> (bool, tuple):
     tmp = []
     for key in entity_keys:
         if key not in keys:
+            current_app.logger.debug("Key {} not exist.".format(key))
             return False, ()
         tmp.append((key, keys.get(key)))
     return True, tuple(tmp)
@@ -127,7 +130,7 @@ class PrometheusProcessor(DataProcessor, metaclass=Singleton):
                 _filter_keys = _filter_unique_labels(record.labels, entity_keys)
                 ok, _id = _id_of_keys(_filter_keys, entity_keys)
                 if not ok:
-                    print("Data error: required key miss.")
+                    current_app.logger.debug("Data error: required key of observe type {} miss.".format(entity_type))
                     continue
                 if _id not in label_map:
                     item = {}
