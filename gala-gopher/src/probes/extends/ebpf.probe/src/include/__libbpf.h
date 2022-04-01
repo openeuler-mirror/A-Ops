@@ -21,7 +21,6 @@
 #include <bpf/libbpf.h>
 #include <bpf/bpf.h>
 #include <sys/resource.h>
-#include "task.h"
 #include "elf_reader.h"
 #include "util.h"
 

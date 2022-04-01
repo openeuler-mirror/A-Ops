@@ -30,33 +30,26 @@
 #include "bpf.h"
 #include "args.h"
 #include "taskprobe.skel.h"
-#include "taskprobe_io.skel.h"
+#include "thread_io.skel.h"
+#include "process_io.skel.h"
 #include "taskprobe_net.skel.h"
 #include "taskprobe.h"
+#include "task.h"
 
 #define TASK_COMM "/proc/%d/comm"
 #define TASK_CWD_FILE "/proc/%d/cwd"
 #define TASK_EXE_FILE "/proc/%d/exe"
 
-#define TASK_PROBE_JAVA_COMMAND "sun.java.command"
-#define TASK_PROBE_JAVA_CLASSPATH "java.class.path"
 #define OO_NAME_TASK "task"
+#define OO_THREAD_NAME  "thread"
+#define OO_PROCESS_NAME "process"
 
-#define TASK_PROBE_COLLECTION_PERIOD 5
+#define OUTPUT_PATH "/sys/fs/bpf/probe/__taskprobe_output"
+#define PERIOD_PATH "/sys/fs/bpf/probe/__taskprobe_period"
 
-enum task_type_e {
-    TASK_TYPE_APP = 0,
-    TASK_TYPE_KERN,
-    TASK_TYPE_OS
-};
-
-struct task_name_t {
-    char name[MAX_PROCESS_NAME_LEN];
-    enum task_type_e type;
-};
-
+static int g_task_bin_map_fd;
 static volatile sig_atomic_t stop = 0;
-static struct probe_params tp_params = {.period = TASK_PROBE_COLLECTION_PERIOD,
+static struct probe_params tp_params = {.period = DEFAULT_PERIOD,
                                         .task_whitelist = {0}};
 
 static struct task_name_t task_range[] = {
@@ -229,7 +222,7 @@ out:
     return;
 }
 
-int jinfo_get_label_info(int pid, char *label, char *buf, int buf_len)
+static int jinfo_get_label_info(int pid, char *label, char *buf, int buf_len)
 {
     FILE *f = NULL;
     char command[COMMAND_LEN];
@@ -253,7 +246,7 @@ int jinfo_get_label_info(int pid, char *label, char *buf, int buf_len)
     return 0;
 }
 
-int update_java_process_info(int pid, char *java_command, char *java_classpath)
+static int update_java_process_info(int pid, char *java_command, char *java_classpath)
 {
     java_command[0] = 0;
     java_classpath[0] = 0;
@@ -268,12 +261,46 @@ int update_java_process_info(int pid, char *java_command, char *java_classpath)
     return 0;
 }
 
-static void update_task_bin_map(struct task_key *key, struct task_data *data, 
-                                                    int task_bin_map_fd)
+static void get_task_bin_data(int bin_fd, struct task_bin* bin, struct task_key* key)   // process
+{
+    char java_command[JAVA_COMMAND_LEN];
+    char java_classpath[JAVA_CLASSPATH_LEN];
+
+    if (bin->comm[0] == 0) {
+        (void)get_task_comm(key->tgid, bin->comm, MAX_PROCESS_NAME_LEN);
+    }
+
+    /* exe file name */ 
+    if (bin->exe_file[0] == 0) {
+        (void)get_task_exe(key->tgid, bin->exe_file, TASK_EXE_FILE_LEN);
+    }
+
+    /* exec file name */
+    if (strstr(bin->comm, "java") != NULL && bin->exec_file[0] == 0) {
+        /* java */
+        (void)update_java_process_info(key->tgid, (char *)java_command, (char *)java_classpath);
+        (void)strncpy(bin->exec_file, java_command, TASK_EXE_FILE_LEN);
+    } else if (strstr(bin->comm, "python") != NULL || strstr(bin->comm, "go") != NULL) {
+        /* python/go run */
+        (void)get_task_cwd(key->tgid, bin->exec_file, TASK_EXE_FILE_LEN);
+    } else if (bin->exec_file[0] == 0) {
+        /* c/c++/go */
+        (void)strncpy(bin->exec_file, bin->exe_file, TASK_EXE_FILE_LEN);
+    } else {
+        ; // nothing to do.
+    }
+
+    /* update task bin */
+    (void)bpf_map_update_elem(bin_fd, key, bin, BPF_ANY);
+
+    return;
+}
+
+static void update_task_bin_map(struct task_key *key, struct task_data *data, int task_bin_map_fd)
 {
     int ret;
     struct task_bin bin = {0};
-    
+
     ret = bpf_map_lookup_elem(task_bin_map_fd, key, &bin);
     if (ret == 0 && (data->base.task_status == TASK_STATUS_INVALID)) {
         // delete task bin entry, if task is invalid.
@@ -302,6 +329,7 @@ static void pull_probe_data(int task_map_fd, int task_bin_map_fd)
         }
 
         if ((ret == 0) && (data.base.task_status == TASK_STATUS_INVALID)) {
+            // delete hash record
             (void)bpf_map_delete_elem(task_map_fd, &next_key);
         } else {
             key = next_key;
@@ -310,58 +338,72 @@ static void pull_probe_data(int task_map_fd, int task_bin_map_fd)
     return;
 }
 
-static void get_task_bin_data(int bin_fd, struct task_bin* bin, struct task_key* key)
-{
-    char java_command[JAVA_COMMAND_LEN];
-    char java_classpath[JAVA_CLASSPATH_LEN];
-
-    if (bin->comm[0] == 0) {
-        (void)get_task_comm(key->pid, bin->comm, TASK_COMM_LEN);
-    }
-
-    /* exe file name */
-    if (bin->exe_file[0] == 0) {
-        (void)get_task_exe(key->pid, bin->exe_file, TASK_EXE_FILE_LEN);
-    }
-
-    /* exec file name */
-    if (strstr(bin->comm, "java") != NULL && bin->exec_file[0] == 0) {
-        /* java */
-        (void)update_java_process_info(key->pid, (char *)java_command, (char *)java_classpath);
-        (void)strncpy(bin->exec_file, java_command, TASK_EXE_FILE_LEN);
-    } else if (strstr(bin->comm, "python") != NULL || strstr(bin->comm, "go") != NULL) {
-        /* python/go run */
-        (void)get_task_cwd(key->pid, bin->exec_file, TASK_EXE_FILE_LEN);
-    } else if (bin->exec_file[0] == 0) {
-        /* c/c++/go */
-        (void)strncpy(bin->exec_file, bin->exe_file, TASK_EXE_FILE_LEN);
-    } else {
-        ; // nothing to do.
-    }
-
-    /* update task bin */
-    (void)bpf_map_update_elem(bin_fd, key, bin, BPF_ANY);
-
-    return;
-}
-
-#define ADDR_STR_LEN 32
 static inline void u642addr(__u64 addr, char *buf, size_t s)
 {
     buf[0] = 0;
     (void)snprintf(buf, s, "0x%llx", addr);
 }
 
-int get_task_io(struct task_io_data *io_data, int pid);
+static void print_thread_metrics(struct task_data *value)
+{
+    char comm[MAX_PROCESS_NAME_LEN];
+    char addr_str[MAX_PROCESS_NAME_LEN];
 
-static void task_probe_pull_probe_data(int task_map_fd, int task_bin_map_fd)
+    (void)get_task_comm(value->id.tgid, comm, MAX_PROCESS_NAME_LEN);
+    u642addr(value->net.kfree_skb_ret_addr, addr_str, MAX_PROCESS_NAME_LEN);
+
+    fprintf(stdout,
+            "|%s|%d|%d|%s|%d|%d|%u|%llu|%llu|%u|%llu|%llu|%s|\n",
+            OO_THREAD_NAME,
+            value->id.pid,
+            value->id.tgid,
+            comm,
+            value->io.t_io_data.major,
+            value->io.t_io_data.minor,
+            value->base.fork_count,
+            value->io.t_io_data.task_io_count,
+            value->io.t_io_data.task_io_time_us,
+            value->io.t_io_data.task_hang_count,
+            value->io.t_io_data.task_io_wait_time_us,
+            value->net.kfree_skb_cnt,
+            addr_str);
+}
+
+static void print_process_metrics(struct task_data *value, int task_bin_map_fd)
+{
+    struct task_key key = {.tgid = value->id.tgid};
+    struct task_bin bin = {0};
+
+    // process bin info (comm / exec_file / exe_file)
+    (void)bpf_map_lookup_elem(task_bin_map_fd, &key, &bin);
+    get_task_bin_data(g_task_bin_map_fd, &bin, &key);
+    // process io info
+    (void)get_task_io(&(value->io.p_io_data), key.pid);
+    // outout
+    fprintf(stdout,
+            "|%s|%d|%d|%s|%s|%s|%u|%llu|%llu|%u|%u|%llu|%llu|%llu|\n",
+            OO_PROCESS_NAME,
+            value->id.tgid,
+            value->id.pgid,
+            bin.comm,
+            bin.exe_file,
+            bin.exec_file,
+            value->base.fork_count,
+            value->io.p_io_data.task_rchar_bytes,
+            value->io.p_io_data.task_wchar_bytes,
+            value->io.p_io_data.task_syscr_count,
+            value->io.p_io_data.task_syscw_count,
+            value->io.p_io_data.task_read_bytes,
+            value->io.p_io_data.task_write_bytes,
+            value->io.p_io_data.task_cancelled_write_bytes);
+}
+
+static void print_task_metrics(int task_map_fd, int task_bin_map_fd)
 {
     int ret;
     struct task_key ckey = {0};
     struct task_key nkey = {0};
     struct task_data data;
-    struct task_bin bin;
-    char addr_str[ADDR_STR_LEN];
 
     while (bpf_map_get_next_key(task_map_fd, &ckey, &nkey) != -1) {
         ret = bpf_map_lookup_elem(task_map_fd, &nkey, &data);
@@ -369,73 +411,14 @@ static void task_probe_pull_probe_data(int task_map_fd, int task_bin_map_fd)
             ckey = nkey;
             continue;
         }
-
-        ret = bpf_map_lookup_elem(task_bin_map_fd, &nkey, &bin);
-        if (ret != 0) {
-            ckey = nkey;
-            continue;
+        print_thread_metrics(&data);
+        if (data.id.pid == data.id.tgid && data.id.pgid != 0) {
+            print_process_metrics(&data, task_bin_map_fd);
         }
-
-        get_task_bin_data(task_bin_map_fd, &bin, &nkey);
-        (void)get_task_io(&data.io, nkey.pid);
-
-        u642addr(data.net.kfree_skb_ret_addr, addr_str, ADDR_STR_LEN);
-        
-        fprintf(stdout, "|%s|%d|%d|%d|%s|%s|%s|%d|%d|%d|%llu|%llu|%llu|%llu|%llu|%u|%u|%llu|%llu|%llu|%u|%llu|%s|\n",
-                OO_NAME_TASK,
-                data.id.tgid,
-                nkey.pid,
-                data.id.pgid,
-                bin.comm,
-                bin.exe_file,
-                bin.exec_file,
-                data.base.fork_count,
-                data.io.major,
-                data.io.minor,
-                data.io.task_io_wait_time_us,
-                data.io.task_io_count,
-                data.io.task_io_time_us,
-                data.io.task_rchar_bytes,
-                data.io.task_wchar_bytes,
-                data.io.task_syscr_count,
-                data.io.task_syscw_count,
-                data.io.task_read_bytes,
-                data.io.task_write_bytes,
-                data.io.task_cancelled_write_bytes,
-                data.io.task_hang_count,
-                data.net.kfree_skb_cnt,
-                addr_str);
-
-        DEBUG("tgid[%d] pid[%d] ppid[%d] pgid[%d] comm[%s] exe_file[%s] exec_file[%s] fork_count[%d] major[%d] minor[%d] "
-                "iowait[%llu] iocount[%llu] iotime[%llu] rchar[%llu] wchar[%llu] sysr[%u] sysw[%u] rbytes[%llu] wbytes[%llu] "
-                "cancelbytes[%llu] hang[%u] skb_free[%llu] addr[%s]\n",
-                data.id.tgid,
-                nkey.pid,
-                data.id.ppid,
-                data.id.pgid,
-                bin.comm,
-                bin.exe_file,
-                bin.exec_file,
-                data.base.fork_count,
-                data.io.major,
-                data.io.minor,
-                data.io.task_io_wait_time_us,
-                data.io.task_io_count,
-                data.io.task_io_time_us,
-                data.io.task_rchar_bytes,
-                data.io.task_wchar_bytes,
-                data.io.task_syscr_count,
-                data.io.task_syscw_count,
-                data.io.task_read_bytes,
-                data.io.task_write_bytes,
-                data.io.task_cancelled_write_bytes,
-                data.io.task_hang_count,
-                data.net.kfree_skb_cnt,
-                addr_str);
 
         ckey = nkey;
     }
-
+    (void)fflush(stdout);
     return;
 }
 
@@ -450,19 +433,20 @@ int main(int argc, char **argv)
     }
 
     ret = args_parse(argc, argv, "t:w:", &tp_params);
-    if (ret != 0)
+    if (ret != 0) {
         return ret;
+    }
 
     if (strlen(tp_params.task_whitelist) == 0) {
         fprintf(stderr, "***task_whitelist_path is null, please check param : -c xx/xxx *** \n");
     }
-
     DEBUG("Task probe starts with period: %us.\n", tp_params.period);
 
     INIT_BPF_APP(taskprobe, EBPF_RLIM_LIMITED);
 
     LOAD(taskprobe, err3);
-    LOAD(taskprobe_io, err2);
+    LOAD(thread_io, err2);
+    LOAD(process_io, err1);
     LOAD(taskprobe_net, err);
 
     pmap_fd = GET_MAP_FD(taskprobe, probe_proc_map);
@@ -474,17 +458,21 @@ int main(int argc, char **argv)
     load_task_wl(pmap_fd);
 
     load_daemon_task(pmap_fd, task_map_fd);
+
     printf("Successfully started!\n");
+
     while (stop == 0) {
         pull_probe_data(task_map_fd, task_bin_map_fd);
-        task_probe_pull_probe_data(task_map_fd, task_bin_map_fd);
+        print_task_metrics(task_map_fd, task_bin_map_fd);
         sleep(tp_params.period);
     }
 
 err:
     UNLOAD(taskprobe_net);
+err1:
+    UNLOAD(process_io);
 err2:
-    UNLOAD(taskprobe_io);
+    UNLOAD(thread_io);
 err3:
     UNLOAD(taskprobe);
     return ret;

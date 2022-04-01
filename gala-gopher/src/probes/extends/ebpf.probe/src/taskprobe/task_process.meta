@@ -2,18 +2,13 @@ version = "1.0.0"
 measurements:
 (
     {
-        name: "task",
+        name: "process",
         fields:
         (
             {
                 description: "task group id of thd task",
-                type: "label",
-                name: "tgid",
-            },
-            {
-                description: "pid of the task",
                 type: "key",
-                name: "pid",
+                name: "tgid",
             },
             {
                 description: "pid of process group",
@@ -39,31 +34,6 @@ measurements:
                 description: "fork count of the task",
                 type: "counter",
                 name: "fork_count",
-            },
-            {
-                description: "disk major of the task io operate",
-                type: "label",
-                name: "major",
-            },
-            {
-                description: "disk minor of the task io operate",
-                type: "label",
-                name: "minor",
-            },
-            {
-                description: "io waite time of task",
-                type: "counter",
-                name: "task_io_wait_time_us",
-            },
-            {
-                description: "count of task io operatation",
-                type: "counter",
-                name: "task_io_count",
-            },
-            {
-                description: "accumulated Time of task io operatation",
-                type: "counter",
-                name: "task_io_time_us",
             },
             {
                 description: "bytes of task system call I/O read operation",
@@ -99,21 +69,6 @@ measurements:
                 description: "bytes written to disk cancelled by task",
                 type: "counter",
                 name: "task_cancelled_write_bytes",
-            },
-            {
-                description: "count of task I/O hang event",
-                type: "counter",
-                name: "task_hang_count",
-            },
-            {
-                description: "count of task TCP/IP drop sk_buff event",
-                type: "counter",
-                name: "kfree_skb_cnt",
-            },
-            {
-                description: "position of task TCP/IP drop sk_buff event",
-                type: "label",
-                name: "kfree_skb_ret_addr",
             }
         )
     }

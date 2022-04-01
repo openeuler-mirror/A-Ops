@@ -18,6 +18,7 @@
 #define BPF_PROG_KERN
 #include "bpf.h"
 #include "taskprobe.h"
+#include "task.h"
 
 char g_linsence[] SEC("license") = "GPL";
 
@@ -96,6 +97,7 @@ KRAWTRACE(sched_process_fork, bpf_raw_tracepoint_args)
     if (flag == 1) {
         /* Add child task info to task_map */
         child_key.pid = _(child->pid);
+        task_value.id.pid = child_key.pid;
         task_value.id.tgid = _(child->tgid);
         task_value.id.ppid = _(parent->pid);
         task_value.id.pgid = get_task_pgid(child);
@@ -111,6 +113,7 @@ KRAWTRACE(sched_process_fork, bpf_raw_tracepoint_args)
             __sync_fetch_and_add(&parent_data_p->base.fork_count, 1);
         } else {
             /* Add parent's task info to task_map first time */
+            task_value.id.pid = parent_key.pid;
             task_value.id.tgid = _(parent->tgid);
             task_value.id.ppid = -1;
             task_value.base.fork_count = 1;
@@ -133,6 +136,6 @@ KRAWTRACE(task_rename, bpf_raw_tracepoint_args)
     struct task_key key = {.pid = _(task->pid)};
     struct task_bin *bin = (struct task_bin *)bpf_map_lookup_elem(&task_bin_map, &key);
     if (bin) {
-        __builtin_memcpy(&(bin->comm), &comm, TASK_COMM_LEN);
+        __builtin_memcpy(&(bin->comm), &comm, MAX_PROCESS_NAME_LEN);
     }
 }

@@ -33,6 +33,7 @@
 #define IP6_STR_LEN             128
 
 #define TASK_COMM_LEN           16
+#define MAX_PROCESS_NAME_LEN    32
 #define TASK_EXE_FILE_LEN       128
 #define JAVA_COMMAND_LEN        128
 #define JAVA_CLASSPATH_LEN      512

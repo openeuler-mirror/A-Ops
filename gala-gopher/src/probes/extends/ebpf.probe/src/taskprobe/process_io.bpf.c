@@ -10,7 +10,7 @@
  * See the Mulan PSL v2 for more details.
  * Author: luzhihao
  * Create: 2022-02-10
- * Description: Collecting Task TCP/IP Data
+ * Description: Collecting Task I/O Data
  ******************************************************************************/
 #ifdef BPF_PROG_USER
 #undef BPF_PROG_USER
@@ -21,14 +21,20 @@
 
 char g_linsence[] SEC("license") = "GPL";
 
-KRAWTRACE(kfree_skb, bpf_raw_tracepoint_args)
-{
-    u64 addr = (u64)ctx->args[1];
+struct bpf_map_def SEC("maps") process_example = {
+    .type = BPF_MAP_TYPE_HASH,
+    .key_size = sizeof(int),
+    .value_size = sizeof(int),
+    .max_entries = 64,
+};
 
-    struct task_key key = {.pid = (int)bpf_get_current_pid_tgid()};
+KRAWTRACE(oom_score_adj_update, bpf_raw_tracepoint_args)
+{
+    int pid = (int)ctx->args[0];
+
+    struct task_key key = {.tgid = pid};
     struct task_data *data = (struct task_data *)bpf_map_lookup_elem(&__task_map, &key);
     if (data) {
-        __sync_fetch_and_add(&(data->net.kfree_skb_cnt), 1);
-        data->net.kfree_skb_ret_addr = addr;
+        __sync_fetch_and_add(&(data->io.p_io_data.task_oom_score_adj), 1);
     }
 }
