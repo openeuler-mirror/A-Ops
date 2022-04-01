@@ -19,6 +19,7 @@
 #include <unistd.h>
 
 #include "bpf.h"
+#include "task.h"
 
 #define TASK_IO "/proc/%d/io"
 #define TASK_IO_COMMAND "/usr/bin/cat /proc/%d/io"
@@ -35,7 +36,7 @@ enum task_io_e {
     TASK_IO_MAX
 };
 
-void __do_set_task_io(struct task_io_data *io_data, __u64 value, int index)
+static void __do_set_task_io(struct process_io_data *io_data, __u64 value, int index)
 {
     switch (index)
     {
@@ -65,18 +66,18 @@ void __do_set_task_io(struct task_io_data *io_data, __u64 value, int index)
     }
 }
 
-void __do_get_task_io(char *line, __u64 *value)
+static void __do_get_task_io(char *line, __u64 *value)
 {
     char *s1, *s2;
     s1 = strtok(line, ":");
     s2 = strtok(NULL, ":");
-    
+
     (void)s1;
     SPLIT_NEWLINE_SYMBOL(s2);
     *value = (__u64)atoll((const char *)s2);
 }
 
-int get_task_io(struct task_io_data *io_data, int pid)
+int get_task_io(struct process_io_data *io_data, int pid)
 {
     FILE *f = NULL;
     int index;
@@ -107,13 +108,13 @@ int get_task_io(struct task_io_data *io_data, int pid)
 
         __do_get_task_io(line, &value);
         __do_set_task_io(io_data, value, index);
-        index++;        
+        index++;
     }
 
 out:
     if (f != NULL) {
         (void)pclose(f);
     }
-    
+
     return 0;
 }

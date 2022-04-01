@@ -19,15 +19,17 @@
 #include <unistd.h>
 
 #include "bpf.h"
+#include "task.h"
 
 #define TASK_PID_COMMAND \
         "ps -T -p \"%d\" | awk 'NR > 1 {print $2}'"
 
 #define TASK_ID_COMMAND \
-    "ps -eo pid,ppid,pgid,comm | grep \"%s\" | awk '{print $1 \"|\" $2 \"|\" $3}'"
+    "ps -eo pid,tid,ppid,pgid,comm | grep \"%s\" | awk '{print $1 \"|\" $2 \"|\" $3 \"|\" $4}'"
 
 enum ps_type {
     PS_TYPE_PID = 0,
+    PS_TYPE_TID,
     PS_TYPE_PPID,
     PS_TYPE_PGID,
     PS_TYPE_MAX,
@@ -61,6 +63,7 @@ static void __do_load_daemon_task(int fd, struct task_id *id)
         }
         SPLIT_NEWLINE_SYMBOL(line);
         key.pid = atoi(line);
+        data.id.pid  = key.pid;
         data.id.tgid = id->tgid;
         data.id.pgid = id->pgid;
         data.id.ppid = id->ppid;
@@ -92,9 +95,10 @@ static int __do_get_task_tgid(const char *ps, struct task_id *id)
     }
     (void)strncpy(id_str[j], ps + start, i - start);
 
-    id->tgid = (unsigned int)atoi(id_str[PS_TYPE_PID]);
-    id->ppid = (unsigned int)atoi(id_str[PS_TYPE_PPID]);
-    id->pgid = (unsigned int)atoi(id_str[PS_TYPE_PGID]);
+    id->tgid = atoi(id_str[PS_TYPE_PID]);
+    id->pid  = atoi(id_str[PS_TYPE_TID]);
+    id->ppid = atoi(id_str[PS_TYPE_PPID]);
+    id->pgid = atoi(id_str[PS_TYPE_PGID]);
 
     return 0;
 }

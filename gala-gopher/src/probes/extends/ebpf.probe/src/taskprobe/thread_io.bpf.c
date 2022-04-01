@@ -17,6 +17,7 @@
 #endif
 #define BPF_PROG_KERN
 #include "bpf.h"
+#include "task.h"
 
 #define MAX_CPU 8
 #define TASK_REQUEST_MAX 100
@@ -38,12 +39,12 @@ static __always_inline void update_task_count_entry(struct task_data *data, stru
 {
     struct gendisk *gd;
 
-    __sync_fetch_and_add(&(data->io.task_io_count), 1);
-    __sync_fetch_and_add(&(data->io.task_io_time_us), delta_us);
+    __sync_fetch_and_add(&(data->io.t_io_data.task_io_count), 1);
+    __sync_fetch_and_add(&(data->io.t_io_data.task_io_time_us), delta_us);
     
     gd = _(request->rq_disk);
-    data->io.major = _(gd->major);
-    data->io.minor = _(gd->first_minor);
+    data->io.t_io_data.major = _(gd->major);
+    data->io.t_io_data.minor = _(gd->first_minor);
     
     if (rwflag) {
         // __sync_fetch_and_add(&(io_statsp->write_bytes), _(request->__data_len));
@@ -98,7 +99,7 @@ KRAWTRACE(sched_stat_iowait, bpf_raw_tracepoint_args)
     struct task_key key = {.pid = _(task->pid)};
     struct task_data *data = (struct task_data *)bpf_map_lookup_elem(&__task_map, &key);
     if (data) {
-        __sync_fetch_and_add(&(data->io.task_io_wait_time_us), delta);
+        __sync_fetch_and_add(&(data->io.t_io_data.task_io_wait_time_us), delta);
     }
 }
 
@@ -108,6 +109,6 @@ KRAWTRACE(sched_process_hang, bpf_raw_tracepoint_args)
     struct task_key key = {.pid = _(task->pid)};
     struct task_data *data = (struct task_data *)bpf_map_lookup_elem(&__task_map, &key);
     if (data) {
-        __sync_fetch_and_add(&(data->io.task_hang_count), 1);
+        __sync_fetch_and_add(&(data->io.t_io_data.task_hang_count), 1);
     }
 }

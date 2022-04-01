@@ -16,7 +16,21 @@
 #define __TASKPROBE__H
 
 #define PROBE_PROC_MAP_ENTRY_SIZE   128
-#define MAX_PROCESS_NAME_LEN        32
+
+#define TASK_PROBE_JAVA_COMMAND "sun.java.command"
+#define TASK_PROBE_JAVA_CLASSPATH "java.class.path"
+
+enum task_type_e {
+    TASK_TYPE_APP = 0,
+    TASK_TYPE_KERN,
+    TASK_TYPE_OS
+};
+
+/* daemon process be probed */
+struct task_name_t {
+    char name[MAX_PROCESS_NAME_LEN];
+    enum task_type_e type;
+};
 
 /* process needed to be probed */
 struct probe_process {
@@ -24,5 +38,6 @@ struct probe_process {
 };
 
 void load_daemon_task_by_name(int fd, const char *name);
+int get_task_io(struct process_io_data *io_data, int pid);
 
 #endif
