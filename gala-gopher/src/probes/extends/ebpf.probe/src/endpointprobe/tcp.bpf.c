@@ -239,10 +239,10 @@ KPROBE(tcp_conn_request, pt_regs)
     
     value = get_tcp_val(sk, &new_entry);
     if (value) {
-        ATOMIC_INC_EP_STATS(value, EP_STATS_LISTEN_DROPS, 1);
-        if (sk_acceptq_is_full((const struct sock *)sk))
+        if (sk_acceptq_is_full((const struct sock *)sk)) {
             ATOMIC_INC_EP_STATS(value, EP_STATS_LISTEN_OVERFLOW, 1);
-        report(ctx, value, new_entry);
+            report(ctx, value, new_entry);
+        }
     }
 
     return;
@@ -321,102 +321,3 @@ KPROBE_RET(tcp_check_req, pt_regs)
     }
     return;
 }
-
-
-#if 0
-
-KPROBE(tcp_done, pt_regs)
-{
-    struct sock *sk = (struct sock *)PT_REGS_PARM1(ctx);
-    unsigned char state = _(sk->sk_state);
-    struct endpoint_val_t *ep_val;
-
-    if (state == TCP_SYN_SENT || state == TCP_SYN_RECV) {
-        ep_val = get_ep_val_by_sock(sk);
-
-        if (ep_val != (void *)0) {
-            ATOMIC_INC_EP_STATS(ep_val, EP_STATS_ATTEMPT_FAILS);
-        }
-    }
-
-    return;
-}
-
-KPROBE_RET(tcp_try_rmem_schedule, pt_regs)
-{
-    int ret = (int)PT_REGS_RC(ctx);
-    struct sock *sk;
-    struct probe_val val;
-
-    struct endpoint_val_t *ep_val;
-    u32 pid __maybe_unused = bpf_get_current_pid_tgid();
-
-    if (PROBE_GET_PARMS(tcp_try_rmem_schedule, ctx, val) < 0)
-        return;
-
-    if (ret == 0) {
-        return;
-    }
-
-    sk = (struct sock *)PROBE_PARM1(val);
-    if (sk == (void *)0) {
-        return;
-    }
-
-    ep_val = get_ep_val_by_sock(sk);
-    if (ep_val != (void *)0) {
-        ATOMIC_INC_EP_STATS(ep_val, EP_STATS_RMEM_SCHEDULE);
-    }
-
-    return;
-}
-
-KPROBE_RET(tcp_check_oom, pt_regs)
-{
-    bool ret = (bool)PT_REGS_RC(ctx);
-    struct sock *sk;
-    struct probe_val val;
-
-    struct endpoint_val_t *ep_val;
-    u32 pid __maybe_unused = bpf_get_current_pid_tgid();
-
-    if (PROBE_GET_PARMS(tcp_check_oom, ctx, val) < 0)
-        return;
-
-    if (!ret) {
-        return;
-    }
-
-    sk = (struct sock *)PROBE_PARM1(val);
-    if (sk == (void *)0) {
-        return;
-    }
-
-    ep_val = get_ep_val_by_sock(sk);
-    if (ep_val != (void *)0) {
-        ATOMIC_INC_EP_STATS(ep_val, EP_STATS_TCP_OOM);
-    }
-
-    return;
-}
-
-KPROBE(tcp_write_wakeup, pt_regs)
-{
-    struct sock *sk = (struct sock *)PT_REGS_PARM1(ctx);
-    int mib = (int)PT_REGS_PARM2(ctx);
-    struct endpoint_val_t *ep_val;
-    u32 pid __maybe_unused = bpf_get_current_pid_tgid();
-
-    if (mib != LINUX_MIB_TCPKEEPALIVE) {
-        return;
-    }
-
-    ep_val = get_ep_val_by_sock(sk);
-    if (ep_val != (void *)0) {
-        ATOMIC_INC_EP_STATS(ep_val, EP_STATS_KEEPLIVE_TIMEOUT);
-    }
-
-    return;
-}
-#endif
-
