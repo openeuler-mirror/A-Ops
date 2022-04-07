@@ -51,7 +51,7 @@ static void print_link_metrics(void *ctx, int cpu, void *data, __u32 size)
     ip_str(link->family, (unsigned char *)&(link->c_ip), src_ip_str, INET6_ADDRSTRLEN);
     ip_str(link->family, (unsigned char *)&(link->s_ip), dst_ip_str, INET6_ADDRSTRLEN);
     fprintf(stdout,
-        "|%s|%u|%u|%s|%s|%u|%u|%llu|%llu|%u|%u|%u|%u|%u|%u|%u|%u|%u|%u|%u|%u|%u|%u|%u|%u|%d|%d|%u|%u|%u|\n",
+        "|%s|%u|%u|%s|%s|%u|%u|%llu|%llu|%u|%u|%u|%u|%u|%u|%u|%u|%u|%u|%u|%u|%u|%u|%u|%u|%d|%d|%u|%u|%u|%d|%d|%d|%d|%d|%d|%d|%d|%u|%u|%u|%u|%u|%u|%u|\n",
         OO_NAME,
         link->tgid,
         link->role,
@@ -81,7 +81,22 @@ static void print_link_metrics(void *ctx, int cpu, void *data, __u32 size)
         metrics->data.sk_err_soft,
         metrics->data.attempt_fails,
         metrics->data.rmem_scheduls,
-        metrics->data.tcp_oom);
+        metrics->data.tcp_oom,
+        metrics->data.snd_mem_last,
+        metrics->data.snd_mem_max,
+        metrics->data.snd_mem_min,
+        metrics->data.rcv_mem_last,
+        metrics->data.rcv_mem_max,
+        metrics->data.rcv_mem_min,
+        metrics->data.forward_mem,
+        metrics->data.omem_alloc,
+        metrics->data.rcv_buf_limit,
+        metrics->data.snd_buf_limit,
+        metrics->data.pacing_rate_last,
+        metrics->data.pacing_rate_max,
+        metrics->data.pacing_rate_min,
+        metrics->data.snd_wnd,
+        metrics->data.ecn_flags);
     (void)fflush(stdout);
 }
 

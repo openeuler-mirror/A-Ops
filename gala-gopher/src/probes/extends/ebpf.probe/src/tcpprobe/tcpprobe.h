@@ -58,11 +58,30 @@ struct tcp_statistics {
     __u64 tx;               // FROM tcp_sendmsg
     int sk_err;             // FROM sock.sk_err
     int sk_err_soft;        // FROM sock.sk_err_soft
+
+    __u32 ecn_flags;        // ECN status bits, 8bits, FROM tcp_sock.ecn_flags
+    __u32 reord_seen;       // number of data packet reordering events, FROM tcp_sock.reord_seen
+
+    int snd_mem_last;       // FROM sock.sk_wmem_alloc
+    int snd_mem_max;        // FROM sock.sk_wmem_alloc
+    int snd_mem_min;        // FROM sock.sk_wmem_alloc
+    int rcv_mem_last;       // FROM sock.sk_rmem_alloc
+    int rcv_mem_max;        // FROM sock.sk_rmem_alloc
+    int rcv_mem_min;        // FROM sock.sk_rmem_alloc
+    int omem_alloc;         // FROM sock.sk_omem_alloc
+    int forward_mem;        // FROM sock.sk_forward_alloc
+    __u32 rcv_buf_limit;    // FROM sock.sk_rcvbuf
+    __u32 snd_buf_limit;    // FROM sock.sk_sndbuf
+    __u32 pacing_rate_last; // FROM sock.sk_pacing_rate
+    __u32 pacing_rate_max;  // FROM sock.sk_pacing_rate
+    __u32 pacing_rate_min;  // FROM sock.sk_pacing_rate
+    __u32 snd_wnd;          // FROM tcp_sock.snd_wnd
+
 };
 
 #define TCP_STATE_UPDATE(data, sk) \
     do { \
-        __u32 __tmp;\
+        __u32 __tmp; \
         struct tcp_sock *__tcp_sock = (struct tcp_sock *)(sk); \
         (data).sk_err = _((sk)->sk_err); \
         (data).sk_err_soft = _((sk)->sk_err_soft); \
@@ -85,6 +104,49 @@ struct tcp_statistics {
             (data).rcv_wnd_max = (data).rcv_wnd_max < __tmp ? __tmp : (data).rcv_wnd_max; \
         } \
         (data).rcv_wnd_last = __tmp; \
+        \
+        bpf_probe_read(&__tmp, sizeof(int), &((sk)->sk_backlog)); \
+        if ((data).rcv_mem_last == 0) { \
+            (data).rcv_mem_min = __tmp; \
+            (data).rcv_mem_max = __tmp; \
+        } else { \
+            (data).rcv_mem_min = (data).rcv_mem_min > __tmp ? __tmp : (data).rcv_wnd_min; \
+            (data).rcv_mem_max = (data).rcv_mem_max < __tmp ? __tmp : (data).rcv_mem_max; \
+        } \
+        (data).rcv_mem_last = __tmp; \
+        \
+        bpf_probe_read(&((data).omem_alloc), sizeof(int), &((sk)->sk_omem_alloc)); \
+        (data).forward_mem = _((sk)->sk_forward_alloc); \
+        (data).rcv_buf_limit = _((sk)->sk_rcvbuf); \
+        (data).ecn_flags = _(__tcp_sock->ecn_flags); \
+    } while (0)
+
+#define SND_TCP_STATE_UPDATE(data, sk) \
+    do { \
+        int __tmp; \
+        struct tcp_sock *__tcp_sock = (struct tcp_sock *)(sk); \
+        bpf_probe_read(&__tmp, sizeof(int), &((sk)->sk_wmem_alloc)); \
+        if ((data).snd_mem_last == 0) { \
+            (data).snd_mem_min = __tmp; \
+            (data).snd_mem_max = __tmp; \
+        } else { \
+            (data).snd_mem_min = (data).snd_mem_min > __tmp ? __tmp : (data).snd_mem_min; \
+            (data).snd_mem_max = (data).snd_mem_max < __tmp ? __tmp : (data).snd_mem_max; \
+        } \
+        (data).snd_mem_last = __tmp; \
+        \
+        __tmp = _((sk)->sk_pacing_rate); \
+        if ((data).pacing_rate_last == 0) { \
+            (data).pacing_rate_min = __tmp; \
+            (data).pacing_rate_max = __tmp; \
+        } else { \
+            (data).pacing_rate_min = (data).pacing_rate_min > __tmp ? __tmp : (data).pacing_rate_min; \
+            (data).pacing_rate_max = (data).pacing_rate_max < __tmp ? __tmp : (data).pacing_rate_max; \
+        } \
+        (data).pacing_rate_last = __tmp; \
+        \
+        (data).snd_buf_limit = _((sk)->sk_sndbuf); \
+        (data).snd_wnd = _(__tcp_sock->snd_wnd); \
     } while (0)
 
 #define TCP_BACKLOG_DROPS_INC(data) __sync_fetch_and_add(&((data).backlog_drops), 1)
