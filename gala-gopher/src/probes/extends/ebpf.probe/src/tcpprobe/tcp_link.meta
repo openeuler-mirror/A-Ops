@@ -10,7 +10,7 @@ measurements:
                 type: "key",
                 name: "tgid",
             },
-	        {
+            {
                 description: "role",
                 type: "key",
                 name: "role",
@@ -149,6 +149,81 @@ measurements:
                 description: "tcp oom",
                 type: "gauge",
                 name: "tcp_oom",
+            },
+            {
+                description: "wmem_alloc_last",
+                type: "gauge",
+                name: "wmem_alloc_last",
+            },
+            {
+                description: "wmem_alloc_max",
+                type: "gauge",
+                name: "wmem_alloc_max",
+            },
+            {
+                description: "wmem_alloc_min",
+                type: "gauge",
+                name: "wmem_alloc_min",
+            },
+            {
+                description: "rmem_alloc_last",
+                type: "gauge",
+                name: "rmem_alloc_last",
+            },
+            {
+                description: "rmem_alloc_max",
+                type: "gauge",
+                name: "rmem_alloc_max",
+            },
+            {
+                description: "rmem_alloc_min",
+                type: "gauge",
+                name: "rmem_alloc_min",
+            },
+            {
+                description: "mem forward alloc",
+                type: "gauge",
+                name: "forward_alloc",
+            },
+            {
+                description: "omem_alloc",
+                type: "gauge",
+                name: "omem_alloc",
+            },
+            {
+                description: "rcv_buf_limit",
+                type: "gauge",
+                name: "rcv_buf_limit",
+            },
+            {
+                description: "snd_buf_limit",
+                type: "gauge",
+                name: "snd_buf_limit",
+            },
+            {
+                description: "pacing_rate_last",
+                type: "gauge",
+                name: "pacing_rate_last",
+            },
+            {
+                description: "pacing_rate_max",
+                type: "gauge",
+                name: "pacing_rate_max",
+            },
+            {
+                description: "pacing_rate_min",
+                type: "gauge",
+                name: "pacing_rate_min",
+            },
+            {
+                description: "snd_wnd",
+                type: "gauge",
+                name: "snd_wnd",
+            },
+            {
+                description: "ecn_flags",
+                type: "gauge",
+                name: "ecn_flags",
             }
         )
     }

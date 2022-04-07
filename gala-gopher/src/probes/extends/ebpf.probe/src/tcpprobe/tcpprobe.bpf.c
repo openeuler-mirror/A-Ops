@@ -275,6 +275,7 @@ KPROBE(tcp_sendmsg, pt_regs)
     metrics = get_tcp_metrics(sk, tgid, &new_entry);
     if (metrics) {
         TCP_TX_XADD(metrics->data, size);
+        SND_TCP_STATE_UPDATE(metrics->data, sk);
         report(ctx, metrics, new_entry);
     }
 }
