@@ -14,12 +14,12 @@ measurements:
             {
                 description: "r/s",
                 type: "gauge",
-                name: "r/s",
+                name: "rspeed",
             },
             {
                 description: "rkB/s",
                 type: "gauge",
-                name: "rkB/s",
+                name: "rspeed_kB",
             },
             {
                 description: "r_await",
@@ -29,17 +29,17 @@ measurements:
             {
                 description: "rareq-sz",
                 type: "gauge",
-                name: "rareq-sz",
+                name: "rareq",
             },
             {
                 description: "w/s",
                 type: "gauge",
-                name: "w/s",
+                name: "wspeed",
             },
             {
                 description: "wkB/s",
                 type: "gauge",
-                name: "wkB/s",
+                name: "wspeed_kB",
             },
             {
                 description: "w_await",
@@ -49,7 +49,7 @@ measurements:
             {
                 description: "wareq-sz",
                 type: "gauge",
-                name: "wareq-sz",
+                name: "wareq",
             },
             {
                 description: "util",
@@ -59,4 +59,3 @@ measurements:
         )
     }
 )
-

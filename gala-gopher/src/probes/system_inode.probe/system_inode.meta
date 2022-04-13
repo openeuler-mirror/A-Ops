@@ -7,25 +7,35 @@ measurements:
         fields:
         (
             {
+                description: "MountOn",
+                type: "key",
+                name: "MountOn",
+            },
+            {
+                description: "File System Type",
+                type: "label",
+                name: "File_sys",
+            },
+            {
                 description: "Inodes",
-                type: "Unknown",
+                type: "label",
                 name: "Inodes",
             },
             {
+                description: "IUse(%)",
+                type: "gauge",
+                name: "IUsePer",
+            },
+            {
                 description: "IUsed",
-                type: "Unknown",
+                type: "gauge",
                 name: "IUsed",
             },
             {
                 description: "IFree",
-                type: "Unknown",
+                type: "gauge",
                 name: "IFree",
-            },
-            {
-                description: "IUse",
-                type: "Unknown",
-                name: "IUse",
-            },
+            }
         )
     }
 )
