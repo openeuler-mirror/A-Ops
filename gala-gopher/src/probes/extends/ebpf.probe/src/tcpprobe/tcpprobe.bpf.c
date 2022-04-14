@@ -423,6 +423,7 @@ KRAWTRACE(sock_exceed_buf_limit, bpf_raw_tracepoint_args)
     metrics = get_tcp_metrics(sk, tgid, &new_entry);
     if (metrics) {
         TCP_SNDBUF_LIMIT_INC(metrics->data);
+        report(ctx, metrics, new_entry);
     }
 }
 
@@ -436,6 +437,7 @@ KRAWTRACE(sock_rcvqueue_full, bpf_raw_tracepoint_args)
     metrics = get_tcp_metrics(sk, tgid, &new_entry);
     if (metrics) {
         TCP_RCVQUE_FULL_INC(metrics->data);
+        report(ctx, metrics, new_entry);
     }
 }
 
@@ -449,6 +451,7 @@ KRAWTRACE(tcp_send_reset, bpf_raw_tracepoint_args)
     metrics = get_tcp_metrics(sk, tgid, &new_entry);
     if (metrics) {
         TCP_SEND_RSTS_INC(metrics->data);
+        report(ctx, metrics, new_entry);
     }
 }
 
@@ -462,6 +465,7 @@ KRAWTRACE(tcp_receive_reset, bpf_raw_tracepoint_args)
     metrics = get_tcp_metrics(sk, tgid, &new_entry);
     if (metrics) {
         TCP_RECEIVE_RSTS_INC(metrics->data);
+        report(ctx, metrics, new_entry);
     }
 }
 
@@ -475,6 +479,7 @@ KRAWTRACE(tcp_retransmit_synack, bpf_raw_tracepoint_args)
     metrics = get_tcp_metrics(sk, tgid, &new_entry);
     if (metrics) {
         TCP_RETRANS_INC(metrics->data);
+        report(ctx, metrics, new_entry);
     }
 }
 
@@ -488,6 +493,7 @@ KRAWTRACE(tcp_retransmit_skb, bpf_raw_tracepoint_args)
     metrics = get_tcp_metrics(sk, tgid, &new_entry);
     if (metrics) {
         TCP_RETRANS_INC(metrics->data);
+        report(ctx, metrics, new_entry);
     }
 }
 
@@ -568,5 +574,3 @@ KPROBE_RET(tcp_check_oom, pt_regs)
 
     return;
 }
-
-

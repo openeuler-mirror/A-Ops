@@ -1,0 +1,120 @@
+version = "1.0.0"
+measurements:
+(
+    {
+        name: "tcp_link_health",
+        fields:
+        (
+            {
+                description: "id of process",
+                type: "key",
+                name: "tgid",
+            },
+            {
+                description: "role",
+                type: "key",
+                name: "role",
+            },
+            {
+                description: "client ip",
+                type: "key",
+                name: "client_ip",
+            },
+            {
+                description: "server ip",
+                type: "key",
+                name: "server_ip",
+            },
+            {
+                description: "server port",
+                type: "key",
+                name: "server_port",
+            },
+            {
+                description: "protocol",
+                type: "key",
+                name: "protocol",
+            },
+            {
+                description: "rx bytes",
+                type: "gauge",
+                name: "rx_bytes",
+            },
+            {
+                description: "tx bytes",
+                type: "gauge",
+                name: "tx_bytes",
+            },
+            {
+                description: "retran packets",
+                type: "gauge",
+                name: "retran_packets",
+            },
+            {
+                description: "synack retrans",
+                type: "gauge",
+                name: "retran_synacks",
+            },
+            {
+                description: "sk_drops",
+                type: "gauge",
+                name: "sk_drops",
+            },
+            {
+                description: "backlog_drops",
+                type: "gauge",
+                name: "backlog_drops",
+            },
+            {
+                description: "md5_hash_drops",
+                type: "gauge",
+                name: "md5_hash_drops",
+            },
+            {
+                description: "filter_drops",
+                type: "gauge",
+                name: "filter_drops",
+            },
+            {
+                description: "tmout_count",
+                type: "gauge",
+                name: "tmout_count",
+            },
+            {
+                description: "rcv_que_full",
+                type: "gauge",
+                name: "rcv_que_full_count",
+            },
+            {
+                description: "sndbuf_limit",
+                type: "gauge",
+                name: "snd_buf_limit_count",
+            },
+            {
+                description: "attempt failed",
+                type: "gauge",
+                name: "attempt_fails",
+            },
+            {
+                description: "rmem schedule",
+                type: "gauge",
+                name: "rmem_scheduls",
+            },
+            {
+                description: "tcp oom",
+                type: "gauge",
+                name: "tcp_oom",
+            },
+            {
+                description: "sk_err",
+                type: "gauge",
+                name: "sk_err",
+            },
+            {
+                description: "sk_err_soft",
+                type: "gauge",
+                name: "sk_err_soft",
+            }
+        )
+    }
+)
