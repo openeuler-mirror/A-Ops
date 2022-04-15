@@ -88,7 +88,10 @@ int RunExtendProbe(ExtendProbe *probe)
             continue;
         }
 
-        bufferSize = strlen(buffer);
+        if ((bufferSize = strlen(buffer)) >= MAX_DATA_STR_LEN) {
+            ERROR("[E-PROBE %s] stdout buf(len:%u) is too long\n", probe->name, bufferSize);
+            continue;
+        }
         for (int i = 0; ((i < bufferSize) && (index < MAX_DATA_STR_LEN)); i++) {
             if (dataStr == NULL) {
                 dataStr = (char *)malloc(MAX_DATA_STR_LEN);
