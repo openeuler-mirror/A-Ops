@@ -51,6 +51,21 @@ measurements:
                 name: "srtt_min",
             },
             {
+                description: "syn_srtt_last(us)",
+                type: "gauge",
+                name: "syn_srtt_last",
+            },
+            {
+                description: "syn_srtt_max(us)",
+                type: "gauge",
+                name: "syn_srtt_max",
+            },
+            {
+                description: "syn_srtt_min(us)",
+                type: "gauge",
+                name: "syn_srtt_min",
+            },
+            {
                 description: "rcv_wnd_last(us)",
                 type: "gauge",
                 name: "rcv_wnd_last",

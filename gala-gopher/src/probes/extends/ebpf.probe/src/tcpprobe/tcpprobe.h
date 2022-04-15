@@ -31,10 +31,18 @@ struct tcp_fd_info {
     unsigned int cnt;
 };
 
+struct tcp_sock_info {
+    __u32 role;     // client:1/server:0
+    __u32 syn_srtt; // rtt from SYN/ACK to ACK
+};
+
 struct tcp_status {
-    __u32 srtt_last;        // FROM tcp_sock.srtt_us
-    __u32 srtt_max;         // FROM tcp_sock.srtt_us
-    __u32 srtt_min;         // FROM tcp_sock.srtt_us
+    __u32 srtt_last;        // FROM tcp_sock.srtt_us in tcp_recvmsg
+    __u32 srtt_max;         // FROM tcp_sock.srtt_us in tcp_recvmsg
+    __u32 srtt_min;         // FROM tcp_sock.srtt_us in tcp_recvmsg
+    __u32 syn_srtt_last;    // FROM tcp_sock.srtt_us when old_state = RCV_SYNC & new_state = EATAB
+    __u32 syn_srtt_max;     // FROM tcp_sock.srtt_us when old_state = RCV_SYNC & new_state = EATAB
+    __u32 syn_srtt_min;     // FROM tcp_sock.srtt_us when old_state = RCV_SYNC & new_state = EATAB
     __u32 rcv_wnd_last;     // FROM tcp_sock.rcv_wnd
     __u32 rcv_wnd_max;      // FROM tcp_sock.rcv_wnd
     __u32 rcv_wnd_min;      // FROM tcp_sock.rcv_wnd
@@ -158,6 +166,18 @@ struct tcp_statistics {
         (data).status.snd_wnd_last = _(__tcp_sock->snd_wnd); \
     } while (0)
 
+#define TCP_SYN_RTT_UPDATE(status) \
+    do { \
+        if ((status).syn_srtt_min == 0) { \
+            (status).syn_srtt_min = (status).syn_srtt_last; \
+        } else { \
+            (status).syn_srtt_min = \
+                (status).syn_srtt_min > (status).syn_srtt_last ? (status).syn_srtt_last : (status).syn_srtt_min; \
+        } \
+        (status).syn_srtt_max = \
+            (status).syn_srtt_max < (status).syn_srtt_last ? (status).syn_srtt_last : (status).syn_srtt_max; \
+    } while (0)
+
 #define TCP_BACKLOG_DROPS_INC(data) __sync_fetch_and_add(&((data).health.backlog_drops), 1)
 #define TCP_SK_DROPS_INC(data) __sync_fetch_and_add(&((data).health.sk_drops), 1)
 #define TCP_MD5_DROPS_INC(data) __sync_fetch_and_add(&((data).health.md5_hash_drops), 1)
@@ -167,7 +187,8 @@ struct tcp_statistics {
 #define TCP_RCVQUE_FULL_INC(data) __sync_fetch_and_add(&((data).health.rcvque_full), 1)
 #define TCP_SEND_RSTS_INC(data) __sync_fetch_and_add(&((data).status.send_rsts), 1)
 #define TCP_RECEIVE_RSTS_INC(data) __sync_fetch_and_add(&((data).status.receive_rsts), 1)
-#define TCP_RETRANS_INC(data) __sync_fetch_and_add(&((data).health.total_retrans), 1)
+#define TCP_SYNACK_RETRANS_INC(data) __sync_fetch_and_add(&((data).health.synack_retrans), 1)
+#define TCP_RETRANS_INC(data, delta) __sync_fetch_and_add(&((data).health.total_retrans), (int)(delta))
 
 #define TCP_ATTEMPT_FAILED_INC(data) __sync_fetch_and_add(&((data).health.attempt_fails), 1)
 #define TCP_RMEM_SCHEDULS_INC(data) __sync_fetch_and_add(&((data).health.rmem_scheduls), 1)

@@ -173,7 +173,7 @@ static __always_inline void report(struct pt_regs *ctx, struct tcp_metrics_s *me
         (void)bpf_perf_event_output(ctx, &output, BPF_F_CURRENT_CPU, metrics, sizeof(struct tcp_metrics_s));
     }
 
-    __builtin_memset(&(metrics->data), 0x0, sizeof(metrics->data));
+    __builtin_memset(&(metrics->data.health), 0x0, sizeof(metrics->data.health));
 }
 
 #define __TCP_FD_MAX (50)
@@ -248,6 +248,7 @@ KPROBE(tcp_set_state, pt_regs)
         ret = create_sock_obj(tgid, sk, LINK_ROLE_SERVER);
         if (ret < 0)
             return;
+        }
 
         /* create tcp sock from tcp fd */
         load_tcp_fd(tgid);
@@ -293,6 +294,7 @@ KPROBE(tcp_recvmsg, pt_regs)
     metrics = get_tcp_metrics(sk, tgid, &new_entry);
     if (metrics) {
         TCP_STATE_UPDATE(metrics->data, sk);
+        TCP_SYN_RTT_UPDATE(metrics->data.status);
         report(ctx, metrics, new_entry);
     }
 }
@@ -478,21 +480,22 @@ KRAWTRACE(tcp_retransmit_synack, bpf_raw_tracepoint_args)
 
     metrics = get_tcp_metrics(sk, tgid, &new_entry);
     if (metrics) {
-        TCP_RETRANS_INC(metrics->data);
+        TCP_SYNACK_RETRANS_INC(metrics->data);
         report(ctx, metrics, new_entry);
     }
 }
 
-KRAWTRACE(tcp_retransmit_skb, bpf_raw_tracepoint_args)
+KPROBE(tcp_retransmit_skb, pt_regs)
 {
     u32 new_entry __maybe_unused = 0;
-    struct sock *sk = (struct sock *)ctx->args[0];
+    struct sock *sk = (struct sock *)PT_REGS_PARM1(ctx);
+    int segs = (int)PT_REGS_PARM3(ctx);
     u32 tgid = bpf_get_current_pid_tgid() >> INT_LEN;
     struct tcp_metrics_s *metrics;
 
     metrics = get_tcp_metrics(sk, tgid, &new_entry);
     if (metrics) {
-        TCP_RETRANS_INC(metrics->data);
+        TCP_RETRANS_INC(metrics->data, segs);
         report(ctx, metrics, new_entry);
     }
 }
@@ -521,7 +524,7 @@ KPROBE_RET(tcp_try_rmem_schedule, pt_regs)
     struct sock *sk;
     struct probe_val val;
     struct tcp_metrics_s *metrics;
-    u32 tgid = bpf_get_current_pid_tgid();
+    u32 tgid = bpf_get_current_pid_tgid() >> INT_LEN;
 
     if (PROBE_GET_PARMS(tcp_try_rmem_schedule, ctx, val) < 0)
         return;
@@ -552,7 +555,7 @@ KPROBE_RET(tcp_check_oom, pt_regs)
     struct probe_val val;
 
     struct tcp_metrics_s *metrics;
-    u32 tgid = bpf_get_current_pid_tgid();
+    u32 tgid = bpf_get_current_pid_tgid() >> INT_LEN;
 
     if (PROBE_GET_PARMS(tcp_check_oom, ctx, val) < 0)
         return;
