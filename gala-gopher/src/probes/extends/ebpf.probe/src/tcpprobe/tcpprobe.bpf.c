@@ -38,7 +38,7 @@ struct bpf_map_def SEC("maps") tcp_link_map = {
 struct bpf_map_def SEC("maps") sock_map = {
     .type = BPF_MAP_TYPE_HASH,
     .key_size = sizeof(struct sock *),
-    .value_size = sizeof(u32),    // role: client:1/server:0
+    .value_size = sizeof(struct tcp_sock_info),
     .max_entries = __TCP_TUPLE_MAX,
 };
 
@@ -57,24 +57,26 @@ struct bpf_map_def SEC("maps") period_map = {
     .max_entries = 1,
 };
 
-static __always_inline u32* get_sock_data(struct sock *sk)
+static __always_inline struct tcp_sock_info *get_sock_data(struct sock *sk)
 {
-    return (u32 *)bpf_map_lookup_elem(&sock_map, &sk);
+    return (struct tcp_sock_info *)bpf_map_lookup_elem(&sock_map, &sk);
 }
 
-static __always_inline int get_tcp_link_key(struct tcp_link_s *link, struct sock *sk, u32 tgid)
+static __always_inline int get_tcp_link_key(struct tcp_link_s *link, struct sock *sk, u32 tgid, u32 *syn_srtt)
 {
     if (!sk)
         return -1;
 
-    u32 *role = get_sock_data(sk);
-    if (!role) {
+    struct tcp_sock_info *sock_data_p = get_sock_data(sk);
+    if (!sock_data_p) {
         return -1;
     }
+    __u32 role = sock_data_p->role;
+    *syn_srtt = sock_data_p->syn_srtt;
 
     link->family = _(sk->sk_family);
 
-    if (*role == LINK_ROLE_CLIENT) {
+    if (role == LINK_ROLE_CLIENT) {
         if (link->family == AF_INET) {
             link->c_ip = _(sk->sk_rcv_saddr);
             link->s_ip = _(sk->sk_daddr);
@@ -94,16 +96,17 @@ static __always_inline int get_tcp_link_key(struct tcp_link_s *link, struct sock
         link->s_port = _(sk->sk_num);
     }
 
-    link->role = *role;
+    link->role = role;
     link->tgid = tgid;
     return 0;
 }
 
-static __always_inline int create_tcp_link(struct tcp_link_s *link) 
+static __always_inline int create_tcp_link(struct tcp_link_s *link, u32 syn_srtt)
 {
     struct tcp_metrics_s metrics = {0};
 
     metrics.ts = bpf_ktime_get_ns();
+    metrics.data.status.syn_srtt_last = syn_srtt;
     __builtin_memcpy(&(metrics.link), link, sizeof(metrics.link));
 
     return bpf_map_update_elem(&tcp_link_map, link, &metrics, BPF_ANY);
@@ -114,18 +117,22 @@ static __always_inline struct tcp_metrics_s *get_tcp_metrics(struct sock *sk, u3
     int ret;
     struct tcp_link_s link = {0};
     struct tcp_metrics_s *metrics;
+    u32 syn_srtt;
 
     *new_entry = 0;
-    ret = get_tcp_link_key(&link, sk, tgid);
+    ret = get_tcp_link_key(&link, sk, tgid, &syn_srtt);
     if (ret < 0)
         return 0;
 
     metrics = bpf_map_lookup_elem(&tcp_link_map, &link);
     if (metrics != (struct tcp_metrics_s *)0) {
+        if (link.role == LINK_ROLE_SERVER) {
+            metrics->data.status.syn_srtt_last = syn_srtt;
+        }
         return metrics;
     }
 
-    ret = create_tcp_link(&link);
+    ret = create_tcp_link(&link, syn_srtt);
     if (ret != 0)
         return 0;
 
@@ -133,12 +140,12 @@ static __always_inline struct tcp_metrics_s *get_tcp_metrics(struct sock *sk, u3
     return bpf_map_lookup_elem(&tcp_link_map, &link);
 }
 
-static __always_inline int create_sock_obj(u32 tgid, struct sock *sk, u32 role)
+static __always_inline int create_sock_obj(u32 tgid, struct sock *sk, struct tcp_sock_info *info)
 {
     //if (!is_task_exist(tgid)) {
     //    return -1;
     //}
-    return bpf_map_update_elem(&sock_map, &sk, &role, BPF_ANY);
+    return bpf_map_update_elem(&sock_map, &sk, info, BPF_ANY);
 }
 
 static __always_inline void delete_sock_obj(struct sock *sk)
@@ -173,7 +180,7 @@ static __always_inline void report(struct pt_regs *ctx, struct tcp_metrics_s *me
         (void)bpf_perf_event_output(ctx, &output, BPF_F_CURRENT_CPU, metrics, sizeof(struct tcp_metrics_s));
     }
 
-    __builtin_memset(&(metrics->data), 0x0, sizeof(metrics->data));
+    __builtin_memset(&(metrics->data.health), 0x0, sizeof(metrics->data.health));
 }
 
 #define __TCP_FD_MAX (50)
@@ -187,12 +194,13 @@ struct bpf_map_def SEC("maps") tcp_fd_map = {
     .max_entries = __TCP_FD_MAX,
 };
 
-static void do_load_tcp_fd(u32 tgid, int fd, int role)
+static void do_load_tcp_fd(u32 tgid, int fd, struct tcp_sock_info *info)
 {
     int ret;
     struct sock *sk;
     struct tcp_link_s link = {0};
     struct task_struct *task = (struct task_struct *)bpf_get_current_task();
+    u32 syn_srtt_unuse = 0;
     if (fd == 0)
         return;
 
@@ -200,11 +208,11 @@ static void do_load_tcp_fd(u32 tgid, int fd, int role)
     if (sk == (struct sock *)0)
         return;
 
-    ret = create_sock_obj(tgid, sk, role);
+    ret = create_sock_obj(tgid, sk, info);
     if (ret < 0)
         return;
 
-    ret = get_tcp_link_key(&link, sk, tgid);
+    ret = get_tcp_link_key(&link, sk, tgid, &syn_srtt_unuse);
     if (ret < 0)
         return;
 
@@ -214,12 +222,15 @@ static void do_load_tcp_fd(u32 tgid, int fd, int role)
 static void load_tcp_fd(u32 tgid)
 {
     struct tcp_fd_info *tcp_fd_s = bpf_map_lookup_elem(&tcp_fd_map, &tgid);
+    struct tcp_sock_info tcp_sock_data;
     if (!tcp_fd_s)
         return;
 
 #pragma clang loop unroll(full)
     for (int i = 0; i < TCP_FD_PER_PROC_MAX; i++) {
-        do_load_tcp_fd(tgid, tcp_fd_s->fds[i], tcp_fd_s->fd_role[i]);
+        tcp_sock_data.role = tcp_fd_s->fd_role[i];
+        tcp_sock_data.syn_srtt = 0;
+        do_load_tcp_fd(tgid, tcp_fd_s->fds[i], &tcp_sock_data);
     }
 
     (void)bpf_map_delete_elem(&tcp_fd_map, &tgid);
@@ -228,14 +239,17 @@ static void load_tcp_fd(u32 tgid)
 KPROBE(tcp_set_state, pt_regs)
 {
     int ret;
+    struct tcp_sock_info tcp_sock_data = {0};
     u16 new_state = (u16)PT_REGS_PARM2(ctx);
     struct sock *sk = (struct sock *)PT_REGS_PARM1(ctx);
+    struct tcp_sock *tcp_sock = (struct tcp_sock *)sk;
     u32 tgid = bpf_get_current_pid_tgid() >> INT_LEN;
     u16 old_state = _(sk->sk_state);
 
     if (old_state == TCP_SYN_SENT && new_state == TCP_ESTABLISHED) {
         /* create sock object */
-        ret = create_sock_obj(tgid, sk, LINK_ROLE_CLIENT);
+        tcp_sock_data.role = LINK_ROLE_CLIENT;
+        ret = create_sock_obj(tgid, sk, &tcp_sock_data);
         if (ret < 0)
             return;
 
@@ -245,7 +259,9 @@ KPROBE(tcp_set_state, pt_regs)
 
     if (old_state == TCP_SYN_RECV && new_state == TCP_ESTABLISHED) {
         /* create sock object */
-        ret = create_sock_obj(tgid, sk, LINK_ROLE_SERVER);
+        tcp_sock_data.role = LINK_ROLE_SERVER;
+        tcp_sock_data.syn_srtt = _(tcp_sock->srtt_us) >> 3;
+        ret = create_sock_obj(tgid, sk, &tcp_sock_data);
         if (ret < 0)
             return;
 
@@ -293,6 +309,7 @@ KPROBE(tcp_recvmsg, pt_regs)
     metrics = get_tcp_metrics(sk, tgid, &new_entry);
     if (metrics) {
         TCP_STATE_UPDATE(metrics->data, sk);
+        TCP_SYN_RTT_UPDATE(metrics->data.status);
         report(ctx, metrics, new_entry);
     }
 }
@@ -478,21 +495,22 @@ KRAWTRACE(tcp_retransmit_synack, bpf_raw_tracepoint_args)
 
     metrics = get_tcp_metrics(sk, tgid, &new_entry);
     if (metrics) {
-        TCP_RETRANS_INC(metrics->data);
+        TCP_SYNACK_RETRANS_INC(metrics->data);
         report(ctx, metrics, new_entry);
     }
 }
 
-KRAWTRACE(tcp_retransmit_skb, bpf_raw_tracepoint_args)
+KPROBE(tcp_retransmit_skb, pt_regs)
 {
     u32 new_entry __maybe_unused = 0;
-    struct sock *sk = (struct sock *)ctx->args[0];
+    struct sock *sk = (struct sock *)PT_REGS_PARM1(ctx);
+    int segs = (int)PT_REGS_PARM3(ctx);
     u32 tgid = bpf_get_current_pid_tgid() >> INT_LEN;
     struct tcp_metrics_s *metrics;
 
     metrics = get_tcp_metrics(sk, tgid, &new_entry);
     if (metrics) {
-        TCP_RETRANS_INC(metrics->data);
+        TCP_RETRANS_INC(metrics->data, segs);
         report(ctx, metrics, new_entry);
     }
 }
@@ -521,7 +539,7 @@ KPROBE_RET(tcp_try_rmem_schedule, pt_regs)
     struct sock *sk;
     struct probe_val val;
     struct tcp_metrics_s *metrics;
-    u32 tgid = bpf_get_current_pid_tgid();
+    u32 tgid = bpf_get_current_pid_tgid() >> INT_LEN;
 
     if (PROBE_GET_PARMS(tcp_try_rmem_schedule, ctx, val) < 0)
         return;
@@ -552,7 +570,7 @@ KPROBE_RET(tcp_check_oom, pt_regs)
     struct probe_val val;
 
     struct tcp_metrics_s *metrics;
-    u32 tgid = bpf_get_current_pid_tgid();
+    u32 tgid = bpf_get_current_pid_tgid() >> INT_LEN;
 
     if (PROBE_GET_PARMS(tcp_check_oom, ctx, val) < 0)
         return;
