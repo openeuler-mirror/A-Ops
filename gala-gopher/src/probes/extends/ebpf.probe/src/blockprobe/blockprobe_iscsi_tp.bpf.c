@@ -31,7 +31,7 @@ KPROBE(iscsi_conn_error_event, pt_regs)
     if(!bdata) {
         return;
     }
-    
+
     if ((err > ISCSI_ERR_BASE) && ((err - ISCSI_ERR_BASE) < ISCSI_ERR_MAX))
         bdata->conn_stats.conn_err[err - ISCSI_ERR_BASE]++;
 }

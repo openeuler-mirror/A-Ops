@@ -78,7 +78,7 @@ static __always_inline __maybe_unused __u64 get_delta_time_ns(struct request *re
     if ((start_time_ns != 0) && (ts > start_time_ns)) {
         return (__u64)(ts - start_time_ns);
     }
-    
+
     return 0;
 }
 
@@ -93,6 +93,34 @@ static __always_inline __maybe_unused void get_block_key_by_req(struct request *
 
     key->major = _(disk->major);
     key->first_minor = _(disk->first_minor);
+}
+
+static __always_inline __maybe_unused void calc_latency(struct block_data *bdata, struct latency_stats *latency_stats, 
+                                                                __u64 delta, __u64 ts)
+{
+    if (delta == 0) {
+        return;
+    }
+    __u64 us = delta >> 3;
+
+    // first calc
+    if (bdata->ts == 0) {
+        INIT_LATENCY_STATS(latency_stats, latency, us);
+        bdata->ts = ts;
+        return;
+    }
+
+    // calculation of intra-period
+    if (ts > bdata->ts) {
+        if ((ts - bdata->ts) < BLOCKPROBE_INTERVAL_NS) {
+            CALC_LATENCY_STATS(latency_stats, latency, us);
+        } else {
+            bdata->ts = ts;  // Start a new statistical period
+            INIT_LATENCY_STATS(latency_stats, latency, us);
+        }
+    } else {
+        bdata->ts = 0; // error
+    }
 }
 
 #endif
