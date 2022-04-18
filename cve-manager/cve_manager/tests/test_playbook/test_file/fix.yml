@@ -1,0 +1,60 @@
+- hosts: total_hosts
+  gather_facts: false
+  tasks:
+  - name: copy script
+    become: true
+    become_user: root
+    copy:
+      src: check.sh
+      dest: /tmp/check.sh
+      owner: root
+      group: root
+      mode: a+x
+
+- hosts: total_hosts
+  gather_facts: false
+  tasks:
+  - name: check memory
+    become: true
+    become_user: root
+    shell: sh /tmp/check.sh memory
+    register: check_memory_result
+    ignore_errors: yes
+  
+- hosts: total_hosts
+  gather_facts: false
+  tasks:
+  - name: check repo
+    become: true
+    become_user: root
+    shell: sh /tmp/check.sh repo
+    register: check_repo_result
+    ignore_errors: yes
+
+- hosts: cve-11-11
+  gather_facts: false
+  tasks:
+  - name: cve-11-11
+    become: true
+    become_user: root
+    shell: yum upgrade -y --cve=cve-11-11
+    when: check_repo_result.rc == 0 and check_memory_result.rc == 0
+    ignore_errors: yes
+  
+- hosts: cve-11-12
+  gather_facts: false
+  tasks:
+  - name: cve-11-12
+    become: true
+    become_user: root
+    shell: yum upgrade -y --cve=cve-11-12
+    when: check_repo_result.rc == 0 and check_memory_result.rc == 0
+    ignore_errors: yes
+
+- hosts: reboot_hosts
+  gather_facts: false
+  tasks:
+  - name: reboot
+    become: true
+    become_user: root
+    shell: reboot

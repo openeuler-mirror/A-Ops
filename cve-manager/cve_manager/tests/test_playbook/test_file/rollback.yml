@@ -1,0 +1,11 @@
+
+  
+- hosts: cve-11-12
+  gather_facts: false
+  tasks:
+  - name: cve-11-12
+    become: true
+    become_user: root
+    shell: c b
+    ignore_errors: yes
+
