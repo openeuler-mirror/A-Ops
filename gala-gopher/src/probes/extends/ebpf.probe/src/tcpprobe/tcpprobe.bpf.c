@@ -119,6 +119,9 @@ static __always_inline struct tcp_metrics_s *get_tcp_metrics(struct sock *sk, u3
     struct tcp_metrics_s *metrics;
     u32 syn_srtt;
 
+    if (tgid == 0)
+        return 0;   // avoid adding value(tgid=0) into tcp_link_map
+
     *new_entry = 0;
     ret = get_tcp_link_key(&link, sk, tgid, &syn_srtt);
     if (ret < 0)
@@ -264,7 +267,6 @@ KPROBE(tcp_set_state, pt_regs)
         ret = create_sock_obj(tgid, sk, &tcp_sock_data);
         if (ret < 0)
             return;
-        }
 
         /* create tcp sock from tcp fd */
         load_tcp_fd(tgid);
