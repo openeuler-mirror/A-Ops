@@ -28,18 +28,17 @@ struct block_key {
     int first_minor;
 };
 
-struct blk_stats {
-    __u64 latency_req_max;      // FROM delta between'blk_account_io_done' and @req->start_time_ns
-    __u64 latency_req_last;     // Same as above
-    __u64 latency_req_sum;      // Same as above
-    __u64 latency_req_jitter;   // Same as above
-    __u32 count_latency_req;    // Same as above
+struct latency_stats {
+    __u64 latency_max;          // MAX value of latency
+    __u64 latency_last;         // LAST value of latency
+    __u64 latency_sum;          // SUM value of latency
+    __u64 latency_jitter;       // JITTER value of latency
+    __u32 count_latency;        // COUNT of io operation
+};
 
-    __u64 latency_flush_max;    // FROM delta between 'mq_flush_data_end_io' and @req->start_time_ns
-    __u64 latency_flush_last;   // Same as above
-    __u64 latency_flush_sum;    // Same as above
-    __u64 latency_flush_jitter; // Same as above
-    __u32 count_latency_flush;  // Same as above
+struct blk_stats {
+    struct latency_stats req;   // FROM delta between'blk_account_io_done' and @req->start_time_ns
+    struct latency_stats flush; // FROM delta between 'mq_flush_data_end_io' and @req->start_time_ns
 };
 
 struct blk_sas_stats {
@@ -87,7 +86,9 @@ struct iscsi_stats {
     __u64 latency_iscsi_sum;        // Same as above
     __u64 latency_iscsi_jitter;     // Same as above
     __u32 count_latency_iscsi;      // Same as above
+};
 
+struct iscsi_err_stats {
     __u64 count_iscsi_tmout;        // FROM 'scsi_dispatch_cmd_timeout'
     __u64 count_iscsi_err;          // FROM tracepoint 'scsi_dispatch_cmd_error'
 };
@@ -98,9 +99,13 @@ struct block_data {
     enum blk_type_e blk_type;       // disk; part; lvm
     char blk_name[DISK_NAME_LEN];
     char disk_name[DISK_NAME_LEN];
-    struct blk_stats        blk_stats;
-    struct iscsi_stats      scsi_stats;
-    struct iscsi_conn_stats conn_stats;
+    struct blk_stats        blk_stats;          // Overall I/O operation delay statistics at the block layer
+    struct latency_stats    blk_drv_stats;      // Block driver layer I/O operation delay statistics
+                                                // FROM delta between tracepoint 'block_rq_issue' and @req->start_time_ns
+    struct latency_stats    blk_dev_stats;      // Block device layer I/O operation delay statistics
+                                                // FROM delta between 'blk_mq_complete_request' (or tracepoint 'scsi_dispatch_cmd_done')and @req->start_time_ns
+    struct iscsi_err_stats  iscsi_err_stats;    // Iscsi layer error statistics
+    struct iscsi_conn_stats conn_stats;         // Iscsi connection layer error statistics
     struct blk_sas_stats    sas_stats;
 };
 

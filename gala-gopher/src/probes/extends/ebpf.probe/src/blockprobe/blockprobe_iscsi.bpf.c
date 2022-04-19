@@ -20,34 +20,6 @@
 
 char g_linsence[] SEC("license") = "GPL";
 
-static __always_inline void __calc_iscsi_latency(struct block_data *bdata, struct iscsi_stats *sc_stats, 
-                                                                __u64 delta, __u64 ts)
-{
-    if (delta == 0) {
-        return;
-    }
-    __u64 us = delta >> 3;
-
-    // first calc
-    if (bdata->ts == 0) {
-        INIT_LATENCY_STATS(sc_stats, latency_iscsi, us);
-        bdata->ts = ts;
-        return;
-    }
-
-    // calculation of intra-period
-    if (ts > bdata->ts) {
-        if ((ts - bdata->ts) < BLOCKPROBE_INTERVAL_NS) {
-            CALC_LATENCY_STATS(sc_stats, latency_iscsi, us);
-        } else {
-            bdata->ts = ts;  // Start a new statistical period
-            INIT_LATENCY_STATS(sc_stats, latency_iscsi, us);
-        }
-    } else {
-        bdata->ts = 0; // error
-    }
-}
-
 KRAWTRACE(scsi_dispatch_cmd_done, bpf_raw_tracepoint_args)
 {
     struct block_key key;
@@ -61,7 +33,7 @@ KRAWTRACE(scsi_dispatch_cmd_done, bpf_raw_tracepoint_args)
         return;
     }
     __u64 ts = bpf_ktime_get_ns();
-    __calc_iscsi_latency(bdata, &(bdata->scsi_stats), get_delta_time_ns(req, ts), ts);
+    calc_latency(bdata, &(bdata->blk_dev_stats), get_delta_time_ns(req, ts), ts);
 }
 
 KRAWTRACE(scsi_dispatch_cmd_timeout, bpf_raw_tracepoint_args)
@@ -76,7 +48,7 @@ KRAWTRACE(scsi_dispatch_cmd_timeout, bpf_raw_tracepoint_args)
     if (!bdata) {
         return;
     }
-    __sync_fetch_and_add(&(bdata->scsi_stats.count_iscsi_tmout), 1);    
+    __sync_fetch_and_add(&(bdata->iscsi_err_stats.count_iscsi_tmout), 1);    
 }
 
 KRAWTRACE(scsi_dispatch_cmd_error, bpf_raw_tracepoint_args)
@@ -91,6 +63,6 @@ KRAWTRACE(scsi_dispatch_cmd_error, bpf_raw_tracepoint_args)
     if (!bdata) {
         return;
     }
-    __sync_fetch_and_add(&(bdata->scsi_stats.count_iscsi_err), 1);    
+    __sync_fetch_and_add(&(bdata->iscsi_err_stats.count_iscsi_err), 1);    
 }
 
