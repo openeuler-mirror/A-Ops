@@ -1,0 +1,70 @@
+version = "1.0.0"
+measurements:
+(
+    {
+        name: "ksliprobe",
+        fields:
+        (
+            {
+                description: "the tgid of server process",
+                type: "key",
+                name: "tgid",
+            },
+            {
+                description: "the socket fd of client connection",
+                type: "key",
+                name: "conn_fd",
+            },
+            {
+                description: "the protocol type",
+                type: "label",
+                name: "protocol",
+            },
+            {
+                description: "the IP of client",
+                type: "label",
+                name: "cli_ip",
+            },
+            {
+                description: "the port of client",
+                type: "label",
+                name: "cli_port",
+            },
+            {
+                description: "the cmd of max rtt req",
+                type: "label",
+                name: "max_command",
+            },
+            {
+                description: "the rtt(ns) of max rtt req",
+                type: "gauge",
+                name: "max_rtt_nsec",
+            },
+            {
+                description: "the cmd of min rtt req",
+                type: "label",
+                name: "min_command",
+            },
+            {
+                description: "the rtt(ns) of min rtt req",
+                type: "gauge",
+                name: "min_rtt_nsec",
+            },
+            {
+                description: "the cmd of recent rtt req",
+                type: "label",
+                name: "recent_command",
+            },
+            {
+                description: "the rtt(ns) of recent rtt req",
+                type: "gauge",
+                name: "recent_rtt_nsec",
+            },
+            {
+                description: "the number of samples in one sample period",
+                type: "gauge",
+                name: "sample_num",
+            }
+        )
+    }
+)
