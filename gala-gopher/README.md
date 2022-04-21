@@ -8,22 +8,34 @@ gala-gopher是基于eBPF的低负载探针框架，致力于提供裸机/虚机/
 ### 基于rpm包安装运行
 
 - yum源配置
-  
-  根据要安装的gala-gopher版本配置指定的yum源。例：
 
-  ```
-  [gala-gopher]
-  name=gala-gopher
-  baseurl=https://repo.huaweicloud.com/openeuler/openEuler-21.09/EPOL/main/x86_64/
-  enabled=1
-  gpgcheck=0
-  ```
+  由于gala-gopher最新版本还没有正式发布，如果需要可以在OBS获取，OBS链接如下：
 
+  ```bash
+  openEuler-20.03-LTS : https://117.78.1.88/package/show/home:zpublic:branches:openEuler:20.03:LTS:SP1/gala-gopher-20.03lts
+  openEuler-20.03-LTS-SP1 : https://117.78.1.88/package/show/home:zpublic:branches:openEuler:20.03:LTS:SP1/gala-gopher
+  openEuler-22.03-LTS : https://117.78.1.88/package/show/home:zpublic:branches:openEuler:22.03:LTS:Next/gala-gopher
+  EulerOS-V2R9C00 : https://117.78.1.88/package/show/home:zpublic:branches:openEuler:20.03:LTS:SP1/gala-gopher-v2r9
+  ```
 
 - rpm安装
 
   ```bash
-  yum install gala-gopher-v1.1.0-2.x86_64.rpm
+  yum localinstall gala-gopher-v1.1.0-2.x86_64.rpm
+  ```
+  安装依赖包如下：librdkafka-devel 、libmicrohttpd-devel 、libconfig-devel 、uthash-devel 、
+
+  ​                               libbpf >= 0.3 、libbpf-devel 
+
+  上述依赖包在openEuler各个版本均有提供，如果EulerOS-V2R9缺包可以从openEuler-20.03-LTS源获取；
+
+  三方探针依赖libbpf，现在22.03-LTS以下的版本中libbpf版本较低，可以在OBS获取libbpf v0.3版本，OBS链接如下：
+
+  ```
+  openEuler-20.03-LTS :
+  https://117.78.1.88/package/show/home:zpublic:branches:openEuler:20.03:LTS/libbpf
+  openEuler-20.03-LTS-SP1 :
+  https://117.78.1.88/package/show/home:zpublic:branches:openEuler:20.03:LTS:SP1/libbpf
   ```
 
 - 运行
@@ -33,26 +45,30 @@ gala-gopher是基于eBPF的低负载探针框架，致力于提供裸机/虚机/
   ```bash
   gala-gopher
   ```
-  
+
   或者通过 systemd 启动，
 
   ```bash
-  systemctl start gala-gopher
+  systemctl start gala-gopher.service
   ```
 
 ### 基于源码编译、安装、运行
 
 - 安装依赖
 
+  该步骤会检查安装架构感知框架所有的依赖包，涉及三方探针编译、运行的依赖包会在编译构建中检查安装。
+
   ```bash
-  sh build.sh check
+  sh build.sh --check
   ```
 
 - 构建
 
   ```bash
-  RELEASE模式：sh build.sh --release
-  DEBUG模式：  sh build.sh --debug
+  sh build.sh --clean
+  sh build.sh --release	# RELEASE模式
+  # 或者
+  sh build.sh --debug		# DEBUG模式
   ```
 
 - 安装
