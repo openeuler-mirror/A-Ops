@@ -1,11 +1,12 @@
 from typing import List
 
 import requests
-from flask import current_app
 
+from spider.util import logger
 from spider.util.singleton import Singleton
 from spider.collector.data_collector import DataCollector
-from spider.collector.data_collector import DataRecord, Label
+from spider.collector.data_collector import DataRecord
+from spider.collector.data_collector import Label
 
 
 def generate_query_sql(metric_id: str, query_options: dict = None) -> str:
@@ -55,7 +56,7 @@ class PrometheusCollector(DataCollector, metaclass=Singleton):
         try:
             rsp = requests.get(url, params).json()
         except requests.RequestException:
-            current_app.logger.error("An error happened when requesting {}".format(url))
+            logger.logger.error("An error happened when requesting {}".format(url))
             return data_list
 
         if rsp is not None and rsp.get("status") == "success":
@@ -104,7 +105,7 @@ class PrometheusCollector(DataCollector, metaclass=Singleton):
         try:
             rsp = requests.get(url, params).json()
         except requests.RequestException:
-            current_app.logger.error("An error happened when requesting {}".format(url))
+            logger.logger.error("An error happened when requesting {}".format(url))
             return data_list
 
         if rsp is not None and rsp.get("status") == "success":

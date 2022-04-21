@@ -1,15 +1,17 @@
-from typing import List, Dict
+from typing import List
+from typing import Dict
 import time
 
-from flask import current_app
-
-from spider.util.singleton import Singleton
-from spider.conf.observe_meta import ObserveMetaMgt, ObserveMeta
+from spider.conf.observe_meta import ObserveMetaMgt
+from spider.conf.observe_meta import ObserveMeta
 from spider.data_process.processor import DataProcessor
-from spider.entity_mgt import ObserveEntity, ObserveEntityCreator
-from spider.collector.data_collector import DataRecord, Label
+from spider.entity_mgt import ObserveEntity
+from spider.entity_mgt import ObserveEntityCreator
+from spider.collector.data_collector import DataRecord
+from spider.collector.data_collector import Label
 from spider.collector.prometheus_collector import PrometheusCollector
 from spider.conf import SpiderConfig
+from spider.util import logger
 
 
 def _filter_unique_labels(labels: List[Label], entity_keys: List[str]) -> Dict[str, str]:
@@ -27,13 +29,13 @@ def _id_of_keys(keys: Dict[str, str], entity_keys: List[str]) -> (bool, tuple):
     tmp = []
     for key in entity_keys:
         if key not in keys:
-            current_app.logger.debug("Key {} not exist.".format(key))
+            logger.logger.debug("Key {} not exist.".format(key))
             return False, ()
         tmp.append((key, keys.get(key)))
     return True, tuple(tmp)
 
 
-class PrometheusProcessor(DataProcessor, metaclass=Singleton):
+class PrometheusProcessor(DataProcessor):
 
     def collect_observe_entity(self, observe_meta: ObserveMeta, timestamp: float = None) -> List[DataRecord]:
         """
@@ -130,7 +132,7 @@ class PrometheusProcessor(DataProcessor, metaclass=Singleton):
                 _filter_keys = _filter_unique_labels(record.labels, entity_keys)
                 ok, _id = _id_of_keys(_filter_keys, entity_keys)
                 if not ok:
-                    current_app.logger.debug("Data error: required key of observe type {} miss.".format(entity_type))
+                    logger.logger.debug("Data error: required key of observe type {} miss.".format(entity_type))
                     continue
                 if _id not in label_map:
                     item = {}

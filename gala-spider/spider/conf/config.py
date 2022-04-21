@@ -35,7 +35,14 @@ class SpiderConfig(metaclass=Singleton):
             'step': 1,
         }
 
-        self.anomaly_detection_conf = {}
+        self.storage_conf = {
+            'period': 60,   # unit: minute
+            'database': 'arangodb',
+            'db_conf': {
+                'url': None,
+                'db_name': None,
+            }
+        }
 
     def load_from_yaml(self, conf_path: str) -> bool:
         try:
@@ -57,9 +64,19 @@ class SpiderConfig(metaclass=Singleton):
         self.log_conf.update(spider_conf.get('log_conf', {}))
         self.kafka_conf.update(result.get('kafka', {}))
         self.prometheus_conf.update(result.get('prometheus', {}))
-        self.anomaly_detection_conf.update(result.get('anomaly_detection', {}))
+
+        self.storage_conf.update(result.get('storage', {}))
 
         return True
+
+
+def init_spider_config(spider_conf_path) -> bool:
+    spider_config = SpiderConfig()
+    if not spider_config.load_from_yaml(spider_conf_path):
+        print('Load spider config failed.')
+        return False
+    print('Load spider config success.')
+    return True
 
 
 if __name__ == '__main__':

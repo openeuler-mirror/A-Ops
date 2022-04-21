@@ -1,35 +1,18 @@
-from typing import Dict, List
-
-from flask import current_app
+from typing import Dict
+from typing import List
 
 from spider.conf import SpiderConfig
-from spider.data_process.prometheus_processor import PrometheusProcessor
-from spider.models import BaseResponse, EntitiesResponse, Entity, Dependenceitem, Attr
-from spider.entity_mgt import ObserveEntity, Relation
-from spider.entity_mgt import DirectRelationCreator, IndirectRelationCreator
-
-
-def _get_observe_entities(timestamp=None) -> List[ObserveEntity]:
-    entities: List[ObserveEntity] = []
-    db_agent = SpiderConfig().db_agent
-
-    if db_agent == "prometheus":
-        entities = PrometheusProcessor().get_observe_entities(timestamp)
-    else:
-        current_app.logger.warning("Unknown data source:{}, please check!".format(db_agent))
-
-    return entities
-
-
-def _get_entity_relations(observe_entities: List[ObserveEntity]) -> List[Relation]:
-    res: List[Relation] = []
-
-    direct_relations = DirectRelationCreator.create_relations(observe_entities)
-    res.extend(direct_relations)
-    indirect_relations = IndirectRelationCreator.create_relations(observe_entities, direct_relations)
-    res.extend(indirect_relations)
-
-    return res
+from spider.util import logger
+from spider.data_process import DataProcessorFactory
+from spider.models import BaseResponse
+from spider.models import EntitiesResponse
+from spider.models import Entity
+from spider.models import Dependenceitem
+from spider.models import Attr
+from spider.entity_mgt import ObserveEntity
+from spider.entity_mgt import Relation
+from spider.service import DataCollectionService
+from spider.service import CalculationService
 
 
 def _get_response_entities(observe_entities: List[ObserveEntity]) -> Dict[str, Entity]:
@@ -76,8 +59,15 @@ def get_observed_entity_list(timestamp=None):  # noqa: E501
     :rtype: EntitiesResponse
     """
     # obtain observe entities
-    observe_entities = _get_observe_entities(timestamp)
-    relations = _get_entity_relations(observe_entities)
+    db_agent = SpiderConfig().db_agent
+    data_processor = DataProcessorFactory.get_instance(db_agent)
+    if data_processor is None:
+        logger.logger.error("Unknown data source:{}, please check!".format(db_agent))
+        return
+    collect_srv = DataCollectionService(data_processor)
+    calc_srv = CalculationService()
+    observe_entities = collect_srv.get_observe_entities(timestamp)
+    relations = calc_srv.get_all_relations(observe_entities)
 
     # transfer observe entities to response format
     resp_entity_map = _get_response_entities(observe_entities)

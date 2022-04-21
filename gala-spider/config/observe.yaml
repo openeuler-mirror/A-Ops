@@ -60,7 +60,7 @@ observe_entities:
     labels:
       - exe_file
       - exec_file
-      - tasks
+      - processes
     level: APPLICATION
     dependingitems:
       -
@@ -89,24 +89,18 @@ observe_entities:
           -
             type: appinstance
   -
-    type: task
+    type: process
     keys:
-      - pid
+      - tgid
       - machine_id
     labels:
-      - tgid
       - pgid
-      - &task_name comm
+      - &process_name comm
       - exe_file
       - exec_file
-      - major
-      - minor
-    name: *task_name
+    name: *process_name
     metrics:
       - fork_count
-      - task_io_wait_time_us
-      - task_io_count
-      - task_io_time_us
       - task_rchar_bytes
       - task_wchar_bytes
       - task_syscr_count
@@ -114,7 +108,6 @@ observe_entities:
       - task_read_bytes
       - task_write_bytes
       - task_cancelled_write_bytes
-      - task_hang_count
     level: PROCESS
     dependingitems:
       -
@@ -135,46 +128,140 @@ observe_entities:
         layer: indirect
         toTypes:
           -
-            type: task
+            type: process
   -
-    type: endpoint
+    type: thread
     keys:
-      - endpoint_type
-      - s_addr
-      - s_port
-      - tgid
+      - pid
       - machine_id
     labels:
-      - process_name
-      - user_id
-      - family
-      - socket_type
-      - protocol
+      - tgid
+      - &task_name comm
+      - major
+      - minor
+    name: *task_name
     metrics:
-      - listendrop
-      - listen_overflow
-      - passive_open
-      - active_open
-      - attempt_fail
-      - abort_close
-      - request_fail
-      - rmem_schedule
-      - tcp_oom
-      - tcp_keepalive_timeout
+      - fork_count
+      - task_io_wait_time_us
+      - task_io_count
+      - task_io_time_us
+      - task_hang_count
+      - kfree_skb_cnt
+      - kfree_skb_ret_addr
+    level: PROCESS
     dependingitems:
       -
         id: belongs_to
         layer: direct
         toTypes:
           -
-            type: task
+            type: process
             matches:
               -
                 from: tgid
                 to: tgid
               -
+                from: machine_id
+                to: machine_id
+  -
+    type: bind
+    keys:
+      - tgid
+      - s_addr
+      - machine_id
+    metrics:
+      - que_rcv_drops
+      - sends
+      - rcvs
+      - err
+    level: PROCESS
+    dependingitems:
+      -
+        id: belongs_to
+        layer: direct
+        toTypes:
+          -
+            type: process
+            matches:
+              -
                 from: tgid
-                to: pid
+                to: tgid
+              -
+                from: machine_id
+                to: machine_id
+  -
+    type: udp
+    keys:
+      - tgid
+      - s_addr
+      - machine_id
+    metrics:
+      - que_rcv_drops
+      - sends
+      - rcvs
+      - err
+    level: PROCESS
+    dependingitems:
+      -
+        id: belongs_to
+        layer: direct
+        toTypes:
+          -
+            type: process
+            matches:
+              -
+                from: tgid
+                to: tgid
+              -
+                from: machine_id
+                to: machine_id
+  -
+    type: connect
+    keys:
+      - tgid
+      - s_addr
+      - machine_id
+    metrics:
+      - active_open
+      - active_open_failed
+    level: PROCESS
+    dependingitems:
+      -
+        id: belongs_to
+        layer: direct
+        toTypes:
+          -
+            type: process
+            matches:
+              -
+                from: tgid
+                to: tgid
+              -
+                from: machine_id
+                to: machine_id
+  -
+    type: listen
+    keys:
+      - tgid
+      - s_port
+      - machine_id
+    metrics:
+      - listendrop
+      - listen_overflow
+      - passive_open
+      - passive_open_failed
+    level: PROCESS
+    dependingitems:
+      -
+        id: belongs_to
+        layer: direct
+        toTypes:
+          -
+            type: process
+            matches:
+              -
+                from: tgid
+                to: tgid
               -
                 from: machine_id
                 to: machine_id
@@ -190,18 +277,48 @@ observe_entities:
     labels:
       - protocol
     metrics:
-      - rx_bytes
-      - tx_bytes
-      - packets_out
-      - packets_in
-      - retran_packets
-      - lost_packets
-      - link_count
-      - tmout_count
-      - rcv_que_full_count
-      - snd_buf_limit_count
-      - send_rsts
-      - receive_rsts
+      - health_rx_bytes
+      - health_tx_bytes
+      - health_retran_packets
+      - health_retran_synacks
+      - health_sk_drops
+      - health_backlog_drops
+      - health_md5_hash_drops
+      - health_filter_drops
+      - health_tmout_count
+      - health_rcv_que_full_count
+      - health_snd_buf_limit_count
+      - health_attempt_fails
+      - health_rmem_scheduls
+      - health_tcp_oom
+      - health_sk_err
+      - health_sk_err_soft
+      - status_srtt_last
+      - status_srtt_max
+      - status_srtt_min
+      - status_syn_srtt_last
+      - status_syn_srtt_max
+      - status_syn_srtt_min
+      - status_rcv_wnd_last
+      - status_rcv_wnd_max
+      - status_rcv_wnd_min
+      - status_snd_wnd_last
+      - status_send_rsts
+      - status_receive_rsts
+      - status_wmem_alloc_last
+      - status_wmem_alloc_max
+      - status_wmem_alloc_min
+      - status_rmem_alloc_last
+      - status_rmem_alloc_max
+      - status_rmem_alloc_min
+      - status_omem_alloc
+      - status_forward_alloc
+      - status_rcv_buf_limit
+      - status_snd_buf_limit
+      - status_pacing_rate_last
+      - status_pacing_rate_max
+      - status_pacing_rate_min
+      - status_ecn_flags
     level: RPC
     dependingitems:
       -
@@ -209,14 +326,11 @@ observe_entities:
         layer: direct
         toTypes:
           -
-            type: task
+            type: process
             matches:
               -
                 from: tgid
                 to: tgid
-              -
-                from: tgid
-                to: pid
               -
                 from: machine_id
                 to: machine_id
@@ -291,6 +405,10 @@ observe_entities:
               -
                 from: client_ip
                 to: client_ip
+            conflicts:
+              -
+                from: role
+                to: role
   -
     type: ipvs_link
     keys: &lb_link_keys
@@ -313,7 +431,7 @@ observe_entities:
         layer: direct
         toTypes:
           -
-            type: task
+            type: thread
             matches: &lb_link_belong_task
               -
                 from: pid
@@ -333,7 +451,7 @@ observe_entities:
         layer: direct
         toTypes:
           -
-            type: task
+            type: thread
             matches: *lb_link_belong_task
   -
     type: haproxy_link
@@ -347,5 +465,5 @@ observe_entities:
         layer: direct
         toTypes:
           -
-            type: task
+            type: thread
             matches: *lb_link_belong_task

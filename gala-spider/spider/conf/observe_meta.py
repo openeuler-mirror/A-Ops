@@ -1,7 +1,10 @@
 import os
 from enum import Enum
-from typing import List, Dict, Set
-from dataclasses import dataclass, field
+from typing import List
+from typing import Dict
+from typing import Set
+from dataclasses import dataclass
+from dataclasses import field
 
 import yaml
 
@@ -21,8 +24,12 @@ class EntityType(ValueCheckEnum):
     HOST = 'host'
     CONTAINER = 'container'
     APPINSTANCE = 'appinstance'
-    TASK = 'task'
-    ENDPOINT = 'endpoint'
+    PROCESS = 'process'
+    THREAD = 'thread'
+    BIND = 'bind'
+    UDP = 'udp'
+    CONNECT = 'connect'
+    LISTEN = 'listen'
     TCP_LINK = 'tcp_link'
     IPVS_LINK = 'ipvs_link'
     NGINX_LINK = 'nginx_link'
@@ -72,6 +79,12 @@ class RequireMeta:
     value: str
 
 
+@dataclass
+class ConflictMeta:
+    from_: str
+    to: str
+
+
 @dataclass(unsafe_hash=True)
 class RelationMeta:
     id: str
@@ -84,6 +97,7 @@ class RelationMeta:
 class DirectRelationMeta(RelationMeta):
     matches: List[MatchMeta] = field(compare=False)
     requires: List[RequireMeta] = field(default_factory=list, compare=False)
+    conflicts: List[ConflictMeta] = field(default_factory=list, compare=False)
 
 
 @dataclass(unsafe_hash=True)
@@ -144,6 +158,25 @@ def _check_relation_require(data) -> bool:
     return True
 
 
+def _check_relation_conflict(data) -> bool:
+    if not isinstance(data, dict):
+        print("Relation conflict must be a dict.")
+        return False
+
+    from_ = data.get("from")
+    to = data.get("to")
+
+    if not isinstance(from_, str):
+        print("Conflict from must be a string.")
+        return False
+
+    if not isinstance(to, str):
+        print("Conflict to must be a string.")
+        return False
+
+    return True
+
+
 def _check_relation_object(data) -> bool:
     if not isinstance(data, dict):
         print("Relation toType must be a dict.")
@@ -152,6 +185,7 @@ def _check_relation_object(data) -> bool:
     type_ = data.get("type")
     matches = data.get("matches", [])
     requires = data.get("requires", [])
+    conflicts = data.get("conflicts", [])
 
     if not EntityType.check_value(type_):
         print("Unsupported relation object type: {}".format(type_))
@@ -171,6 +205,14 @@ def _check_relation_object(data) -> bool:
     for require in requires:
         if not _check_relation_require(require):
             print("Relation require check failed, which is: {}.".format(require))
+            return False
+
+    if not isinstance(conflicts, list):
+        print("Relation conflicts must be a list.")
+        return False
+    for conflict in conflicts:
+        if not _check_relation_conflict(conflict):
+            print("Relation conflict check failed, which is: {}.".format(conflict))
             return False
 
     return True
@@ -286,8 +328,8 @@ class ObserveMetaMgt(metaclass=Singleton):
     def load_from_yaml(self, observe_path: str) -> bool:
         try:
             observe_path = os.path.abspath(observe_path)
-            with open(observe_path, 'r') as f:
-                data = yaml.safe_load(f)
+            with open(observe_path, 'r') as file:
+                data = yaml.safe_load(file)
         except IOError as ex:
             print("Unable to open observe config file: {}.".format(ex))
             return False
@@ -380,18 +422,22 @@ class ObserveMetaMgt(metaclass=Singleton):
             if layer == RelationLayerType.DIRECT.value:
                 matches = to_type.get("matches", [])
                 requires = to_type.get("requires", [])
+                conflicts = to_type.get("conflicts", [])
 
                 match_objs = []
                 require_objs = []
+                conflict_objs = []
                 for match in matches:
                     match_objs.append(MatchMeta(from_=match.get("from"), to=match.get("to")))
                 for require in requires:
                     require_objs.append(RequireMeta(side=require.get("side"), label=require.get("label"),
                                                     value=require.get("value")))
+                for conflict in conflicts:
+                    conflict_objs.append(ConflictMeta(from_=conflict.get("from"), to=conflict.get("to")))
 
                 relation_meta = DirectRelationMeta(id=id_, layer=layer, from_type=subject_type,
                                                    to_type=object_type, matches=match_objs,
-                                                   requires=require_objs)
+                                                   requires=require_objs, conflicts=conflict_objs)
             elif layer == RelationLayerType.INDIRECT.value:
                 relation_meta = IndirectRelationMeta(id=id_, layer=layer, from_type=subject_type,
                                                      to_type=object_type)
@@ -399,6 +445,15 @@ class ObserveMetaMgt(metaclass=Singleton):
                 res.append(relation_meta)
 
         return res
+
+
+def init_observe_meta_config(observe_conf_path) -> bool:
+    observe_meta_mgt = ObserveMetaMgt()
+    if not observe_meta_mgt.load_from_yaml(observe_conf_path):
+        print('Load observe metadata failed.')
+        return False
+    print('Load observe metadata success.')
+    return True
 
 
 # TODO : just for test, to delete

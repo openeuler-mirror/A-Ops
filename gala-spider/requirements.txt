@@ -3,4 +3,4 @@ python_dateutil == 2.6.0
 setuptools >= 21.0.0
 requests
 pyyaml
-py2neo
+pyarango == 2.0.1
