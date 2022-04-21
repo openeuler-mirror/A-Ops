@@ -5,37 +5,11 @@ gala-gopher是基于eBPF的低负载探针框架，致力于提供裸机/虚机/
 
 ## 快速开始
 
-### 基于源码编译、安装、运行
-
-- 安装依赖
-
-  ```bash
-  sh build.sh check
-  ```
-
-- 构建
-
-  ```bash
-  sh build.sh build
-  ```
-
-- 安装
-
-  ```bash
-  sh install.sh
-  ```
-
-- 运行
-
-  ```bash
-  gala-gopher
-  ```
-
 ### 基于rpm包安装运行
 
 - yum源配置
   
-  根据要安装的gala-gopher版本配置指定的yum源。例，
+  根据要安装的gala-gopher版本配置指定的yum源。例：
 
   ```
   [gala-gopher]
@@ -57,7 +31,7 @@ gala-gopher是基于eBPF的低负载探针框架，致力于提供裸机/虚机/
   直接运行命令，
 
   ```bash
-  systemctl start gala-gopher
+  gala-gopher
   ```
   
   或者通过 systemd 启动，
@@ -65,6 +39,43 @@ gala-gopher是基于eBPF的低负载探针框架，致力于提供裸机/虚机/
   ```bash
   systemctl start gala-gopher
   ```
+
+### 基于源码编译、安装、运行
+
+- 安装依赖
+
+  ```bash
+  sh build.sh check
+  ```
+
+- 构建
+
+  ```bash
+  RELEASE模式：sh build.sh --release
+  DEBUG模式：  sh build.sh --debug
+  ```
+
+- 安装
+
+  ```bash
+  sh install.sh
+  ```
+
+- 运行
+
+  ```bash
+  gala-gopher
+  ```
+
+### REST API使用
+
+- 默认提供的REST API地址为：
+
+  ```bash
+  http://localhost:port
+  ```
+
+  其中port可以在配置文件`gala-gopher.conf` 中配置，默认配置为8888。
 
 ## 总体介绍
 
