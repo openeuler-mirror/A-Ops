@@ -67,6 +67,16 @@ gala-gopher是基于eBPF的低负载探针框架，致力于提供裸机/虚机/
   gala-gopher
   ```
 
+### REST API使用
+
+- 默认提供的REST API地址为：
+
+  ```bash
+  http://localhost:port
+  ```
+
+  其中port可以在配置文件`gala-gopher.conf` 中配置，默认配置为8888。
+
 ## 总体介绍
 
 gala-gopher是基于eBPF的低负载探针框架，并集成了常用的native探针、知名中间件探针；gala-gopher有良好的扩展性，能方便的集成各种类型的探针程序，发挥社区的力量丰富探针框架的能力；gala-gopher中的几个主要部件：
