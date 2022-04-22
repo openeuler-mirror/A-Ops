@@ -12,7 +12,7 @@ VERSION = "1.0.0"
 # prerequisite: setuptools
 # http://pypi.python.org/pypi/setuptools
 
-REQUIRES = ["connexion", "requests", "pyyaml"]
+REQUIRES = ["connexion", "requests", "pyyaml", "pyarango"]
 
 setup(
     name=NAME,
@@ -27,7 +27,9 @@ setup(
     data_files=[('/etc/spider/', ['config/gala-spider.yaml', 'config/observe.yaml'])],
     include_package_data=True,
     entry_points={
-        'console_scripts': ['spider=spider.__main__:main']},
+        'console_scripts': ['spider-server=spider.__main__:main',
+                            'spider-storage=spider.storage_daemon:main']
+    },
     long_description="""\
     Topo Graph Engine Service
     """

@@ -1,8 +1,16 @@
-from typing import List, Dict, Tuple
+from typing import List
+from typing import Dict
+from typing import Tuple
 
-from spider.conf.observe_meta import ObserveMetaMgt, ObserveMeta, EntityType
-from spider.conf.observe_meta import DirectRelationMeta, RelationSideType, RelationType, RelationLayerType
-from .models import ObserveEntity, Relation
+from spider.conf.observe_meta import ObserveMetaMgt
+from spider.conf.observe_meta import ObserveMeta
+from spider.conf.observe_meta import EntityType
+from spider.conf.observe_meta import DirectRelationMeta
+from spider.conf.observe_meta import RelationSideType
+from spider.conf.observe_meta import RelationType
+from spider.conf.observe_meta import RelationLayerType
+from spider.entity_mgt.models import ObserveEntity
+from spider.entity_mgt.models import Relation
 
 ConnectPair = Tuple[ObserveEntity, ObserveEntity]
 
@@ -43,8 +51,8 @@ class ObserveEntityCreator:
         hosts = ObserveEntityCreator._create_host_observe_entities(observe_entities)
         res.extend(hosts)
 
-        tasks = observe_entity_map.get(EntityType.TASK.value, [])
-        app_instances = ObserveEntityCreator._create_app_instance_observe_entities(tasks)
+        processes = observe_entity_map.get(EntityType.PROCESS.value, [])
+        app_instances = ObserveEntityCreator._create_app_instance_observe_entities(processes)
         res.extend(app_instances)
 
         return res
@@ -63,19 +71,19 @@ class ObserveEntityCreator:
         return list(entity_map.values())
 
     @staticmethod
-    def _create_app_instance_observe_entities(tasks: List[ObserveEntity]) -> List[ObserveEntity]:
+    def _create_app_instance_observe_entities(processes: List[ObserveEntity]) -> List[ObserveEntity]:
         app_inst_meta = ObserveMetaMgt().get_observe_meta(EntityType.APPINSTANCE.value)
         entity_map: Dict[str, ObserveEntity] = {}
 
-        for task in tasks:
-            entity = ObserveEntityCreator._create_entity_from(task, app_inst_meta)
+        for process in processes:
+            entity = ObserveEntityCreator._create_entity_from(process, app_inst_meta)
             if not entity.id:
                 continue
 
             entity_map.setdefault(entity.id, entity)
             entity_attrs = entity_map.get(entity.id).attrs
-            entity_attrs.setdefault('tasks', [])
-            entity_attrs.get('tasks').append(task.id)
+            entity_attrs.setdefault('processes', [])
+            entity_attrs.get('processes').append(process.id)
 
         return list(entity_map.values())
 
@@ -123,6 +131,10 @@ class DirectRelationCreator:
         for require in relation_meta.requires:
             entity = sub_entity if RelationSideType.FROM.value == require.side else obj_entity
             if entity.attrs.get(require.label) != require.value:
+                return None
+
+        for conflict in relation_meta.conflicts:
+            if sub_entity.attrs.get(conflict.from_) == obj_entity.attrs.get(conflict.to):
                 return None
 
         relation = Relation(relation_meta.id, relation_meta.layer, sub_entity, obj_entity)
