@@ -45,6 +45,7 @@ function install_daemon_bin()
 function install_conf()
 {
     GOPHER_CONF_FILE=${PROJECT_FOLDER}/config/gala-gopher.conf
+    TASKPROBE_WHITELIST_FILE=${PROJECT_FOLDER}/config/task_whitelist.conf
     GOPHER_CONF_TARGET_DIR=/opt/gala-gopher
 
     if [ $# -eq 1 ]; then
@@ -56,6 +57,9 @@ function install_conf()
         echo "${GOPHER_CONF_FILE} not exist. please check ./config dir."
         exit 1
     fi
+    if [ ! -f ${TASKPROBE_WHITELIST_FILE} ]; then
+        echo "${TASKPROBE_WHITELIST_FILE} not exist. please check ./config dir."
+    fi
 
     # install gala-gopher.conf
     if [ ! -d ${GOPHER_CONF_TARGET_DIR} ]; then
@@ -63,6 +67,8 @@ function install_conf()
     fi
     cp -f ${GOPHER_CONF_FILE} ${GOPHER_CONF_TARGET_DIR}
     echo "install ${GOPHER_CONF_FILE} success."
+    cp -f ${TASKPROBE_WHITELIST_FILE} ${GOPHER_CONF_TARGET_DIR}
+    echo "install ${TASKPROBE_WHITELIST_FILE} success."
 
 }
 

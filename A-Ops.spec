@@ -11,7 +11,7 @@ patch0001:	0001-fix-diag-return.patch
 
 # build for gopher
 BuildRequires:	cmake gcc-c++ yum elfutils-devel clang >= 10.0.1 llvm libconfig-devel
-BuildRequires:	librdkafka-devel libmicrohttpd-devel
+BuildRequires:	librdkafka-devel libmicrohttpd-devel uthash-devel libbpf libbpf-devel
 
 # build for ragdoll & aops basic module
 BuildRequires:  python3-setuptools python3-connexion python3-werkzeug python3-libyang
@@ -222,7 +222,7 @@ popd
 
 #build for gala-gopher
 pushd gala-gopher
-sh build.sh build
+sh build.sh --release
 popd
 
 #build for gala-ragdoll
@@ -452,6 +452,7 @@ fi
 %dir /opt/gala-gopher/meta
 %{_bindir}/gala-gopher
 %config(noreplace) /opt/gala-gopher/gala-gopher.conf
+%config(noreplace) /opt/gala-gopher/task_whitelist.conf
 /opt/gala-gopher/extend_probes/*
 /opt/gala-gopher/meta/*
 /usr/lib/systemd/system/gala-gopher.service
