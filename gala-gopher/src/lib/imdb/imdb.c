@@ -411,6 +411,8 @@ static int IMDB_DataBaseMgrParseContent(IMDB_DataBaseMgr *mgr, IMDB_Table *table
 
         index += 1;
     }
+    if (buffer_head != NULL)
+        free(buffer_head);
     return 0;
 
 ERR:
@@ -706,7 +708,7 @@ static int IMDB_Prometheus_BuildLabel(const IMDB_DataBaseMgr *mgr, IMDB_Record *
     if (ret < 0 || ret >= curMaxLen) {
         goto ERR;
     }
-    curMaxLen -= ret;
+    //curMaxLen -= ret;
 
 ERR:
     return ret;
@@ -721,7 +723,8 @@ static int IMDB_Record2String(IMDB_DataBaseMgr *mgr, IMDB_Record *record, char *
 
     char labels[MAX_LABELS_BUFFER_SIZE] = {0};
     ret = IMDB_Prometheus_BuildLabel(mgr, record, labels, MAX_LABELS_BUFFER_SIZE);
-    if (ret < 0) {
+    if (ret < 0 || ret >= MAX_LABELS_BUFFER_SIZE) {
+        ERROR("[IMDB] table(%s) build label fail, ret: %d\n", tableName, ret);
         goto ERR;
     }
 
@@ -776,7 +779,7 @@ static int IMDB_Table2String(IMDB_DataBaseMgr *mgr, IMDB_Table *table, char *buf
         }
 
         ret = IMDB_Record2String(mgr, record, curBuffer, curMaxLen, table->name);
-        if (ret < 0) {
+        if (ret <= 0) {
             ERROR("[IMDB] table(%s) record to string fail.\n", table->name);
             return -1;
         }
@@ -797,6 +800,7 @@ static int IMDB_Table2String(IMDB_DataBaseMgr *mgr, IMDB_Table *table, char *buf
 
     ret = snprintf(curBuffer, curMaxLen, "\n");
     if (ret < 0) {
+        ERROR("[IMDB] table(%s) add endsym fail.\n", table->name);
         return -1;
     }
     curBuffer += 1;
