@@ -77,13 +77,13 @@ static __always_inline struct endpoint_val_t* get_tcp_obj(struct endpoint_key_t 
     return 0;
 }
 
-static void get_tcp_key(struct sock *sk, struct endpoint_key_t *key)
+static void get_tcp_key(struct sock *sk, struct endpoint_key_t *key, u32 tgid)
 {
     if (key->type == SK_TYPE_LISTEN_TCP) {
-        key->key.tcp_listen_key.tgid = bpf_get_current_pid_tgid() >> INT_LEN;
+        key->key.tcp_listen_key.tgid = tgid;
         key->key.tcp_listen_key.port = (int)_(sk->sk_num);
     } else if (key->type == SK_TYPE_CLIENT_TCP) {
-        key->key.tcp_connect_key.tgid = bpf_get_current_pid_tgid() >> INT_LEN;
+        key->key.tcp_connect_key.tgid = tgid;
         init_ip(&key->key.tcp_connect_key.ip_addr, sk);
     }
     return;
@@ -92,6 +92,7 @@ static void get_tcp_key(struct sock *sk, struct endpoint_key_t *key)
 static struct endpoint_val_t* get_tcp_val(struct sock *sk, int *new_entry)
 {
     int ret;
+    struct endpoint_v *epv;
     enum endpoint_t type;
     struct endpoint_key_t key = {0};
     struct endpoint_val_t *value;
@@ -101,14 +102,15 @@ static struct endpoint_val_t* get_tcp_val(struct sock *sk, int *new_entry)
     if (sk == 0)
         return 0;
 
-    // get sock type
-    ret = get_sock_type(sk, &type);
-    if (ret < 0)
+    // get endpoint val
+    epv = get_endpoint_val(sk);
+    if (epv == 0)
         return 0;
+    type = epv->type;
 
     // get tcp key by sock type
-    key.type = type;
-    get_tcp_key(sk, &key);
+    key.type = epv->type;
+    get_tcp_key(sk, &key, epv->tgid);
 
     // get tcp obj
     value = get_tcp_obj(&key);
@@ -150,7 +152,6 @@ static __always_inline struct sock *listen_sock(struct sock *sk)
     return lsk;
 }
 
-
 KPROBE(__sock_release, pt_regs)
 {
     struct socket* socket = (struct socket *)PT_REGS_PARM1(ctx);
@@ -158,12 +159,11 @@ KPROBE(__sock_release, pt_regs)
     (void)delete_sock_map(sk);
 }
 
-
 KPROBE(inet_listen, pt_regs)
 {
     struct socket* socket = (struct socket *)PT_REGS_PARM1(ctx);
     struct sock *sk = _(socket->sk);
-    (void)create_sock_map(sk, SK_TYPE_LISTEN_TCP);
+    (void)create_sock_map(sk, SK_TYPE_LISTEN_TCP, (bpf_get_current_pid_tgid() >> INT_LEN));
     report_tcp(ctx, sk);
 }
 
@@ -194,7 +194,7 @@ KPROBE(__sys_accept4, pt_regs)
 
     (void)bpf_map_delete_elem(&listen_sockfd_map, &listen_sockfd_key);
 
-    (void)create_sock_map(sk, SK_TYPE_LISTEN_TCP);
+    (void)create_sock_map(sk, SK_TYPE_LISTEN_TCP, (bpf_get_current_pid_tgid() >> INT_LEN));
     value = get_tcp_val(sk, &new_entry);
     if (value) {
         ATOMIC_INC_EP_STATS(value, EP_STATS_PASSIVE_OPENS, 1);
@@ -218,7 +218,7 @@ KPROBE_RET(tcp_connect, pt_regs)
     if (sk == (void *)0) {
         return;
     }
-    (void)create_sock_map(sk, SK_TYPE_CLIENT_TCP);
+    (void)create_sock_map(sk, SK_TYPE_CLIENT_TCP, (bpf_get_current_pid_tgid() >> INT_LEN));
     value = get_tcp_val(sk, &new_entry);
     if (value) {
         if (ret == 0) {
@@ -229,7 +229,6 @@ KPROBE_RET(tcp_connect, pt_regs)
         report(ctx, value, new_entry);
     }
 }
-
 
 KPROBE(tcp_conn_request, pt_regs)
 {
@@ -287,7 +286,7 @@ KPROBE_RET(tcp_create_openreq_child, pt_regs)
     value = get_tcp_val(sk, &new_entry);
     if (value == 0)
         return;
-    
+
     if (new_sk) {
         ATOMIC_INC_EP_STATS(value, EP_STATS_PASSIVE_OPENS, 1);
     } else {
@@ -321,3 +320,19 @@ KPROBE_RET(tcp_check_req, pt_regs)
     }
     return;
 }
+
+KRAWTRACE(tcp_retransmit_synack, bpf_raw_tracepoint_args)
+{
+    int new_entry;
+    struct endpoint_val_t* value;
+    struct sock *sk = (struct sock *)ctx->args[0];
+    
+    value = get_tcp_val(sk, &new_entry);
+    if (value) {
+        ATOMIC_INC_EP_STATS(value, EP_STATS_RETRANS_SYNACK, 1);
+        report(ctx, value, new_entry);
+    }
+
+    return;
+}
+

@@ -34,6 +34,7 @@ struct tcp_fd_info {
 struct tcp_sock_info {
     __u32 role;     // client:1/server:0
     __u32 syn_srtt; // rtt from SYN/ACK to ACK
+    __u32 tgid;     // PID
 };
 
 struct tcp_status {
@@ -73,10 +74,10 @@ struct tcp_health {
     __u64 tx;               // FROM tcp_sendmsg
 
     __u32 total_retrans;    // FROM tcp_retransmit_skb event
-    __u32 synack_retrans;   // FROM tcp_retransmit_synack
+    __u32 synack_retrans;   // FROM tcp_retransmit_synack        ==> dereference
     __u32 backlog_drops;    // FROM tcp_add_backlog event
     __u32 sk_drops;         // FROM tcp_drop
-    __u32 md5_hash_drops;   // FROM tcp_v4_inbound_md5_hash event
+    __u32 md5_hash_drops;   // FROM tcp_v4_inbound_md5_hash event ==> dereference
     __u32 filter_drops;     // FROM tcp_filter event
     __u32 tmout;            // FROM tcp_write_err event
     __u32 rcvque_full;      // FROM sock_rcvqueue_full event

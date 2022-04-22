@@ -91,7 +91,7 @@ static void print_link_metrics(void *ctx, int cpu, void *data, __u32 size)
         metrics->data.status.ecn_flags);
     // health infos
     fprintf(stdout,
-        "|%s_%s|%u|%u|%s|%s|%u|%u|%llu|%llu|%u|%u|%u|%u|%u|%u|%u|%u|%u|%u|%u|%u|%d|%d|\n",
+        "|%s_%s|%u|%u|%s|%s|%u|%u|%llu|%llu|%u|%u|%u|%u|%u|%u|%u|%u|%u|%u|%d|%d|\n",
         OO_NAME,
         OO_TYPE_HEALTH,
         link->tgid,
@@ -103,10 +103,8 @@ static void print_link_metrics(void *ctx, int cpu, void *data, __u32 size)
         metrics->data.health.rx,
         metrics->data.health.tx,
         metrics->data.health.total_retrans,
-        metrics->data.health.synack_retrans,
         metrics->data.health.sk_drops,
         metrics->data.health.backlog_drops,
-        metrics->data.health.md5_hash_drops,
         metrics->data.health.filter_drops,
         metrics->data.health.tmout,
         metrics->data.health.rcvque_full,

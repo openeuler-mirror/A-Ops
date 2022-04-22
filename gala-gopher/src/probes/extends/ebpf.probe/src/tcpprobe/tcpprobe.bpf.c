@@ -62,13 +62,13 @@ static __always_inline struct tcp_sock_info *get_sock_data(struct sock *sk)
     return (struct tcp_sock_info *)bpf_map_lookup_elem(&sock_map, &sk);
 }
 
-static __always_inline int get_tcp_link_key(struct tcp_link_s *link, struct sock *sk, u32 tgid, u32 *syn_srtt)
+static __always_inline int get_tcp_link_key(struct tcp_link_s *link, struct sock *sk, u32 *syn_srtt)
 {
     if (!sk)
         return -1;
 
     struct tcp_sock_info *sock_data_p = get_sock_data(sk);
-    if (!sock_data_p) {
+    if (!sock_data_p || sock_data_p->tgid == 0) {
         return -1;
     }
     __u32 role = sock_data_p->role;
@@ -97,7 +97,7 @@ static __always_inline int get_tcp_link_key(struct tcp_link_s *link, struct sock
     }
 
     link->role = role;
-    link->tgid = tgid;
+    link->tgid = sock_data_p->tgid;
     return 0;
 }
 
@@ -112,18 +112,15 @@ static __always_inline int create_tcp_link(struct tcp_link_s *link, u32 syn_srtt
     return bpf_map_update_elem(&tcp_link_map, link, &metrics, BPF_ANY);
 }
 
-static __always_inline struct tcp_metrics_s *get_tcp_metrics(struct sock *sk, u32 tgid, u32 *new_entry) 
+static __always_inline struct tcp_metrics_s *get_tcp_metrics(struct sock *sk, u32 *new_entry) 
 {
     int ret;
     struct tcp_link_s link = {0};
     struct tcp_metrics_s *metrics;
     u32 syn_srtt;
 
-    if (tgid == 0)
-        return 0;   // avoid adding value(tgid=0) into tcp_link_map
-
     *new_entry = 0;
-    ret = get_tcp_link_key(&link, sk, tgid, &syn_srtt);
+    ret = get_tcp_link_key(&link, sk, &syn_srtt);
     if (ret < 0)
         return 0;
 
@@ -145,15 +142,22 @@ static __always_inline struct tcp_metrics_s *get_tcp_metrics(struct sock *sk, u3
 
 static __always_inline int create_sock_obj(u32 tgid, struct sock *sk, struct tcp_sock_info *info)
 {
-    //if (!is_task_exist(tgid)) {
-    //    return -1;
-    //}
+    info->tgid = tgid;
     return bpf_map_update_elem(&sock_map, &sk, info, BPF_ANY);
 }
 
 static __always_inline void delete_sock_obj(struct sock *sk)
 {
     (void)bpf_map_delete_elem(&sock_map, &sk);
+}
+
+static __always_inline void update_sock_obj(struct sock *sk, u32 tgid)
+{
+    struct tcp_sock_info * sk_info = get_sock_data(sk);
+    if (sk_info == 0)
+        return;
+    sk_info->tgid = tgid;
+    (void)bpf_map_update_elem(&sock_map, &sk, sk_info, BPF_ANY);
 }
 
 #define __PERIOD ((u64)30 * 1000000000)
@@ -169,7 +173,7 @@ static __always_inline u64 get_period()
     return period; // units from second to nanosecond
 }
 
-static __always_inline void report(struct pt_regs *ctx, struct tcp_metrics_s *metrics, u32 new_entry)
+static __always_inline void report(void *ctx, struct tcp_metrics_s *metrics, u32 new_entry)
 {
     if (new_entry) {
         (void)bpf_perf_event_output(ctx, &output, BPF_F_CURRENT_CPU, metrics, sizeof(struct tcp_metrics_s));
@@ -215,7 +219,7 @@ static void do_load_tcp_fd(u32 tgid, int fd, struct tcp_sock_info *info)
     if (ret < 0)
         return;
 
-    ret = get_tcp_link_key(&link, sk, tgid, &syn_srtt_unuse);
+    ret = get_tcp_link_key(&link, sk, &syn_srtt_unuse);
     if (ret < 0)
         return;
 
@@ -225,7 +229,7 @@ static void do_load_tcp_fd(u32 tgid, int fd, struct tcp_sock_info *info)
 static void load_tcp_fd(u32 tgid)
 {
     struct tcp_fd_info *tcp_fd_s = bpf_map_lookup_elem(&tcp_fd_map, &tgid);
-    struct tcp_sock_info tcp_sock_data;
+    struct tcp_sock_info tcp_sock_data = {0};
     if (!tcp_fd_s)
         return;
 
@@ -233,6 +237,7 @@ static void load_tcp_fd(u32 tgid)
     for (int i = 0; i < TCP_FD_PER_PROC_MAX; i++) {
         tcp_sock_data.role = tcp_fd_s->fd_role[i];
         tcp_sock_data.syn_srtt = 0;
+        tcp_sock_data.tgid = tgid;
         do_load_tcp_fd(tgid, tcp_fd_s->fds[i], &tcp_sock_data);
     }
 
@@ -241,35 +246,23 @@ static void load_tcp_fd(u32 tgid)
 
 KPROBE(tcp_set_state, pt_regs)
 {
-    int ret;
     struct tcp_sock_info tcp_sock_data = {0};
     u16 new_state = (u16)PT_REGS_PARM2(ctx);
     struct sock *sk = (struct sock *)PT_REGS_PARM1(ctx);
     struct tcp_sock *tcp_sock = (struct tcp_sock *)sk;
-    u32 tgid = bpf_get_current_pid_tgid() >> INT_LEN;
     u16 old_state = _(sk->sk_state);
 
     if (old_state == TCP_SYN_SENT && new_state == TCP_ESTABLISHED) {
         /* create sock object */
         tcp_sock_data.role = LINK_ROLE_CLIENT;
-        ret = create_sock_obj(tgid, sk, &tcp_sock_data);
-        if (ret < 0)
-            return;
-
-        /* create tcp sock from tcp fd */
-        load_tcp_fd(tgid);
+        (void)create_sock_obj(0, sk, &tcp_sock_data);
     }
 
     if (old_state == TCP_SYN_RECV && new_state == TCP_ESTABLISHED) {
         /* create sock object */
         tcp_sock_data.role = LINK_ROLE_SERVER;
         tcp_sock_data.syn_srtt = _(tcp_sock->srtt_us) >> 3;
-        ret = create_sock_obj(tgid, sk, &tcp_sock_data);
-        if (ret < 0)
-            return;
-
-        /* create tcp sock from tcp fd */
-        load_tcp_fd(tgid);
+        (void)create_sock_obj(0, sk, &tcp_sock_data);
     }
     return;
 }
@@ -291,7 +284,9 @@ KPROBE(tcp_sendmsg, pt_regs)
     u32 tgid = bpf_get_current_pid_tgid() >> INT_LEN;
     load_tcp_fd(tgid);
 
-    metrics = get_tcp_metrics(sk, tgid, &new_entry);
+    update_sock_obj(sk, tgid);
+
+    metrics = get_tcp_metrics(sk, &new_entry);
     if (metrics) {
         TCP_TX_XADD(metrics->data, size);
         SND_TCP_STATE_UPDATE(metrics->data, sk);
@@ -309,7 +304,9 @@ KPROBE(tcp_recvmsg, pt_regs)
     u32 tgid = bpf_get_current_pid_tgid() >> INT_LEN;
     load_tcp_fd(tgid);
 
-    metrics = get_tcp_metrics(sk, tgid, &new_entry);
+    update_sock_obj(sk, tgid);
+
+    metrics = get_tcp_metrics(sk, &new_entry);
     if (metrics) {
         TCP_STATE_UPDATE(metrics->data, sk);
         TCP_SYN_RTT_UPDATE(metrics->data.status);
@@ -322,9 +319,9 @@ KPROBE(tcp_drop, pt_regs)
     u32 new_entry = 0;
     struct tcp_metrics_s *metrics;
     struct sock *sk = (struct sock *)PT_REGS_PARM1(ctx);
-    u32 tgid = bpf_get_current_pid_tgid() >> INT_LEN;
+    u32 pid __maybe_unused = bpf_get_current_pid_tgid();
 
-    metrics = get_tcp_metrics(sk, tgid, &new_entry);
+    metrics = get_tcp_metrics(sk, &new_entry);
     if (metrics) {
         TCP_SK_DROPS_INC(metrics->data);
         report(ctx, metrics, new_entry);
@@ -335,7 +332,6 @@ KPROBE_RET(tcp_add_backlog, pt_regs)
 {
     u32 new_entry = 0;
     bool discard = (bool)PT_REGS_RC(ctx);
-    u32 tgid = bpf_get_current_pid_tgid() >> INT_LEN;
     struct sock *sk;
     struct probe_val val;
     struct tcp_metrics_s *metrics;
@@ -346,7 +342,7 @@ KPROBE_RET(tcp_add_backlog, pt_regs)
     if (discard) {
         sk = (struct sock *)PROBE_PARM1(val);
 
-        metrics = get_tcp_metrics(sk, tgid, &new_entry);
+        metrics = get_tcp_metrics(sk, &new_entry);
         if (metrics) {
             TCP_BACKLOG_DROPS_INC(metrics->data);
             report(ctx, metrics, new_entry);
@@ -354,11 +350,11 @@ KPROBE_RET(tcp_add_backlog, pt_regs)
     }
 }
 
+#if 0
 KPROBE_RET(tcp_v4_inbound_md5_hash, pt_regs)
 {
     u32 new_entry = 0;
     bool discard = (bool)PT_REGS_RC(ctx);
-    u32 tgid = bpf_get_current_pid_tgid() >> INT_LEN;
     struct sock *sk;
     struct probe_val val;
     struct tcp_metrics_s *metrics;
@@ -370,19 +366,19 @@ KPROBE_RET(tcp_v4_inbound_md5_hash, pt_regs)
 
         sk = (struct sock *)PROBE_PARM1(val);
 
-        metrics = get_tcp_metrics(sk, tgid, &new_entry);
+        metrics = get_tcp_metrics(sk, &new_entry);
         if (metrics) {
             TCP_MD5_DROPS_INC(metrics->data);
             report(ctx, metrics, new_entry);
         }
     }
 }
+#endif
 
 KPROBE_RET(tcp_filter, pt_regs)
 {
     u32 new_entry = 0;
     bool discard = (bool)PT_REGS_RC(ctx);
-    u32 tgid = bpf_get_current_pid_tgid() >> INT_LEN;
     struct sock *sk;
     struct probe_val val;
     struct tcp_metrics_s *metrics;
@@ -393,7 +389,7 @@ KPROBE_RET(tcp_filter, pt_regs)
     if (discard) {
 
         sk = (struct sock *)PROBE_PARM1(val);
-        metrics = get_tcp_metrics(sk, tgid, &new_entry);
+        metrics = get_tcp_metrics(sk, &new_entry);
         if (metrics) {
             TCP_FILTER_DROPS_INC(metrics->data);
             report(ctx, metrics, new_entry);
@@ -405,10 +401,10 @@ KPROBE(tcp_write_err, pt_regs)
 {
     u32 new_entry = 0;
     struct sock *sk = (struct sock *)PT_REGS_PARM1(ctx);
-    u32 tgid = bpf_get_current_pid_tgid() >> INT_LEN;
     struct tcp_metrics_s *metrics;
+    u32 pid __maybe_unused = bpf_get_current_pid_tgid();
 
-    metrics = get_tcp_metrics(sk, tgid, &new_entry);
+    metrics = get_tcp_metrics(sk, &new_entry);
     if (metrics) {
         TCP_TMOUT_INC(metrics->data);
         report(ctx, metrics, new_entry);
@@ -419,14 +415,14 @@ KPROBE(tcp_cleanup_rbuf, pt_regs)
 {
     u32 new_entry = 0;
     struct sock *sk = (struct sock *)PT_REGS_PARM1(ctx);
-    u32 tgid = bpf_get_current_pid_tgid() >> INT_LEN;
     int copied = (int)PT_REGS_PARM2(ctx);
     struct tcp_metrics_s *metrics;
+    u32 pid __maybe_unused = bpf_get_current_pid_tgid();
 
     if (copied <= 0)
         return;
 
-    metrics = get_tcp_metrics(sk, tgid, &new_entry);
+    metrics = get_tcp_metrics(sk, &new_entry);
     if (metrics) {
         TCP_RX_XADD(metrics->data, copied);
         report(ctx, metrics, new_entry);
@@ -437,10 +433,10 @@ KRAWTRACE(sock_exceed_buf_limit, bpf_raw_tracepoint_args)
 {
     u32 new_entry = 0;
     struct sock *sk = (struct sock*)ctx->args[0];
-    u32 tgid = bpf_get_current_pid_tgid() >> INT_LEN;
     struct tcp_metrics_s *metrics;
+    u32 pid __maybe_unused = bpf_get_current_pid_tgid();
 
-    metrics = get_tcp_metrics(sk, tgid, &new_entry);
+    metrics = get_tcp_metrics(sk, &new_entry);
     if (metrics) {
         TCP_SNDBUF_LIMIT_INC(metrics->data);
         report(ctx, metrics, new_entry);
@@ -451,10 +447,10 @@ KRAWTRACE(sock_rcvqueue_full, bpf_raw_tracepoint_args)
 {
     u32 new_entry __maybe_unused = 0;
     struct sock *sk = (struct sock*)ctx->args[0];
-    u32 tgid = bpf_get_current_pid_tgid() >> INT_LEN;
     struct tcp_metrics_s *metrics;
+    u32 pid __maybe_unused = bpf_get_current_pid_tgid();
 
-    metrics = get_tcp_metrics(sk, tgid, &new_entry);
+    metrics = get_tcp_metrics(sk, &new_entry);
     if (metrics) {
         TCP_RCVQUE_FULL_INC(metrics->data);
         report(ctx, metrics, new_entry);
@@ -465,10 +461,10 @@ KRAWTRACE(tcp_send_reset, bpf_raw_tracepoint_args)
 {
     u32 new_entry __maybe_unused = 0;
     struct sock *sk = (struct sock *)ctx->args[0];
-    u32 tgid = bpf_get_current_pid_tgid() >> INT_LEN;
     struct tcp_metrics_s *metrics;
+    u32 pid __maybe_unused = bpf_get_current_pid_tgid();
 
-    metrics = get_tcp_metrics(sk, tgid, &new_entry);
+    metrics = get_tcp_metrics(sk, &new_entry);
     if (metrics) {
         TCP_SEND_RSTS_INC(metrics->data);
         report(ctx, metrics, new_entry);
@@ -479,39 +475,40 @@ KRAWTRACE(tcp_receive_reset, bpf_raw_tracepoint_args)
 {
     u32 new_entry __maybe_unused = 0;
     struct sock *sk = (struct sock *)ctx->args[0];
-    u32 tgid = bpf_get_current_pid_tgid() >> INT_LEN;
     struct tcp_metrics_s *metrics;
+    u32 pid __maybe_unused = bpf_get_current_pid_tgid();
 
-    metrics = get_tcp_metrics(sk, tgid, &new_entry);
+    metrics = get_tcp_metrics(sk, &new_entry);
     if (metrics) {
         TCP_RECEIVE_RSTS_INC(metrics->data);
         report(ctx, metrics, new_entry);
     }
 }
 
+#if 0
 KRAWTRACE(tcp_retransmit_synack, bpf_raw_tracepoint_args)
 {
     u32 new_entry __maybe_unused = 0;
     struct sock *sk = (struct sock *)ctx->args[0];
-    u32 tgid = bpf_get_current_pid_tgid() >> INT_LEN;
     struct tcp_metrics_s *metrics;
 
-    metrics = get_tcp_metrics(sk, tgid, &new_entry);
+    metrics = get_tcp_metrics(sk, &new_entry);
     if (metrics) {
         TCP_SYNACK_RETRANS_INC(metrics->data);
         report(ctx, metrics, new_entry);
     }
 }
+#endif
 
 KPROBE(tcp_retransmit_skb, pt_regs)
 {
     u32 new_entry __maybe_unused = 0;
     struct sock *sk = (struct sock *)PT_REGS_PARM1(ctx);
     int segs = (int)PT_REGS_PARM3(ctx);
-    u32 tgid = bpf_get_current_pid_tgid() >> INT_LEN;
     struct tcp_metrics_s *metrics;
+    u32 pid __maybe_unused = bpf_get_current_pid_tgid();
 
-    metrics = get_tcp_metrics(sk, tgid, &new_entry);
+    metrics = get_tcp_metrics(sk, &new_entry);
     if (metrics) {
         TCP_RETRANS_INC(metrics->data, segs);
         report(ctx, metrics, new_entry);
@@ -524,10 +521,10 @@ KPROBE(tcp_done, pt_regs)
     struct sock *sk = (struct sock *)PT_REGS_PARM1(ctx);
     unsigned char state = _(sk->sk_state);
     struct tcp_metrics_s *metrics;
-    u32 tgid = bpf_get_current_pid_tgid() >> INT_LEN;
+    u32 pid __maybe_unused = bpf_get_current_pid_tgid();
 
     if ((state == TCP_SYN_SENT || state == TCP_SYN_RECV)) {
-        metrics = get_tcp_metrics(sk, tgid, &new_entry);
+        metrics = get_tcp_metrics(sk, &new_entry);
         if (metrics) {
             TCP_ATTEMPT_FAILED_INC(metrics->data);
             report(ctx, metrics, new_entry);
@@ -542,7 +539,6 @@ KPROBE_RET(tcp_try_rmem_schedule, pt_regs)
     struct sock *sk;
     struct probe_val val;
     struct tcp_metrics_s *metrics;
-    u32 tgid = bpf_get_current_pid_tgid() >> INT_LEN;
 
     if (PROBE_GET_PARMS(tcp_try_rmem_schedule, ctx, val) < 0)
         return;
@@ -556,7 +552,7 @@ KPROBE_RET(tcp_try_rmem_schedule, pt_regs)
         return;
     }
 
-    metrics = get_tcp_metrics(sk, tgid, &new_entry);
+    metrics = get_tcp_metrics(sk, &new_entry);
     if (metrics) {
         TCP_RMEM_SCHEDULS_INC(metrics->data);
         report(ctx, metrics, new_entry);
@@ -573,7 +569,6 @@ KPROBE_RET(tcp_check_oom, pt_regs)
     struct probe_val val;
 
     struct tcp_metrics_s *metrics;
-    u32 tgid = bpf_get_current_pid_tgid() >> INT_LEN;
 
     if (PROBE_GET_PARMS(tcp_check_oom, ctx, val) < 0)
         return;
@@ -587,7 +582,7 @@ KPROBE_RET(tcp_check_oom, pt_regs)
         return;
     }
 
-    metrics = get_tcp_metrics(sk, tgid, &new_entry);
+    metrics = get_tcp_metrics(sk, &new_entry);
     if (metrics) {
         TCP_OOM_INC(metrics->data);
         report(ctx, metrics, new_entry);

@@ -67,13 +67,13 @@ static __always_inline struct endpoint_val_t* get_udp_obj(struct endpoint_key_t 
     return 0;
 }
 
-static void get_udp_key(struct sock *sk, struct endpoint_key_t *key)
+static void get_udp_key(struct sock *sk, struct endpoint_key_t *key, u32 tgid)
 {
     if (key->type == SK_TYPE_LISTEN_UDP) {
-        key->key.udp_server_key.tgid = bpf_get_current_pid_tgid() >> INT_LEN;
+        key->key.udp_server_key.tgid = tgid;
         init_ip(&key->key.udp_server_key.ip_addr, sk);
     } else if (key->type == SK_TYPE_CLIENT_UDP) {
-        key->key.udp_client_key.tgid = bpf_get_current_pid_tgid() >> INT_LEN;
+        key->key.udp_client_key.tgid = tgid;
         init_ip(&key->key.udp_client_key.ip_addr, sk);
     }
     return;
@@ -82,6 +82,7 @@ static void get_udp_key(struct sock *sk, struct endpoint_key_t *key)
 static struct endpoint_val_t* get_udp_val(struct sock *sk, int *new_entry)
 {
     int ret;
+    struct endpoint_v *epv;
     enum endpoint_t type;
     struct endpoint_key_t key = {0};
     struct endpoint_val_t *value;
@@ -91,14 +92,15 @@ static struct endpoint_val_t* get_udp_val(struct sock *sk, int *new_entry)
     if (sk == 0)
         return 0;
 
-    // get sock type
-    ret = get_sock_type(sk, &type);
-    if (ret < 0)
+    // get endpoint val
+    epv = get_endpoint_val(sk);
+    if (epv == 0)
         return 0;
+    type = epv->type;
 
     // get udp key by sock type
     key.type = type;
-    get_udp_key(sk, &key);
+    get_udp_key(sk, &key, epv->tgid);
 
     // get udp obj
     value = get_udp_obj(&key);
@@ -145,7 +147,7 @@ KPROBE_RET(inet_bind, pt_regs)
     }
 
     if (_(sock->type) == SOCK_DGRAM) {
-        (void)create_sock_map(sk, SK_TYPE_LISTEN_UDP);
+        (void)create_sock_map(sk, SK_TYPE_LISTEN_UDP, (bpf_get_current_pid_tgid() >> INT_LEN));
         report_udp(ctx, sk);
     }
 
@@ -200,6 +202,6 @@ KRAWTRACE(udp_fail_queue_rcv_skb, bpf_raw_tracepoint_args)
 KPROBE(udp_init_sock, pt_regs)
 {
     struct sock* sk = (struct sock *)PT_REGS_PARM1(ctx);
-    (void)create_sock_map(sk, SK_TYPE_CLIENT_UDP);
+    (void)create_sock_map(sk, SK_TYPE_CLIENT_UDP, (bpf_get_current_pid_tgid() >> INT_LEN));
     report_udp(ctx, sk);
 }

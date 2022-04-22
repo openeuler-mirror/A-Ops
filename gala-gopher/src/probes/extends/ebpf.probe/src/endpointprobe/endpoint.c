@@ -57,14 +57,15 @@ static struct probe_params params = {.period = DEFAULT_PERIOD};
 static void print_tcp_listen_metrics(struct endpoint_val_t *value)
 {
     fprintf(stdout,
-            "|%s|%d|%d|%lu|%lu|%lu|%lu|\n",
+            "|%s|%d|%d|%lu|%lu|%lu|%lu|%lu|\n",
             LISTEN_NAME,
             value->key.key.tcp_listen_key.tgid,
             value->key.key.tcp_listen_key.port,
             value->ep_stats.stats[EP_STATS_LISTEN_DROPS],
             value->ep_stats.stats[EP_STATS_LISTEN_OVERFLOW],
             value->ep_stats.stats[EP_STATS_PASSIVE_OPENS],
-            value->ep_stats.stats[EP_STATS_PASSIVE_FAILS]);
+            value->ep_stats.stats[EP_STATS_PASSIVE_FAILS],
+            value->ep_stats.stats[EP_STATS_RETRANS_SYNACK]);
 }
 
 static void print_tcp_connect_metrics(struct endpoint_val_t *value)

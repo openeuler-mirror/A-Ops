@@ -51,11 +51,6 @@ measurements:
                 name: "retran_packets",
             },
             {
-                description: "synack retrans",
-                type: "gauge",
-                name: "retran_synacks",
-            },
-            {
                 description: "sk_drops",
                 type: "gauge",
                 name: "sk_drops",
@@ -64,11 +59,6 @@ measurements:
                 description: "backlog_drops",
                 type: "gauge",
                 name: "backlog_drops",
-            },
-            {
-                description: "md5_hash_drops",
-                type: "gauge",
-                name: "md5_hash_drops",
             },
             {
                 description: "filter_drops",
