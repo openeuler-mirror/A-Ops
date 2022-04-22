@@ -10,6 +10,7 @@ enum {
     EP_STATS_LISTEN_OVERFLOW,
     EP_STATS_PASSIVE_OPENS,
     EP_STATS_PASSIVE_FAILS,
+    EP_STATS_RETRANS_SYNACK,
 
     // tcp connect statistic value
     EP_STATS_ACTIVE_OPENS,
@@ -32,6 +33,11 @@ enum endpoint_t {
     SK_TYPE_LISTEN_UDP,
     SK_TYPE_CLIENT_TCP,
     SK_TYPE_CLIENT_UDP,
+};
+
+struct endpoint_v {
+    enum endpoint_t type;
+    __u32 tgid;
 };
 
 struct ip {
