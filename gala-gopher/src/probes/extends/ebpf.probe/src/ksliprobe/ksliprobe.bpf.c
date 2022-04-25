@@ -34,13 +34,6 @@ struct bpf_map_def SEC("maps") conn_map = {
     .max_entries = MAX_CONN_LEN,
 };
 
-struct bpf_map_def SEC("maps") msg_evt_data_map = {
-    .type = BPF_MAP_TYPE_PERCPU_ARRAY,
-    .key_size = sizeof(u32),
-    .value_size = sizeof(struct msg_event_data_t),
-    .max_entries = 1,
-};
-
 struct bpf_map_def SEC("maps") msg_event_map = {
     .type = BPF_MAP_TYPE_PERF_EVENT_ARRAY,
     .key_size = sizeof(u32),
@@ -87,7 +80,7 @@ static __always_inline int init_conn_id(struct conn_id_t *conn_id, int fd, int t
 
 
 // 创建服务端 tcp 连接
-KPROBE_RET(__sys_accept4, pt_regs)
+KPROBE_RET(__sys_accept4, pt_regs, CTX_USER)
 {
     int fd = PT_REGS_RC(ctx);
     u32 tgid = bpf_get_current_pid_tgid() >> INT_LEN;
@@ -98,7 +91,7 @@ KPROBE_RET(__sys_accept4, pt_regs)
     struct conn_key_t conn_key = {0};
     struct conn_data_t conn_data = {0};
 
-    if (PROBE_GET_PARMS(__sys_accept4, ctx, val) < 0)
+    if (PROBE_GET_PARMS(__sys_accept4, ctx, val, CTX_USER) < 0)
         return;
 
     if (fd < 0) {
@@ -122,7 +115,7 @@ KPROBE_RET(__sys_accept4, pt_regs)
 }
 
 // 关闭 tcp 连接
-KPROBE_RET(__close_fd, pt_regs)
+KPROBE_RET(__close_fd, pt_regs, CTX_USER)
 {
     int fd;
     u32 tgid = bpf_get_current_pid_tgid() >> INT_LEN;
@@ -131,7 +124,7 @@ KPROBE_RET(__close_fd, pt_regs)
     struct conn_key_t conn_key = {0};
     struct conn_data_t *conn_data;
 
-    if (PROBE_GET_PARMS(__close_fd, ctx, val) < 0)
+    if (PROBE_GET_PARMS(__close_fd, ctx, val, CTX_USER) < 0)
         return;
 
     if (PT_REGS_RC(ctx) < 0)
@@ -315,7 +308,7 @@ static __always_inline void process_rdwr_msg(int fd, const char *buf, const unsi
 }
 
 // 跟踪连接 read 读消息
-KPROBE_RET(ksys_read, pt_regs)
+KPROBE_RET(ksys_read, pt_regs, CTX_USER)
 {
     int fd;
     u32 tgid __maybe_unused = bpf_get_current_pid_tgid() >> INT_LEN;
@@ -324,7 +317,7 @@ KPROBE_RET(ksys_read, pt_regs)
     struct probe_val val;
     int err;
 
-    err = PROBE_GET_PARMS(ksys_read, ctx, val);
+    err = PROBE_GET_PARMS(ksys_read, ctx, val, CTX_USER);
     if (err < 0) {
         return;
     }
@@ -342,7 +335,7 @@ KPROBE_RET(ksys_read, pt_regs)
 }
 
 // 跟踪连接 write 写消息
-KPROBE_RET(ksys_write, pt_regs)
+KPROBE_RET(ksys_write, pt_regs, CTX_USER)
 {
     int fd;
     u32 tgid __maybe_unused = bpf_get_current_pid_tgid() >> INT_LEN;
@@ -351,7 +344,7 @@ KPROBE_RET(ksys_write, pt_regs)
     struct probe_val val;
     int err;
 
-    err = PROBE_GET_PARMS(ksys_write, ctx, val);
+    err = PROBE_GET_PARMS(ksys_write, ctx, val, CTX_USER);
     if (err < 0) {
         return;
     }

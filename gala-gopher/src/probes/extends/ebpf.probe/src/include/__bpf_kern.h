@@ -80,13 +80,13 @@ static __always_inline __maybe_unused struct sock *sock_get_by_fd(int fd, struct
     return sk;
 }
 
-#define KPROBE_RET(func, type) \
+#define KPROBE_RET(func, type, caller_type) \
     bpf_section("kprobe/" #func) \
     void __kprobe_bpf_##func(struct type *ctx) { \
         int ret; \
         struct __probe_key __key = {0}; \
         struct __probe_val __val = {0}; \
-        __get_probe_key(&__key, (const long)PT_REGS_FP(ctx)); \
+        __get_probe_key(&__key, (const long)PT_REGS_FP(ctx), caller_type); \
         __get_probe_val(&__val, (const long)PT_REGS_PARM1(ctx), \
                                (const long)PT_REGS_PARM2(ctx), \
                                (const long)PT_REGS_PARM3(ctx), \

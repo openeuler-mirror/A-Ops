@@ -328,7 +328,7 @@ KPROBE(tcp_drop, pt_regs)
     }
 }
 
-KPROBE_RET(tcp_add_backlog, pt_regs)
+KPROBE_RET(tcp_add_backlog, pt_regs, CTX_KERNEL)
 {
     u32 new_entry = 0;
     bool discard = (bool)PT_REGS_RC(ctx);
@@ -336,7 +336,7 @@ KPROBE_RET(tcp_add_backlog, pt_regs)
     struct probe_val val;
     struct tcp_metrics_s *metrics;
 
-    if (PROBE_GET_PARMS(tcp_add_backlog, ctx, val) < 0)
+    if (PROBE_GET_PARMS(tcp_add_backlog, ctx, val, CTX_KERNEL) < 0)
         return;
 
     if (discard) {
@@ -351,7 +351,7 @@ KPROBE_RET(tcp_add_backlog, pt_regs)
 }
 
 #if 0
-KPROBE_RET(tcp_v4_inbound_md5_hash, pt_regs)
+KPROBE_RET(tcp_v4_inbound_md5_hash, pt_regs, CTX_KERNEL)
 {
     u32 new_entry = 0;
     bool discard = (bool)PT_REGS_RC(ctx);
@@ -359,7 +359,7 @@ KPROBE_RET(tcp_v4_inbound_md5_hash, pt_regs)
     struct probe_val val;
     struct tcp_metrics_s *metrics;
 
-    if (PROBE_GET_PARMS(tcp_v4_inbound_md5_hash, ctx, val) < 0)
+    if (PROBE_GET_PARMS(tcp_v4_inbound_md5_hash, ctx, val, CTX_KERNEL) < 0)
         return;
 
     if (discard) {
@@ -375,7 +375,7 @@ KPROBE_RET(tcp_v4_inbound_md5_hash, pt_regs)
 }
 #endif
 
-KPROBE_RET(tcp_filter, pt_regs)
+KPROBE_RET(tcp_filter, pt_regs, CTX_KERNEL)
 {
     u32 new_entry = 0;
     bool discard = (bool)PT_REGS_RC(ctx);
@@ -383,7 +383,7 @@ KPROBE_RET(tcp_filter, pt_regs)
     struct probe_val val;
     struct tcp_metrics_s *metrics;
 
-    if (PROBE_GET_PARMS(tcp_filter, ctx, val) < 0)
+    if (PROBE_GET_PARMS(tcp_filter, ctx, val, CTX_KERNEL) < 0)
         return;
 
     if (discard) {
@@ -532,7 +532,7 @@ KPROBE(tcp_done, pt_regs)
     }
 }
 
-KPROBE_RET(tcp_try_rmem_schedule, pt_regs)
+KPROBE_RET(tcp_try_rmem_schedule, pt_regs, CTX_KERNEL)
 {
     u32 new_entry = 0;
     int ret = (int)PT_REGS_RC(ctx);
@@ -540,7 +540,7 @@ KPROBE_RET(tcp_try_rmem_schedule, pt_regs)
     struct probe_val val;
     struct tcp_metrics_s *metrics;
 
-    if (PROBE_GET_PARMS(tcp_try_rmem_schedule, ctx, val) < 0)
+    if (PROBE_GET_PARMS(tcp_try_rmem_schedule, ctx, val, CTX_KERNEL) < 0)
         return;
 
     if (ret == 0) {
@@ -561,7 +561,7 @@ KPROBE_RET(tcp_try_rmem_schedule, pt_regs)
     return;
 }
 
-KPROBE_RET(tcp_check_oom, pt_regs)
+KPROBE_RET(tcp_check_oom, pt_regs, CTX_KERNEL)
 {
     u32 new_entry = 0;
     bool ret = (bool)PT_REGS_RC(ctx);
@@ -570,7 +570,7 @@ KPROBE_RET(tcp_check_oom, pt_regs)
 
     struct tcp_metrics_s *metrics;
 
-    if (PROBE_GET_PARMS(tcp_check_oom, ctx, val) < 0)
+    if (PROBE_GET_PARMS(tcp_check_oom, ctx, val, CTX_KERNEL) < 0)
         return;
 
     if (!ret) {

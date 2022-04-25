@@ -50,7 +50,7 @@
         int ret; \
         struct __probe_key __key = {0}; \
         struct __probe_val __val = {0}; \
-        __get_probe_key(&__key, prog_id); \
+        __get_probe_key(&__key, prog_id, CTX_USER); \
         __get_probe_val(&__val, (const long)PT_REGS_PARM1(ctx), \
                                (const long)PT_REGS_PARM2(ctx), \
                                (const long)PT_REGS_PARM3(ctx), \

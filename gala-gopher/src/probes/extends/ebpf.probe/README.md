@@ -162,7 +162,7 @@ cp tcpprobe/tcpprobe killprobe/killprobe  /usr/bin/extends/ebpf.probe
       这种API一般用于观测点需要同时观测入参、返回值。
       
       // 同时观测kprobe/kretprobe对应的读参API
-      #define PROBE_GET_PARMS(func, ctx, probe_val)
+      #define PROBE_GET_PARMS(func, ctx, probe_val, caller_type)
       #define PROBE_PARM1(probe_val)
       ...
       ...

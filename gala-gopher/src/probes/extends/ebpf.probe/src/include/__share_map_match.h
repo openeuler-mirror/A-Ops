@@ -33,8 +33,7 @@
 #endif
 
 struct __probe_key {
-    unsigned int smp_id;
-    unsigned int pid;
+    unsigned int ctx_id;
     long bp;
 };
 
@@ -53,6 +52,11 @@ struct probe_val {
     struct __probe_val val;
 };
 
+enum ctx_caller_t {
+    CTX_USER,
+    CTX_KERNEL,
+};
+
 #define __PROBE_MATCH_MAP_MAX_ENTRIES 1000
 struct bpf_map_def SEC("maps") __probe_match_map = {
     .type = BPF_MAP_TYPE_HASH,
@@ -61,10 +65,12 @@ struct bpf_map_def SEC("maps") __probe_match_map = {
     .max_entries = __PROBE_MATCH_MAP_MAX_ENTRIES,
 };
 
-static __always_inline __maybe_unused void __get_probe_key(struct __probe_key *key, const long bp) {
-    key->smp_id = bpf_get_smp_processor_id();
-    key->pid = (unsigned int)bpf_get_current_pid_tgid();
+static __always_inline __maybe_unused void __get_probe_key(struct __probe_key *key, const long bp,
+                                                           enum ctx_caller_t caller_type) {
+    unsigned int pid = (unsigned int)bpf_get_current_pid_tgid();
+    key->ctx_id = (caller_type == CTX_USER && pid != 0) ? pid : bpf_get_smp_processor_id();
     key->bp = bp;
+
 }
 
 static __always_inline __maybe_unused void __get_probe_val(struct __probe_val *val,
@@ -110,7 +116,7 @@ static __maybe_unused int __do_pop_match_map_entry(const struct __probe_key *key
         int ret; \
         struct __probe_key __key = {0}; \
         struct __probe_val __val = {0}; \
-        __get_probe_key(&__key, prog_id); \
+        __get_probe_key(&__key, prog_id, CTX_USER); \
         ret = __do_pop_match_map_entry((const struct __probe_key *)&__key, \
                                         &__val); \
         if (ret >= 0) { \
@@ -121,12 +127,12 @@ static __maybe_unused int __do_pop_match_map_entry(const struct __probe_key *key
 #endif
 
 #ifdef BPF_PROG_KERN
-#define PROBE_GET_PARMS(func, ctx, probe_val) \
+#define PROBE_GET_PARMS(func, ctx, probe_val, caller_type) \
     ({\
         int ret; \
         struct __probe_key __key = {0}; \
         struct __probe_val __val = {0}; \
-        __get_probe_key(&__key, (const long)PT_REGS_FP(ctx)); \
+        __get_probe_key(&__key, (const long)PT_REGS_FP(ctx), caller_type); \
         ret = __do_pop_match_map_entry((const struct __probe_key *)&__key, \
                                         &__val); \
         if (ret >= 0) { \
