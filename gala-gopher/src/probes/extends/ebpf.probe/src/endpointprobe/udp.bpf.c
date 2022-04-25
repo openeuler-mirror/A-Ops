@@ -126,14 +126,14 @@ static void report_udp(struct pt_regs *ctx, struct sock *sk)
         report(ctx, value, new_entry);
 }
 
-KPROBE_RET(inet_bind, pt_regs)
+KPROBE_RET(inet_bind, pt_regs, CTX_KERNEL)
 {
     int ret = PT_REGS_RC(ctx);
     struct socket *sock;
     struct sock *sk;
     struct probe_val val;
 
-    if (PROBE_GET_PARMS(inet_bind, ctx, val) < 0)
+    if (PROBE_GET_PARMS(inet_bind, ctx, val, CTX_KERNEL) < 0)
         return;
 
     if (ret != 0) {

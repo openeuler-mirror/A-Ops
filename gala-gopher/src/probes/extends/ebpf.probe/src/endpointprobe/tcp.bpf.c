@@ -203,7 +203,7 @@ KPROBE(__sys_accept4, pt_regs)
     return;
 }
 
-KPROBE_RET(tcp_connect, pt_regs)
+KPROBE_RET(tcp_connect, pt_regs, CTX_KERNEL)
 {
     int new_entry;
     struct endpoint_val_t* value;
@@ -211,7 +211,7 @@ KPROBE_RET(tcp_connect, pt_regs)
     struct sock *sk;
     struct probe_val val;
 
-    if (PROBE_GET_PARMS(tcp_connect, ctx, val) < 0)
+    if (PROBE_GET_PARMS(tcp_connect, ctx, val, CTX_KERNEL) < 0)
         return;
 
     sk = (struct sock *)PROBE_PARM1(val);
@@ -268,7 +268,7 @@ KPROBE(tcp_req_err, pt_regs)
     return;
 }
 
-KPROBE_RET(tcp_create_openreq_child, pt_regs)
+KPROBE_RET(tcp_create_openreq_child, pt_regs, CTX_KERNEL)
 {
     struct sock *new_sk = (struct sock *)PT_REGS_RC(ctx);
     struct sock *sk;
@@ -276,7 +276,7 @@ KPROBE_RET(tcp_create_openreq_child, pt_regs)
     int new_entry;
     struct endpoint_val_t* value;
 
-    if (PROBE_GET_PARMS(tcp_create_openreq_child, ctx, val) < 0)
+    if (PROBE_GET_PARMS(tcp_create_openreq_child, ctx, val, CTX_KERNEL) < 0)
         return;
 
     sk = (struct sock *)PROBE_PARM1(val);
@@ -296,7 +296,7 @@ KPROBE_RET(tcp_create_openreq_child, pt_regs)
 }
 
 
-KPROBE_RET(tcp_check_req, pt_regs)
+KPROBE_RET(tcp_check_req, pt_regs, CTX_KERNEL)
 {
     struct sock *new_sk = (struct sock *)PT_REGS_RC(ctx);
     struct sock *sk;
@@ -304,7 +304,7 @@ KPROBE_RET(tcp_check_req, pt_regs)
     int new_entry;
     struct endpoint_val_t* value;
 
-    if (PROBE_GET_PARMS(tcp_check_req, ctx, val) < 0)
+    if (PROBE_GET_PARMS(tcp_check_req, ctx, val, CTX_KERNEL) < 0)
         return;
 
     sk = (struct sock *)PROBE_PARM1(val);
