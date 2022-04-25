@@ -54,6 +54,8 @@ gala-gopher是基于eBPF的低负载探针框架，致力于提供裸机/虚机/
 
 ### 基于源码编译、安装、运行
 
+​	建议在最低openEuler-20.03-LTS-SP1的环境执行编译动作，这是因为gala-gopher中ebpf探针编译依赖clang和llvm，大多数的bpf功能需要clang 10或者更高版本才可以正常工作，而20.03-SP1以下的发布版本中clang版本较低(低于10)。
+
 - 安装依赖
 
   该步骤会检查安装架构感知框架所有的依赖包，涉及三方探针编译、运行的依赖包会在编译构建中检查安装。
@@ -70,6 +72,19 @@ gala-gopher是基于eBPF的低负载探针框架，致力于提供裸机/虚机/
   # 或者
   sh build.sh --debug		# DEBUG模式
   ```
+  注：在编译过程中出现如下信息，表示bpf探针编译需要的vmlinux.h文件缺失；
+
+  ![build_err](D:\code\A-Ops\gala-gopher\doc\pic\build_err.png)
+
+  ​	vmlinux.h文件包含了系统运行Linux内核源码中使用的所有类型定义，可以利用bpftool工具生成；我们已经预生成了几个LTS版本的vmlinux.h文件在`src\probes\extends\ebpf.probe\src\include`目录，请根据内核版本、CPU架构选择相应的文件，并手动软链接到vmlinux.h；例如：
+
+  ```shell
+  [root@master ~]# uname -r
+  4.19.90-2012.5.0.0054.oe1.x86_64
+  [root@master ~]# ln -s linux_4.19.90-2012.5.0.0053.oe1.x86_64.h vmlinux.h
+  ```
+
+  生成vmlinux.h文件后再次执行编译命令。
 
 - 安装
 
