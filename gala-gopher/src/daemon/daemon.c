@@ -104,7 +104,7 @@ static int DaemonCheckProbeNeedStart(char *check_cmd, ProbeStartCheckType chkTyp
 static void CleanData(const ResourceMgr *mgr)
 {
 #define __SYS_FS_BPF "/sys/fs/bpf"
-
+    FILE *fp = NULL;
     char *pinPath;
     char cmd[MAX_COMMAND_LEN];
 
@@ -123,8 +123,10 @@ static void CleanData(const ResourceMgr *mgr)
     }
     
     (void)snprintf(cmd, MAX_COMMAND_LEN, "/usr/bin/rm -rf %s/*", pinPath);
-    (void)popen(cmd, "r");
-    
+    fp = popen(cmd, "r");
+    if (fp != NULL) {
+        (void)pclose(fp);
+    }
     DEBUG("[DAEMON] clean data success[%s].\n", cmd);
 }
 

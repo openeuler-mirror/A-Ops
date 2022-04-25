@@ -170,13 +170,17 @@ int main(int argc, char **argv)
     int out_put_fd;
     const int load_udp = 1;
     struct perf_buffer* pb = NULL;
+    FILE *fp = NULL;
 
     err = args_parse(argc, argv, "t:", &params);
     if (err != 0) {
         return -1;
     }
     printf("arg parse interval time:%us\n", params.period);
-    (void)popen(RM_BPF_PATH, "r");
+    fp = popen(RM_BPF_PATH, "r");
+    if (fp != NULL) {
+        (void)pclose(fp);
+    }
 
     INIT_BPF_APP(endpoint, EBPF_RLIM_LIMITED);
 
