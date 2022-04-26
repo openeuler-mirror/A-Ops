@@ -59,7 +59,7 @@ static void get_host_ip(const unsigned char *value, unsigned short family)
         printf("Fail get_host_ip.\n");
         return ;
     }
-    pclose(fp);
+    (void)pclose(fp);
     num = sscanf(buffer, "%47s", (char *)value);
     if (num < 1)
         printf("failed get hostip [%d]", errno);

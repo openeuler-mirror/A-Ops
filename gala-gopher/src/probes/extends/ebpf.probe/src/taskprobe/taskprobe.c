@@ -114,6 +114,7 @@ static int do_read_file(const char* fname, char *buf, unsigned int buf_len)
     
     SPLIT_NEWLINE_SYMBOL(line);
     (void)strncpy(buf, line, buf_len);
+    (void)pclose(f);
     return 0;
 }
                                     

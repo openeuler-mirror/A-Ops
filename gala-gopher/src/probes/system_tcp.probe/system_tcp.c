@@ -14,6 +14,7 @@
  ******************************************************************************/
 #include <stdio.h>
 #include <string.h>
+#include <errno.h>
 
 /*
  [root@master ~]# cat /proc/net/snmp | grep Tcp: | awk '{print $10 ":" $11 ":" $12 ":" $13 ":"  $14}' | tail -n1
@@ -58,6 +59,7 @@ static int get_snmp_data(const char *cmd, char buf[][DATA_LEN], int max_len)
 
     f = popen(cmd, "r");
     if (f == NULL) {
+        printf("[SYSTEM_TCP] popen fail, %s with %d.\n", strerror(errno), errno);
         return -1;
     }
     line[0] = 0;
@@ -99,11 +101,11 @@ int main()
     fprintf(stdout, "|%s|%s|%s|%s|%s|%s|%s|%s|%s|\n",
         METRICS_NAME,
         "/proc/dev/snmp",
-        tcp_buf[METRICS_TCP_CURR_ESTAB], 
-        tcp_buf[METRICS_TCP_IN_SEGS], 
-        tcp_buf[METRICS_TCP_OUT_SEGS], 
-        tcp_buf[METRICS_TCP_RETRANS_SEGS], 
-        tcp_buf[METRICS_TCP_IN_ERRS], 
+        tcp_buf[METRICS_TCP_CURR_ESTAB],
+        tcp_buf[METRICS_TCP_IN_SEGS],
+        tcp_buf[METRICS_TCP_OUT_SEGS],
+        tcp_buf[METRICS_TCP_RETRANS_SEGS],
+        tcp_buf[METRICS_TCP_IN_ERRS],
         udp_buf[METRICS_UDP_IN_DATAGRAMS],
         udp_buf[METRICS_UDP_OUT_DATAGRAMS]);
 

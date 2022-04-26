@@ -13,6 +13,7 @@
  * Description: system iostat probe
  ******************************************************************************/
 #include <stdio.h>
+#include <errno.h>
 #include <unistd.h>
 #include <string.h>
 #include <stdlib.h>
@@ -98,7 +99,7 @@ static int local_disk_add(local_disk *local_disk_head)
 
     fp = popen(LOCAL_DISK_COMMAND, "r");
     if (fp == NULL) {
-        printf("[SYSTEM_IOSTAT] popen error, cmd : ls -l /sys/block. \n");
+        printf("[SYSTEM_IOSTAT] cmd: ls /sys/block popen fail, %s with %d. \n", strerror(errno), errno);
         return -1;
     }
     while (!feof(fp)) {
@@ -165,7 +166,7 @@ static int get_disk_stats(local_disk *local_disk_head, const int get_id)
         (void)memset(line, 0, LINE_BUF_LEN);
         if (fgets(line, LINE_BUF_LEN, f) == NULL) {
             printf("[SYSTEM_IOSTAT] the %d time get disk[%s] stats fail, fgets error.\n", get_id, disk->disk_name);
-            fclose(f);
+            pclose(f);
             return -1;
         }
         if (get_id == 1) {
@@ -175,8 +176,8 @@ static int get_disk_stats(local_disk *local_disk_head, const int get_id)
         } else {
             ;
         }
+        (void)pclose(f);
     }
-    (void)pclose(f);
     return 0;
 }
 

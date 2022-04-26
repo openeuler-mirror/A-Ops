@@ -397,14 +397,22 @@ int main(int argc, char **argv)
 {
     int err = -1;
     char iscsi, iscsi_tp, iscsi_sas;
+    FILE *fp = NULL;
     
     err = args_parse(argc, argv, "t:", &params);
     if (err != 0)
         return -1;
 
     printf("arg parse interval time:%us\n", params.period);
-    (void)popen(RM_BLOCK_MAP_PATH, "r");
-    (void)popen(RM_SCSI_MAP_PATH, "r");
+    fp = popen(RM_BLOCK_MAP_PATH, "r");
+    if (fp != NULL) {
+        (void)pclose(fp);
+        fp = NULL;
+    }
+    fp = popen(RM_SCSI_MAP_PATH, "r");
+    if (fp != NULL) {
+        (void)pclose(fp);
+    }
 
     iscsi = is_exist_iscsi_mod();
     iscsi_tp = is_exist_iscsi_tp_mod();
