@@ -7,7 +7,8 @@
 enum {
     // tcp listen statistic value
     EP_STATS_LISTEN_DROPS = 0,
-    EP_STATS_LISTEN_OVERFLOW,
+    EP_STATS_ACCEPT_OVERFLOW,   // alarm accpet queue full
+    EP_STATS_SYN_OVERFLOW,      // alarm syn queue full
     EP_STATS_PASSIVE_OPENS,
     EP_STATS_PASSIVE_FAILS,
     EP_STATS_RETRANS_SYNACK,

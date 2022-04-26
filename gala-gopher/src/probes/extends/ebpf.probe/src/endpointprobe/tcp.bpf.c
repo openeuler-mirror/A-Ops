@@ -144,6 +144,18 @@ static __always_inline bool sk_acceptq_is_full(const struct sock *sk)
     return ack_backlog > max_ack_backlog;
 }
 
+static __always_inline bool sk_synq_is_full(const struct sock *sk)
+{
+    u32 max_ack_backlog = _(sk->sk_max_ack_backlog);
+    struct inet_connection_sock *inet_csk = (struct inet_connection_sock *)sk;
+    struct request_sock_queue icsk_accept_queue = _(inet_csk->icsk_accept_queue);
+
+    int syn_qlen;
+    bpf_probe_read(&syn_qlen, sizeof(int), &(icsk_accept_queue.qlen));
+
+    return syn_qlen >= max_ack_backlog;
+}
+
 static __always_inline struct sock *listen_sock(struct sock *sk)
 {
     struct request_sock *req = (struct request_sock *)sk;
@@ -235,11 +247,19 @@ KPROBE(tcp_conn_request, pt_regs)
     int new_entry;
     struct endpoint_val_t* value;
     struct sock *sk = (struct sock *)PT_REGS_PARM3(ctx);
+    bool flag = 0;
     
     value = get_tcp_val(sk, &new_entry);
     if (value) {
         if (sk_acceptq_is_full((const struct sock *)sk)) {
-            ATOMIC_INC_EP_STATS(value, EP_STATS_LISTEN_OVERFLOW, 1);
+            ATOMIC_INC_EP_STATS(value, EP_STATS_ACCEPT_OVERFLOW, 1);
+            flag = 1;
+        }
+        if (sk_synq_is_full((const struct sock *)sk)) {
+            ATOMIC_INC_EP_STATS(value, EP_STATS_SYN_OVERFLOW, 1);
+            flag = 1;
+        }
+        if (flag) {
             report(ctx, value, new_entry);
         }
     }

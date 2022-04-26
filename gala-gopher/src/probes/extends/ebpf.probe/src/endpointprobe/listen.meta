@@ -22,9 +22,14 @@ measurements:
                 name: "listendrop",
             },
 	        {
-                description: "listen overflows of the endpoint",
+                description: "listen overflows of accepted queue",
                 type: "gauge",
-                name: "listen_overflow",
+                name: "accept_overflow",
+            },
+            {
+                description: "listen overflows of syn queue",
+                type: "gauge",
+                name: "syn_overflow",
             },
 	        {
                 description: "passive opens of the endpoint",
