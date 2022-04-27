@@ -34,7 +34,8 @@ endpoint 按照 tcp/udp 、服务端/客户端，可分为4种类型：
 | 指标名 | 描述 | 跟踪点 | 支持的endpoint类型 |
 | --- | --- | --- | --- |
 | EP_STATS_LISTEN_DROPS | tcp监听端口丢包数统计 | tcp_conn_request/tcp_v4_syn_recv_sock/tcp_v6_syn_recv_sock/tcp_req_err | SK_TYPE_LISTEN_TCP |
-| EP_STATS_LISTEN_OVERFLOW | tcp监听连接队列溢出数统计 | tcp_conn_request/tcp_v4_syn_recv_sock/tcp_v6_syn_recv_sock | SK_TYPE_LISTEN_TCP | 
+| EP_STATS_ACCEPT_OVERFLOW | tcp全连接队列溢出数统计 | tcp_conn_request/tcp_v4_syn_recv_sock/tcp_v6_syn_recv_sock | SK_TYPE_LISTEN_TCP |
+| EP_STATS_SYN_OVERFLOW | tcp半连接队列溢出数统计 | tcp_conn_request/tcp_v4_syn_recv_sock/tcp_v6_syn_recv_sock | SK_TYPE_LISTEN_TCP | 
 | EP_STATS_PASSIVE_OPENS | tcp监听端口被动连接数统计 | tcp_create_openreq_child | SK_TYPE_LISTEN_TCP |
 | EP_STATS_ACTIVE_OPENS | tcp主动连接数统计 | tcp_connect | SK_TYPE_CLIENT_TCP |
 | EP_STATS_ATTEMPT_FAILS | tcp建链失败的次数（包括主动、被动）统计 | tcp_done | SK_TYPE_LISTEN_TCP/SK_TYPE_CLIENT_TCP |
