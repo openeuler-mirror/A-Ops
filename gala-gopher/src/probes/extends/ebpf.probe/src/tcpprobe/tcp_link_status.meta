@@ -111,6 +111,21 @@ measurements:
                 name: "wmem_alloc_min",
             },
             {
+                description: "write queue len last",
+                type: "gauge",
+                name: "snd_que_last",
+            },
+            {
+                description: "write queue len max",
+                type: "gauge",
+                name: "snd_que_max",
+            },
+            {
+                description: "write queue len min",
+                type: "gauge",
+                name: "snd_que_min",
+            },
+            {
                 description: "rmem_alloc_last",
                 type: "gauge",
                 name: "rmem_alloc_last",
@@ -124,6 +139,21 @@ measurements:
                 description: "rmem_alloc_min",
                 type: "gauge",
                 name: "rmem_alloc_min",
+            },
+            {
+                description: "receive queue len last",
+                type: "gauge",
+                name: "rcv_que_last",
+            },
+            {
+                description: "receive queue len max",
+                type: "gauge",
+                name: "rcv_que_max",
+            },
+            {
+                description: "receive queue len min",
+                type: "gauge",
+                name: "rcv_que_min",
             },
             {
                 description: "omem_alloc",
