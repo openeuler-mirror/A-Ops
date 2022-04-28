@@ -106,7 +106,7 @@ static __always_inline int create_tcp_link(struct tcp_link_s *link, u32 syn_srtt
     struct tcp_metrics_s metrics = {0};
 
     metrics.ts = bpf_ktime_get_ns();
-    metrics.data.status.syn_srtt_last = syn_srtt;
+    metrics.data.syn_status.syn_srtt_last = syn_srtt;
     __builtin_memcpy(&(metrics.link), link, sizeof(metrics.link));
 
     return bpf_map_update_elem(&tcp_link_map, link, &metrics, BPF_ANY);
@@ -127,7 +127,7 @@ static __always_inline struct tcp_metrics_s *get_tcp_metrics(struct sock *sk, u3
     metrics = bpf_map_lookup_elem(&tcp_link_map, &link);
     if (metrics != (struct tcp_metrics_s *)0) {
         if (link.role == LINK_ROLE_SERVER) {
-            metrics->data.status.syn_srtt_last = syn_srtt;
+            metrics->data.syn_status.syn_srtt_last = syn_srtt;
         }
         return metrics;
     }
@@ -186,7 +186,7 @@ static __always_inline void report(void *ctx, struct tcp_metrics_s *metrics, u32
         metrics->ts = ts;
         (void)bpf_perf_event_output(ctx, &output, BPF_F_CURRENT_CPU, metrics, sizeof(struct tcp_metrics_s));
     }
-
+    __builtin_memset(&(metrics->data.status), 0x0, sizeof(metrics->data.status));
     __builtin_memset(&(metrics->data.health), 0x0, sizeof(metrics->data.health));
 }
 
@@ -309,7 +309,7 @@ KPROBE(tcp_recvmsg, pt_regs)
     metrics = get_tcp_metrics(sk, &new_entry);
     if (metrics) {
         TCP_STATE_UPDATE(metrics->data, sk);
-        TCP_SYN_RTT_UPDATE(metrics->data.status);
+        TCP_SYN_RTT_UPDATE(metrics->data.syn_status);
         report(ctx, metrics, new_entry);
     }
 }

@@ -37,13 +37,16 @@ struct tcp_sock_info {
     __u32 tgid;     // PID
 };
 
+struct tcp_syn_status {
+    __u32 syn_srtt_last;    // FROM tcp_sock.srtt_us when old_state = RCV_SYNC & new_state = EATAB
+    __u32 syn_srtt_max;     // FROM tcp_sock.srtt_us when old_state = RCV_SYNC & new_state = EATAB
+    __u32 syn_srtt_min;     // FROM tcp_sock.srtt_us when old_state = RCV_SYNC & new_state = EATAB
+};
+
 struct tcp_status {
     __u32 srtt_last;        // FROM tcp_sock.srtt_us in tcp_recvmsg
     __u32 srtt_max;         // FROM tcp_sock.srtt_us in tcp_recvmsg
     __u32 srtt_min;         // FROM tcp_sock.srtt_us in tcp_recvmsg
-    __u32 syn_srtt_last;    // FROM tcp_sock.srtt_us when old_state = RCV_SYNC & new_state = EATAB
-    __u32 syn_srtt_max;     // FROM tcp_sock.srtt_us when old_state = RCV_SYNC & new_state = EATAB
-    __u32 syn_srtt_min;     // FROM tcp_sock.srtt_us when old_state = RCV_SYNC & new_state = EATAB
     __u32 rcv_wnd_last;     // FROM tcp_sock.rcv_wnd
     __u32 rcv_wnd_max;      // FROM tcp_sock.rcv_wnd
     __u32 rcv_wnd_min;      // FROM tcp_sock.rcv_wnd
@@ -51,6 +54,12 @@ struct tcp_status {
     __u32 send_rsts;        // FROM tcp_send_reset event
     __u32 receive_rsts;     // FROM tcp_receive_reset event
 
+    __u32 snd_que_last;     // FROM sock.sk_write_queue.qlen
+    __u32 snd_que_max;      // FROM sock.sk_write_queue.qlen
+    __u32 snd_que_min;      // FROM sock.sk_write_queue.qlen
+    __u32 rcv_que_last;     // FROM sock.sk_receive_queue.qlen
+    __u32 rcv_que_max;      // FROM sock.sk_receive_queue.qlen
+    __u32 rcv_que_min;      // FROM sock.sk_receive_queue.qlen
     int snd_mem_last;       // FROM sock.sk_wmem_alloc
     int snd_mem_max;        // FROM sock.sk_wmem_alloc
     int snd_mem_min;        // FROM sock.sk_wmem_alloc
@@ -91,6 +100,7 @@ struct tcp_health {
 };
 
 struct tcp_statistics {
+    struct tcp_syn_status syn_status;
     struct tcp_status status;
     struct tcp_health health;
 };
@@ -99,6 +109,7 @@ struct tcp_statistics {
     do { \
         __u32 __tmp; \
         struct tcp_sock *__tcp_sock = (struct tcp_sock *)(sk); \
+        struct sk_buff_head rcv_que = _((sk)->sk_receive_queue); \
         (data).health.sk_err = _((sk)->sk_err); \
         (data).health.sk_err_soft = _((sk)->sk_err_soft); \
         __tmp = _(__tcp_sock->srtt_us) >> 3; \
@@ -131,6 +142,16 @@ struct tcp_statistics {
         } \
         (data).status.rcv_mem_last = __tmp; \
         \
+        __tmp = _(rcv_que.qlen); \
+        if ((data).status.rcv_que_last == 0) { \
+            (data).status.rcv_que_max = __tmp; \
+            (data).status.rcv_que_min = __tmp; \
+        } else { \
+            (data).status.rcv_que_min = (data).status.rcv_que_min > __tmp ? __tmp : (data).status.rcv_que_min; \
+            (data).status.rcv_que_max = (data).status.rcv_que_max < __tmp ? __tmp : (data).status.rcv_que_max; \
+        } \
+        (data).status.rcv_que_last = __tmp; \
+        \
         bpf_probe_read(&((data).status.omem_alloc), sizeof(int), &((sk)->sk_omem_alloc)); \
         (data).status.forward_mem = _((sk)->sk_forward_alloc); \
         (data).status.rcv_buf_limit = _((sk)->sk_rcvbuf); \
@@ -141,6 +162,7 @@ struct tcp_statistics {
     do { \
         int __tmp; \
         struct tcp_sock *__tcp_sock = (struct tcp_sock *)(sk); \
+        struct sk_buff_head snd_que = _(sk->sk_write_queue); \
         bpf_probe_read(&__tmp, sizeof(int), &((sk)->sk_wmem_alloc)); \
         if ((data).status.snd_mem_last == 0) { \
             (data).status.snd_mem_min = __tmp; \
@@ -150,6 +172,16 @@ struct tcp_statistics {
             (data).status.snd_mem_max = (data).status.snd_mem_max < __tmp ? __tmp : (data).status.snd_mem_max; \
         } \
         (data).status.snd_mem_last = __tmp; \
+        \
+        __tmp = _(snd_que.qlen); \
+        if ((data).status.snd_que_last == 0) { \
+            (data).status.snd_que_min = __tmp; \
+            (data).status.snd_que_max = __tmp; \
+        } else { \
+            (data).status.snd_que_min = (data).status.snd_que_min > __tmp ? __tmp : (data).status.snd_que_min; \
+            (data).status.snd_que_max = (data).status.snd_que_max < __tmp ? __tmp : (data).status.snd_que_max; \
+        } \
+        (data).status.snd_que_last = __tmp; \
         \
         __tmp = _((sk)->sk_pacing_rate); \
         if ((data).status.pacing_rate_last == 0) { \
