@@ -57,9 +57,29 @@ struct bpf_map_def SEC("maps") period_map = {
     .max_entries = 1,
 };
 
+// flag: is c_port valid in key
+struct bpf_map_def SEC("maps") cport_flag_map = {
+    .type = BPF_MAP_TYPE_ARRAY,
+    .key_size = sizeof(u32),    // const value 0
+    .value_size = sizeof(u32),  // flag: valid:1/invalid:0
+    .max_entries = 1,
+};
+
 static __always_inline struct tcp_sock_info *get_sock_data(struct sock *sk)
 {
     return (struct tcp_sock_info *)bpf_map_lookup_elem(&sock_map, &sk);
+}
+
+static __always_inline u16 get_cport_flag()
+{
+    u32 key = 0;
+    u16 cport_flag = 0; // default: invalid
+
+    u16 *value = (u16 *)bpf_map_lookup_elem(&cport_flag_map, &key);
+    if (value)
+        cport_flag = *value;
+
+    return cport_flag;
 }
 
 static __always_inline int get_tcp_link_key(struct tcp_link_s *link, struct sock *sk, u32 *syn_srtt)
@@ -74,6 +94,9 @@ static __always_inline int get_tcp_link_key(struct tcp_link_s *link, struct sock
     __u32 role = sock_data_p->role;
     *syn_srtt = sock_data_p->syn_srtt;
 
+    /* update c_port_flag */
+    link->c_flag = get_cport_flag();
+
     link->family = _(sk->sk_family);
 
     if (role == LINK_ROLE_CLIENT) {
@@ -85,6 +108,11 @@ static __always_inline int get_tcp_link_key(struct tcp_link_s *link, struct sock
             bpf_probe_read_user(link->s_ip6, IP6_LEN, &sk->sk_v6_daddr);
         }
         link->s_port = bpf_ntohs(_(sk->sk_dport));
+        if (link->c_flag == 1) {
+            link->c_port = bpf_ntohs(_(sk->sk_num));
+        } else {
+            link->c_port = 0;
+        }
     } else {
         if (link->family == AF_INET) {
             link->s_ip = _(sk->sk_rcv_saddr);
@@ -94,6 +122,11 @@ static __always_inline int get_tcp_link_key(struct tcp_link_s *link, struct sock
             bpf_probe_read_user(link->c_ip6, IP6_LEN, &sk->sk_v6_daddr);
         }
         link->s_port = _(sk->sk_num);
+        if (link->c_flag == 1) {
+            link->c_port = bpf_ntohs(_(sk->sk_dport));
+        } else {
+            link->c_port = 0;
+        }
     }
 
     link->role = role;
@@ -110,6 +143,24 @@ static __always_inline int create_tcp_link(struct tcp_link_s *link, u32 syn_srtt
     __builtin_memcpy(&(metrics.link), link, sizeof(metrics.link));
 
     return bpf_map_update_elem(&tcp_link_map, link, &metrics, BPF_ANY);
+}
+
+static __always_inline int delete_tcp_link(struct sock *sk)
+{
+    struct tcp_link_s link = {0};
+    u32 syn_srtt __maybe_unused = 0;
+
+    if (link.c_flag == 0) {
+        /* if cport_flag is invalid, return */
+        return 0;
+    }
+
+    if (get_tcp_link_key(&link, sk, &syn_srtt) < 0) {
+        bpf_printk("delete link map fail, because get key fail.\n");
+        return -1;
+    }
+
+    return bpf_map_delete_elem(&tcp_link_map, &link);
 }
 
 static __always_inline struct tcp_metrics_s *get_tcp_metrics(struct sock *sk, u32 *new_entry) 
@@ -263,6 +314,10 @@ KPROBE(tcp_set_state, pt_regs)
         tcp_sock_data.role = LINK_ROLE_SERVER;
         tcp_sock_data.syn_srtt = _(tcp_sock->srtt_us) >> 3;
         (void)create_sock_obj(0, sk, &tcp_sock_data);
+    }
+
+    if (new_state == TCP_CLOSE || new_state == TCP_CLOSE_WAIT || new_state == TCP_FIN_WAIT1) {
+        (void)delete_tcp_link(sk);
     }
     return;
 }

@@ -38,7 +38,8 @@
 #define OO_TYPE_HEALTH "health"
 #define TCP_LINK_TMOUT  (5 * 60)    // 5 min
 
-static struct probe_params params = {.period = DEFAULT_PERIOD};
+static struct probe_params params = {.period = DEFAULT_PERIOD,
+                                     .cport_flag = 0};
 
 static void print_link_metrics(void *ctx, int cpu, void *data, __u32 size)
 {
@@ -54,13 +55,14 @@ static void print_link_metrics(void *ctx, int cpu, void *data, __u32 size)
     ip_str(link->family, (unsigned char *)&(link->s_ip), dst_ip_str, INET6_ADDRSTRLEN);
     // status infos
     fprintf(stdout,
-        "|%s_%s|%u|%u|%s|%s|%u|%u|%u|%u|%u|%u|%u|%u|%u|%u|%u|%u|%u|%u|%d|%d|%d|%u|%u|%u|%d|%d|%d|%u|%u|%u|%d|%d|%u|%u|%u|%u|%u|%u|\n",
+        "|%s_%s|%u|%u|%s|%s|%u|%u|%u|%u|%u|%u|%u|%u|%u|%u|%u|%u|%u|%u|%u|%d|%d|%d|%u|%u|%u|%d|%d|%d|%u|%u|%u|%d|%d|%u|%u|%u|%u|%u|%u|\n",
         OO_NAME,
         OO_TYPE_STATUS,
         link->tgid,
         link->role,
         src_ip_str,
         dst_ip_str,
+        link->c_port,
         link->s_port,
         link->family,
         metrics->data.status.srtt_last,
@@ -97,13 +99,14 @@ static void print_link_metrics(void *ctx, int cpu, void *data, __u32 size)
         metrics->data.status.ecn_flags);
     // health infos
     fprintf(stdout,
-        "|%s_%s|%u|%u|%s|%s|%u|%u|%llu|%llu|%u|%u|%u|%u|%u|%u|%u|%u|%u|%u|%d|%d|\n",
+        "|%s_%s|%u|%u|%s|%s|%u|%u|%u|%llu|%llu|%u|%u|%u|%u|%u|%u|%u|%u|%u|%u|%d|%d|\n",
         OO_NAME,
         OO_TYPE_HEALTH,
         link->tgid,
         link->role,
         src_ip_str,
         dst_ip_str,
+        link->c_port,
         link->s_port,
         link->family,
         metrics->data.health.rx,
@@ -128,6 +131,12 @@ static void load_period(int period_fd, __u32 value)
     __u32 key = 0;
     __u64 period = (__u64)value * 1000000000;
     (void)bpf_map_update_elem(period_fd, &key, &period, BPF_ANY);
+}
+
+static void load_cport_flag(int cport_flag_fd, __u32 value)
+{
+    __u32 key = 0;
+    (void)bpf_map_update_elem(cport_flag_fd, &key, &value, BPF_ANY);
 }
 
 static void do_load_tcp_fd(int tcp_fd_map_fd, __u32 tgid, int fd, __u8 role)
@@ -186,11 +195,12 @@ int main(int argc, char **argv)
     int out_put_fd = -1;
     struct perf_buffer* pb = NULL;
 
-    err = args_parse(argc, argv, "t:", &params);
+    err = args_parse(argc, argv, "t:c:", &params);
     if (err != 0)
         return -1;
 
     printf("arg parse interval time:%us\n", params.period);
+    printf("arg parse cport flag:%u\n", params.cport_flag);
 
     INIT_BPF_APP(tcpprobe, EBPF_RLIM_LIMITED);
     LOAD(tcpprobe, err);
@@ -204,6 +214,7 @@ int main(int argc, char **argv)
 
     load_tcp_fd(GET_MAP_FD(tcpprobe, tcp_fd_map));
     load_period(GET_MAP_FD(tcpprobe, period_map), params.period);
+    load_cport_flag(GET_MAP_FD(tcpprobe, cport_flag_map), params.cport_flag);
 
     printf("Successfully started!\n");
 
