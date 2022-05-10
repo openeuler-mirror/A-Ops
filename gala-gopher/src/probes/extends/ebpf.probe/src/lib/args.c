@@ -27,8 +27,9 @@
 static int __period_arg_parse(char opt, char *arg, struct probe_params *params)
 {
     unsigned int interval = 0;
+    unsigned int flag = 0;
 
-    if ((opt != 't' && opt != 'p' && opt != 'w') || arg == NULL)
+    if ((opt != 't' && opt != 'p' && opt != 'w' && opt != 'c') || arg == NULL)
         return -1;
 
     switch (opt) {
@@ -47,6 +48,14 @@ static int __period_arg_parse(char opt, char *arg, struct probe_params *params)
         case 'w':
             if (arg != NULL)
                 (void)snprintf((void *)params->task_whitelist, MAX_PATH_LEN, "%s", arg);
+            break;
+        case 'c':
+            flag = (unsigned int)atoi(arg);
+            if (flag != 0 && flag != 1) {
+                printf("Please check arg(t), val shold be 1:cport_valid 0:cport_invalid.\n");
+                return -1;
+            }
+            params->cport_flag = flag;
             break;
         default:
             break;

@@ -19,6 +19,7 @@
 #define MAX_PATH_LEN    512
 struct probe_params {
     unsigned int period;
+    unsigned int cport_flag;
     char elf_path[MAX_PATH_LEN];
     char task_whitelist[MAX_PATH_LEN];
 };

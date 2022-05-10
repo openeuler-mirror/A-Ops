@@ -231,6 +231,7 @@ struct tcp_statistics {
 #define TCP_TX_XADD(data, delta) __sync_fetch_and_add(&((data).health.tx), (__u64)(delta))
 
 struct tcp_link_s {
+    __u32 tgid;     // process id
     union {
         __u32 c_ip;
         unsigned char c_ip6[IP6_LEN];
@@ -239,9 +240,10 @@ struct tcp_link_s {
         __u32 s_ip;
         unsigned char s_ip6[IP6_LEN];
     };
-    __u16 s_port;
+    __u16 s_port;   // server port
+    __u16 c_port;   // client port
     __u16 family;
-    __u32 tgid;     // process id
+    __u16 c_flag;   // c_port valid:1/invalid:0
     __u32 role;     // role: client:1/server:0
 };
 
