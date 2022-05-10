@@ -85,7 +85,7 @@ static inline int __debug_printf(const char *format, ...)
 
 // extend probe config
 #define MAX_EXTEND_PROBE_COMMAND_LEN 128
-#define MAX_EXTEND_PROBE_PARAM_LEN 128
+#define MAX_PARAM_LEN 128
 #define MAX_COMMAND_LEN 1024
 
 // kafka switch

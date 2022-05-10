@@ -12,6 +12,7 @@
   */
 #include <stdio.h>
 #include <string.h>
+#include "args.h"
 
 #define SYSTEM_MEMINFO_FILE_PATH "/proc/meminfo"
 
@@ -92,7 +93,7 @@ static int system_meminfo_print_records()
     return 0;
 }
 
-int main()
+int main(struct probe_params * params)
 {
     int ret = 0;
     FILE *f = NULL;

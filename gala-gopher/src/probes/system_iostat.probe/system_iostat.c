@@ -17,6 +17,7 @@
 #include <unistd.h>
 #include <string.h>
 #include <stdlib.h>
+#include "args.h"
 
 /*
 [root@localhost ~]# iostat -xd -t 60
@@ -220,7 +221,7 @@ static int get_disk_io_info(local_disk *disk_node)
     return 0;
 }
 
-int main()
+int main(struct probe_params * params)
 {
     int ret;
     local_disk *disk_head = NULL;

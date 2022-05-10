@@ -20,6 +20,7 @@
 
 #include "base.h"
 #include "fifo.h"
+#include "args.h"
 
 #define ZEROPAD 1       /* pad with zero */
 #define SIGN    2       /* unsigned/signed long */
@@ -29,7 +30,7 @@
 #define SMALL   32      /* Must be 32 == 0x20 */
 #define SPECIAL 64      /* 0x */
 
-typedef int (*ProbeMain)(void);
+typedef int (*ProbeMain)(struct probe_params *);
 
 typedef struct {
     char name[MAX_PROBE_NAME_LEN];       // key
@@ -39,6 +40,7 @@ typedef struct {
     ProbeSwitch probeSwitch;
     Fifo *fifo;
     ProbeMain func;
+    struct probe_params params;
 
     pthread_t tid;
 } Probe;

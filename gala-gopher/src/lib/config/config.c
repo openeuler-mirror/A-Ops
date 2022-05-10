@@ -290,6 +290,13 @@ static int ConfigMgrLoadProbesConfig(void *config, config_setting_t *settings)
         }
         (void)strncpy(_probeConfig->name, strVal, MAX_PROBE_NAME_LEN - 1);
 
+        ret = config_setting_lookup_string(_probe, "param", &strVal);
+        if (ret == 0) {
+            ERROR("[CONFIG] load config for probe param failed.\n");
+            return -1;
+        }
+        (void)strncpy(_probeConfig->param, strVal, MAX_PARAM_LEN - 1);
+
         ret = config_setting_lookup_string(_probe, "switch", &strVal);
         if (ret == 0) {
             ERROR("[CONFIG] load config for probe switch failed.\n");
@@ -358,7 +365,7 @@ static int ConfigMgrLoadExtendProbesConfig(void *config, config_setting_t *setti
             ERROR("[CONFIG] load config for extend probe param failed.\n");
             return -1;
         }
-        (void)strncpy(_probeConfig->param, strVal, MAX_EXTEND_PROBE_PARAM_LEN - 1);
+        (void)strncpy(_probeConfig->param, strVal, MAX_PARAM_LEN - 1);
 
         ret = config_setting_lookup_string(_probe, "switch", &strVal);
         if (ret == 0) {

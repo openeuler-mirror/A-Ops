@@ -1,5 +1,6 @@
 #include <stdio.h>
 #include <string.h>
+#include "args.h"
 
 void example_collect_data()
 {
@@ -11,7 +12,7 @@ void example_collect_data()
     );
 }
 
-int main()
+int main(struct probe_params * params)
 {
     example_collect_data();
     return 0;

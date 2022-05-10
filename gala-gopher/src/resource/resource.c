@@ -18,6 +18,7 @@
 #include <time.h>
 #include "base.h"
 #include "config.h"
+#include "args.h"
 #include "resource.h"
 
 #if GALA_GOPHER_INFO("inner func")
@@ -192,6 +193,10 @@ static int ProbeMgrInit(ResourceMgr *resourceMgr)
         // refresh probe configuration
         probe->interval = _probeConfig->interval;
         probe->probeSwitch = _probeConfig->probeSwitch;
+        ret = params_parse(_probeConfig->param, &probe->params);
+        if (ret != 0) {
+            ERROR("[RESOURCE] probes(%s) params(%s) invalid.\n", probe->name, _probeConfig->param);
+        }
     }
     INFO("[RESOURCE] refresh probes configuration success.\n");
 
@@ -228,7 +233,7 @@ static int ExtendProbeMgrInit(ResourceMgr *resourceMgr)
 
         (void)strncpy(_extendProbe->name, _extendProbeConfig->name, MAX_PROBE_NAME_LEN - 1);
         (void)strncpy(_extendProbe->executeCommand, _extendProbeConfig->command, MAX_EXTEND_PROBE_COMMAND_LEN - 1);
-        (void)strncpy(_extendProbe->executeParam, _extendProbeConfig->param, MAX_EXTEND_PROBE_PARAM_LEN - 1);
+        (void)strncpy(_extendProbe->executeParam, _extendProbeConfig->param, MAX_PARAM_LEN - 1);
         (void)strncpy(_extendProbe->startChkCmd, _extendProbeConfig->startChkCmd, MAX_EXTEND_PROBE_COMMAND_LEN - 1);
 
         _extendProbe->probeSwitch = _extendProbeConfig->probeSwitch;

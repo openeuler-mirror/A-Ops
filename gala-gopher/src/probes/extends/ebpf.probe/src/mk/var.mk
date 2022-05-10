@@ -6,9 +6,11 @@ CLANG ?= clang
 LLVM_STRIP ?= llvm-strip
 BPFTOOL ?= $(ROOT_DIR)/../../tools/bpftool
 LIBBPF_DIR = $(ROOT_DIR)/../.output
+GOPHER_COMMON_DIR = $(ROOT_DIR)/../../../../../common
 
 UTIL_DIR ?= $(ROOT_DIR)../lib
 UTIL_SRC ?= $(wildcard $(UTIL_DIR)/*.c)
+UTIL_SRC += $(wildcard $(GOPHER_COMMON_DIR)/*.c)
 INSTALL_DIR=/usr/bin/extends/ebpf.probe
 
 ARCH = $(shell uname -m)
@@ -30,4 +32,5 @@ CFLAGS += -DKER_VER_MAJOR=$(KER_VER_MAJOR) -DKER_VER_MINOR=$(KER_VER_MINOR) -DKE
 
 BASE_INC := -I/usr/include \
             -I$(ROOT_DIR)../include \
-	    -I$(LIBBPF_DIR)
+            -I$(GOPHER_COMMON_DIR) \
+             -I$(LIBBPF_DIR)

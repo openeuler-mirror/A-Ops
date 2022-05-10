@@ -12,6 +12,7 @@
   */
 #include <stdio.h>
 #include <string.h>
+#include "args.h"
 
 /*
 eg:
@@ -41,7 +42,7 @@ Inodes:IUsed:IFree:IUse
         } \
     } while (0)
 
-int main()
+int main(struct probe_params * params)
 {
     char line[LEN_BUF];
     FILE *f = NULL;

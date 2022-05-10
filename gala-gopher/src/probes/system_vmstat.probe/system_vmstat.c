@@ -12,6 +12,7 @@
   */
 #include <stdio.h>
 #include <string.h>
+#include "args.h"
 
 #define SYSTEM_VMSTAT_FILE_PATH "/proc/vmstat"
 
@@ -93,7 +94,7 @@ static int system_vmstat_print_records()
     return 0;
 }
 
-int main()
+int main(struct probe_params * params)
 {
     int ret = 0;
     FILE *f = NULL;
