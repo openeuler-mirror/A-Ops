@@ -14,6 +14,7 @@
  ******************************************************************************/
 #include <stdio.h>
 #include <string.h>
+#include "args.h"
 
 /*
 eg:
@@ -74,7 +75,7 @@ static void get_netdev_fileds(const char *net_dev_info, net_dev_stat *stats)
     return;
 }
 
-int main()
+int main(struct probe_params * params)
 {
     FILE* f = NULL;
     char line[LINE_BUF_LEN];

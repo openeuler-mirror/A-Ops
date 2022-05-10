@@ -22,6 +22,7 @@ SET(KAFKA_DIR       ${SRC_DIR}/lib/kafka)
 SET(PROBE_DIR       ${SRC_DIR}/lib/probe)
 SET(IMDB_DIR        ${SRC_DIR}/lib/imdb)
 SET(CMD_DIR         ${SRC_DIR}/cmd)
+SET(COMMON_DIR      ${SRC_DIR}/common)
 
 SET(LIBRDKAFKA_DIR /usr/include/librdkafka)
 
@@ -46,6 +47,8 @@ SET(SOURCES main.c daemon.c
     ${IMDB_DIR}/imdb.c
     
     ${CMD_DIR}/server.c
+    ${COMMON_DIR}/kern_config.c
+    ${COMMON_DIR}/args.c
 )
 
 SET(SOURCE_CMD ${CMD_DIR}/client.c)
@@ -79,6 +82,7 @@ TARGET_INCLUDE_DIRECTORIES(${EXECUTABLE_TARGET} PRIVATE
     ${LIBRDKAFKA_DIR}
 
     ${CMD_DIR}
+    ${COMMON_DIR}
 )
 
 TARGET_LINK_LIBRARIES(${EXECUTABLE_TARGET} PRIVATE config pthread rt dl rdkafka microhttpd)

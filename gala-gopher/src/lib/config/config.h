@@ -56,6 +56,7 @@ typedef struct {
     char name[MAX_PROBE_NAME_LEN];
     ProbeSwitch probeSwitch;
     uint32_t interval;
+    char param[MAX_PARAM_LEN];
 } ProbeConfig;
 
 typedef struct {
@@ -66,7 +67,7 @@ typedef struct {
 typedef struct {
     char name[MAX_PROBE_NAME_LEN];
     char command[MAX_EXTEND_PROBE_COMMAND_LEN];
-    char param[MAX_EXTEND_PROBE_PARAM_LEN];
+    char param[MAX_PARAM_LEN];
     char startChkCmd[MAX_EXTEND_PROBE_COMMAND_LEN];
     ProbeStartCheckType startChkType;
     ProbeSwitch probeSwitch;

@@ -58,7 +58,7 @@ static void *DaemonRunSingleProbe(void *arg)
     prctl(PR_SET_NAME, thread_name);
 
     for (;;) {
-        g_probe->func();
+        g_probe->func(&(g_probe->params));
         sleep(g_probe->interval);
     }
 }

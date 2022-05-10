@@ -15,6 +15,7 @@
 #include <stdio.h>
 #include <string.h>
 #include <errno.h>
+#include "args.h"
 
 /*
  [root@master ~]# cat /proc/net/snmp | grep Tcp: | awk '{print $10 ":" $11 ":" $12 ":" $13 ":"  $14}' | tail -n1
@@ -81,7 +82,7 @@ static int get_snmp_data(const char *cmd, char buf[][DATA_LEN], int max_len)
     return 0;
 }
 
-int main()
+int main(struct probe_params * params)
 {
     int ret;
     char tcp_buf[METRICS_TCP_MAX][DATA_LEN];
