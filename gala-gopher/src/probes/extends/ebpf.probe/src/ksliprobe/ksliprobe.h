@@ -88,4 +88,35 @@ struct msg_event_data_t {
     __u32 sample_num;                       // 上报周期内采样数
 };
 
+#define KSLIPROBE_RET(func, type, caller_type, fd) \
+    bpf_section("kprobe/" #func) \
+    void __kprobe_bpf_##func(struct type *ctx) { \
+        int ret; \
+        struct __probe_key __key = {0}; \
+        struct __probe_val __val = {0}; \
+        struct conn_key_t conn_key = {0}; \
+        u32 tgid = bpf_get_current_pid_tgid() >> INT_LEN; \
+        init_conn_key(&conn_key, fd, tgid); \
+        if ((struct conn_data_t *)bpf_map_lookup_elem(&conn_map, &conn_key) == (void *)0) { \
+            return; \
+        } \
+        __get_probe_key(&__key, (const long)PT_REGS_FP(ctx), caller_type); \
+        __get_probe_val(&__val, (const long)PT_REGS_PARM1(ctx), \
+                               (const long)PT_REGS_PARM2(ctx), \
+                               (const long)PT_REGS_PARM3(ctx), \
+                               (const long)PT_REGS_PARM4(ctx), \
+                               (const long)PT_REGS_PARM5(ctx), \
+                               (const long)PT_REGS_PARM6(ctx)); \
+        ret = __do_push_match_map(&__key, &__val); \
+        if (ret < 0) { \
+            bpf_printk("---KPROBE_RET[" #func "] push failed.\n"); \
+            __do_pop_match_map_entry((const struct __probe_key *)&__key, \
+                                        &__val); \
+        } \
+    } \
+    \
+    bpf_section("kretprobe/" #func) \
+    void __kprobe_ret_bpf_##func(struct type *ctx)
+
+
 #endif
