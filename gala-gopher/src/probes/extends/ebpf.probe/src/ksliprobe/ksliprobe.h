@@ -70,11 +70,11 @@ struct rtt_cmd_t {
 
 struct conn_data_t {
     struct conn_id_t id;
+    void *sk;                               // tcp连接对应的 sk 地址
     struct rtt_cmd_t max;
     struct rtt_cmd_t min;
     struct rtt_cmd_t recent;
-    enum msg_event_rw_t find_state;         // 正在寻找收还是发的首包
-    __u64 ts_nsec_req;                      // 上一次请求时间戳
+    struct rtt_cmd_t current;
     __u64 last_report_ts_nsec;              // 上一次上报完成的时间点
     __u32 sample_num;                       // 上报周期内采样数
 };
