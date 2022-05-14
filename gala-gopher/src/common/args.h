@@ -20,11 +20,13 @@
 #define BLOCK_NAME      32
 struct probe_params {
     unsigned int period;          // [-t <>] Sampling period, unit second, default is 5 seconds
-    unsigned int latency_thr;     // [-T <>] Threshold of latency time, unit us, default is 0 microseconds
-    unsigned int jitter_thr;      // [-J <>] Threshold of jitter time, unit us, default is 0 microseconds
-    unsigned int offline_thr;     // [-o <>] Threshold of offline time, unit us, default is 0 microseconds
+    unsigned int latency_thr;     // [-T <>] Threshold of latency time, unit ms, default is 0 milliseconds
+    unsigned int jitter_thr;      // [-J <>] Threshold of jitter time, unit ms, default is 0 milliseconds
+    unsigned int offline_thr;     // [-o <>] Threshold of offline time, unit ms, default is 0 milliseconds
     unsigned int drops_count_thr; // [-D <>] Threshold of the number of drop packets, default is 0
     unsigned int filter_pid;      // [-F <>] Filtering PID monitoring ranges by specific pid, default is 0 (no filter)
+    char logs;                    // [-l   ] Enable the logs function
+    char pad[3];                  // Reserved fields;
     char filter_task_probe;       // [-F <>] Filtering PID monitoring ranges by task probe, default is 0 (no filter)
     char res_percent_upper;       // [-U <>] Upper limit of resource percentage, default is 0%
     char res_percent_lower;       // [-L <>] Lower limit of resource percentage, default is 0%
