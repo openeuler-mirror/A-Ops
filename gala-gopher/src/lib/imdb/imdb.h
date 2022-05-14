@@ -123,7 +123,7 @@ IMDB_Table *IMDB_DataBaseMgrFindTable(IMDB_DataBaseMgr *mgr, char *tableName);
 
 int IMDB_DataBaseMgrAddRecord(IMDB_DataBaseMgr *mgr, char *recordStr);
 IMDB_Record* IMDB_DataBaseMgrCreateRec(IMDB_DataBaseMgr *mgr, IMDB_Table *table, char *content);
-int IMDB_DataBaseMgrData2String(IMDB_DataBaseMgr *mgr, char *buffer, uint32_t maxLen, uint32_t *buf_len);
+int IMDB_DataBase2Prometheus(IMDB_DataBaseMgr *mgr, char *buffer, uint32_t maxLen, uint32_t *buf_len);
 int IMDB_DataStr2Json(IMDB_DataBaseMgr *mgr, const char *recordStr, char *jsonStr, uint32_t jsonStrLen);
 int IMDB_Rec2Json(IMDB_DataBaseMgr *mgr, IMDB_Table *table,
                         IMDB_Record* rec, const char *dataStr, char *jsonStr, uint32_t jsonStrLen);

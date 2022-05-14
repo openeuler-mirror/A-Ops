@@ -7,17 +7,32 @@ measurements:
         fields:
         (
             {
-                description: "Time when the event occurred, uint64 nanoseconds since Unix epoch.",
-                type: "long",
-                name: "Timestamp",
+                description: "Name of the table to which the indicator belongs.",
+                type: "string",
+                name: "tblName",
             },
             {
-                description: "Event level",
-                type: "byte sequence",
+                description: "ID of entity where the exception occurs.",
+                type: "string",
+                name: "EntityID",
+            },
+            {
+                description: "Metrics where exceptions occur.",
+                type: "string",
+                name: "metrics",
+            },
+            {
+                description: "This is the string representation of the severity as it is known at the source.",
+                type: "string",
                 name: "SeverityText",
             },
             {
-                description: "Event Body",
+                description: "Numerical value of the severity, normalized to values described in this document.",
+                type: "number",
+                name: "SeverityNumber",
+            },
+            {
+                description: "Event Body, can be for example a human-readable string message",
                 type: "byte sequence",
                 name: "Body",
             },

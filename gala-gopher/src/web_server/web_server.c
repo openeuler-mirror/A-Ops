@@ -61,7 +61,7 @@ static int WebRequestCallback(void *cls,
         return MHD_NO;
     }
 
-    ret = IMDB_DataBaseMgrData2String(imdbMgr, g_buffer, MAX_WEBPAGE_BUFFER_SIZE, &buf_len);
+    ret = IMDB_DataBase2Prometheus(imdbMgr, g_buffer, MAX_WEBPAGE_BUFFER_SIZE, &buf_len);
     if (ret < 0) {
         return MHD_NO;
     }
