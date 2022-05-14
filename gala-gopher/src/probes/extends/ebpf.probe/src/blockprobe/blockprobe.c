@@ -34,6 +34,7 @@
 #include "blockprobe_iscsi_tp.skel.h"
 #include "blockprobe_iscsi_sas.skel.h"
 #include "blockprobe.h"
+#include "event.h"
 
 #define OO_NAME "block"  // Observation Object name
 #define ISCSI_MOD "libiscsi"
@@ -300,6 +301,99 @@ static void do_load_blk()
     return;
 }
 
+#define __ENTITY_ID_LEN 32
+static void build_entity_id(struct block_key *key, char *buf, int buf_len)
+{
+    (void)snprintf(buf, buf_len, "%d_%d",
+                        key->major,
+                        key->first_minor);
+}
+
+static void report_block(struct block_key *key, struct block_data *bdata)
+{
+    char entityId[__ENTITY_ID_LEN];
+    unsigned int latency_thr_us;
+    unsigned int jitter_thr_us;
+    struct latency_stats* flush_stats = &(bdata->blk_stats.flush);
+    struct latency_stats* request_stats = &(bdata->blk_stats.req);
+    struct iscsi_err_stats* iscsi_err = &(bdata->iscsi_err_stats);
+
+    if (params.logs == 0)
+        return;
+
+    entityId[0] = 0;
+    build_entity_id(key, entityId, __ENTITY_ID_LEN);
+
+    latency_thr_us = params.latency_thr << 3; // milliseconds to microseconds
+    jitter_thr_us = params.jitter_thr << 3; // milliseconds to microseconds
+
+    if (iscsi_err->count_iscsi_err != 0) {
+        report_logs(OO_NAME,
+                    entityId,
+                    "count_iscsi_err",
+                    EVT_SEC_WARN,
+                    "Iscsi errors(%llu) occured on Block(%s, disk %s).",
+                    iscsi_err->count_iscsi_err,
+                    bdata->blk_name,
+                    bdata->disk_name);
+    }
+
+    if (iscsi_err->count_iscsi_tmout != 0) {
+        report_logs(OO_NAME,
+                    entityId,
+                    "count_iscsi_tmout",
+                    EVT_SEC_WARN,
+                    "Iscsi timeout(%llu) occured on Block(%s, disk %s).",
+                    iscsi_err->count_iscsi_tmout,
+                    bdata->blk_name,
+                    bdata->disk_name);
+    }
+
+    if ((jitter_thr_us > 0) && (flush_stats->latency_jitter > jitter_thr_us)) {
+        report_logs(OO_NAME,
+                    entityId,
+                    "latency_flush_jitter",
+                    EVT_SEC_WARN,
+                    "Jitter latency of flush operation(%llu) exceeded threshold, occured on Block(%s, disk %s).",
+                    flush_stats->latency_jitter,
+                    bdata->blk_name,
+                    bdata->disk_name);
+    }
+
+    if ((latency_thr_us > 0) && (flush_stats->latency_max > latency_thr_us)) {
+        report_logs(OO_NAME,
+                    entityId,
+                    "latency_flush_max",
+                    EVT_SEC_WARN,
+                    "Latency of flush operation(%llu) exceeded threshold, occured on Block(%s, disk %s).",
+                    flush_stats->latency_max,
+                    bdata->blk_name,
+                    bdata->disk_name);
+    }
+
+    if ((jitter_thr_us > 0) && (request_stats->latency_jitter > jitter_thr_us)) {
+        report_logs(OO_NAME,
+                    entityId,
+                    "latency_req_jitter",
+                    EVT_SEC_WARN,
+                    "Jitter latency of request operation(%llu) exceeded threshold, occured on Block(%s, disk %s).",
+                    request_stats->latency_jitter,
+                    bdata->blk_name,
+                    bdata->disk_name);
+    }
+
+    if ((latency_thr_us > 0) && (request_stats->latency_max > latency_thr_us)) {
+        report_logs(OO_NAME,
+                    entityId,
+                    "latency_req_max",
+                    EVT_SEC_WARN,
+                    "Latency of request operation(%llu) exceeded threshold, occured on Block(%s, disk %s).",
+                    request_stats->latency_max,
+                    bdata->blk_name,
+                    bdata->disk_name);
+    }
+}
+
 static void pull_block_stats(int map_fd)
 {
     int ret;
@@ -312,7 +406,10 @@ static void pull_block_stats(int map_fd)
         if (ret != 0) {
             ckey = nkey;
             continue;
-        }        
+        }
+
+        report_block(&nkey, &data);
+
         fprintf(stdout, "|%s|%d|%d|%s|%s|%s|%llu|%llu|%llu|%llu|%u|%llu|%llu|%llu"
                 "|%llu|%u|%llu|%llu|%llu|%llu|%u|%llu|%llu|%llu|%llu|%u|%llu|%llu|%llu|%llu|%llu|%llu|%llu|\n",
                 OO_NAME,
@@ -342,7 +439,7 @@ static void pull_block_stats(int map_fd)
                 data.blk_dev_stats.latency_jitter,
                 data.blk_dev_stats.count_latency,
                 data.iscsi_err_stats.count_iscsi_tmout,
-                data.iscsi_err_stats.count_iscsi_err,                
+                data.iscsi_err_stats.count_iscsi_err,
                 data.conn_stats.conn_err[ISCSI_ERR_BAD_OPCODE],
                 data.conn_stats.conn_err[ISCSI_ERR_XMIT_FAILED],
                 data.conn_stats.conn_err[ISCSI_ERR_NOP_TIMEDOUT],
@@ -381,7 +478,7 @@ static void pull_block_stats(int map_fd)
                 data.blk_dev_stats.latency_jitter,
                 data.blk_dev_stats.count_latency,
                 data.iscsi_err_stats.count_iscsi_tmout,
-                data.iscsi_err_stats.count_iscsi_err,                
+                data.iscsi_err_stats.count_iscsi_err,
                 data.conn_stats.conn_err[ISCSI_ERR_BAD_OPCODE],
                 data.conn_stats.conn_err[ISCSI_ERR_XMIT_FAILED],
                 data.conn_stats.conn_err[ISCSI_ERR_NOP_TIMEDOUT],

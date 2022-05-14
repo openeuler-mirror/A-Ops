@@ -48,7 +48,7 @@ KRAWTRACE(scsi_dispatch_cmd_timeout, bpf_raw_tracepoint_args)
     if (!bdata) {
         return;
     }
-    __sync_fetch_and_add(&(bdata->iscsi_err_stats.count_iscsi_tmout), 1);    
+    __sync_fetch_and_add(&(bdata->iscsi_err_stats.count_iscsi_tmout), 1);
 }
 
 KRAWTRACE(scsi_dispatch_cmd_error, bpf_raw_tracepoint_args)
@@ -63,6 +63,6 @@ KRAWTRACE(scsi_dispatch_cmd_error, bpf_raw_tracepoint_args)
     if (!bdata) {
         return;
     }
-    __sync_fetch_and_add(&(bdata->iscsi_err_stats.count_iscsi_err), 1);    
+    __sync_fetch_and_add(&(bdata->iscsi_err_stats.count_iscsi_err), 1);
 }
 

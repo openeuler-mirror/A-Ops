@@ -32,14 +32,103 @@
 #include "args.h"
 #include "tcpprobe.skel.h"
 #include "tcpprobe.h"
+#include "event.h"
 
-#define OO_NAME "tcp_link"  // Observation Object name
-#define OO_TYPE_STATUS "status"
-#define OO_TYPE_HEALTH "health"
-#define TCP_LINK_TMOUT  (5 * 60)    // 5 min
+#define OO_TYPE_STATUS "tcp_link_status"
+#define OO_TYPE_HEALTH "tcp_link_health"
 
 static struct probe_params params = {.period = DEFAULT_PERIOD,
                                      .cport_flag = 0};
+
+static void build_entity_id(struct tcp_link_s *link, char *buf, int buf_len)
+{
+    unsigned char src_ip_str[INET6_ADDRSTRLEN];
+    unsigned char dst_ip_str[INET6_ADDRSTRLEN];
+
+    ip_str(link->family, (unsigned char *)&(link->c_ip), src_ip_str, INET6_ADDRSTRLEN);
+    ip_str(link->family, (unsigned char *)&(link->s_ip), dst_ip_str, INET6_ADDRSTRLEN);
+
+    (void)snprintf(buf, buf_len, "%u_%u_%s_%s_%u_%u_%u",
+                        link->tgid,
+                        link->role,
+                        src_ip_str,
+                        dst_ip_str,
+                        link->c_port,
+                        link->s_port,
+                        link->family);
+}
+
+#define __ENTITY_ID_LEN 128
+
+static void report_tcp_health(struct tcp_metrics_s *metrics)
+{
+    struct tcp_health *th;
+    char entityId[__ENTITY_ID_LEN];
+
+    if (params.logs == 0)
+        return;
+
+    entityId[0] = 0;
+
+    th = &(metrics->data.health);
+    if (th->tcp_oom != 0) {
+        build_entity_id(&metrics->link, entityId, __ENTITY_ID_LEN);
+        report_logs(OO_TYPE_HEALTH,
+                    entityId,
+                    "tcp_oom",
+                    EVT_SEC_WARN,
+                    "TCP out of memory(%u).",
+                    th->tcp_oom);
+    }
+
+    if ((params.drops_count_thr != 0) && (th->backlog_drops > params.drops_count_thr)) {
+        if (entityId[0] != 0)
+            build_entity_id(&metrics->link, entityId, __ENTITY_ID_LEN);
+
+        report_logs(OO_TYPE_HEALTH,
+                    entityId,
+                    "backlog_drops",
+                    EVT_SEC_WARN,
+                    "TCP backlog queue drops(%u).",
+                    th->backlog_drops);
+    }
+
+    if ((params.drops_count_thr != 0) && (th->filter_drops > params.drops_count_thr)) {
+        if (entityId[0] != 0)
+            build_entity_id(&metrics->link, entityId, __ENTITY_ID_LEN);
+
+        report_logs(OO_TYPE_HEALTH,
+                    entityId,
+                    "backlog_drops",
+                    EVT_SEC_WARN,
+                    "TCP filter drops(%u).",
+                    th->filter_drops);
+    }
+}
+
+static void report_tcp_status(struct tcp_metrics_s *metrics)
+{
+    struct tcp_syn_status *syn;
+    char entityId[__ENTITY_ID_LEN];
+    unsigned int latency_thr_us;
+
+    if (params.logs == 0)
+        return;
+
+    entityId[0] = 0;
+
+    syn = &(metrics->data.syn_status);
+    latency_thr_us = params.latency_thr << 3; // milliseconds to microseconds
+    if ((latency_thr_us != 0) && (syn->syn_srtt_last > latency_thr_us)) {
+        build_entity_id(&metrics->link, entityId, __ENTITY_ID_LEN);
+        report_logs(OO_TYPE_STATUS,
+                    entityId,
+                    "syn_srtt_last",
+                    EVT_SEC_WARN,
+                    "TCP connection establish timed out(%u us).",
+                    syn->syn_srtt_last);
+    }
+}
 
 static void print_link_metrics(void *ctx, int cpu, void *data, __u32 size)
 {
@@ -47,7 +136,7 @@ static void print_link_metrics(void *ctx, int cpu, void *data, __u32 size)
     struct tcp_metrics_s *metrics  = (struct tcp_metrics_s *)data;
 
     link = &(metrics->link);
-    
+
     unsigned char src_ip_str[INET6_ADDRSTRLEN];
     unsigned char dst_ip_str[INET6_ADDRSTRLEN];
 
@@ -55,8 +144,7 @@ static void print_link_metrics(void *ctx, int cpu, void *data, __u32 size)
     ip_str(link->family, (unsigned char *)&(link->s_ip), dst_ip_str, INET6_ADDRSTRLEN);
     // status infos
     fprintf(stdout,
-        "|%s_%s|%u|%u|%s|%s|%u|%u|%u|%u|%u|%u|%u|%u|%u|%u|%u|%u|%u|%u|%u|%d|%d|%d|%u|%u|%u|%d|%d|%d|%u|%u|%u|%d|%d|%u|%u|%u|%u|%u|%u|\n",
-        OO_NAME,
+        "|%s|%u|%u|%s|%s|%u|%u|%u|%u|%u|%u|%u|%u|%u|%u|%u|%u|%u|%u|%u|%d|%d|%d|%u|%u|%u|%d|%d|%d|%u|%u|%u|%d|%d|%u|%u|%u|%u|%u|%u|\n",
         OO_TYPE_STATUS,
         link->tgid,
         link->role,
@@ -99,8 +187,7 @@ static void print_link_metrics(void *ctx, int cpu, void *data, __u32 size)
         metrics->data.status.ecn_flags);
     // health infos
     fprintf(stdout,
-        "|%s_%s|%u|%u|%s|%s|%u|%u|%u|%llu|%llu|%u|%u|%u|%u|%u|%u|%u|%u|%u|%u|%d|%d|\n",
-        OO_NAME,
+        "|%s|%u|%u|%s|%s|%u|%u|%u|%llu|%llu|%u|%u|%u|%u|%u|%u|%u|%u|%u|%u|%d|%d|\n",
         OO_TYPE_HEALTH,
         link->tgid,
         link->role,
@@ -124,6 +211,9 @@ static void print_link_metrics(void *ctx, int cpu, void *data, __u32 size)
         metrics->data.health.sk_err,
         metrics->data.health.sk_err_soft);
     (void)fflush(stdout);
+
+    report_tcp_health(metrics);
+    report_tcp_status(metrics);
 }
 
 static void load_period(int period_fd, __u32 value)
