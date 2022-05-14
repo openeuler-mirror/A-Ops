@@ -132,37 +132,37 @@ measurements:
             },
             {
                 description: "Count of iscsi operation time out",
-                type: "counter",
+                type: "gauge",
                 name: "count_iscsi_tmout",
             },
             {
                 description: "Count of iscsi operation error",
-                type: "counter",
+                type: "gauge",
                 name: "count_iscsi_err",
             },
             {
                 description: "Count of iscsi transport bad op-code",
-                type: "counter",
+                type: "gauge",
                 name: "conn_err_bad_opcode",
             },
             {
                 description: "Count of iscsi transport xmit failed",
-                type: "counter",
+                type: "gauge",
                 name: "conn_err_xmit_failed",
             },
             {
                 description: "Count of iscsi transport time out",
-                type: "counter",
+                type: "gauge",
                 name: "conn_err_tmout",
             },
             {
                 description: "Count of iscsi transport connection failed",
-                type: "counter",
+                type: "gauge",
                 name: "conn_err_connect_failed",
             },
             {
                 description: "Count of iscsi sas abort",
-                type: "counter",
+                type: "gauge",
                 name: "count_sas_abort",
             }
         )
