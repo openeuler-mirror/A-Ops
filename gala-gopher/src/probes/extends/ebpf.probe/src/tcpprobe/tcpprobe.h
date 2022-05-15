@@ -39,8 +39,8 @@ struct tcp_sock_info {
 
 struct tcp_syn_status {
     __u32 syn_srtt_last;    // FROM tcp_sock.srtt_us when old_state = RCV_SYNC & new_state = EATAB
-    __u32 syn_srtt_max;     // FROM tcp_sock.srtt_us when old_state = RCV_SYNC & new_state = EATAB
-    __u32 syn_srtt_min;     // FROM tcp_sock.srtt_us when old_state = RCV_SYNC & new_state = EATAB
+    //__u32 syn_srtt_max;     // FROM tcp_sock.srtt_us when old_state = RCV_SYNC & new_state = EATAB
+    //__u32 syn_srtt_min;     // FROM tcp_sock.srtt_us when old_state = RCV_SYNC & new_state = EATAB
 };
 
 struct tcp_status {
@@ -197,18 +197,6 @@ struct tcp_statistics {
         \
         (data).status.snd_buf_limit = _((sk)->sk_sndbuf); \
         (data).status.snd_wnd_last = _(__tcp_sock->snd_wnd); \
-    } while (0)
-
-#define TCP_SYN_RTT_UPDATE(status) \
-    do { \
-        if ((status).syn_srtt_min == 0) { \
-            (status).syn_srtt_min = (status).syn_srtt_last; \
-        } else { \
-            (status).syn_srtt_min = \
-                (status).syn_srtt_min > (status).syn_srtt_last ? (status).syn_srtt_last : (status).syn_srtt_min; \
-        } \
-        (status).syn_srtt_max = \
-            (status).syn_srtt_max < (status).syn_srtt_last ? (status).syn_srtt_last : (status).syn_srtt_max; \
     } while (0)
 
 #define TCP_BACKLOG_DROPS_INC(data) __sync_fetch_and_add(&((data).health.backlog_drops), 1)

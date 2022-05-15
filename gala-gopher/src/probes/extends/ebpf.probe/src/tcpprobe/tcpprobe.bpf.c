@@ -364,7 +364,6 @@ KPROBE(tcp_recvmsg, pt_regs)
     metrics = get_tcp_metrics(sk, &new_entry);
     if (metrics) {
         TCP_STATE_UPDATE(metrics->data, sk);
-        TCP_SYN_RTT_UPDATE(metrics->data.syn_status);
         report(ctx, metrics, new_entry);
     }
 }

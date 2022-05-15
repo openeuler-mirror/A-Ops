@@ -144,7 +144,7 @@ static void print_link_metrics(void *ctx, int cpu, void *data, __u32 size)
     ip_str(link->family, (unsigned char *)&(link->s_ip), dst_ip_str, INET6_ADDRSTRLEN);
     // status infos
     fprintf(stdout,
-        "|%s|%u|%u|%s|%s|%u|%u|%u|%u|%u|%u|%u|%u|%u|%u|%u|%u|%u|%u|%u|%d|%d|%d|%u|%u|%u|%d|%d|%d|%u|%u|%u|%d|%d|%u|%u|%u|%u|%u|%u|\n",
+        "|%s|%u|%u|%s|%s|%u|%u|%u|%u|%u|%u|%u|%u|%u|%u|%u|%u|%u|%d|%d|%d|%u|%u|%u|%d|%d|%d|%u|%u|%u|%d|%d|%u|%u|%u|%u|%u|%u|\n",
         OO_TYPE_STATUS,
         link->tgid,
         link->role,
@@ -157,8 +157,6 @@ static void print_link_metrics(void *ctx, int cpu, void *data, __u32 size)
         metrics->data.status.srtt_max,
         metrics->data.status.srtt_min,
         metrics->data.syn_status.syn_srtt_last,
-        metrics->data.syn_status.syn_srtt_max,
-        metrics->data.syn_status.syn_srtt_min,
         metrics->data.status.rcv_wnd_last,
         metrics->data.status.rcv_wnd_max,
         metrics->data.status.rcv_wnd_min,
