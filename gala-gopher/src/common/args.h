@@ -18,14 +18,15 @@
 #define DEFAULT_PERIOD  5
 #define MAX_PATH_LEN    512
 #define BLOCK_NAME      32
+#define __OPT_S "t:T:J:O:D:F:l:U:L:c:p:w:"
 struct probe_params {
     unsigned int period;          // [-t <>] Sampling period, unit second, default is 5 seconds
     unsigned int latency_thr;     // [-T <>] Threshold of latency time, unit ms, default is 0 milliseconds
     unsigned int jitter_thr;      // [-J <>] Threshold of jitter time, unit ms, default is 0 milliseconds
-    unsigned int offline_thr;     // [-o <>] Threshold of offline time, unit ms, default is 0 milliseconds
+    unsigned int offline_thr;     // [-O <>] Threshold of offline time, unit ms, default is 0 milliseconds
     unsigned int drops_count_thr; // [-D <>] Threshold of the number of drop packets, default is 0
     unsigned int filter_pid;      // [-F <>] Filtering PID monitoring ranges by specific pid, default is 0 (no filter)
-    char logs;                    // [-l   ] Enable the logs function
+    char logs;                    // [-l <warn>] Enable the logs function
     char pad[3];                  // Reserved fields;
     char filter_task_probe;       // [-F <>] Filtering PID monitoring ranges by task probe, default is 0 (no filter)
     char res_percent_upper;       // [-U <>] Upper limit of resource percentage, default is 0%
@@ -35,7 +36,7 @@ struct probe_params {
     char elf_path[MAX_PATH_LEN];  // [-p <>] Set ELF file path of the monitored software, default is null 
     char task_whitelist[MAX_PATH_LEN]; // [-w <>] Filtering app monitoring ranges, default is null
 };
-int args_parse(int argc, char **argv, char *opt_str, struct probe_params* params);
+int args_parse(int argc, char **argv, struct probe_params* params);
 int params_parse(char *s, struct probe_params *params);
 
 #endif

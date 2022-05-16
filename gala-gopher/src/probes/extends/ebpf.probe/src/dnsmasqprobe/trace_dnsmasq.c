@@ -130,7 +130,7 @@ int main(int argc, char **argv)
     int elf_num = -1;
     int attach_flag = 0;
 
-    err = args_parse(argc, argv, "t:p:", &params);
+    err = args_parse(argc, argv, &params);
     if (err != 0)
         return -1;
     printf("arg parse interval time:%us\n", params.period);

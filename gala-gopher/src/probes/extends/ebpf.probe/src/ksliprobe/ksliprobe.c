@@ -114,7 +114,7 @@ int main(int argc, char **argv)
 {
     int err;
 
-    err = args_parse(argc, argv, "t:", &params);
+    err = args_parse(argc, argv, &params);
     if (err != 0) {
         return -1;
     }

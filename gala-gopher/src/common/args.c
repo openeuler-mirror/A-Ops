@@ -23,6 +23,7 @@
 #define OUT_PUT_PERIOD_MAX     (120) // 2mim
 #define OUT_PUT_PERIOD_MIN     (1)  // 1s
 #define MAX_PARAM_LEN 128
+#define FILTER_BY_TASKPROBE    "task"
 
 static void __set_default_params(struct probe_params *params)
 {
@@ -30,14 +31,36 @@ static void __set_default_params(struct probe_params *params)
     params->period = DEFAULT_PERIOD;
 }
 
+static char __is_digit_str(const char *s)
+{
+    int len = (int)strlen(s);
+    for (int i = 0; i < len; i++) {
+        if (!(isdigit(s[i])))
+            return 0;
+    }
+    return 1;
+}
+
+static void __filter_arg_parse(char *arg, struct probe_params *params)
+{
+    if (strcmp(arg, FILTER_BY_TASKPROBE) == 0) {
+        params->filter_task_probe = 1;
+        return;
+    }
+
+    if (__is_digit_str(arg)) {
+        params->filter_pid = (unsigned int)atoi(arg);
+        return;
+    }
+
+    (void)strncpy(params->filter_block, arg, BLOCK_NAME - 1);
+    return;
+}
+
 // gala-gopher.conf only support one arg, used set out put period
 static int __period_arg_parse(char opt, char *arg, struct probe_params *params)
 {
-    unsigned int interval = 0;
-    unsigned int flag = 0;
-
-    if ((opt != 't' && opt != 'p' && opt != 'w' && opt != 'c') || arg == NULL)
-        return -1;
+    unsigned int interval, cport_flag;
 
     switch (opt) {
         case 't':
@@ -57,15 +80,39 @@ static int __period_arg_parse(char opt, char *arg, struct probe_params *params)
                 (void)snprintf((void *)params->task_whitelist, MAX_PATH_LEN, "%s", arg);
             break;
         case 'c':
-            flag = (unsigned int)atoi(arg);
-            if (flag != 0 && flag != 1) {
+            cport_flag = (unsigned int)atoi(arg);
+            if (cport_flag != 0 && cport_flag != 1) {
                 printf("Please check arg(t), val shold be 1:cport_valid 0:cport_invalid.\n");
                 return -1;
             }
-            params->cport_flag = (unsigned char)flag;
+            params->cport_flag = (unsigned char)cport_flag;
+            break;
+        case 'T':
+            params->latency_thr = (unsigned int)atoi(arg);
+            break;
+        case 'J':
+            params->jitter_thr = (unsigned int)atoi(arg);
+            break;
+        case 'O':
+            params->offline_thr = (unsigned int)atoi(arg);
+            break;
+        case 'D':
+            params->drops_count_thr = (unsigned int)atoi(arg);
+            break;
+        case 'U':
+            params->res_percent_upper = (char)atoi(arg) % 100;
+            break;
+        case 'L':
+            params->res_percent_lower = (char)atoi(arg) % 100;
+            break;
+        case 'F':
+            __filter_arg_parse(arg, params);
+            break;
+        case 'l':
+            params->logs = 1;
             break;
         default:
-            break;
+            return -1;
     }
 
     return 0;
@@ -79,8 +126,10 @@ static int __args_parse(int argc, char **argv, char *opt_str, struct probe_param
         return -1;
 
     while ((ch = getopt(argc, argv, opt_str)) != -1) {
-        if (!optarg)
+        if (!optarg) {
+            printf("optarg is null(%c).\n", ch);
             return -1;
+        }
 
         if (__period_arg_parse(ch, optarg, params) != 0)
             return -1;
@@ -88,11 +137,11 @@ static int __args_parse(int argc, char **argv, char *opt_str, struct probe_param
     return 0;
 }
 
-int args_parse(int argc, char **argv, char *opt_str, struct probe_params *params)
+int args_parse(int argc, char **argv, struct probe_params *params)
 {
     __set_default_params(params);
 
-    return __args_parse(argc, argv, opt_str, params);
+    return __args_parse(argc, argv, __OPT_S, params);
 }
 
 static void __params_val_parse(char *p, char params_val[], size_t params_len)

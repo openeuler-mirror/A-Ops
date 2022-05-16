@@ -58,7 +58,7 @@ int main(int argc, char **argv)
     int map_fd, err;
     struct perf_buffer* pb = NULL;
 
-    err = args_parse(argc, argv, "t:", &params);
+    err = args_parse(argc, argv, &params);
     if (err != 0)
         return -1;
 

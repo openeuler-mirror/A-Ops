@@ -185,7 +185,7 @@ int main(int argc, char **argv)
     int collect_map_fd = -1;
     int err = -1;
 
-    err = args_parse(argc, argv, "t:", &params);
+    err = args_parse(argc, argv, &params);
     if (err != 0)
         return -1;
 

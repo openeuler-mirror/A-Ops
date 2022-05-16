@@ -141,7 +141,7 @@ int main(int argc, char **argv)
     int err;
     int ret;
 
-    err = args_parse(argc, argv, "t:p:", &params);
+    err = args_parse(argc, argv, &params);
     if (err != 0) {
         return -1;
     }
