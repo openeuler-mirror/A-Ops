@@ -299,7 +299,7 @@ int main(int argc, char **argv)
     struct perf_buffer* pb = NULL;
     FILE *fp = NULL;
 
-    err = args_parse(argc, argv, "t:", &params);
+    err = args_parse(argc, argv, &params);
     if (err != 0) {
         return -1;
     }
