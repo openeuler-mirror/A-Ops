@@ -6,7 +6,7 @@ measurements:
         fields:
         (
             {
-                description: "id of process",
+                description: "tgid of process",
                 type: "key",
                 name: "tgid",
             },
@@ -51,52 +51,52 @@ measurements:
                 name: "tx_bytes",
             },
             {
-                description: "retran packets",
+                description: "retrans packets",
                 type: "gauge",
                 name: "retran_packets",
             },
             {
-                description: "sk_drops",
+                description: "tcp drop counter",
                 type: "gauge",
                 name: "sk_drops",
             },
             {
-                description: "backlog_drops",
+                description: "drops caused by backlog queue full",
                 type: "gauge",
                 name: "backlog_drops",
             },
             {
-                description: "filter_drops",
+                description: "drops caused by socket filter",
                 type: "gauge",
                 name: "filter_drops",
             },
             {
-                description: "tmout_count",
+                description: "counter of tcp link timeout",
                 type: "gauge",
                 name: "tmout_count",
             },
             {
-                description: "rcv_que_full",
+                description: "counter of sk_receive_queue is full",
                 type: "gauge",
                 name: "rcv_que_full_count",
             },
             {
-                description: "sndbuf_limit",
+                description: "counter of limits when allocate wmem",
                 type: "gauge",
                 name: "snd_buf_limit_count",
             },
             {
-                description: "attempt failed",
+                description: "tcp establish failed counter",
                 type: "gauge",
                 name: "attempt_fails",
             },
             {
-                description: "rmem schedule",
+                description: "rmem is not enough",
                 type: "gauge",
                 name: "rmem_scheduls",
             },
             {
-                description: "tcp oom",
+                description: "tcp out of memory",
                 type: "gauge",
                 name: "tcp_oom",
             },
