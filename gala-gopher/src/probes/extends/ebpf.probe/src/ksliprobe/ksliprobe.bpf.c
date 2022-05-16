@@ -52,7 +52,7 @@ struct conn_samp_data_t {
     enum samp_status_t status;
     struct sk_buff *skb;
     u64 start_ts_nsec;
-    u64 end_ts_nsec;
+    u64 rtt_ts_nsec;
 };
 
 struct bpf_map_def SEC("maps") conn_samp_map = {
@@ -107,10 +107,6 @@ static __always_inline void init_conn_samp_data(struct sock *sk)
     bpf_map_update_elem(&conn_samp_map, &sk, &csd, BPF_ANY);
 }
 
-static __always_inline u64 get_samp_rtt(struct conn_samp_data_t *csd)
-{
-    return csd->end_ts_nsec - csd->start_ts_nsec;
-}
 
 // 创建服务端 tcp 连接
 KPROBE_RET(__sys_accept4, pt_regs, CTX_USER)
@@ -323,7 +319,7 @@ static __always_inline void process_rdwr_msg(int fd, const char *buf, const unsi
 
         if (csd->status == SAMP_FINISHED) {
             csd->status = SAMP_INIT;
-            conn_data->current.rtt_nsec = get_samp_rtt(csd);
+            conn_data->current.rtt_nsec = csd->rtt_ts_nsec;
             conn_data->recent = conn_data->current;
             if (conn_data->sample_num == 0) {
                 conn_data->max = conn_data->recent;
@@ -343,12 +339,10 @@ static __always_inline void process_rdwr_msg(int fd, const char *buf, const unsi
             // 超过采样周期，则重置采样状态，避免采样状态一直处于不可达的情况
             if (ts_nsec > csd->start_ts_nsec &&
                 ts_nsec - csd->start_ts_nsec >= __PERIOD) {
-                bpf_printk("Sampling status not finished for a long time, reset.\n");
                 csd->status = SAMP_INIT;
+                csd->start_ts_nsec = 0;
             }
-            if (csd->status != SAMP_INIT) {
-                return;
-            }
+            return;
         }
 
         enum conn_protocol_t protocol = parse_req(conn_data, count, buf);
@@ -358,7 +352,9 @@ static __always_inline void process_rdwr_msg(int fd, const char *buf, const unsi
         if (conn_data->sample_num == 0) {
             conn_data->id.protocol = protocol;
         }
-        csd->start_ts_nsec = ts_nsec;
+        if (csd->start_ts_nsec == 0) {
+            csd->start_ts_nsec = ts_nsec;
+        }
         csd->status = SAMP_READ_READY;
     } else {
         if (csd->status == SAMP_READ_READY) {
@@ -455,12 +451,33 @@ KPROBE(tcp_rate_skb_delivered, pt_regs)
     csd = (struct conn_samp_data_t *)bpf_map_lookup_elem(&conn_samp_map, &sk);
     if (csd != (void *)0) {
         if (csd->status == SAMP_SKB_READY && csd->skb == skb) {
-            csd->end_ts_nsec = bpf_ktime_get_ns();
-            if (csd->end_ts_nsec < csd->start_ts_nsec) {
+            u64 end_ts_nsec = bpf_ktime_get_ns();
+            if (end_ts_nsec < csd->start_ts_nsec) {
                 csd->status = SAMP_INIT;
                 return;
             }
+            csd->rtt_ts_nsec = end_ts_nsec - csd->start_ts_nsec;
+            csd->start_ts_nsec = 0;
             csd->status = SAMP_FINISHED;
+        }
+    }
+}
+
+KPROBE(tcp_recvmsg, pt_regs)
+{
+    struct sock *sk;
+    struct conn_samp_data_t *csd;
+    sk = (struct sock *)PT_REGS_PARM1(ctx);
+
+    csd = (struct conn_samp_data_t *)bpf_map_lookup_elem(&conn_samp_map, &sk);
+    if (csd != (void *)0) {
+        if (csd->status == SAMP_FINISHED || csd->status == SAMP_INIT) {
+            if (sk != (void *)0) {
+                struct sk_buff *skb = _(sk->sk_receive_queue.next);
+                if (skb != (struct sk_buff *)(&sk->sk_receive_queue)){
+                    csd->start_ts_nsec = _(skb->tstamp);
+                }
+            }
         }
     }
 }
