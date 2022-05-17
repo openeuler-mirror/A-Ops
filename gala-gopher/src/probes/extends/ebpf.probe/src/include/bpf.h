@@ -86,7 +86,6 @@ static inline int __debug_printf(const char *format, ...)
 
 #define __maybe_unused      __attribute__((unused))
 
-#include "ver.h"
 #include "__share_map_task.h"
 #include "__share_map_match.h"
 #include "__bpf_kern.h"
