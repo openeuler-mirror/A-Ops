@@ -76,8 +76,6 @@ function install_meta()
 {
     GOPHER_META_DIR=/opt/gala-gopher/meta
 
-    rm -rf $(GOPHER_META_DIR)/*.meta
-
     if [ $# -eq 1 ]; then
         GOPHER_META_DIR=$1/meta
     fi

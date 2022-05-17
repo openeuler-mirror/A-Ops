@@ -10,25 +10,11 @@ EXT_PROBE_BUILD_LIST=`find ${EXT_PROBE_FOLDER} -maxdepth 2 | grep "\<build.sh\>"
 PROBES_LIST=""
 PROBES_C_LIST=""
 PROBES_META_LIST=""
-KERNEL_DEV=""
 
 DAEMON_FOLDER=${PROJECT_FOLDER}/src/daemon
 
 TAILOR_PATH=${PROJECT_FOLDER}/tailor.conf
 TAILOR_PATH_TMP=${TAILOR_PATH}.tmp
-
-function get_kernel_devel_dir()
-{
-    ver=`rpm -qi kernel-devel | grep -w Version | awk -F ': ' '{print $2}'`
-    rel=`rpm -qi kernel-devel | grep -w Release | awk -F ': ' '{print $2}'`
-    dir=/lib/modules/${ver}-${rel}.$(uname -m)/build/include/generated
-    if [ -d $dir ]; then
-        KERNEL_DEV=$dir
-    else
-        echo "error: can't find kernel devel rpm, pls check it."
-        return 1
-    fi
-}
 
 function load_tailor()
 {
@@ -110,7 +96,7 @@ function compile_daemon_release()
     mkdir build
     cd build
 
-    cmake -DGOPHER_DEBUG="0" -DKERNEL_DEV="${KERNEL_DEV}" -DPROBES_C_LIST="${PROBES_C_LIST}" -DPROBES_LIST="${PROBES_LIST}" -DPROBES_META_LIST="${PROBES_META_LIST}" ..
+    cmake -DGOPHER_DEBUG="0" -DPROBES_C_LIST="${PROBES_C_LIST}" -DPROBES_LIST="${PROBES_LIST}" -DPROBES_META_LIST="${PROBES_META_LIST}" ..
     make
 }
 
@@ -121,7 +107,7 @@ function compile_daemon_debug()
     mkdir build
     cd build
 
-    cmake -DGOPHER_DEBUG="1" -DKERNEL_DEV="${KERNEL_DEV}" -DPROBES_C_LIST="${PROBES_C_LIST}" -DPROBES_LIST="${PROBES_LIST}" -DPROBES_META_LIST="${PROBES_META_LIST}" ..
+    cmake -DGOPHER_DEBUG="1" -DPROBES_C_LIST="${PROBES_C_LIST}" -DPROBES_LIST="${PROBES_LIST}" -DPROBES_META_LIST="${PROBES_META_LIST}" ..
     make
 }
 
@@ -247,7 +233,6 @@ fi
 
 if [ "$1" = "--release" ];then
     load_tailor
-    get_kernel_devel_dir
     prepare_probes
     compile_daemon_release
     compile_extend_probes_release
@@ -257,7 +242,6 @@ fi
 
 if [ "$1" = "--debug" ];then
     load_tailor
-    get_kernel_devel_dir
     prepare_probes
     compile_daemon_debug
     compile_extend_probes_debug
