@@ -15,6 +15,7 @@
 #ifndef __BASE_H__
 #define __BASE_H__
 
+#include "ver.h"
 #define GALA_GOPHER_INFO(description)   1
 
 #ifndef GOPHER_DEBUG
