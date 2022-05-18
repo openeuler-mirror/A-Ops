@@ -120,6 +120,12 @@ int main(int argc, char **argv)
     }
     printf("arg parse interval time:%us\n", params.period);
 
+#ifdef KERNEL_SUPPORT_TSTAMP
+    load_tc_ingress_bpf(params.netcard_list);
+#else
+    printf("The kernel version does not support loading the tc tstamp program\n");
+#endif
+
 	INIT_BPF_APP(ksliprobe, EBPF_RLIM_LIMITED);
     LOAD(ksliprobe, err);
 
@@ -143,5 +149,8 @@ int main(int argc, char **argv)
 
 err:
     UNLOAD(ksliprobe);
+#ifdef KERNEL_SUPPORT_TSTAMP
+    offload_tc_ingress_bpf();
+#endif
     return -err;
 }

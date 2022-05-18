@@ -4,6 +4,7 @@ INCLUDES = $(BASE_INC)
 #CFLAGS += -DREDIS_VERSION=$(REDIS_VERSION)
 
 APP := ksliprobe
+TC_BPF := tc_tstamp.bpf.o
 
 BPF_C := $(wildcard *.bpf.c)
 DEPS := $(patsubst %.bpf.c, %.bpf.o, $(BPF_C))
@@ -37,4 +38,4 @@ clean:
 install:
 	mkdir -p $(INSTALL_DIR)
 	cp $(APP) $(INSTALL_DIR)
-
+	cp $(TC_BPF) $(INSTALL_DIR)
