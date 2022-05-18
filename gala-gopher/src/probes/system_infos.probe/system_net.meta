@@ -13,42 +13,42 @@ measurements:
             },
             {
                 description: "rx_bytes",
-                type: "counter",
+                type: "gauge",
                 name: "rx_bytes",
             },
             {
                 description: "rx_packets",
-                type: "counter",
+                type: "gauge",
                 name: "rx_packets",
             },
             {
                 description: "rx_errs",
-                type: "counter",
+                type: "gauge",
                 name: "rx_errs",
             },
             {
                 description: "rx_dropped",
-                type: "counter",
+                type: "gauge",
                 name: "rx_dropped",
             },
             {
                 description: "tx_bytes",
-                type: "counter",
+                type: "gauge",
                 name: "tx_bytes",
             },
             {
                 description: "tx_packets",
-                type: "counter",
+                type: "gauge",
                 name: "tx_packets",
             },
             {
                 description: "tx_errs",
-                type: "counter",
+                type: "gauge",
                 name: "tx_errs",
             },
             {
                 description: "tx_dropped",
-                type: "counter",
+                type: "gauge",
                 name: "tx_dropped",
             },
         )

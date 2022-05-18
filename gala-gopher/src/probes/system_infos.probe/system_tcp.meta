@@ -13,37 +13,37 @@ measurements:
             },
             {
                 description: "tcp_curr_estab",
-                type: "gause",
+                type: "gauge",
                 name: "tcp_curr_estab",
             },
             {
                 description: "tcp_in_segs",
-                type: "counter",
+                type: "gauge",
                 name: "tcp_in_segs",
             },
             {
                 description: "tcp_out_segs",
-                type: "counter",
+                type: "gauge",
                 name: "tcp_out_segs",
             },
             {
                 description: "tcp_retrans_segs",
-                type: "counter",
+                type: "gauge",
                 name: "tcp_retrans_segs",
             },
             {
                 description: "tcp_in_errs",
-                type: "counter",
+                type: "gauge",
                 name: "tcp_in_errs",
             },
             {
                 description: "udp_indata_grams",
-                type: "counter",
+                type: "gauge",
                 name: "udp_indata_grams",
             },
             {
                 description: "udp_outdata_grams",
-                type: "counter",
+                type: "gauge",
                 name: "udp_outdata_grams",
             }
         )
