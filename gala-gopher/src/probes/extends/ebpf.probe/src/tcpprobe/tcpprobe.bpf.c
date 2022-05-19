@@ -237,8 +237,8 @@ static __always_inline void report(void *ctx, struct tcp_metrics_s *metrics, u32
         metrics->ts = ts;
         (void)bpf_perf_event_output(ctx, &output, BPF_F_CURRENT_CPU, metrics, sizeof(struct tcp_metrics_s));
     }
-    __builtin_memset(&(metrics->data.status), 0x0, sizeof(metrics->data.status));
     __builtin_memset(&(metrics->data.health), 0x0, sizeof(metrics->data.health));
+    __builtin_memset(&(metrics->data.info), 0x0, sizeof(metrics->data.info));
 }
 
 #define __TCP_FD_MAX (50)
@@ -295,6 +295,130 @@ static void load_tcp_fd(u32 tgid)
     (void)bpf_map_delete_elem(&tcp_fd_map, &tgid);
 }
 
+static void get_tcp_wnd(struct sock *sk, struct tcp_state* info)
+{
+    struct tcp_sock *tcp_sk = (struct tcp_sock *)sk;
+    u32 write_seq = _(tcp_sk->write_seq);
+    u32 snd_nxt = _(tcp_sk->snd_nxt);
+    u32 snd_wnd = _(tcp_sk->snd_wnd);
+    u32 snd_una = _(tcp_sk->snd_una);
+    u32 rcv_wnd = _(tcp_sk->rcv_wnd);
+
+    if (write_seq > snd_nxt) {
+        info->tcpi_notsent_bytes = max(write_seq - snd_nxt, info->tcpi_notsent_bytes);
+    }
+
+    if (snd_nxt > snd_una) {
+        info->tcpi_notack_bytes = max(snd_nxt - snd_una, info->tcpi_notack_bytes);
+    }
+
+    info->tcpi_snd_wnd = min_zero(info->tcpi_snd_wnd, snd_wnd);
+    info->tcpi_rcv_wnd = min_zero(info->tcpi_rcv_wnd, rcv_wnd);
+}
+
+static void tcp_compute_delivery_rate(struct tcp_sock *tcp_sk, struct tcp_state* info)
+{
+    u32 rate = _(tcp_sk->rate_delivered);
+    u32 intv = _(tcp_sk->rate_interval_us);
+    u32 mss_cache = _(tcp_sk->mss_cache);
+    u64 rate64 = 0;
+
+    if (rate && intv) {
+        rate64 = (u64)rate * mss_cache * USEC_PER_SEC;
+    }
+
+    info->tcpi_delivery_rate = min_zero(info->tcpi_delivery_rate, rate64);
+    return;
+}
+
+static __always_inline unsigned int jiffies_to_usecs(unsigned long j)
+{
+    return (USEC_PER_SEC / HZ) * j;
+}
+
+static void get_tcp_info(struct sock *sk, struct tcp_state* info)
+{
+    u32 chrono_stat[3] = {0};
+    u32 tmp;
+    struct tcp_sock *tcp_sk = (struct tcp_sock *)sk;
+    struct inet_connection_sock *icsk = (struct inet_connection_sock *)sk;
+
+    tmp = jiffies_to_usecs(_(icsk->icsk_rto));
+    info->tcpi_rto = max(info->tcpi_rto, tmp);
+
+    tmp = jiffies_to_usecs(_(icsk->icsk_ack.ato));
+    info->tcpi_ato = max(info->tcpi_ato, tmp);
+
+    tmp = _(tcp_sk->srtt_us) >> 3;
+    info->tcpi_srtt = max(info->tcpi_srtt, tmp);
+
+    tmp = _(tcp_sk->snd_ssthresh);
+    info->tcpi_snd_ssthresh = min_zero(info->tcpi_snd_ssthresh, tmp);
+
+    tmp = _(tcp_sk->rcv_ssthresh);
+    info->tcpi_rcv_ssthresh = min_zero(info->tcpi_rcv_ssthresh, tmp);
+
+    tmp = _(tcp_sk->snd_cwnd);
+    info->tcpi_snd_cwnd = min_zero(info->tcpi_snd_cwnd, tmp);
+
+    tmp = _(tcp_sk->advmss);
+    info->tcpi_advmss = max(info->tcpi_advmss, tmp);
+
+    tmp = _(tcp_sk->reordering);
+    info->tcpi_reordering = max(info->tcpi_reordering, tmp);
+
+    tmp = _(tcp_sk->rcv_rtt_est.rtt_us);
+    tmp = tmp >> 3;
+    info->tcpi_rcv_rtt = max(info->tcpi_rcv_rtt, tmp);
+
+    tmp = _(tcp_sk->rcvq_space.space);
+    info->tcpi_rcv_space = min_zero(info->tcpi_rcv_space, tmp);
+
+    tcp_compute_delivery_rate(tcp_sk, info);
+
+    bpf_probe_read(chrono_stat, 3 * sizeof(u32), &(tcp_sk->chrono_stat));
+
+    tmp = chrono_stat[0] + chrono_stat[1] + chrono_stat[2];
+    info->tcpi_busy_time = max(info->tcpi_busy_time, tmp);
+
+    tmp = chrono_stat[1];
+    info->tcpi_rwnd_limited = max(info->tcpi_rwnd_limited, tmp);
+
+    tmp = chrono_stat[2];
+    info->tcpi_sndbuf_limited = max(info->tcpi_sndbuf_limited, tmp);
+
+    tmp = _(sk->sk_pacing_rate);
+    if (tmp != ~0U) {
+        info->tcpi_pacing_rate = min_zero(info->tcpi_pacing_rate, tmp);
+    }
+
+    tmp = _(sk->sk_max_pacing_rate);
+    if (tmp != ~0U) {
+        info->tcpi_max_pacing_rate = min_zero(info->tcpi_max_pacing_rate, tmp);
+    }
+
+    tmp = _(sk->sk_error_queue.qlen);
+    info->tcpi_sk_err_que_size = max(info->tcpi_sk_err_que_size, tmp);
+
+    tmp = _(sk->sk_receive_queue.qlen);
+    info->tcpi_sk_rcv_que_size = max(info->tcpi_sk_rcv_que_size, tmp);
+
+    tmp = _(sk->sk_write_queue.qlen);
+    info->tcpi_sk_wri_que_size = max(info->tcpi_sk_wri_que_size, tmp);
+
+    tmp = (u32)_(sk->sk_backlog.len);
+    info->tcpi_sk_backlog_size = max(info->tcpi_sk_backlog_size, tmp);
+
+    tmp = (u32)_(sk->sk_omem_alloc.counter);
+    info->tcpi_sk_omem_size = max(info->tcpi_sk_omem_size, tmp);
+
+    tmp = (u32)_(sk->sk_forward_alloc);
+    info->tcpi_sk_forward_size = max(info->tcpi_sk_forward_size, tmp);
+
+    tmp = (u32)_(sk->sk_wmem_alloc.refs.counter);
+    info->tcpi_sk_wmem_size = max(info->tcpi_sk_wmem_size, tmp);
+}
+
 KPROBE(tcp_set_state, pt_regs)
 {
     struct tcp_sock_info tcp_sock_data = {0};
@@ -344,7 +468,8 @@ KPROBE(tcp_sendmsg, pt_regs)
     metrics = get_tcp_metrics(sk, &new_entry);
     if (metrics) {
         TCP_TX_XADD(metrics->data, size);
-        SND_TCP_STATE_UPDATE(metrics->data, sk);
+        get_tcp_info(sk, &(metrics->data.info));
+        get_tcp_wnd(sk, &(metrics->data.info));
         report(ctx, metrics, new_entry);
     }
 }
@@ -363,7 +488,8 @@ KPROBE(tcp_recvmsg, pt_regs)
 
     metrics = get_tcp_metrics(sk, &new_entry);
     if (metrics) {
-        TCP_STATE_UPDATE(metrics->data, sk);
+        get_tcp_info(sk, &(metrics->data.info));
+        get_tcp_wnd(sk, &(metrics->data.info));
         report(ctx, metrics, new_entry);
     }
 }
@@ -403,31 +529,6 @@ KPROBE_RET(tcp_add_backlog, pt_regs, CTX_KERNEL)
         }
     }
 }
-
-#if 0
-KPROBE_RET(tcp_v4_inbound_md5_hash, pt_regs, CTX_KERNEL)
-{
-    u32 new_entry = 0;
-    bool discard = (bool)PT_REGS_RC(ctx);
-    struct sock *sk;
-    struct probe_val val;
-    struct tcp_metrics_s *metrics;
-
-    if (PROBE_GET_PARMS(tcp_v4_inbound_md5_hash, ctx, val, CTX_KERNEL) < 0)
-        return;
-
-    if (discard) {
-
-        sk = (struct sock *)PROBE_PARM1(val);
-
-        metrics = get_tcp_metrics(sk, &new_entry);
-        if (metrics) {
-            TCP_MD5_DROPS_INC(metrics->data);
-            report(ctx, metrics, new_entry);
-        }
-    }
-}
-#endif
 
 KPROBE_RET(tcp_filter, pt_regs, CTX_KERNEL)
 {
@@ -497,20 +598,6 @@ KRAWTRACE(sock_exceed_buf_limit, bpf_raw_tracepoint_args)
     }
 }
 
-KRAWTRACE(sock_rcvqueue_full, bpf_raw_tracepoint_args)
-{
-    u32 new_entry __maybe_unused = 0;
-    struct sock *sk = (struct sock*)ctx->args[0];
-    struct tcp_metrics_s *metrics;
-    u32 pid __maybe_unused = bpf_get_current_pid_tgid();
-
-    metrics = get_tcp_metrics(sk, &new_entry);
-    if (metrics) {
-        TCP_RCVQUE_FULL_INC(metrics->data);
-        report(ctx, metrics, new_entry);
-    }
-}
-
 KRAWTRACE(tcp_send_reset, bpf_raw_tracepoint_args)
 {
     u32 new_entry __maybe_unused = 0;
@@ -538,21 +625,6 @@ KRAWTRACE(tcp_receive_reset, bpf_raw_tracepoint_args)
         report(ctx, metrics, new_entry);
     }
 }
-
-#if 0
-KRAWTRACE(tcp_retransmit_synack, bpf_raw_tracepoint_args)
-{
-    u32 new_entry __maybe_unused = 0;
-    struct sock *sk = (struct sock *)ctx->args[0];
-    struct tcp_metrics_s *metrics;
-
-    metrics = get_tcp_metrics(sk, &new_entry);
-    if (metrics) {
-        TCP_SYNACK_RETRANS_INC(metrics->data);
-        report(ctx, metrics, new_entry);
-    }
-}
-#endif
 
 KPROBE(tcp_retransmit_skb, pt_regs)
 {

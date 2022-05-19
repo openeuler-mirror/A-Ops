@@ -80,6 +80,8 @@ function install_meta()
         GOPHER_META_DIR=$1/meta
     fi
 
+    rm -rf ${GOPHER_META_DIR}/*.meta
+
     cd ${PROJECT_FOLDER}
 
     # install meta files

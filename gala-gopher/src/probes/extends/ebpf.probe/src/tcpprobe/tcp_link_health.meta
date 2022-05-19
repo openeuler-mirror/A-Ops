@@ -41,29 +41,19 @@ measurements:
                 name: "protocol",
             },
             {
-                description: "rx bytes",
-                type: "gauge",
-                name: "rx_bytes",
-            },
-            {
-                description: "tx bytes",
-                type: "gauge",
-                name: "tx_bytes",
-            },
-            {
                 description: "retrans packets",
                 type: "gauge",
                 name: "retran_packets",
             },
             {
-                description: "tcp drop counter",
-                type: "gauge",
-                name: "sk_drops",
-            },
-            {
                 description: "drops caused by backlog queue full",
                 type: "gauge",
                 name: "backlog_drops",
+            },
+            {
+                description: "tcp drop counter",
+                type: "gauge",
+                name: "sk_drops",
             },
             {
                 description: "drops caused by socket filter",
@@ -74,11 +64,6 @@ measurements:
                 description: "counter of tcp link timeout",
                 type: "gauge",
                 name: "tmout_count",
-            },
-            {
-                description: "counter of sk_receive_queue is full",
-                type: "gauge",
-                name: "rcv_que_full_count",
             },
             {
                 description: "counter of limits when allocate wmem",
@@ -99,6 +84,16 @@ measurements:
                 description: "tcp out of memory",
                 type: "gauge",
                 name: "tcp_oom",
+            },
+            {
+                description: "send_rsts",
+                type: "gauge",
+                name: "send_rsts",
+            },
+            {
+                description: "receive_rsts",
+                type: "gauge",
+                name: "receive_rsts",
             },
             {
                 description: "sk_err",

@@ -34,8 +34,8 @@
 #include "tcpprobe.h"
 #include "event.h"
 
-#define OO_TYPE_STATUS "tcp_link_status"
 #define OO_TYPE_HEALTH "tcp_link_health"
+#define OO_TYPE_INFO "tcp_link_info"
 
 static struct probe_params params = {.period = DEFAULT_PERIOD,
                                      .cport_flag = 0};
@@ -121,7 +121,7 @@ static void report_tcp_status(struct tcp_metrics_s *metrics)
     latency_thr_us = params.latency_thr << 3; // milliseconds to microseconds
     if ((latency_thr_us != 0) && (syn->syn_srtt_last > latency_thr_us)) {
         build_entity_id(&metrics->link, entityId, __ENTITY_ID_LEN);
-        report_logs(OO_TYPE_STATUS,
+        report_logs(OO_TYPE_INFO,
                     entityId,
                     "syn_srtt_last",
                     EVT_SEC_WARN,
@@ -142,50 +142,10 @@ static void print_link_metrics(void *ctx, int cpu, void *data, __u32 size)
 
     ip_str(link->family, (unsigned char *)&(link->c_ip), src_ip_str, INET6_ADDRSTRLEN);
     ip_str(link->family, (unsigned char *)&(link->s_ip), dst_ip_str, INET6_ADDRSTRLEN);
-    // status infos
-    fprintf(stdout,
-        "|%s|%u|%u|%s|%s|%u|%u|%u|%u|%u|%u|%u|%u|%u|%u|%u|%u|%u|%d|%d|%d|%u|%u|%u|%d|%d|%d|%u|%u|%u|%d|%d|%u|%u|%u|%u|%u|%u|\n",
-        OO_TYPE_STATUS,
-        link->tgid,
-        link->role,
-        src_ip_str,
-        dst_ip_str,
-        link->c_port,
-        link->s_port,
-        link->family,
-        metrics->data.status.srtt_last,
-        metrics->data.status.srtt_max,
-        metrics->data.status.srtt_min,
-        metrics->data.syn_status.syn_srtt_last,
-        metrics->data.status.rcv_wnd_last,
-        metrics->data.status.rcv_wnd_max,
-        metrics->data.status.rcv_wnd_min,
-        metrics->data.status.snd_wnd_last,
-        metrics->data.status.send_rsts,
-        metrics->data.status.receive_rsts,
-        metrics->data.status.snd_mem_last,
-        metrics->data.status.snd_mem_max,
-        metrics->data.status.snd_mem_min,
-        metrics->data.status.snd_que_last,
-        metrics->data.status.snd_que_max,
-        metrics->data.status.snd_que_min,
-        metrics->data.status.rcv_mem_last,
-        metrics->data.status.rcv_mem_max,
-        metrics->data.status.rcv_mem_min,
-        metrics->data.status.rcv_que_last,
-        metrics->data.status.rcv_que_max,
-        metrics->data.status.rcv_que_min,
-        metrics->data.status.omem_alloc,
-        metrics->data.status.forward_mem,
-        metrics->data.status.rcv_buf_limit,
-        metrics->data.status.snd_buf_limit,
-        metrics->data.status.pacing_rate_last,
-        metrics->data.status.pacing_rate_max,
-        metrics->data.status.pacing_rate_min,
-        metrics->data.status.ecn_flags);
+
     // health infos
     fprintf(stdout,
-        "|%s|%u|%u|%s|%s|%u|%u|%u|%llu|%llu|%u|%u|%u|%u|%u|%u|%u|%u|%u|%u|%d|%d|\n",
+        "|%s|%u|%u|%s|%s|%u|%u|%u|%u|%u|%u|%u|%u|%u|%u|%u|%u|%u|%u|%d|%d|\n",
         OO_TYPE_HEALTH,
         link->tgid,
         link->role,
@@ -194,20 +154,62 @@ static void print_link_metrics(void *ctx, int cpu, void *data, __u32 size)
         link->c_port,
         link->s_port,
         link->family,
-        metrics->data.health.rx,
-        metrics->data.health.tx,
         metrics->data.health.total_retrans,
-        metrics->data.health.sk_drops,
         metrics->data.health.backlog_drops,
+        metrics->data.health.sk_drops,
         metrics->data.health.filter_drops,
         metrics->data.health.tmout,
-        metrics->data.health.rcvque_full,
         metrics->data.health.sndbuf_limit,
         metrics->data.health.attempt_fails,
         metrics->data.health.rmem_scheduls,
         metrics->data.health.tcp_oom,
+        metrics->data.health.send_rsts,
+        metrics->data.health.receive_rsts,
         metrics->data.health.sk_err,
         metrics->data.health.sk_err_soft);
+
+    // tcp infos
+    fprintf(stdout,
+        "|%s|%u|%u|%s|%s|%u|%u|%u|%llu|%llu|%u|%u|%u|%u|%u"
+        "|%u|%u|%u|%u|%u|%u|%u|%u|%u|%llu|%u|%u|%u|%u|%u|%u|%u|%u|%u|%u|%u|%u|%u|\n",
+        OO_TYPE_INFO,
+        link->tgid,
+        link->role,
+        src_ip_str,
+        dst_ip_str,
+        link->c_port,
+        link->s_port,
+        link->family,
+        metrics->data.info.rx,
+        metrics->data.info.tx,
+        metrics->data.info.tcpi_rto,
+        metrics->data.info.tcpi_ato,
+        metrics->data.info.tcpi_srtt,
+        metrics->data.info.tcpi_snd_ssthresh,
+        metrics->data.info.tcpi_rcv_ssthresh,
+        metrics->data.info.tcpi_snd_cwnd,
+        metrics->data.info.tcpi_advmss,
+        metrics->data.info.tcpi_reordering,
+        metrics->data.info.tcpi_rcv_rtt,
+        metrics->data.info.tcpi_rcv_space,
+        metrics->data.info.tcpi_notsent_bytes,
+        metrics->data.info.tcpi_notack_bytes,
+        metrics->data.info.tcpi_snd_wnd,
+        metrics->data.info.tcpi_rcv_wnd,
+        metrics->data.info.tcpi_delivery_rate,
+        metrics->data.info.tcpi_busy_time,
+        metrics->data.info.tcpi_rwnd_limited,
+        metrics->data.info.tcpi_sndbuf_limited,
+        metrics->data.info.tcpi_pacing_rate,
+        metrics->data.info.tcpi_max_pacing_rate,
+        metrics->data.info.tcpi_sk_err_que_size,
+        metrics->data.info.tcpi_sk_rcv_que_size,
+        metrics->data.info.tcpi_sk_wri_que_size,
+        metrics->data.syn_status.syn_srtt_last,
+        metrics->data.info.tcpi_sk_backlog_size,
+        metrics->data.info.tcpi_sk_omem_size,
+        metrics->data.info.tcpi_sk_forward_size,
+        metrics->data.info.tcpi_sk_wmem_size);
     (void)fflush(stdout);
 
     report_tcp_health(metrics);

@@ -77,6 +77,9 @@ static inline int __debug_printf(const char *format, ...)
 
 #define KERNEL_VERSION(a, b, c) (((a) << 16) + ((b) << 8) + (c))
 #define CURRENT_KERNEL_VERSION KERNEL_VERSION(KER_VER_MAJOR, KER_VER_MINOR, KER_VER_PATCH)
+#define max(x, y) ((x) > (y) ? (x) : (y))
+#define min(x, y) ((x) < (y) ? (x) : (y))
+#define min_zero(x, y) ((x) == 0 ? (y) : (((x) < (y) ? (x) : (y))))
 
 #define SPLIT_NEWLINE_SYMBOL(s) \
     do { \
@@ -87,6 +90,16 @@ static inline int __debug_printf(const char *format, ...)
     } while (0)
 
 #define __maybe_unused      __attribute__((unused))
+
+#define HZ 100
+
+#define MSEC_PER_SEC	1000L
+#define USEC_PER_MSEC	1000L
+#define NSEC_PER_USEC	1000L
+#define NSEC_PER_MSEC	1000000L
+#define USEC_PER_SEC	1000000L
+#define NSEC_PER_SEC	1000000000L
+#define FSEC_PER_SEC	1000000000000000LL
 
 #include "__share_map_task.h"
 #include "__share_map_match.h"
