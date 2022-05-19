@@ -309,13 +309,6 @@ static int ConfigMgrLoadProbesConfig(void *config, config_setting_t *settings)
         } else {
             _probeConfig->probeSwitch = PROBE_SWITCH_OFF;
         }
-
-        ret = config_setting_lookup_int(_probe, "interval", &intVal);
-        if (ret == 0) {
-            ERROR("[CONFIG] load config for probe interval failed.\n");
-            return -1;
-        }
-        _probeConfig->interval = intVal;
     }
 
     return 0;
