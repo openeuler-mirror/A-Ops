@@ -316,6 +316,36 @@ static void get_tcp_wnd(struct sock *sk, struct tcp_state* info)
     info->tcpi_rcv_wnd = min_zero(info->tcpi_rcv_wnd, rcv_wnd);
 }
 
+static void tcp_compute_busy_time(struct tcp_sock *tcp_sk, struct tcp_state* info)
+{
+    u32 i;
+    u8 chrono_type;
+    u32 chrono_stat[3] = {0};
+    u32 chrono_start;
+    u64 total = 0;
+    u64 stats[__TCP_CHRONO_MAX];
+    u64 ms = bpf_ktime_get_ns() >> 6; // ns -> ms
+
+    chrono_start = _(tcp_sk->chrono_start);
+    bpf_probe_read(chrono_stat, 3 * sizeof(u32), &(tcp_sk->chrono_stat));
+    bpf_probe_read(&chrono_type, sizeof(u8), (char *)&(tcp_sk->chrono_stat) + 3 * sizeof(u32));
+
+    chrono_type &= 0xC0;
+
+#pragma clang loop unroll(full)
+    for (i = TCP_CHRONO_BUSY; i < __TCP_CHRONO_MAX; ++i) {
+        stats[i] = chrono_stat[i - 1];
+        if (i == chrono_type)
+            stats[i] += (ms > chrono_start) ? (ms - chrono_start) : 0;
+        stats[i] *= USEC_PER_SEC / HZ;
+        total += stats[i];
+    }
+
+    info->tcpi_busy_time = total;
+    info->tcpi_rwnd_limited = stats[TCP_CHRONO_RWND_LIMITED];
+    info->tcpi_sndbuf_limited = stats[TCP_CHRONO_SNDBUF_LIMITED];
+}
+
 static void tcp_compute_delivery_rate(struct tcp_sock *tcp_sk, struct tcp_state* info)
 {
     u32 rate = _(tcp_sk->rate_delivered);
@@ -338,7 +368,6 @@ static __always_inline unsigned int jiffies_to_usecs(unsigned long j)
 
 static void get_tcp_info(struct sock *sk, struct tcp_state* info)
 {
-    u32 chrono_stat[3] = {0};
     u32 tmp;
     struct tcp_sock *tcp_sk = (struct tcp_sock *)sk;
     struct inet_connection_sock *icsk = (struct inet_connection_sock *)sk;
@@ -376,16 +405,7 @@ static void get_tcp_info(struct sock *sk, struct tcp_state* info)
 
     tcp_compute_delivery_rate(tcp_sk, info);
 
-    bpf_probe_read(chrono_stat, 3 * sizeof(u32), &(tcp_sk->chrono_stat));
-
-    tmp = chrono_stat[0] + chrono_stat[1] + chrono_stat[2];
-    info->tcpi_busy_time = max(info->tcpi_busy_time, tmp);
-
-    tmp = chrono_stat[1];
-    info->tcpi_rwnd_limited = max(info->tcpi_rwnd_limited, tmp);
-
-    tmp = chrono_stat[2];
-    info->tcpi_sndbuf_limited = max(info->tcpi_sndbuf_limited, tmp);
+    tcp_compute_busy_time(tcp_sk, info);
 
     tmp = _(sk->sk_pacing_rate);
     if (tmp != ~0U) {
