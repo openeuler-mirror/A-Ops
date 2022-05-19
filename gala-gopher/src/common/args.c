@@ -152,7 +152,7 @@ static void __params_val_parse(char *p, char params_val[], size_t params_len)
 {
     size_t index = 0;
     size_t len = strlen(p);
-    for (int i = 0; i < len; i++) {
+    for (int i = 1; i < len; i++) {
         if (p[i] == '-') {
             break;
         }
@@ -172,10 +172,14 @@ int params_parse(char *s, struct probe_params *params)
     char *p;
     char opt;
     char params_val[MAX_PARAM_LEN];
+    char temp[MAX_PARAM_LEN];
+
+    temp[0] = 0;
+    (void)strcpy(temp, s);
 
     __set_default_params(params);
 
-    p = strtok(s, "-");
+    p = strtok(temp, "-");
     while (p != NULL) {
         opt = *p;
         params_val[0] = 0;
@@ -183,7 +187,7 @@ int params_parse(char *s, struct probe_params *params)
         if (__period_arg_parse(opt, params_val, params) != 0)
             return -1;
 
-        p = strtok(NULL, " ");
+        p = strtok(NULL, "-");
     }
     return 0;
 }

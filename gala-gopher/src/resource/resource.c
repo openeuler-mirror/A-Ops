@@ -191,7 +191,6 @@ static int ProbeMgrInit(ResourceMgr *resourceMgr)
             continue;
 
         // refresh probe configuration
-        probe->interval = _probeConfig->interval;
         probe->probeSwitch = _probeConfig->probeSwitch;
         ret = params_parse(_probeConfig->param, &probe->params);
         if (ret != 0) {

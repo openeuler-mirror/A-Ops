@@ -36,7 +36,6 @@ typedef struct {
     char name[MAX_PROBE_NAME_LEN];       // key
     char metaPath[MAX_META_PATH_LEN];
 
-    uint32_t interval;
     ProbeSwitch probeSwitch;
     Fifo *fifo;
     ProbeMain func;
