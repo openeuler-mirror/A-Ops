@@ -111,6 +111,10 @@ static int __period_arg_parse(char opt, char *arg, struct probe_params *params)
         case 'l':
             params->logs = 1;
             break;
+        case 'n':
+            if (arg != NULL)
+                (void)snprintf((void *)params->netcard_list, MAX_PATH_LEN, "%s", arg);
+            break;
         default:
             return -1;
     }

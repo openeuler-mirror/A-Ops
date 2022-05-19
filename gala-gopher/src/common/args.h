@@ -18,7 +18,7 @@
 #define DEFAULT_PERIOD  5
 #define MAX_PATH_LEN    512
 #define BLOCK_NAME      32
-#define __OPT_S "t:T:J:O:D:F:l:U:L:c:p:w:"
+#define __OPT_S "t:T:J:O:D:F:l:U:L:c:p:w:n:"
 struct probe_params {
     unsigned int period;          // [-t <>] Sampling period, unit second, default is 5 seconds
     unsigned int latency_thr;     // [-T <>] Threshold of latency time, unit ms, default is 0 milliseconds
@@ -35,6 +35,7 @@ struct probe_params {
     char filter_block[BLOCK_NAME];// [-F <>] Filtering block device monitoring ranges, default is null 
     char elf_path[MAX_PATH_LEN];  // [-p <>] Set ELF file path of the monitored software, default is null 
     char task_whitelist[MAX_PATH_LEN]; // [-w <>] Filtering app monitoring ranges, default is null
+    char netcard_list[MAX_PATH_LEN]; // [-n <>] Network cards that need to enable tc ingress bpf, default is null
 };
 int args_parse(int argc, char **argv, struct probe_params* params);
 int params_parse(char *s, struct probe_params *params);

@@ -50,7 +50,6 @@
 #define PT_REGS_PARM6(x) (((PT_REGS_ARM64 *)(x))->regs[5])
 #endif
 
-#define KERNEL_VERSION(a, b, c) (((a) << 16) + ((b) << 8) + (c))
 
 static __always_inline __maybe_unused struct sock *sock_get_by_fd(int fd, struct task_struct *task)
 {

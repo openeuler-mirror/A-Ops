@@ -75,6 +75,8 @@ static inline int __debug_printf(const char *format, ...)
 
 #define INFO printf
 
+#define KERNEL_VERSION(a, b, c) (((a) << 16) + ((b) << 8) + (c))
+#define CURRENT_KERNEL_VERSION KERNEL_VERSION(KER_VER_MAJOR, KER_VER_MINOR, KER_VER_PATCH)
 
 #define SPLIT_NEWLINE_SYMBOL(s) \
     do { \

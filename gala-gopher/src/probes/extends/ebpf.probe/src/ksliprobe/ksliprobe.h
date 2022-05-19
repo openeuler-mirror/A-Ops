@@ -15,6 +15,8 @@
 #ifndef __KSLIPROBE_H__
 #define __KSLIPROBE_H__
 
+#define TC_PROG "tc_tstamp.bpf.o"
+
 #define MAX_COMMAND_REQ_SIZE (32 - 1)     // todo:command max待定
 
 #define FIND0_MSG_START 0
@@ -26,6 +28,20 @@
 
 #define SLI_OK       0
 #define SLI_ERR      (-1)
+
+#define NAME_MAX         255
+#define MAX_CMD_LEN         (256 + NAME_MAX)
+
+#if ((CURRENT_KERNEL_VERSION == KERNEL_VERSION(4, 18, 0)) || (CURRENT_KERNEL_VERSION >= KERNEL_VERSION(5, 10, 0)))
+#define KERNEL_SUPPORT_TSTAMP
+#endif
+
+typedef int NetdevCallback(const char *ethdev);
+
+struct TcCmd {
+    const char *cmdStr;
+    bool verifyRet;
+};
 
 enum msg_event_rw_t {
     MSG_READ,                       // 读消息事件
@@ -118,5 +134,7 @@ struct msg_event_data_t {
     bpf_section("kretprobe/" #func) \
     void __kprobe_ret_bpf_##func(struct type *ctx)
 
+void load_tc_ingress_bpf(char netcard_list[]);
+void offload_tc_ingress_bpf();
 
 #endif
