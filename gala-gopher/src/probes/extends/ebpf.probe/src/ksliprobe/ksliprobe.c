@@ -45,9 +45,11 @@ static void sig_int(int signo)
 static void msg_event_handler(void *ctx, int cpu, void *data, unsigned int size)
 {
     struct msg_event_data_t *msg_evt_data = (struct msg_event_data_t *)data;
+    unsigned char ser_ip_str[INET6_ADDRSTRLEN];
     unsigned char cli_ip_str[INET6_ADDRSTRLEN];
     const char *protocol;
-    ip_str(msg_evt_data->ip_info.family, (unsigned char *)&(msg_evt_data->ip_info.ipaddr), cli_ip_str, INET6_ADDRSTRLEN);
+    ip_str(msg_evt_data->server_ip_info.family, (unsigned char *)&(msg_evt_data->server_ip_info.ipaddr), ser_ip_str, INET6_ADDRSTRLEN);
+    ip_str(msg_evt_data->client_ip_info.family, (unsigned char *)&(msg_evt_data->client_ip_info.ipaddr), cli_ip_str, INET6_ADDRSTRLEN);
     switch (msg_evt_data->conn_id.protocol) {
         case PROTOCOL_REDIS:
             protocol = "REDIS";
@@ -57,13 +59,15 @@ static void msg_event_handler(void *ctx, int cpu, void *data, unsigned int size)
             break;
     }
     fprintf(stdout,
-            "|%s|%d|%d|%s|%s|%d|%s|%llu|%s|%llu|%s|%llu|%u|\n",
+            "|%s|%d|%d|%s|%s|%u|%s|%u|%s|%llu|%s|%llu|%s|%llu|%u|\n",
             OO_NAME,
             msg_evt_data->conn_id.tgid,
             msg_evt_data->conn_id.fd,
             protocol,
+            ser_ip_str,
+            msg_evt_data->server_ip_info.port,
             cli_ip_str,
-            ntohs(msg_evt_data->ip_info.port),
+            ntohs(msg_evt_data->client_ip_info.port),
             msg_evt_data->max.command,
             msg_evt_data->max.rtt_nsec,
             msg_evt_data->min.command,

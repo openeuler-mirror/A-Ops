@@ -68,31 +68,24 @@ static __always_inline void init_conn_key(struct conn_key_t *conn_key, int fd, i
     conn_key->tgid = tgid;
 }
 
-static __always_inline int init_conn_id(struct conn_id_t *conn_id, int fd, int tgid, struct probe_val *val)
+static __always_inline int init_conn_id(struct conn_id_t *conn_id, int fd, int tgid, struct sock *sk)
 {
-    struct sockaddr *upeer_sockaddr = (struct sockaddr *)PROBE_PARM2(*val);
-    if (upeer_sockaddr == (void *)0) {
-        return -1;
-    }
 
-    int *upeer_addrlen = (int *)PROBE_PARM3(*val);
-    if (upeer_addrlen < 0) {
-        return -1;
-    }
+    conn_id->client_ip_info.family = _(sk->sk_family);
+    if (conn_id->client_ip_info.family == AF_INET) {
+        conn_id->server_ip_info.ipaddr.ip4 = _(sk->sk_rcv_saddr);
+        conn_id->client_ip_info.ipaddr.ip4 = _(sk->sk_daddr);
+    } else if (conn_id->client_ip_info.family == AF_INET6) {
+        bpf_probe_read(conn_id->server_ip_info.ipaddr.ip6, IP6_LEN, &sk->sk_v6_rcv_saddr);
+        bpf_probe_read(conn_id->client_ip_info.ipaddr.ip6, IP6_LEN, &sk->sk_v6_daddr);
 
-    conn_id->ip_info.family = _(upeer_sockaddr->sa_family);
-    if (conn_id->ip_info.family == AF_INET) {
-        struct sockaddr_in *addr_in = (struct sockaddr_in *)upeer_sockaddr;
-        conn_id->ip_info.ipaddr.ip4 = _(addr_in->sin_addr.s_addr);
-        conn_id->ip_info.port = _(addr_in->sin_port);
-    } else if (conn_id->ip_info.family == AF_INET6) {
-        struct sockaddr_in6 *addr_in6 = (struct sockaddr_in6 *)upeer_sockaddr;
-        conn_id->ip_info.port = _(addr_in6->sin6_port);
-        bpf_probe_read(conn_id->ip_info.ipaddr.ip6, IP6_LEN, addr_in6->sin6_addr.in6_u.u6_addr8);
     } else {
         bpf_printk("ip_str family abnormal.\n");
         return -1;
     }
+
+    conn_id->server_ip_info.port = _(sk->sk_num);
+    conn_id->client_ip_info.port = _(sk->sk_dport);
 
     conn_id->fd = fd;
     conn_id->tgid = tgid;
@@ -109,7 +102,7 @@ static __always_inline void init_conn_samp_data(struct sock *sk)
 
 
 // 创建服务端 tcp 连接
-KPROBE_RET(__sys_accept4, pt_regs, CTX_USER)
+KRETPROBE(__sys_accept4, pt_regs)
 {
     int fd = PT_REGS_RC(ctx);
     u32 tgid = bpf_get_current_pid_tgid() >> INT_LEN;
@@ -122,17 +115,11 @@ KPROBE_RET(__sys_accept4, pt_regs, CTX_USER)
     struct sock *sk;
     struct task_struct *task;
 
-    if (PROBE_GET_PARMS(__sys_accept4, ctx, val, CTX_USER) < 0)
-        return;
-
     if (fd < 0) {
         return;
     }
 
     init_conn_key(&conn_key, fd, tgid);
-    if (init_conn_id(&conn_data.id, fd, tgid, &val) < 0) {
-        return;
-    }
 
     task = (struct task_struct *)bpf_get_current_task();
     sk = sock_get_by_fd(fd, task);
@@ -140,6 +127,10 @@ KPROBE_RET(__sys_accept4, pt_regs, CTX_USER)
         return;
     }
     conn_data.sk = (void *)sk;
+
+    if (init_conn_id(&conn_data.id, fd, tgid, sk) < 0) {
+        return;
+    }
 
     err = bpf_map_update_elem(&conn_map, &conn_key, &conn_data, BPF_ANY);
     if (err < 0) {
@@ -277,7 +268,8 @@ static __always_inline void periodic_report(u64 ts_nsec, struct conn_data_t *con
             struct msg_event_data_t msg_evt_data = {0};
             msg_evt_data.conn_id = conn_data->id;
             msg_evt_data.sample_num = conn_data->sample_num;
-            msg_evt_data.ip_info = conn_data->id.ip_info;
+            msg_evt_data.server_ip_info = conn_data->id.server_ip_info;
+            msg_evt_data.client_ip_info = conn_data->id.client_ip_info;
             msg_evt_data.max = conn_data->max;
             msg_evt_data.min = conn_data->min;
             msg_evt_data.recent = conn_data->recent;
