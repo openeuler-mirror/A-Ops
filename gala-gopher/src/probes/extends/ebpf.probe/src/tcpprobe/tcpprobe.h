@@ -46,7 +46,9 @@ struct tcp_syn_status {
 struct tcp_health {
     __u32 total_retrans;    // FROM tcp_retransmit_skb event
     __u32 backlog_drops;    // FROM tcp_add_backlog event
-    __u32 sk_drops;         // FROM tcp_drop
+    __u32 sk_drops;         // FROM sock.sk_drops.counter
+    __u32 lost_out;         // FROM tcp_sock.lost_out
+    __u32 sacked_out;       // FROM tcp_sock.sacked_out
     __u32 filter_drops;     // FROM tcp_filter event
     __u32 tmout;            // FROM tcp_write_err event
     __u32 sndbuf_limit;     // FROM sock_exceed_buf_limit event
@@ -109,7 +111,6 @@ struct tcp_statistics {
 };
 
 #define TCP_BACKLOG_DROPS_INC(data) __sync_fetch_and_add(&((data).health.backlog_drops), 1)
-#define TCP_SK_DROPS_INC(data) __sync_fetch_and_add(&((data).health.sk_drops), 1)
 #define TCP_FILTER_DROPS_INC(data) __sync_fetch_and_add(&((data).health.filter_drops), 1)
 #define TCP_TMOUT_INC(data) __sync_fetch_and_add(&((data).health.tmout), 1)
 #define TCP_SNDBUF_LIMIT_INC(data) __sync_fetch_and_add(&((data).health.sndbuf_limit), 1)

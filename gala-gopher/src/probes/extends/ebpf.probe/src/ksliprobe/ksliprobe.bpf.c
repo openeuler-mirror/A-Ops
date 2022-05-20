@@ -106,7 +106,6 @@ KRETPROBE(__sys_accept4, pt_regs)
 {
     int fd = PT_REGS_RC(ctx);
     u32 tgid = bpf_get_current_pid_tgid() >> INT_LEN;
-    struct probe_val val;
 
     long err;
 

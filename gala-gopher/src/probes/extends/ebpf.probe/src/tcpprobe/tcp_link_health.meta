@@ -51,9 +51,19 @@ measurements:
                 name: "backlog_drops",
             },
             {
-                description: "tcp drop counter",
+                description: "sock drop counter",
                 type: "gauge",
                 name: "sk_drops",
+            },
+            {
+                description: "tcp lost counter",
+                type: "gauge",
+                name: "lost_out",
+            },
+            {
+                description: "tcp sacked out counter",
+                type: "gauge",
+                name: "sacked_out",
             },
             {
                 description: "drops caused by socket filter",
