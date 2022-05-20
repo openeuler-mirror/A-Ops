@@ -75,7 +75,9 @@ struct conn_id_t {
     int tgid;
     int fd;
     enum conn_protocol_t protocol;
-    struct ip_info_t ip_info;
+    struct ip_info_t server_ip_info;
+    struct ip_info_t client_ip_info;
+
     __u64 ts_nsec;                      // 连接创建的时间戳
 };
 
@@ -100,7 +102,8 @@ struct msg_event_data_t {
     struct rtt_cmd_t max;
     struct rtt_cmd_t min;
     struct rtt_cmd_t recent;
-    struct ip_info_t ip_info;
+    struct ip_info_t server_ip_info;
+    struct ip_info_t client_ip_info;
     __u32 sample_num;                       // 上报周期内采样数
 };
 

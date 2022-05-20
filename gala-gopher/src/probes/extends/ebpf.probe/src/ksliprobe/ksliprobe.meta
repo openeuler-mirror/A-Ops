@@ -21,14 +21,24 @@ measurements:
                 name: "protocol",
             },
             {
+                description: "the IP of server",
+                type: "label",
+                name: "server_ip",
+            },
+            {
+                description: "the port of server",
+                type: "label",
+                name: "server_port",
+            },
+            {
                 description: "the IP of client",
                 type: "label",
-                name: "cli_ip",
+                name: "client_ip",
             },
             {
                 description: "the port of client",
                 type: "label",
-                name: "cli_port",
+                name: "client_port",
             },
             {
                 description: "the cmd of max rtt req",
