@@ -197,19 +197,19 @@ static int get_netdev_num(int *num)
 
 static void get_netdev_fileds(const char *net_dev_info, net_dev_stat *stats)
 {
-    int ret;
+    int i, ret;
     char *devinfo = (char *)net_dev_info;
+    int index = 0;
 
-    char *colon = strchr(devinfo, ':');
-    if (colon == NULL) {
-        printf("system_net.probe not find symbol ':' \n");
-        return;
+    /* obtain netdev name(delete useless spaces) */
+    for (i = 0; (devinfo[i] != ':') && (devinfo[i] != '\0'); i++) {
+        if (devinfo[i] != ' ') {
+            stats->dev_name[index++] = devinfo[i];
+        }
     }
-    *colon = '\0';
-
-    (void)snprintf((char *)stats->dev_name, NET_DEVICE_NAME_SIZE, devinfo);
-    ret = sscanf(colon + 1,
-        "%llu %llu %llu %llu %*Lu %*Lu %*Lu %*Lu %llu %llu %llu %llu %*Lu %*Lu %*Lu %*Lu",
+    /* parse fileds */
+    ret = sscanf(devinfo,
+        "%*s %llu %llu %llu %llu %*Lu %*Lu %*Lu %*Lu %llu %llu %llu %llu %*Lu %*Lu %*Lu %*Lu",
         &stats->rx_bytes, &stats->rx_packets, &stats->rx_errs, &stats->rx_dropped,
         &stats->tx_bytes, &stats->tx_packets, &stats->tx_errs, &stats->tx_dropped);
     if (ret < 8) {
@@ -223,7 +223,7 @@ static int system_net_probe(net_dev_stat *stats, int num)
     FILE* f = NULL;
     char line[LINE_BUF_LEN];
     net_dev_stat temp;
-    int i, ret;
+    int ret;
     int index = 0;
 
     f = fopen(SYSTEM_NET_DEV_PATH, "r");
@@ -241,13 +241,9 @@ static int system_net_probe(net_dev_stat *stats, int num)
             strstr(line, "lo") != NULL) {
             continue;
         }
-        for (i = 0; line[i] != '\0'; i++) {
-            if (line[i] != ' ') {
-                break;
-            }
-        }
         if (index >= num) {
-            printf("[SYSTEM_PROBE] net_probe record beyond max nums(%d).\n", num);
+            printf("[SYSTEM_PROBE] net_probe records beyond max netdev nums(%d).\n", num);
+            (void)fclose(f);
             return -1;
         }
         (void)memcpy(&temp, &stats[index], sizeof(net_dev_stat));
