@@ -1,11 +1,14 @@
-#!/bin/sh
+#!/bin/bash
 PROGRAM=$0
 PRJ_DIR=$(dirname $(readlink -f "$0"))
 
 INSTALL_FILES="redis.probe/redis_probe.py"
+INSTALL_FILES+=" redis_client.probe/client-async.py"
 
 if [ $# -eq 1 ]; then
     # copy to specify dir
     cd ${PRJ_DIR}
-    \cp ${INSTALL_FILES} $1
+    for file in ${INSTALL_FILES}; do
+        cp ${file} $1
+    done
 fi
