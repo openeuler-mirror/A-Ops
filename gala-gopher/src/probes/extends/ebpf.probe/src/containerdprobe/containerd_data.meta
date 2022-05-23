@@ -11,9 +11,9 @@ measurements:
                 name: "container_id",
             },
             {
-                description: "namespace",
+                description: "cgroup id",
                 type: "label",
-                name: "ns",
+                name: "cgroupid",
             },
             {
                 description: "task pid",
@@ -49,11 +49,6 @@ measurements:
                 description: "pids.limit",
                 type: "gauge",
                 name: "pids.limit",
-            },
-            {
-                description: "status",
-                type: "gauge",
-                name: "status",
             }
         )
     }
