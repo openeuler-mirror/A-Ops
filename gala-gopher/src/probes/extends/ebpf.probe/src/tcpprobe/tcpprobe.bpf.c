@@ -366,6 +366,21 @@ static __always_inline unsigned int jiffies_to_usecs(unsigned long j)
     return (USEC_PER_SEC / HZ) * j;
 }
 
+static void get_tcp_health(struct sock *sk, struct tcp_health* health)
+{
+    u32 tmp;
+    struct tcp_sock *tcp_sk = (struct tcp_sock *)sk;
+
+    tmp = _(sk->sk_drops.counter);
+    health->sk_drops = max(health->sk_drops, tmp);
+
+    tmp = _(tcp_sk->lost_out);
+    health->lost_out = max(health->lost_out, tmp);
+
+    tmp = _(tcp_sk->sacked_out);
+    health->sacked_out = max(health->sacked_out, tmp);
+}
+
 static void get_tcp_info(struct sock *sk, struct tcp_state* info)
 {
     u32 tmp;
@@ -489,6 +504,7 @@ KPROBE(tcp_sendmsg, pt_regs)
     if (metrics) {
         TCP_TX_XADD(metrics->data, size);
         get_tcp_info(sk, &(metrics->data.info));
+        get_tcp_health(sk, &(metrics->data.health));
         get_tcp_wnd(sk, &(metrics->data.info));
         report(ctx, metrics, new_entry);
     }
@@ -509,21 +525,8 @@ KPROBE(tcp_recvmsg, pt_regs)
     metrics = get_tcp_metrics(sk, &new_entry);
     if (metrics) {
         get_tcp_info(sk, &(metrics->data.info));
+        get_tcp_health(sk, &(metrics->data.health));
         get_tcp_wnd(sk, &(metrics->data.info));
-        report(ctx, metrics, new_entry);
-    }
-}
-
-KPROBE(tcp_drop, pt_regs)
-{
-    u32 new_entry = 0;
-    struct tcp_metrics_s *metrics;
-    struct sock *sk = (struct sock *)PT_REGS_PARM1(ctx);
-    u32 pid __maybe_unused = bpf_get_current_pid_tgid();
-
-    metrics = get_tcp_metrics(sk, &new_entry);
-    if (metrics) {
-        TCP_SK_DROPS_INC(metrics->data);
         report(ctx, metrics, new_entry);
     }
 }

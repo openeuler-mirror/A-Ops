@@ -145,7 +145,7 @@ static void print_link_metrics(void *ctx, int cpu, void *data, __u32 size)
 
     // health infos
     fprintf(stdout,
-        "|%s|%u|%u|%s|%s|%u|%u|%u|%u|%u|%u|%u|%u|%u|%u|%u|%u|%u|%u|%d|%d|\n",
+        "|%s|%u|%u|%s|%s|%u|%u|%u|%u|%u|%u|%u|%u|%u|%u|%u|%u|%u|%u|%u|%u|%d|%d|\n",
         OO_TYPE_HEALTH,
         link->tgid,
         link->role,
@@ -157,6 +157,8 @@ static void print_link_metrics(void *ctx, int cpu, void *data, __u32 size)
         metrics->data.health.total_retrans,
         metrics->data.health.backlog_drops,
         metrics->data.health.sk_drops,
+        metrics->data.health.lost_out,
+        metrics->data.health.sacked_out,
         metrics->data.health.filter_drops,
         metrics->data.health.tmout,
         metrics->data.health.sndbuf_limit,
