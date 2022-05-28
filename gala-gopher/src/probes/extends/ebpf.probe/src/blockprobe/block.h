@@ -116,6 +116,9 @@ static __always_inline __maybe_unused void calc_latency(struct block_data *bdata
             CALC_LATENCY_STATS(latency_stats, latency, us);
         } else {
             bdata->ts = ts;  // Start a new statistical period
+            __builtin_memset(&(bdata->blk_stats), 0x0, sizeof(bdata->blk_stats));
+            __builtin_memset(&(bdata->blk_drv_stats), 0x0, sizeof(bdata->blk_drv_stats));
+            __builtin_memset(&(bdata->blk_dev_stats), 0x0, sizeof(bdata->blk_dev_stats));
             INIT_LATENCY_STATS(latency_stats, latency, us);
 
             // reset counter
