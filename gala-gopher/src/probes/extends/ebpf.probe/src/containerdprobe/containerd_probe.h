@@ -17,7 +17,7 @@
 
 #define CONTAINER_MAX_ENTRIES   1000
 #define SYMADDRS_MAP_KEY      0xacbd
-
+#define CONTAINER_KEY_LEN     (CONTAINER_ID_LEN + 4)
 struct go_containerd_t {
     // Arguments of runtime/v1/linux.(*Task).Start.
     int task_Start_t_offset;                // 8
@@ -39,15 +39,14 @@ struct go_containerd_t {
 };
 
 struct container_key {
-    char container_id[CONTAINER_ID_LEN];
+    char container_id[CONTAINER_KEY_LEN];
 };
 
 struct container_value {
-    char namespace[NAMESPACE_LEN];
-    __u32 task_pid;
-    int tgid;
-    __u32 status;
-    char comm[16];
+    __u32 task_pid;                         // Process id of container(global namespace)
+    int tgid;                               // Process id of containerd(global namespace)
+    char comm[16];                          // Process name of containerd(global namespace)
+    __u32 cgpid;                            // CGroup id of container
     __u64 memory_usage_in_bytes;
     __u64 memory_limit_in_bytes;
     __u64 memory_stat_cache;
@@ -55,6 +54,17 @@ struct container_value {
     __u64 cpuacct_usage_percpu[16];
     __u64 pids_current;
     __u64 pids_limit;
+    char namespace[NAMESPACE_LEN + 1];
+};
+
+struct container_evt_s {
+    struct container_key k;
+    __u32 task_pid;                         // Process id of container(global namespace)
+    int tgid;                               // Process id of containerd(global namespace)
+    char comm[16];                          // Process name of containerd(global namespace)
+    char namespace[NAMESPACE_LEN + 1];
+    char pad[3];
+    __u32 crt_or_del;                       // 0: create event; 1: delete event
 };
 
 #endif /* __TRACE_CONTAINERD__H */

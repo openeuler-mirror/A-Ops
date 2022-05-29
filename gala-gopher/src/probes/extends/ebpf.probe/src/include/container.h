@@ -18,6 +18,12 @@
 #define TEN                 10
 #define COER_NUM            16
 
+enum container_status_e {
+    CONTAINER_STATUS_RUNNING = 0,
+    CONTAINER_STATUS_RESTARTING,
+    CONTAINER_STATUS_STOP
+};
+
 struct cgroup_metric {
     unsigned long memory_usage_in_bytes;
     unsigned long memory_limit_in_bytes;
@@ -33,9 +39,11 @@ typedef struct container_info_s {
     unsigned int netns;
     unsigned int mntns;
     unsigned int cgroup;
-    char container[CONTAINER_ID_LEN];
+    enum container_status_e status;
     char pod[POD_NAME_LEN];
     char comm[TASK_COMM_LEN];
+    char abbrContainerId[CONTAINER_ID_LEN + 1];
+    char containerId[CONTAINER_ID_LEN + 1];
 } container_info;
 
 typedef struct container_tbl_s {
@@ -46,8 +54,9 @@ typedef struct container_tbl_s {
 container_tbl* get_all_container(void);
 const char* get_container_id_by_pid(container_tbl* cstbl, unsigned int pid);
 void free_container_tbl(container_tbl **pcstbl);
-int get_container_merged_path(const char *container_id, char *path, unsigned int len);
-int exec_container_command(const char *container_id, const char *exec, char *buf, unsigned int len);
+int get_container_merged_path(const char *abbr_container_id, char *path, unsigned int len);
+int exec_container_command(const char *abbr_container_id, const char *exec, char *buf, unsigned int len);
 void get_container_cgroup_metric(const char *container_id, const char *namespace, struct cgroup_metric *cgroup);
+int get_cgroup_id_bypid(unsigned int pid, unsigned int *cgroup);
 
 #endif

@@ -27,12 +27,12 @@
 
 #include "bpf.h"
 #include "args.h"
+#include "hash.h"
 #include "container.h"
 #include "containerd_probe.skel.h"
 #include "containerd_probe.h"
 
 #define METRIC_NAME_RUNC_TRACE    "container_data"
-#define CONTAINERS_MAP_FILE_PATH  "/sys/fs/bpf/probe/containers"
 
 static struct probe_params params = {.period = DEFAULT_PERIOD,
                                      .elf_path = {0}};
@@ -40,6 +40,66 @@ static volatile bool g_stop = false;
 static void sig_handler(int sig)
 {
     g_stop = true;
+}
+
+struct container_hash_t {
+    H_HANDLE;
+    struct container_key k;
+    struct container_value v;
+};
+
+struct container_hash_t *head = NULL;
+
+static void clear_container_tbl(struct container_hash_t **pphead)
+{
+    struct container_hash_t *item, *tmp;
+    if (*pphead == NULL)
+        return;
+
+    H_ITER(*pphead, item, tmp) {
+        H_DEL(*pphead, item);
+        (void)free(item);
+    }
+}
+
+static struct container_hash_t* add_container(const char *container_id, struct container_hash_t **pphead)
+{
+    struct container_hash_t *item;
+
+    INFO("Create new container %s.\n", container_id);
+
+    item = malloc(sizeof(struct container_hash_t));
+    if (item == NULL)
+        return NULL;
+
+    (void)memset(item, 0, sizeof(struct container_hash_t));
+    (void)strncpy(item->k.container_id, container_id, CONTAINER_ID_LEN);
+
+    H_ADD_KEYPTR(*pphead, item->k.container_id, CONTAINER_ID_LEN + 1, item);
+    return item;
+}
+
+static struct container_hash_t* find_container(const char *container_id, struct container_hash_t **pphead)
+{
+    struct container_hash_t *item;
+
+    H_FIND(*pphead, container_id, CONTAINER_ID_LEN + 1, item);
+    return item;
+}
+
+static void delete_container(const char *container_id, struct container_hash_t **pphead)
+{
+    struct container_hash_t *item;
+
+    INFO("Delete container %s.\n", container_id);
+
+    item = find_container(container_id, pphead);
+    if (item == NULL)
+        return;
+
+    H_DEL(*pphead, item);
+    (void)free(item);
+    return;
 }
 
 static void bpf_update_containerd_symaddrs(int fd)
@@ -69,67 +129,79 @@ static void bpf_update_containerd_symaddrs(int fd)
     (void)bpf_map_update_elem(fd, &sym_key, &symaddrs, BPF_ANY);
 }
 
-static void print_container_metric(int fd)
+static void proc_container_evt(void *ctx, int cpu, void *data, __u32 size)
 {
-    int ret = -1;
-    struct container_key    k  = {0};
-    struct container_key    nk = {0};
-    struct container_value  v  = {0};
+    struct container_evt_s *evt  = (struct container_evt_s *)data;
+    struct container_hash_t *item;
 
-    while (bpf_map_get_next_key(fd, &k, &nk) != -1) {
-        ret = bpf_map_lookup_elem(fd, &nk, &v);
-        if (ret == 0) {
-            /* add container's cgroup metrics when container start */
-            if (v.memory_usage_in_bytes == 0) {
-                struct cgroup_metric   cgroup = {0};
-                get_container_cgroup_metric((char *)nk.container_id, (char *)v.namespace, &cgroup);
-                v.memory_usage_in_bytes = cgroup.memory_usage_in_bytes;
-                v.memory_limit_in_bytes = cgroup.memory_limit_in_bytes;
-                v.memory_stat_cache = cgroup.memory_stat_cache;
-                v.cpuacct_usage = cgroup.cpuacct_usage;
-                v.pids_current = cgroup.pids_current;
-                v.pids_limit = cgroup.pids_limit;
-                /* update hash map */
-                (void)bpf_map_update_elem(fd, &nk, &v, BPF_ANY);
-            }
-            fprintf(stdout, "|%s|%s|%s|%u|%llu|%llu|%llu|%llu|%llu|%llu|%u|\n",
-                METRIC_NAME_RUNC_TRACE,
-                nk.container_id,
-                v.namespace,
-                v.task_pid,
-                v.memory_usage_in_bytes,
-                v.memory_limit_in_bytes,
-                v.memory_stat_cache,
-                v.cpuacct_usage,
-                v.pids_current,
-                v.pids_limit,
-                v.status);
+    item = find_container((const char *)(evt->k.container_id), &head);
+    if (evt->crt_or_del == 0) {
+        if (item == NULL) {
+            item = add_container((const char *)(evt->k.container_id), &head);
         }
-        if (v.status == 0) {
-            (void)bpf_map_delete_elem(fd, &nk);
-        } else {
-            k = nk;
+
+        if (item) {
+            item->v.task_pid = evt->task_pid;
+            item->v.tgid = evt->tgid;
+            (void)strncpy(item->v.comm, evt->comm, TASK_COMM_LEN - 1);
+            // (void)strncpy(item->v.namespace, evt->namespace, NAMESPACE_LEN + 1);
         }
+    } else {
+        if (item) {
+            delete_container((const char *)(evt->k.container_id), &head);
+        }
+    }
+}
+
+static void print_container_metric(struct container_hash_t **pphead)
+{
+    struct container_hash_t *item, *tmp;
+    struct cgroup_metric cgroup;
+
+    H_ITER(*pphead, item, tmp) {
+        get_container_cgroup_metric((char *)item->k.container_id, (char *)item->v.namespace, &cgroup);
+
+        (void)get_cgroup_id_bypid(item->v.task_pid, &item->v.cgpid);
+
+        item->v.memory_usage_in_bytes = cgroup.memory_usage_in_bytes;
+        item->v.memory_limit_in_bytes = cgroup.memory_limit_in_bytes;
+        item->v.memory_stat_cache = cgroup.memory_stat_cache;
+        item->v.cpuacct_usage = cgroup.cpuacct_usage;
+        item->v.pids_current = cgroup.pids_current;
+        item->v.pids_limit = cgroup.pids_limit;
+
+        fprintf(stdout, "|%s|%s|%u|%u|%llu|%llu|%llu|%llu|%llu|%llu|\n",
+            METRIC_NAME_RUNC_TRACE,
+            item->k.container_id,
+            item->v.cgpid,
+            item->v.task_pid,
+            item->v.memory_usage_in_bytes,
+            item->v.memory_limit_in_bytes,
+            item->v.memory_stat_cache,
+            item->v.cpuacct_usage,
+            item->v.pids_current,
+            item->v.pids_limit);
     }
     (void)fflush(stdout);
     return;
 }
 
-static void update_current_containers_info(int map_fd)
+static void update_current_containers_info(struct container_hash_t **pphead)
 {
-    int ret;
     int i;
-    struct container_value c_value = {0};
+    struct container_hash_t *item;
 
     container_tbl* cstbl = get_all_container();
     if (cstbl != NULL) {
         container_info *p = cstbl->cs;
         for (i = 0; i < cstbl->num; i++) {
-            ret = bpf_map_lookup_elem(map_fd, p->container, &c_value);
-            if (ret) {
-                c_value.task_pid = p->pid;
-                c_value.status = 1;
-                (void)bpf_map_update_elem(map_fd, p->container, &c_value, BPF_ANY);
+            if (p->status != CONTAINER_STATUS_RUNNING)
+                continue;
+
+            item = add_container(p->containerId, pphead);
+            if (item) {
+                item->v.task_pid = p->pid;
+                item->v.cgpid = p->cgroup;
             }
             p++;
         }
@@ -140,9 +212,12 @@ static void update_current_containers_info(int map_fd)
 int main(int argc, char **argv)
 {
     int err = -1;
+    int ret = 0;
     char *elf[PATH_NUM] = {0};
     int elf_num = -1;
     int attach_flag = 0;
+    int out_put_fd;
+    struct perf_buffer* pb = NULL;
 
     err = args_parse(argc, argv, &params);
     if (err != 0)
@@ -162,13 +237,13 @@ int main(int argc, char **argv)
     INIT_BPF_APP(containerd_probe, EBPF_RLIM_LIMITED);
     LOAD(containerd_probe, err);
     /* Update already running container */
-    update_current_containers_info(GET_MAP_FD(containerd_probe, containers_map));
+    update_current_containers_info(&head);
     /* Update BPF symaddrs for this binary */
     bpf_update_containerd_symaddrs(GET_MAP_FD(containerd_probe, containerd_symaddrs_map));
 
     /* Attach tracepoint handler for each elf_path */
     for (int i = 0; i < elf_num; i++) {
-        int ret = 0;
+        ret = 0;
         UBPF_ATTACH(containerd_probe, linux_Task_Start, elf[i], 
                 github.com/containerd/containerd/runtime/v1/linux.(*Task).Start, ret);
         if (ret <= 0) {
@@ -186,22 +261,27 @@ int main(int argc, char **argv)
         goto err;
     }
 
-    int pinned = bpf_obj_pin(GET_MAP_FD(containerd_probe, containers_map), CONTAINERS_MAP_FILE_PATH);
-    if (pinned < 0) {
-        printf("Failed to pin containers_map to the file system: %d, err: %d\n", pinned, errno);
+    out_put_fd = GET_MAP_FD(containerd_probe, output);
+    pb = create_pref_buffer(out_put_fd, proc_container_evt);
+    if (pb == NULL) {
+        fprintf(stderr, "ERROR: crate perf buffer failed\n");
         goto err;
     }
+
     printf("Successfully started!\n");
     while (!g_stop) {
-        print_container_metric(GET_MAP_FD(containerd_probe, containers_map));
+        if ((ret = perf_buffer__poll(pb, THOUSAND)) < 0)
+            break;
+
+        print_container_metric(&head);
         sleep(params.period);
     }
 err:
+    if (pb)
+        perf_buffer__free(pb);
+
     /* Clean up */
     UNLOAD(containerd_probe);
-    if (access(CONTAINERS_MAP_FILE_PATH, F_OK) == 0) {
-        if (remove(CONTAINERS_MAP_FILE_PATH) < 0)
-            printf("Delete the pinned file:%s failed!\n", CONTAINERS_MAP_FILE_PATH);
-    }
+    clear_container_tbl(&head);
     return -err;
 }
