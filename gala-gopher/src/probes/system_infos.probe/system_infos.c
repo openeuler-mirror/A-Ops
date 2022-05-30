@@ -247,7 +247,7 @@ static int system_net_probe(net_dev_stat *stats, int num)
             return -1;
         }
         (void)memcpy(&temp, &stats[index], sizeof(net_dev_stat));
-        get_netdev_fileds(line + i, &stats[index]);
+        get_netdev_fileds(line, &stats[index]);
         fprintf(stdout, "|%6s|%s|%llu|%llu|%llu|%llu|%llu|%llu|%llu|%llu|\n",
             METRICS_NET_NAME,
             stats[index].dev_name,
@@ -384,12 +384,18 @@ static int system_iostat_probe()
 }
 #endif
 
+#if SYSTEM_PROBE_DESC("system proc probe")
+extern int system_proc_probe(void);
+extern void system_proc_init(char *task_whitelist);
+#endif
+
 int main(struct probe_params * params)
 {
-    int ret, num = 0;
+    int ret = 0, num = 0;
     net_snmp_stat snmp_stats = {0};
     net_dev_stat *dev_stats;
 
+    /* system net init */
     ret = get_netdev_num(&num);
     if (ret < 0 || num <= 0) {
         return -1;
@@ -399,6 +405,9 @@ int main(struct probe_params * params)
         return -1;
     }
     (void)memset(dev_stats, 0, num * sizeof(net_dev_stat));
+
+    /* system proc init */
+    system_proc_init(params->task_whitelist);
 
     for (;;) {
         ret = system_tcp_probe(&snmp_stats);
@@ -419,6 +428,11 @@ int main(struct probe_params * params)
         ret = system_iostat_probe();
         if (ret < 0) {
             printf("[SYSTEM_PROBE] system iostat probe fail.\n");
+            goto err;
+        }
+        ret = system_proc_probe();
+        if (ret < 0) {
+            printf("[SYSTEM_PROBE] system proc probe fail.\n");
             goto err;
         }
         sleep(params->period);
