@@ -372,8 +372,10 @@ static int __get_estabs(struct tcp_estabs* tes)
             break;
 
         ret = __get_estab((const char *)line, te);
-        if (ret < 0)
+        if (ret < 0) {
             __free_estab(&te);
+            continue;
+        }
 
         ret = __add_estab(tes, te);
         if (ret < 0)
