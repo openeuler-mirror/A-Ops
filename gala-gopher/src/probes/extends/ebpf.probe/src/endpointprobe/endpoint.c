@@ -44,14 +44,14 @@
 
 #define ENDPOINT_PATH "/sys/fs/bpf/probe/__endpoint_sock"
 #define OUTPUT_PATH "/sys/fs/bpf/probe/__endpoint_output"
-#define PERIOD_PATH "/sys/fs/bpf/probe/__endpoint_period"
+#define ARGS_PATH "/sys/fs/bpf/probe/__endpoint_args"
 #define RM_BPF_PATH "/usr/bin/rm -rf /sys/fs/bpf/probe/__endpoint*"
 
 #define __LOAD_ENDPOINT_PROBE(probe_name, end, load) \
     OPEN(probe_name, end, load); \
     MAP_SET_PIN_PATH(probe_name, endpoint_map, ENDPOINT_PATH, load); \
     MAP_SET_PIN_PATH(probe_name, output, OUTPUT_PATH, load); \
-    MAP_SET_PIN_PATH(probe_name, period_map, PERIOD_PATH, load); \
+    MAP_SET_PIN_PATH(probe_name, args_map, ARGS_PATH, load); \
     LOAD_ATTACH(probe_name, end, load)
 
 static struct probe_params params = {.period = DEFAULT_PERIOD};
@@ -262,11 +262,16 @@ static void print_endpoint_metrics(void *ctx, int cpu, void *data, __u32 size)
     (void)fflush(stdout);
 }
 
-static void load_period(int period_fd, __u32 value)
+static void load_args(int args_fd, struct probe_params* params)
 {
     __u32 key = 0;
-    __u64 period = (__u64)value * 1000000000;
-    (void)bpf_map_update_elem(period_fd, &key, &period, BPF_ANY);
+    struct endpoint_args_s args = {0};
+
+    args.period = (__u64)params->period * 1000000000;
+    args.filter_by_task = (__u32)params->filter_task_probe;
+    args.filter_by_tgid = (__u32)params->filter_pid;
+
+    (void)bpf_map_update_elem(args_fd, &key, &args, BPF_ANY);
 }
 
 static void load_listen_fd(int fd)
@@ -322,7 +327,7 @@ int main(int argc, char **argv)
     }
 
     load_listen_fd(GET_MAP_FD(tcp, listen_sockfd_map));
-    load_period(GET_MAP_FD(tcp, period_map), params.period);
+    load_args(GET_MAP_FD(tcp, args_map), &params);
 
     printf("Successfully started!\n");
     poll_pb(pb, THOUSAND);

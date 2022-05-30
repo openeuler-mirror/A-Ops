@@ -218,17 +218,17 @@ static void print_link_metrics(void *ctx, int cpu, void *data, __u32 size)
     report_tcp_status(metrics);
 }
 
-static void load_period(int period_fd, __u32 value)
+static void load_args(int args_fd, struct probe_params* params)
 {
     __u32 key = 0;
-    __u64 period = (__u64)value * 1000000000;
-    (void)bpf_map_update_elem(period_fd, &key, &period, BPF_ANY);
-}
+    struct tcp_args_s args = {0};
 
-static void load_cport_flag(int cport_flag_fd, __u32 value)
-{
-    __u32 key = 0;
-    (void)bpf_map_update_elem(cport_flag_fd, &key, &value, BPF_ANY);
+    args.cport_flag = (__u32)params->cport_flag;
+    args.period = (__u64)params->period * 1000000000;
+    args.filter_by_task = (__u32)params->filter_task_probe;
+    args.filter_by_tgid = (__u32)params->filter_pid;
+
+    (void)bpf_map_update_elem(args_fd, &key, &args, BPF_ANY);
 }
 
 static void do_load_tcp_fd(int tcp_fd_map_fd, __u32 tgid, int fd, __u8 role)
@@ -305,8 +305,7 @@ int main(int argc, char **argv)
     }
 
     load_tcp_fd(GET_MAP_FD(tcpprobe, tcp_fd_map));
-    load_period(GET_MAP_FD(tcpprobe, period_map), params.period);
-    load_cport_flag(GET_MAP_FD(tcpprobe, cport_flag_map), params.cport_flag);
+    load_args(GET_MAP_FD(tcpprobe, args_map), &params);
 
     printf("Successfully started!\n");
 
