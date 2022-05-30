@@ -11,6 +11,7 @@
 #include <bpf/bpf_tracing.h>
 #include <bpf/bpf_core_read.h>
 
+#include "bpf.h"
 #include "endpoint.h"
 
 #define BPF_F_INDEX_MASK    0xffffffffULL
@@ -33,11 +34,11 @@ struct bpf_map_def SEC("maps") output = {
     .max_entries = __PERF_OUT_MAX,
 };
 
-// Data collection period
-struct bpf_map_def SEC("maps") period_map = {
+// Data collection args
+struct bpf_map_def SEC("maps") args_map = {
     .type = BPF_MAP_TYPE_ARRAY,
     .key_size = sizeof(u32),    // const value 0
-    .value_size = sizeof(u64),  // period time as second
+    .value_size = sizeof(struct endpoint_args_s),  // endpoint args
     .max_entries = 1,
 };
 
@@ -47,16 +48,37 @@ static __always_inline u64 get_period()
     u32 key = 0;
     u64 period = __PERIOD;
 
-    u64 *value = (u64 *)bpf_map_lookup_elem(&period_map, &key);
-    if (value)
-        period = *value;
+    struct endpoint_args_s *args;
+    args = (struct endpoint_args_s *)bpf_map_lookup_elem(&args_map, &key);
+    if (args)
+        period = args->period;
 
     return period; // units from second to nanosecond
+}
+
+static __always_inline char is_valid_tgid(u32 tgid)
+{
+    u32 key = 0;
+    struct endpoint_args_s *args;
+
+    args = (struct endpoint_args_s *)bpf_map_lookup_elem(&args_map, &key);
+    if (args && args->filter_by_task) {
+        return is_task_exist((int)tgid);
+    }
+
+    if (args && args->filter_by_tgid) {
+        return (args->filter_by_tgid == tgid);
+    }
+
+    return 1;
 }
 
 static __always_inline int create_sock_map(struct sock *sk, enum endpoint_t type, u32 tgid)
 {
     struct endpoint_v val = {0};
+    if (!is_valid_tgid(tgid))
+        return 0;
+
     val.type = type;
     val.tgid = tgid;
     return bpf_map_update_elem(&endpoint_map, &sk, &val, BPF_ANY);

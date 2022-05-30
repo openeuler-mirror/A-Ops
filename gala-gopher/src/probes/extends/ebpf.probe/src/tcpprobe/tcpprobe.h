@@ -148,4 +148,11 @@ struct tcp_metrics_s {
     struct tcp_statistics data;
 };
 
+struct tcp_args_s {
+    __u64 period;               // Sampling period, unit ns
+    __u32 cport_flag;           // Indicates whether the probes(such as tcp) identifies the client port
+    __u32 filter_by_task;       // Filtering PID monitoring ranges by task probe
+    __u32 filter_by_tgid;       // Filtering PID monitoring ranges by specific pid
+};
+
 #endif
