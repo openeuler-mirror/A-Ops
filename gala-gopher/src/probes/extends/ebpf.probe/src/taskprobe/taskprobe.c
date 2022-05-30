@@ -370,35 +370,6 @@ static void print_thread_metrics(struct task_data *value)
             addr_str);
 }
 
-static void print_process_metrics(struct task_data *value, int task_bin_map_fd)
-{
-    struct task_key key = {.tgid = value->id.tgid};
-    struct task_bin bin = {0};
-
-    // process bin info (comm / exec_file / exe_file)
-    (void)bpf_map_lookup_elem(task_bin_map_fd, &key, &bin);
-    get_task_bin_data(g_task_bin_map_fd, &bin, &key);
-    // process io info
-    (void)get_task_io(&(value->io.p_io_data), key.pid);
-    // outout
-    fprintf(stdout,
-            "|%s|%d|%d|%s|%s|%s|%u|%llu|%llu|%u|%u|%llu|%llu|%llu|\n",
-            OO_PROCESS_NAME,
-            value->id.tgid,
-            value->id.pgid,
-            bin.comm,
-            bin.exe_file,
-            bin.exec_file,
-            value->base.fork_count,
-            value->io.p_io_data.task_rchar_bytes,
-            value->io.p_io_data.task_wchar_bytes,
-            value->io.p_io_data.task_syscr_count,
-            value->io.p_io_data.task_syscw_count,
-            value->io.p_io_data.task_read_bytes,
-            value->io.p_io_data.task_write_bytes,
-            value->io.p_io_data.task_cancelled_write_bytes);
-}
-
 static void print_task_metrics(int task_map_fd, int task_bin_map_fd)
 {
     int ret;
@@ -413,10 +384,6 @@ static void print_task_metrics(int task_map_fd, int task_bin_map_fd)
             continue;
         }
         print_thread_metrics(&data);
-        if (data.id.pid == data.id.tgid && data.id.pgid != 0) {
-            print_process_metrics(&data, task_bin_map_fd);
-        }
-
         ckey = nkey;
     }
     (void)fflush(stdout);
