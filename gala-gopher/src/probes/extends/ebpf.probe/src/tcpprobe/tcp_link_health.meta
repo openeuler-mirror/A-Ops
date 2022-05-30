@@ -52,7 +52,7 @@ measurements:
             },
             {
                 description: "sock drop counter",
-                type: "gauge",
+                type: "counter",
                 name: "sk_drops",
             },
             {
