@@ -385,8 +385,7 @@ static void get_tcp_health(struct sock *sk, struct tcp_health* health)
     u32 tmp;
     struct tcp_sock *tcp_sk = (struct tcp_sock *)sk;
 
-    tmp = _(sk->sk_drops.counter);
-    health->sk_drops = max(health->sk_drops, tmp);
+    health->sk_drops = _(sk->sk_drops.counter);
 
     tmp = _(tcp_sk->lost_out);
     health->lost_out = max(health->lost_out, tmp);
