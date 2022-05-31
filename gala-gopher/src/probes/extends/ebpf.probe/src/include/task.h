@@ -25,13 +25,10 @@ enum task_status_type {
 };
 
 struct task_key {
-    union {
-        int pid;                // task_struct.pid
-        int tgid;               // task_struct.tgid || '/proc/[PID]'
-    };
+    int pid;                // task_struct.pid
 };
 
-struct thread_io_data {
+struct task_io_data {
     int major;
     int minor;
     __u64 task_io_wait_time_us; // FROM tracepoint 'sched_stat_iowait'
@@ -42,51 +39,19 @@ struct thread_io_data {
     __u32 task_hang_count;      // FROM tracepoint 'sched_process_hang'
 };
 
-struct process_io_data {
-    __u32 fd_count;             // FROM '/usr/bin/ls -l /proc/[PID]/fd | wc -l'
-    __u64 task_rchar_bytes;     // FROM '/proc/[PID]/io'
-    __u64 task_wchar_bytes;     // FROM same as 'task_rchar_bytes'
-    __u32 task_syscr_count;     // FROM same as 'task_rchar_bytes'
-    __u32 task_syscw_count;     // FROM same as 'task_rchar_bytes'
-    __u64 task_read_bytes;      // FROM same as 'task_rchar_bytes'
-    __u64 task_write_bytes;     // FROM same as 'task_rchar_bytes'
-    __u64 task_cancelled_write_bytes;   // FROM same as 'task_rchar_bytes'
-    __u32 task_oom_score_adj;   // FROM tracepoint 'oom_score_adj_update'
-};
-
-union task_io_data {
-    struct thread_io_data   t_io_data;
-    struct process_io_data  p_io_data;
-};
-
 struct task_id {
     int tgid;                   // task group id
     int pid;                    // tid: thread id
     int ppid;                   // parent process id
     int pgid;                   // process group id
-};
-
-struct task_bin {
-    char comm[MAX_PROCESS_NAME_LEN];    // FROM '/proc/[PID]/comm'
-    char exec_file[TASK_EXE_FILE_LEN];  // executed_file path, eg. xxx.jar
-    char exe_file[TASK_EXE_FILE_LEN];   // EXE path, eg. /usr/bin/java
-};
-
-struct task_base_data {
-    __u32 task_status;
-    __u32 fork_count;
-};
-
-struct task_net_data {
-    __u64 kfree_skb_cnt;
-    __u64 kfree_skb_ret_addr;
+    char comm[TASK_COMM_LEN];   // process comm
 };
 
 struct task_data {
+    __u64 ts;
+    __u32 fork_count;
     struct task_id id;
-    struct task_base_data base;
-    union task_io_data io;
-    struct task_net_data net;
+    struct task_io_data io;
 };
 
 #endif

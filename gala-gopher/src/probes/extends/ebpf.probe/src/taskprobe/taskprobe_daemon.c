@@ -22,16 +22,18 @@
 #include "task.h"
 
 #define TASK_PID_COMMAND \
-        "ps -T -p \"%d\" | awk 'NR > 1 {print $2}'"
+    "ps -T -p \"%d\" | awk 'NR > 1 {print $2}'"
 
 #define TASK_ID_COMMAND \
-    "ps -eo pid,tid,ppid,pgid,comm | grep %s | awk '{print $1 \"|\" $2 \"|\" $3 \"|\" $4}'"
+    "ps -eo pid,tid,ppid,pgid,comm | grep %s | awk '{print $1 \"|\" $2 \"|\" $3 \"|\" $4 \"|\" $5}'"
 
 enum ps_type {
     PS_TYPE_PID = 0,
     PS_TYPE_TID,
     PS_TYPE_PPID,
     PS_TYPE_PGID,
+    PS_TYPE_COMM,
+
     PS_TYPE_MAX,
 };
 
@@ -42,7 +44,7 @@ enum ps_type {
 1398
 1399
 */
-static void __do_load_daemon_task(int fd, struct task_id *id)
+static void do_load_daemon_task(int fd, struct task_id *id)
 {
     FILE *f = NULL;
     char cmd[COMMAND_LEN];
@@ -67,53 +69,51 @@ static void __do_load_daemon_task(int fd, struct task_id *id)
         data.id.tgid = id->tgid;
         data.id.pgid = id->pgid;
         data.id.ppid = id->ppid;
+        (void)strncpy(data.id.comm, id->comm, TASK_COMM_LEN - 1);
         /* update task map and daemon task map */
         (void)bpf_map_update_elem(fd, &key, &data, BPF_ANY);
-        DEBUG("[TASKPROBE]: load daemon task '[pid=%d,tgid=%d,pgid=%d,ppid=%d]'.\n", 
-                key.pid, id->tgid, id->pgid, id->ppid);
+        DEBUG("[TASKPROBE]: load daemon task '[pid=%d,tgid=%d,pgid=%d,ppid=%d,comm=%s]'.\n",
+              key.pid, id->tgid, id->pgid, id->ppid, id->comm);
     }
 
     pclose(f);
     return;
 }
 
-static int __do_get_task_tgid(const char *ps, struct task_id *id)
+static int do_get_task_tgid(char *ps, struct task_id *id)
 {
-    int i;
-    int start = 0, j = 0;
-    char id_str[PS_TYPE_MAX][INT_LEN] = {0};
-    int len = strlen(ps);
+    int index = 0;
+    char *ptoken = NULL;
+    char *psave = NULL;
+    char *id_str[PS_TYPE_MAX];
 
-    for (i = 0; i < len; i++) {
-        if (ps[i] == '|') {
-            (void)strncpy(id_str[j++], ps + start, i - start);
-            start = i + 1;
-        }
+    ptoken = strtok_r(ps, "|", &psave);
+    while (ptoken != NULL && index < PS_TYPE_MAX) {
+        id_str[index++] = ptoken;
+        ptoken = strtok_r(NULL, "|", &psave);
     }
-    if (j < PS_TYPE_MAX - 1) {
-        return -1;
-    }
-    (void)strncpy(id_str[j], ps + start, i - start);
+    *(id_str[PS_TYPE_COMM] + TASK_COMM_LEN - 1) = '\0';
 
     id->tgid = atoi(id_str[PS_TYPE_PID]);
     id->pid  = atoi(id_str[PS_TYPE_TID]);
     id->ppid = atoi(id_str[PS_TYPE_PPID]);
     id->pgid = atoi(id_str[PS_TYPE_PGID]);
+    (void)strncpy(id->comm, id_str[PS_TYPE_COMM], TASK_COMM_LEN - 1);
 
     return 0;
 }
 
 
 /* ps_rlt exemple:
-    ps -eo pid,ppid,pgid,comm | grep nginx | awk '{print $1 "|" $2 "|" $3 "|" $4}'
+    ps -eo pid,ppid,pgid,comm | grep -w nginx | awk '{print $1 "|" $2 "|" $3 "|" $4}'
     3144599|3144598|3144598
     3144600|3144598|3144598
  */
-static void __do_get_daemon_task_tgid(int fd, const char* name, int is_whole_word)
+static void do_get_daemon_task_tgid(int fd, const char* name, int is_whole_word)
 {
     FILE *f = NULL;
-    char filter_content[COMMAND_LEN];
     char cmd[COMMAND_LEN];
+    char filter_content[COMMAND_LEN];
     char line[LINE_BUF_LEN];
     struct task_id id;
 
@@ -136,8 +136,8 @@ static void __do_get_daemon_task_tgid(int fd, const char* name, int is_whole_wor
         }
         SPLIT_NEWLINE_SYMBOL(line);
         
-        if (__do_get_task_tgid((const char *)line, &id) == 0)
-            __do_load_daemon_task(fd, &id);
+        if (do_get_task_tgid((char *)line, &id) == 0)
+            do_load_daemon_task(fd, &id);
     }
 
     pclose(f);
@@ -146,5 +146,5 @@ static void __do_get_daemon_task_tgid(int fd, const char* name, int is_whole_wor
 
 void load_daemon_task_by_name(int fd, const char *name, int is_whole_word)
 {
-    __do_get_daemon_task_tgid(fd, name, is_whole_word);
+    do_get_daemon_task_tgid(fd, name, is_whole_word);
 }
