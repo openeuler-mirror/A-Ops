@@ -13,6 +13,8 @@ from redis.connection import SocketBuffer
 
 TABLE_NAME = "redis_client"
 
+SUPPORT_CMDS = ["get", "set"]
+
 SYM_STAR = b"*"
 SYM_DOLLAR = b"$"
 SYM_CRLF = b"\r\n"
@@ -48,16 +50,29 @@ def usage():
     print("  -r    key range of redis command.")
     print("  -d    sample duration.")
     print("  -q    max send queue size.")
+    print("  -t    test commands.")
+    print("  -s    value length of redis command.")
+
+
+def gen_random_str(length):
+    base_str = 'abcdefg'
+    base_str_len = len(base_str)
+    rand_chars = [base_str[random.randint(0, base_str_len - 1)] for _ in range(length)]
+    return ''.join(rand_chars)
 
 
 class RedisClient:
-    def __init__(self, host="127.0.0.1", port=6379, key_range=10000, period=5, max_queue_size=0):
+    def __init__(self, host="127.0.0.1", port=6379, key_range=10000, period=5, max_queue_size=0, cmds=None,
+                 cmd_val_len=1):
         self.host = host
         self.port = port
         self.key_range = key_range
         self.period = period * 1000 * 1000 * 1000
         self.max_queue_size = max_queue_size
+        self.cmds = cmds
+        self.cmd_val_len = cmd_val_len
 
+        self.cmd_val = gen_random_str(cmd_val_len)
         self.cmds_queue = queue.Queue(self.max_queue_size)
         self.encode = encode
         self.sock = self.create_sock()
@@ -73,6 +88,7 @@ class RedisClient:
         self.min_rtt = 0
         self.max_rtt = 0
         self.recent_rtt = 0
+        self.recent_cmd = ''
 
     def create_sock(self):
         sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -83,7 +99,7 @@ class RedisClient:
         r = redis.Redis(host=self.host, port=self.port, single_connection_client=True)
         pipe = r.pipeline()
         for k in range(self.key_range):
-            pipe.set(str(k), "1234567")
+            pipe.set(str(k), self.cmd_val)
         pipe.execute()
         r.close()
 
@@ -127,6 +143,7 @@ class RedisClient:
             self.min_rtt = min(rtt, self.min_rtt)
             self.max_rtt = max(rtt, self.max_rtt)
         self.recent_rtt = rtt
+        self.recent_cmd = cmd[0]
         self.samp_num = self.samp_num + 1
         self.cmds_queue.task_done()
 
@@ -160,7 +177,7 @@ class RedisClient:
         return ts > self.last_report + self.period
 
     def report(self, ts):
-        print("|{}|{}|{}|{}|{}|{}|{}|{}|{}|{}|{}|".format(
+        print("|{}|{}|{}|{}|{}|{}|{}|{}|{}|{}|{}|{}|".format(
             TABLE_NAME,
             self.s_addr,
             self.s_port,
@@ -171,6 +188,7 @@ class RedisClient:
             self.min_rtt / 1000,
             self.max_rtt / 1000,
             self.recent_rtt / 1000,
+            self.recent_cmd,
             self.cmds_queue.qsize(),
         ))
         sys.stdout.flush()
@@ -181,21 +199,38 @@ class RedisClient:
         self.buf.close()
 
 
-def task_send_cmds(redis_client: RedisClient):
+def gen_cmd_arg(cmd, redis_client):
+    key_range = redis_client.key_range
+    cmd = cmd.upper()
+    if cmd == "GET":
+        key = random.randint(0, key_range)
+        return cmd, key
+    elif cmd == "SET":
+        key = random.randint(0, key_range)
+        val = redis_client.cmd_val
+        return cmd, key, val
+    else:
+        return None
+
+
+def task_send_cmds(redis_client):
     print("===Start redis sending task...")
     global g_stop
-    key_range = redis_client.key_range
+    cmds = redis_client.cmds
 
     while True:
         if g_stop:
             break
-        key = random.randint(0, key_range)
-        redis_client.send_cmd("GET", key)
+        for cmd in cmds:
+            cmd_arg = gen_cmd_arg(cmd, redis_client)
+            if cmd_arg is None:
+                break
+            redis_client.send_cmd(*cmd_arg)
 
     print("===End redis sending task...")
 
 
-def task_recv_replies(redis_client: RedisClient):
+def task_recv_replies(redis_client):
     print("===Start redis receiving task...")
     global g_stop
 
@@ -210,10 +245,18 @@ def task_recv_replies(redis_client: RedisClient):
     print("===End redis receiving task...")
 
 
+def _check_rds_cmds(cmds):
+    for cmd in cmds:
+        if cmd not in SUPPORT_CMDS:
+            print("Unsupported redis command {}".format(cmd))
+            return False
+    return True
+
+
 def main():
     argv = sys.argv[1:]
     try:
-        opts, args = getopt.getopt(argv, "h:p:r:d:q:")
+        opts, args = getopt.getopt(argv, "h:p:r:d:q:t:s:")
     except:
         print("Params Error")
         return
@@ -223,6 +266,8 @@ def main():
     port = 6379
     period = 5
     max_queue_size = 0
+    cmds = ["get"]
+    cmd_val_len = 1
     for opt, arg in opts:
         if opt in ["-h"]:
             host = arg
@@ -234,8 +279,15 @@ def main():
             period = int(arg)
         elif opt in ["-q"]:
             max_queue_size = int(arg)
+        elif opt in ["-t"]:
+            cmds = str(arg).split(",")
+            if not _check_rds_cmds(cmds):
+                return
+        elif opt in ["-s"]:
+            cmd_val_len = int(arg)
 
-    redis_client = RedisClient(host=host, port=port, key_range=key_range, period=period, max_queue_size=max_queue_size)
+    redis_client = RedisClient(host=host, port=port, key_range=key_range, period=period, max_queue_size=max_queue_size,
+                               cmds=cmds, cmd_val_len=cmd_val_len)
     redis_client.init_db()
 
     thread1 = threading.Thread(target=task_send_cmds, args=(redis_client,))

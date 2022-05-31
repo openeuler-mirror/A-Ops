@@ -51,6 +51,11 @@ measurements:
                 name: "recent_rtt",
             },
             {
+                description: "recent command",
+                type: "label",
+                name: "recent_cmd",
+            },
+            {
                 description: "send queue backlog",
                 type: "gauge",
                 name: "send_queue_nums",
