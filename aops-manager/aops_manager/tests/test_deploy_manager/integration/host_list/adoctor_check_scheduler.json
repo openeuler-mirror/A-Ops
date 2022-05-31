@@ -1,8 +1,0 @@
-{
-    "adoctor_check_scheduler_hosts": {
-      "192.168.1.1": {
-        "ansible_host": "192.168.1.1",
-        "ansible_python_interpreter": "/usr/bin/python3"
-      }
-    }
-  }

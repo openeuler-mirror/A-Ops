@@ -1,9 +1,0 @@
-{
-    "gala_ragdoll_hosts": {
-      "192.168.1.1": {
-        "ansible_host": "192.168.1.1",
-        "kafka_port": 9092,
-        "ansible_python_interpreter": "/usr/bin/python3"
-      }
-    }
-  }
