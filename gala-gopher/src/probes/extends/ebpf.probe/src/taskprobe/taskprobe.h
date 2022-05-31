@@ -37,7 +37,7 @@ struct probe_process {
     char name[MAX_PROCESS_NAME_LEN];
 };
 
-void load_daemon_task_by_name(int fd, const char *name);
+void load_daemon_task_by_name(int fd, const char *name, int is_whole_word);
 int get_task_io(struct process_io_data *io_data, int pid);
 
 #endif

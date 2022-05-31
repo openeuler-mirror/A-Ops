@@ -25,7 +25,7 @@
         "ps -T -p \"%d\" | awk 'NR > 1 {print $2}'"
 
 #define TASK_ID_COMMAND \
-    "ps -eo pid,tid,ppid,pgid,comm | grep \"%s\" | awk '{print $1 \"|\" $2 \"|\" $3 \"|\" $4}'"
+    "ps -eo pid,tid,ppid,pgid,comm | grep %s | awk '{print $1 \"|\" $2 \"|\" $3 \"|\" $4}'"
 
 enum ps_type {
     PS_TYPE_PID = 0,
@@ -109,15 +109,22 @@ static int __do_get_task_tgid(const char *ps, struct task_id *id)
     3144599|3144598|3144598
     3144600|3144598|3144598
  */
-static void __do_get_daemon_task_tgid(int fd, const char* name)
+static void __do_get_daemon_task_tgid(int fd, const char* name, int is_whole_word)
 {
     FILE *f = NULL;
+    char filter_content[COMMAND_LEN];
     char cmd[COMMAND_LEN];
     char line[LINE_BUF_LEN];
     struct task_id id;
 
+    filter_content[0] = 0;
+    if (is_whole_word == 1) {
+        (void)snprintf(filter_content, COMMAND_LEN, "-w %s", name);
+    } else {
+        (void)snprintf(filter_content, COMMAND_LEN, "%s", name);
+    }
     cmd[0] = 0;
-    (void)snprintf(cmd, COMMAND_LEN, TASK_ID_COMMAND, name);
+    (void)snprintf(cmd, COMMAND_LEN, TASK_ID_COMMAND, filter_content);
     f = popen(cmd, "r");
     if (f == NULL) {
         return;
@@ -137,7 +144,7 @@ static void __do_get_daemon_task_tgid(int fd, const char* name)
     return;
 }
 
-void load_daemon_task_by_name(int fd, const char *name)
+void load_daemon_task_by_name(int fd, const char *name, int is_whole_word)
 {
-    __do_get_daemon_task_tgid(fd, name);
+    __do_get_daemon_task_tgid(fd, name, is_whole_word);
 }

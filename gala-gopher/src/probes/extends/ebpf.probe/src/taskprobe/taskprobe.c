@@ -155,7 +155,7 @@ static void load_daemon_task(int app_fd, int task_map_fd)
     while (bpf_map_get_next_key(app_fd, &ckey, &nkey) != -1) {
         ret = bpf_map_lookup_elem(app_fd, &nkey, &flag);
         if (ret == 0) {
-            load_daemon_task_by_name(task_map_fd, (const char *)nkey.name);
+            load_daemon_task_by_name(task_map_fd, (const char *)nkey.name, 1);
             DEBUG("[TASKPROBE]: load daemon process '%s'.\n", nkey.name);
         }
         ckey = nkey;
@@ -165,7 +165,7 @@ static void load_daemon_task(int app_fd, int task_map_fd)
     for (index = 0; index < size; index++) {
         if (task_range[index].type != TASK_TYPE_APP) {
 
-            load_daemon_task_by_name(task_map_fd, (const char *)task_range[index].name);
+            load_daemon_task_by_name(task_map_fd, (const char *)task_range[index].name, 0);
             DEBUG("[TASKPROBE]: load daemon process '%s'.\n", task_range[index].name);
         }
     }
