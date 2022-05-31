@@ -29,6 +29,9 @@
 #define SLI_OK       0
 #define SLI_ERR      (-1)
 
+#define MAY_INIT_CONN     1
+#define NO_INIT_CONN      0
+
 #define NAME_MAX         255
 #define MAX_CMD_LEN         (256 + NAME_MAX)
 
@@ -107,7 +110,7 @@ struct msg_event_data_t {
     __u32 sample_num;                       // 上报周期内采样数
 };
 
-#define KSLIPROBE_RET(func, type, caller_type, fd) \
+#define KSLIPROBE_RET(func, type, caller_type, fd, init) \
     bpf_section("kprobe/" #func) \
     void __kprobe_bpf_##func(struct type *ctx) { \
         int ret; \
@@ -117,7 +120,8 @@ struct msg_event_data_t {
         u32 tgid = bpf_get_current_pid_tgid() >> INT_LEN; \
         init_conn_key(&conn_key, fd, tgid); \
         if ((struct conn_data_t *)bpf_map_lookup_elem(&conn_map, &conn_key) == (void *)0) { \
-            return; \
+            if (init && (update_conn_map_n_conn_samp_map(fd, tgid, &conn_key) != SLI_OK)) \
+                return; \
         } \
         __get_probe_key(&__key, (const long)PT_REGS_FP(ctx), caller_type); \
         __get_probe_val(&__val, (const long)PT_REGS_PARM1(ctx), \
