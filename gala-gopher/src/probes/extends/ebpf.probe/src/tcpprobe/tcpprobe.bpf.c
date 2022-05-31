@@ -101,6 +101,9 @@ static __always_inline int get_tcp_link_key(struct tcp_link_s *link, struct sock
     if (!sock_data_p || sock_data_p->tgid == 0) {
         return -1;
     }
+    if (!is_valid_tgid(sock_data_p->tgid)) {
+        return -1;
+    }
     __u32 role = sock_data_p->role;
     *syn_srtt = sock_data_p->syn_srtt;
 
@@ -203,9 +206,6 @@ static __always_inline struct tcp_metrics_s *get_tcp_metrics(struct sock *sk, u3
 
 static __always_inline int create_sock_obj(u32 tgid, struct sock *sk, struct tcp_sock_info *info)
 {
-    if (!is_valid_tgid(tgid))
-        return -1;
-
     info->tgid = tgid;
     return bpf_map_update_elem(&sock_map, &sk, info, BPF_ANY);
 }
