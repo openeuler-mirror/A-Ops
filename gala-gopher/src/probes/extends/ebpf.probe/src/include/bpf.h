@@ -38,12 +38,15 @@
 #define JAVA_COMMAND_LEN        128
 #define JAVA_CLASSPATH_LEN      512
 
+#define CONTAINER_NAME_LEN      64
 #define CONTAINER_ID_LEN        64
+#define CONTAINER_ABBR_ID_LEN   12
 #define NAMESPACE_LEN           64
 #define POD_NAME_LEN            64
 
 #define COMMAND_LEN             256
 #define LINE_BUF_LEN            512
+#define PATH_LEN                256
 
 #if !defined INET6_ADDRSTRLEN
     #define INET6_ADDRSTRLEN    48
@@ -81,25 +84,17 @@ static inline int __debug_printf(const char *format, ...)
 #define min(x, y) ((x) < (y) ? (x) : (y))
 #define min_zero(x, y) ((x) == 0 ? (y) : (((x) < (y) ? (x) : (y))))
 
-#define SPLIT_NEWLINE_SYMBOL(s) \
-    do { \
-        int __len = strlen(s); \
-        if (__len > 0 && (s)[__len - 1] == '\n') { \
-            (s)[__len - 1] = 0; \
-        } \
-    } while (0)
-
 #define __maybe_unused      __attribute__((unused))
 
 #define HZ 100
 
-#define MSEC_PER_SEC	1000L
-#define USEC_PER_MSEC	1000L
-#define NSEC_PER_USEC	1000L
-#define NSEC_PER_MSEC	1000000L
-#define USEC_PER_SEC	1000000L
-#define NSEC_PER_SEC	1000000000L
-#define FSEC_PER_SEC	1000000000000000LL
+#define MSEC_PER_SEC    1000L
+#define USEC_PER_MSEC   1000L
+#define NSEC_PER_USEC   1000L
+#define NSEC_PER_MSEC   1000000L
+#define USEC_PER_SEC    1000000L
+#define NSEC_PER_SEC    1000000000L
+#define FSEC_PER_SEC    1000000000000000LL
 
 #include "__share_map_task.h"
 #include "__share_map_match.h"

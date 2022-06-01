@@ -42,6 +42,41 @@ static void sig_handler(int sig)
     g_stop = true;
 }
 
+static void init_container(const char *container_id, struct container_value *container)
+{
+    if (container->proc_id == 0)
+        (void)get_container_pid(container_id, &container->proc_id);
+
+    if (container->name[0] == 0)
+        (void)get_container_name(container_id, container->name, CONTAINER_NAME_LEN);
+
+    if (container->cpucg_dir[0] == 0)
+        (void)get_container_cpucg_dir(container_id, container->cpucg_dir, PATH_LEN);
+
+    if (container->memcg_dir[0] == 0)
+        (void)get_container_memcg_dir(container_id, container->memcg_dir, PATH_LEN);
+
+    if (container->pidcg_dir[0] == 0)
+        (void)get_container_pidcg_dir(container_id, container->pidcg_dir, PATH_LEN);
+
+    if (container->cpucg_inode == 0)
+        (void)get_container_cpucg_inode(container_id, &container->cpucg_inode);
+
+    if (container->memcg_inode == 0)
+        (void)get_container_memcg_inode(container_id, &container->memcg_inode);
+
+    if (container->pidcg_inode == 0)
+        (void)get_container_pidcg_inode(container_id, &container->pidcg_inode);
+
+    if (container->mnt_ns_id == 0)
+        (void)get_container_mntns_id(container_id, &container->mnt_ns_id);
+
+    if (container->net_ns_id == 0)
+        (void)get_container_netns_id(container_id, &container->net_ns_id);
+
+    return;
+}
+
 struct container_hash_t {
     H_HANDLE;
     struct container_key k;
@@ -73,9 +108,11 @@ static struct container_hash_t* add_container(const char *container_id, struct c
         return NULL;
 
     (void)memset(item, 0, sizeof(struct container_hash_t));
-    (void)strncpy(item->k.container_id, container_id, CONTAINER_ID_LEN);
+    (void)strncpy(item->k.container_id, container_id, CONTAINER_ABBR_ID_LEN);
 
-    H_ADD_KEYPTR(*pphead, item->k.container_id, CONTAINER_ID_LEN + 1, item);
+    H_ADD_KEYPTR(*pphead, item->k.container_id, CONTAINER_ABBR_ID_LEN, item);
+
+    init_container((const char *)item->k.container_id, &(item->v));
     return item;
 }
 
@@ -83,7 +120,7 @@ static struct container_hash_t* find_container(const char *container_id, struct 
 {
     struct container_hash_t *item;
 
-    H_FIND(*pphead, container_id, CONTAINER_ID_LEN + 1, item);
+    H_FIND(*pphead, container_id, CONTAINER_ABBR_ID_LEN, item);
     return item;
 }
 
@@ -139,13 +176,6 @@ static void proc_container_evt(void *ctx, int cpu, void *data, __u32 size)
         if (item == NULL) {
             item = add_container((const char *)(evt->k.container_id), &head);
         }
-
-        if (item) {
-            item->v.task_pid = evt->task_pid;
-            item->v.tgid = evt->tgid;
-            (void)strncpy(item->v.comm, evt->comm, TASK_COMM_LEN - 1);
-            // (void)strncpy(item->v.namespace, evt->namespace, NAMESPACE_LEN + 1);
-        }
     } else {
         if (item) {
             delete_container((const char *)(evt->k.container_id), &head);
@@ -153,32 +183,128 @@ static void proc_container_evt(void *ctx, int cpu, void *data, __u32 size)
     }
 }
 
+#ifdef COMMAND_LEN
+#undef COMMAND_LEN
+#define COMMAND_LEN 512
+#endif
+
+#define __CAT_FILE "/usr/bin/cat %s/%s"
+#define __TEN 10
+static void __get_container_memory_metrics(struct container_value *container)
+{
+    char command[COMMAND_LEN];
+    char line[LINE_BUF_LEN];
+
+    /* memory.usage_in_bytes */
+    command[0] = 0;
+    line[0] = 0;
+    (void)snprintf(command, COMMAND_LEN, __CAT_FILE, container->memcg_dir, "memory.usage_in_bytes");
+    if (exec_cmd(command, line, LINE_BUF_LEN) == -1) {
+        return;
+    }
+    container->memory_usage_in_bytes = strtoull((char *)line, NULL, __TEN);
+
+    /* memory.limit_in_bytes */
+    command[0] = 0;
+    line[0] = 0;
+    (void)snprintf(command, COMMAND_LEN, __CAT_FILE, container->memcg_dir, "memory.limit_in_bytes");
+    if (exec_cmd(command, line, LINE_BUF_LEN) == -1)
+        return;
+    container->memory_limit_in_bytes = strtoull((char *)line, NULL, __TEN);
+
+    return;
+}
+
+static void __get_container_cpuaccet_metrics(struct container_value *container)
+{
+    char command[COMMAND_LEN];
+    char line[LINE_BUF_LEN];
+
+    /* cpuacct.usage */
+    command[0] = 0;
+    line[0] = 0;
+    (void)snprintf(command, COMMAND_LEN, __CAT_FILE, container->cpucg_dir, "cpuacct.usage");
+    if (exec_cmd(command, line, LINE_BUF_LEN) == -1)
+        return;
+
+    container->cpuacct_usage = strtoull((char *)line, NULL, __TEN);
+
+    /* cpuacct.usage_sys */
+    command[0] = 0;
+    line[0] = 0;
+    (void)snprintf(command, COMMAND_LEN, __CAT_FILE, container->cpucg_dir, "cpuacct.usage_sys");
+    if (exec_cmd(command, line, LINE_BUF_LEN) == -1)
+        return;
+
+    container->cpuacct_usage_sys = strtoull((char *)line, NULL, __TEN);
+
+    /* cpuacct.usage_user */
+    command[0] = 0;
+    line[0] = 0;
+    (void)snprintf(command, COMMAND_LEN, __CAT_FILE, container->cpucg_dir, "cpuacct.usage_user");
+    if (exec_cmd(command, line, LINE_BUF_LEN) == -1)
+        return;
+
+    container->cpuacct_usage_user = strtoull((char *)line, NULL, __TEN);
+
+    return;
+}
+
+#define PID_MAX_LIMIT 2^22
+static void __get_container_pids_metrics(struct container_value *container)
+{
+    char command[COMMAND_LEN];
+    char line[LINE_BUF_LEN];
+
+    /* pids.current */
+    command[0] = 0;
+    line[0] = 0;
+    (void)snprintf(command, COMMAND_LEN, __CAT_FILE, container->pidcg_dir, "pids.current");
+    if (exec_cmd(command, line, LINE_BUF_LEN) == -1)
+        return;
+
+    container->pids_current = strtoull((char *)line, NULL, __TEN);
+
+    /* pids.limit */
+    command[0] = 0;
+    line[0] = 0;
+    (void)snprintf(command, COMMAND_LEN, __CAT_FILE, container->pidcg_dir, "pids.max");
+    if (exec_cmd(command, line, LINE_BUF_LEN) == -1)
+        return;
+
+    if (strcmp((char *)line, "max") == 0) {
+        container->pids_limit = PID_MAX_LIMIT;
+    } else {
+        container->pids_limit = strtoull((char *)line, NULL, __TEN);
+    }
+
+    return;
+}
+
 static void print_container_metric(struct container_hash_t **pphead)
 {
     struct container_hash_t *item, *tmp;
-    struct cgroup_metric cgroup;
 
     H_ITER(*pphead, item, tmp) {
-        get_container_cgroup_metric((char *)item->k.container_id, (char *)item->v.namespace, &cgroup);
+        __get_container_memory_metrics(&(item->v));
+        __get_container_cpuaccet_metrics(&(item->v));
+        __get_container_pids_metrics(&(item->v));
 
-        (void)get_cgroup_id_bypid(item->v.task_pid, &item->v.cgpid);
-
-        item->v.memory_usage_in_bytes = cgroup.memory_usage_in_bytes;
-        item->v.memory_limit_in_bytes = cgroup.memory_limit_in_bytes;
-        item->v.memory_stat_cache = cgroup.memory_stat_cache;
-        item->v.cpuacct_usage = cgroup.cpuacct_usage;
-        item->v.pids_current = cgroup.pids_current;
-        item->v.pids_limit = cgroup.pids_limit;
-
-        fprintf(stdout, "|%s|%s|%u|%u|%llu|%llu|%llu|%llu|%llu|%llu|\n",
+        fprintf(stdout, "|%s|%s|%s|%u|%u|%u|%u|%u|%u|%llu|%llu|%llu|%llu|%llu|%llu|%llu|\n",
             METRIC_NAME_RUNC_TRACE,
             item->k.container_id,
-            item->v.cgpid,
-            item->v.task_pid,
+            item->v.name,
+            item->v.cpucg_inode,
+            item->v.memcg_inode,
+            item->v.pidcg_inode,
+            item->v.mnt_ns_id,
+            item->v.net_ns_id,
+            item->v.proc_id,
             item->v.memory_usage_in_bytes,
             item->v.memory_limit_in_bytes,
-            item->v.memory_stat_cache,
             item->v.cpuacct_usage,
+            item->v.cpuacct_usage_sys,
+            item->v.cpuacct_usage_user,
             item->v.pids_current,
             item->v.pids_limit);
     }
@@ -189,7 +315,6 @@ static void print_container_metric(struct container_hash_t **pphead)
 static void update_current_containers_info(struct container_hash_t **pphead)
 {
     int i;
-    struct container_hash_t *item;
 
     container_tbl* cstbl = get_all_container();
     if (cstbl != NULL) {
@@ -198,11 +323,7 @@ static void update_current_containers_info(struct container_hash_t **pphead)
             if (p->status != CONTAINER_STATUS_RUNNING)
                 continue;
 
-            item = add_container(p->containerId, pphead);
-            if (item) {
-                item->v.task_pid = p->pid;
-                item->v.cgpid = p->cgroup;
-            }
+            (void)add_container(p->abbrContainerId, pphead);
             p++;
         }
         free_container_tbl(&cstbl);

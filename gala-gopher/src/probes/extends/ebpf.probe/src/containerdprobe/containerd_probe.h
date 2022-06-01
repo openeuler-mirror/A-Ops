@@ -43,27 +43,29 @@ struct container_key {
 };
 
 struct container_value {
-    __u32 task_pid;                         // Process id of container(global namespace)
-    int tgid;                               // Process id of containerd(global namespace)
-    char comm[16];                          // Process name of containerd(global namespace)
-    __u32 cgpid;                            // CGroup id of container
+    __u32 proc_id;                          // First process id of container
+    __u32 cpucg_inode;                      // cpu group inode of container
+    __u32 memcg_inode;                      // memory group inode of container
+    __u32 pidcg_inode;                      // pids group inode of container
+    __u32 mnt_ns_id;                        // Mount namespace id of container
+    __u32 net_ns_id;                        // Net namespace id of container
     __u64 memory_usage_in_bytes;
     __u64 memory_limit_in_bytes;
-    __u64 memory_stat_cache;
     __u64 cpuacct_usage;
-    __u64 cpuacct_usage_percpu[16];
+    __u64 cpuacct_usage_user;
+    __u64 cpuacct_usage_sys;
     __u64 pids_current;
     __u64 pids_limit;
-    char namespace[NAMESPACE_LEN + 1];
+
+    char name[CONTAINER_NAME_LEN];           // Name of container
+
+    char cpucg_dir[PATH_LEN];
+    char memcg_dir[PATH_LEN];
+    char pidcg_dir[PATH_LEN];
 };
 
 struct container_evt_s {
     struct container_key k;
-    __u32 task_pid;                         // Process id of container(global namespace)
-    int tgid;                               // Process id of containerd(global namespace)
-    char comm[16];                          // Process name of containerd(global namespace)
-    char namespace[NAMESPACE_LEN + 1];
-    char pad[3];
     __u32 crt_or_del;                       // 0: create event; 1: delete event
 };
 
