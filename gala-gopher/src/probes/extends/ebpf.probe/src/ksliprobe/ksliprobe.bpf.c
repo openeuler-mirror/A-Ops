@@ -93,13 +93,35 @@ static __always_inline int init_conn_id(struct conn_id_t *conn_id, int fd, int t
     return 0;
 }
 
-static __always_inline void init_conn_samp_data(struct sock *sk)
+static __always_inline int init_conn_samp_data(struct sock *sk)
 {
     struct conn_samp_data_t csd = {0};
     csd.status = SAMP_INIT;
-    bpf_map_update_elem(&conn_samp_map, &sk, &csd, BPF_ANY);
+    return bpf_map_update_elem(&conn_samp_map, &sk, &csd, BPF_ANY);
 }
 
+static __always_inline int update_conn_map_n_conn_samp_map(int fd, int tgid, struct conn_key_t *conn_key)
+{
+    long err;
+    struct conn_data_t conn_data = {0};
+    struct task_struct *task = (struct task_struct *)bpf_get_current_task();
+    struct sock *sk = sock_get_by_fd(fd, task);
+    if (sk == (void *)0) {
+        return SLI_ERR;
+    }
+    conn_data.sk = (void *)sk;
+
+    if (init_conn_id(&conn_data.id, fd, tgid, sk) < 0) {
+        return SLI_ERR;
+    }
+
+    err = bpf_map_update_elem(&conn_map, conn_key, &conn_data, BPF_ANY);
+    if (err < 0) {
+        return SLI_ERR;
+    }
+
+    return init_conn_samp_data(sk);
+}
 
 // 创建服务端 tcp 连接
 KRETPROBE(__sys_accept4, pt_regs)
@@ -107,42 +129,20 @@ KRETPROBE(__sys_accept4, pt_regs)
     int fd = PT_REGS_RC(ctx);
     u32 tgid = bpf_get_current_pid_tgid() >> INT_LEN;
 
-    long err;
-
     struct conn_key_t conn_key = {0};
-    struct conn_data_t conn_data = {0};
-    struct sock *sk;
-    struct task_struct *task;
 
     if (fd < 0) {
         return;
     }
 
     init_conn_key(&conn_key, fd, tgid);
-
-    task = (struct task_struct *)bpf_get_current_task();
-    sk = sock_get_by_fd(fd, task);
-    if (sk == (void *)0) {
-        return;
-    }
-    conn_data.sk = (void *)sk;
-
-    if (init_conn_id(&conn_data.id, fd, tgid, sk) < 0) {
-        return;
-    }
-
-    err = bpf_map_update_elem(&conn_map, &conn_key, &conn_data, BPF_ANY);
-    if (err < 0) {
-        //bpf_printk("====[tgid=%u]: connection create failed.\n", tgid);
-        return;
-    }
-    init_conn_samp_data(sk);
+    (void)update_conn_map_n_conn_samp_map(fd, tgid, &conn_key);
 
     return;
 }
 
 // 关闭 tcp 连接
-KSLIPROBE_RET(__close_fd, pt_regs, CTX_USER, (int)PT_REGS_PARM2(ctx))
+KSLIPROBE_RET(__close_fd, pt_regs, CTX_USER, (int)PT_REGS_PARM2(ctx), NO_INIT_CONN)
 {
     int fd;
     u32 tgid = bpf_get_current_pid_tgid() >> INT_LEN;
@@ -207,7 +207,7 @@ static __always_inline void parse_msg_to_redis_cmd(char msg_char, int *j, char *
             } else if (msg_char == '\r' || msg_char == '\n') {
                 *find_state = FIND_MSG_OK_STOP;
             } else {
-                *find_state = 15;
+                *find_state = FIND_MSG_ERR_STOP;
             }
             break;
         case FIND_MSG_OK_STOP:
@@ -357,7 +357,7 @@ static __always_inline void process_rdwr_msg(int fd, const char *buf, const unsi
 }
 
 // 跟踪连接 read 读消息
-KSLIPROBE_RET(ksys_read, pt_regs, CTX_USER, (int)PT_REGS_PARM1(ctx))
+KSLIPROBE_RET(ksys_read, pt_regs, CTX_USER, (int)PT_REGS_PARM1(ctx), MAY_INIT_CONN)
 {
     int fd;
     u32 tgid __maybe_unused = bpf_get_current_pid_tgid() >> INT_LEN;
@@ -384,7 +384,7 @@ KSLIPROBE_RET(ksys_read, pt_regs, CTX_USER, (int)PT_REGS_PARM1(ctx))
 }
 
 // 跟踪连接 write 写消息
-KSLIPROBE_RET(ksys_write, pt_regs, CTX_USER, (int)PT_REGS_PARM1(ctx))
+KSLIPROBE_RET(ksys_write, pt_regs, CTX_USER, (int)PT_REGS_PARM1(ctx), NO_INIT_CONN)
 {
     int fd;
     u32 tgid __maybe_unused = bpf_get_current_pid_tgid() >> INT_LEN;
