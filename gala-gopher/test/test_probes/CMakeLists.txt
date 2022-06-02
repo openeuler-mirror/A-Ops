@@ -10,6 +10,7 @@ SET(EXECUTABLE_TARGET probes_test)
 
 SET(SRC_DIR         ../../src)
 SET(BASE_DIR        ${SRC_DIR}/lib)
+SET(COMMON_DIR      ${SRC_DIR}/common)
 SET(RESOURCE_DIR    ${SRC_DIR}/resource)
 SET(CONFIG_DIR      ${SRC_DIR}/lib/config)
 SET(EGRESS_DIR      ${SRC_DIR}/egress)
@@ -29,6 +30,7 @@ SET(CMAKE_C_FLAGS "-rdynamic -g -fno-builtin-fprintf -Wl,--wrap=fprintf   \
 )
 
 SET(SOURCES main.c test_probes.c
+    ${COMMON_DIR}/args.c
     ${RESOURCE_DIR}/resource.c
     ${CONFIG_DIR}/config.c
     ${EGRESS_DIR}/egress.c
@@ -52,6 +54,7 @@ MESSAGE("SOURCES:\n" ${SOURCES})
 ADD_EXECUTABLE(${EXECUTABLE_TARGET} ${SOURCES})
 TARGET_INCLUDE_DIRECTORIES(${EXECUTABLE_TARGET} PRIVATE
     ${BASE_DIR}
+    ${COMMON_DIR}
     ${RESOURCE_DIR}
     ${CONFIG_DIR}
     ${EGRESS_DIR}
@@ -67,5 +70,5 @@ TARGET_INCLUDE_DIRECTORIES(${EXECUTABLE_TARGET} PRIVATE
     ${WEBSERVER_DIR}
 )
 
-TARGET_LINK_LIBRARIES(${EXECUTABLE_TARGET} PRIVATE config pthread dl rdkafka microhttpd cunit)
+TARGET_LINK_LIBRARIES(${EXECUTABLE_TARGET} PRIVATE config pthread dl rdkafka microhttpd cunit rt)
 

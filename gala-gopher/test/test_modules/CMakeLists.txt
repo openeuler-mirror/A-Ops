@@ -6,6 +6,7 @@ SET(EXECUTABLE_TARGET submodule_test)
 
 SET(SRC_DIR         ../../src)
 SET(BASE_DIR        ${SRC_DIR}/lib)
+SET(COMMON_DIR      ${SRC_DIR}/common)
 SET(RESOURCE_DIR    ${SRC_DIR}/resource)
 SET(CONFIG_DIR      ${SRC_DIR}/lib/config)
 SET(EGRESS_DIR      ${SRC_DIR}/egress)
@@ -28,7 +29,7 @@ ADD_EXECUTABLE(${EXECUTABLE_TARGET}
     test_meta.c
     test_probe.c
     test_imdb.c
-
+    ${COMMON_DIR}/args.c
     ${RESOURCE_DIR}/resource.c
     ${CONFIG_DIR}/config.c
     ${EGRESS_DIR}/egress.c
@@ -43,6 +44,7 @@ ADD_EXECUTABLE(${EXECUTABLE_TARGET}
 )
 
 TARGET_INCLUDE_DIRECTORIES(${EXECUTABLE_TARGET} PRIVATE ${BASE_DIR}
+    ${COMMON_DIR}
     ${RESOURCE_DIR}
     ${CONFIG_DIR}
     ${EGRESS_DIR}
@@ -56,5 +58,5 @@ TARGET_INCLUDE_DIRECTORIES(${EXECUTABLE_TARGET} PRIVATE ${BASE_DIR}
     ${LIBRDKAFKA_DIR}
 )
 
-TARGET_LINK_LIBRARIES(${EXECUTABLE_TARGET} PRIVATE cunit config pthread dl rdkafka microhttpd)
+TARGET_LINK_LIBRARIES(${EXECUTABLE_TARGET} PRIVATE cunit config pthread dl rdkafka microhttpd rt)
 

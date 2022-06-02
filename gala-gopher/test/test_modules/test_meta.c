@@ -23,7 +23,7 @@
 
 static void TestMeasurementMgrCreate(void)
 {
-    MeasurementMgr *mgr = MeasurementMgrCreate(MEASUREMENT_MGR_SIZE);
+    MeasurementMgr *mgr = MeasurementMgrCreate(MEASUREMENT_MGR_SIZE, MEASUREMENT_MGR_SIZE);
 
     CU_ASSERT(mgr != NULL);
     CU_ASSERT(mgr->measurements != NULL);
@@ -35,7 +35,7 @@ static void TestMeasurementMgrCreate(void)
 static void TestMeasurementMgrLoad(void)
 {
     uint32_t ret = 0;
-    MeasurementMgr *mgr = MeasurementMgrCreate(MEASUREMENT_MGR_SIZE);
+    MeasurementMgr *mgr = MeasurementMgrCreate(MEASUREMENT_MGR_SIZE, MEASUREMENT_MGR_SIZE);
     CU_ASSERT(mgr != NULL);
 
     ret = MeasurementMgrLoadSingleMeta(mgr, META_PATH);
