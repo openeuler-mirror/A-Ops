@@ -6,19 +6,44 @@ measurements:
         fields:
         (
             {
-                description: "container_id",
+                description: "ID of container",
                 type: "key",
                 name: "container_id",
             },
             {
-                description: "cgroup id",
+                description: "Name of container",
                 type: "label",
-                name: "cgroupid",
+                name: "name",
             },
             {
-                description: "task pid",
+                description: "CpuAcct group inode of container",
                 type: "label",
-                name: "pid",
+                name: "cpucg_inode",
+            },
+            {
+                description: "Memory group inode of container",
+                type: "label",
+                name: "memcg_inode",
+            },
+            {
+                description: "PIDS group inode of container",
+                type: "label",
+                name: "pidcg_inode",
+            },
+            {
+                description: "Mount namespace id of container",
+                type: "label",
+                name: "mnt_ns_id",
+            },
+            {
+                description: "Net namespace id of container",
+                type: "label",
+                name: "net_ns_id",
+            },
+            {
+                description: "First process id of container",
+                type: "label",
+                name: "proc_id",
             },
             {
                 description: "memory.usage_in_bytes",
@@ -31,14 +56,19 @@ measurements:
                 name: "memory.limit_in_byte",
             },
             {
-                description: "memory.stat.cache",
-                type: "gauge",
-                name: "memory.stat.cache",
-            },
-            {
                 description: "cpuacct.usage",
                 type: "gauge",
                 name: "cpuacct.usage",
+            },
+            {
+                description: "cpuacct.usage_sys",
+                type: "gauge",
+                name: "cpuacct_usage_sys",
+            },
+            {
+                description: "cpuacct.usage_user",
+                type: "gauge",
+                name: "cpuacct_usage_user",
             },
             {
                 description: "pids.current",

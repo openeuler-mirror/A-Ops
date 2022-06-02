@@ -81,5 +81,24 @@ void ip_str(unsigned int family, unsigned char *ip, unsigned char *ip_str, unsig
     (void)snprintf((char *)ip_str, ip_str_size, "%u.%u.%u.%u", ip[0], ip[1], ip[2], ip[3]);
     return;
 }
+
+int exec_cmd(const char *cmd, char *buf, unsigned int buf_len)
+{
+    FILE *f = NULL;
+
+    f = popen(cmd, "r");
+    if (f == NULL)
+        return -1;
+
+    if (fgets(buf, buf_len, f) == NULL) {
+        (void)pclose(f);
+        return -1;
+    }
+    (void)pclose(f);
+
+    SPLIT_NEWLINE_SYMBOL(buf);
+    return 0;
+}
+
 #endif
 

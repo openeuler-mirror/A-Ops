@@ -27,7 +27,6 @@
 #include "elf_reader.h"
 #include "container.h"
 
-#define PATH_LEN 512
 #define SYSTEM_PATH_LEN 1024
 #define DEFAULT_PATH_LIST   "/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/root/bin"
 

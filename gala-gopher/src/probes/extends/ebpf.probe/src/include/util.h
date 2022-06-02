@@ -28,6 +28,14 @@
 #define AF_INET6 10
 #endif
 
+#define SPLIT_NEWLINE_SYMBOL(s) \
+    do { \
+        int __len = strlen(s); \
+        if (__len > 0 && (s)[__len - 1] == '\n') { \
+            (s)[__len - 1] = 0; \
+        } \
+    } while (0)
+
 unsigned short ntohs(unsigned short netshort);
 
 #define NIP6(addr)                                                                                  \
@@ -42,5 +50,6 @@ int get_func_offset(char *proc_name, char *func_name, char *bin_file_path);
 char *get_cur_time(void);
 
 void ip_str(unsigned int family, unsigned char *ip, unsigned char *ip_str, unsigned int ip_str_size);
+int exec_cmd(const char *cmd, char *buf, unsigned int buf_len);
 
 #endif

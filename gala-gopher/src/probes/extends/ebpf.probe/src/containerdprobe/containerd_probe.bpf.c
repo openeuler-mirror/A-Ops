@@ -46,10 +46,6 @@ UPROBE(linux_Task_Start, pt_regs)
     struct container_evt_s evt = {0};
     unsigned int sym_key = SYMADDRS_MAP_KEY;
 
-    // containerd's info [pid + comm]
-    evt.tgid = bpf_get_current_pid_tgid() >> INT_LEN;
-    bpf_get_current_comm(&evt.comm, sizeof(evt.comm));
-
     // symbol's offset
     struct go_containerd_t *sym_str = bpf_map_lookup_elem(&containerd_symaddrs_map, &sym_key);
     if (sym_str == (void *)0) {
@@ -61,15 +57,10 @@ UPROBE(linux_Task_Start, pt_regs)
     const void *sp = (const void *)PT_REGS_SP(ctx);
     void *t_ptr;
     bpf_probe_read(&t_ptr, sizeof(void *), (void *)sp + sym_str->task_Start_t_offset);
-    bpf_probe_read(&evt.task_pid, sizeof(int), (char *)t_ptr + sym_str->linux_Task_pid_offset);
 
     void *id_str;
     bpf_probe_read(&id_str, sizeof(void *), (char *)t_ptr + sym_str->linux_Task_id_offset);
     bpf_probe_read_str(&evt.k.container_id, (CONTAINER_ID_LEN + 1) * sizeof(char), id_str);
-
-    void *ns_str;
-    bpf_probe_read(&ns_str, sizeof(void *), (char *)t_ptr + sym_str->linux_Task_namespace_offset);
-    bpf_probe_read_str(&evt.namespace, (NAMESPACE_LEN + 1) * sizeof(char), ns_str);
 
     report(ctx, &evt);
     return;
@@ -92,6 +83,7 @@ UPROBE(linux_Task_Delete, pt_regs)
     const void *sp = (const void *)PT_REGS_SP(ctx);
     void *t_ptr;
     bpf_probe_read(&t_ptr, sizeof(void *), (char *)sp + sym_str->task_Delete_t_offset);
+
     void *id_str;
     bpf_probe_read(&id_str, sizeof(void *), (char *)t_ptr + sym_str->linux_Task_id_offset);
     bpf_probe_read_str(&evt.k.container_id, (CONTAINER_ID_LEN + 1) * sizeof(char), id_str);

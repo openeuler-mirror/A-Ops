@@ -15,35 +15,20 @@
 #ifndef __CONTAINER_H__
 #define __CONTAINER_H__
 
-#define TEN                 10
-#define COER_NUM            16
-
 enum container_status_e {
     CONTAINER_STATUS_RUNNING = 0,
     CONTAINER_STATUS_RESTARTING,
     CONTAINER_STATUS_STOP
 };
 
-struct cgroup_metric {
-    unsigned long memory_usage_in_bytes;
-    unsigned long memory_limit_in_bytes;
-    unsigned long memory_stat_cache;
-    unsigned long cpuacct_usage;
-    unsigned long cpuacct_usage_percpu[COER_NUM];
-    unsigned long pids_current;
-    unsigned long pids_limit;
-};
-
 typedef struct container_info_s {
     unsigned int pid;
     unsigned int netns;
     unsigned int mntns;
-    unsigned int cgroup;
     enum container_status_e status;
     char pod[POD_NAME_LEN];
     char comm[TASK_COMM_LEN];
-    char abbrContainerId[CONTAINER_ID_LEN + 1];
-    char containerId[CONTAINER_ID_LEN + 1];
+    char abbrContainerId[CONTAINER_ID_LEN];
 } container_info;
 
 typedef struct container_tbl_s {
@@ -52,11 +37,19 @@ typedef struct container_tbl_s {
 } container_tbl;
 
 container_tbl* get_all_container(void);
-const char* get_container_id_by_pid(container_tbl* cstbl, unsigned int pid);
+int get_container_id_by_pid(unsigned int pid, char *container_id, unsigned int buf_len);
 void free_container_tbl(container_tbl **pcstbl);
 int get_container_merged_path(const char *abbr_container_id, char *path, unsigned int len);
 int exec_container_command(const char *abbr_container_id, const char *exec, char *buf, unsigned int len);
-void get_container_cgroup_metric(const char *container_id, const char *namespace, struct cgroup_metric *cgroup);
-int get_cgroup_id_bypid(unsigned int pid, unsigned int *cgroup);
+int get_container_cpucg_dir(const char *abbr_container_id, char dir[], unsigned int dir_len);
+int get_container_memcg_dir(const char *abbr_container_id, char dir[], unsigned int dir_len);
+int get_container_pidcg_dir(const char *abbr_container_id, char dir[], unsigned int dir_len);
+int get_container_cpucg_inode(const char *abbr_container_id, unsigned int *inode);
+int get_container_memcg_inode(const char *abbr_container_id, unsigned int *inode);
+int get_container_pidcg_inode(const char *abbr_container_id, unsigned int *inode);
+int get_container_netns_id(const char *abbr_container_id, unsigned int *id);
+int get_container_mntns_id(const char *abbr_container_id, unsigned int *id);
+int get_container_pid(const char *abbr_container_id, unsigned int *pid);
+int get_container_name(const char *abbr_container_id, char name[], unsigned int len);
 
 #endif
