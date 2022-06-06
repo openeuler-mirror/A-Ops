@@ -15,6 +15,10 @@
 #ifndef __LVSPROBE__H
 #define __LVSPROBE__H
 
+#if ((CURRENT_KERNEL_VERSION >= KERNEL_VERSION(4, 18, 0)) && (CURRENT_KERNEL_VERSION <= KERNEL_VERSION(4, 19, 0)))
+#define KERNEL_SUPPORT_LVS
+#endif
+
 #define IPPROTO_IP      0   /* Dummy protocol for TCP */
 #define IPPROTO_TCP     6   /* Transmission Control Protocol */
 #define IPPROTO_UDP     17  /* User Datagram Protocol */

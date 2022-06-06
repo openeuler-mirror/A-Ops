@@ -96,10 +96,44 @@ static inline int __debug_printf(const char *format, ...)
 #define NSEC_PER_SEC    1000000000L
 #define FSEC_PER_SEC    1000000000000000LL
 
+#ifndef NULL
+#define NULL (void *)0
+#endif
+
+#ifndef IFNAMSIZ
+#define IFNAMSIZ 16
+#endif
+
+#ifndef MAX_CPU
+#define MAX_CPU 8
+#endif
+
+#define NS(sec)  ((__u64)(sec) * 1000000000)
+
 #include "__share_map_task.h"
 #include "__share_map_match.h"
 #include "__bpf_kern.h"
 #include "__bpf_usr.h"
 #include "__libbpf.h"
+
+#ifndef s8
+typedef __s8 s8;
+#endif
+
+#ifndef s16
+typedef __s16 s16;
+#endif
+
+#ifndef u32
+typedef __u32 u32;
+#endif
+
+#ifndef s64
+typedef __s64 s64;
+#endif
+
+#ifndef u64
+typedef __u64 u64;
+#endif
 
 #endif
