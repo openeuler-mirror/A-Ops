@@ -23,6 +23,8 @@
 #define GOPHER_CMD_MAX                    3
 #define GOPHER_CMD_MIN                    1
 
+char *g_galaConfPath;
+
 static void ShowUsage(void)
 {
     (void)printf("Usage:\n"

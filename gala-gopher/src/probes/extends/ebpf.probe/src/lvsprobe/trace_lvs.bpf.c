@@ -19,6 +19,8 @@
 #include "bpf.h"
 #include "trace_lvs.h"
 
+#ifdef KERNEL_SUPPORT_LVS
+
 char g_linsence[] SEC("license") = "GPL";
 
 struct bpf_map_def SEC("maps") lvs_link_map = {
@@ -196,3 +198,4 @@ KPROBE(ip_vs_conn_expire, pt_regs)
 
     return;
 }
+#endif

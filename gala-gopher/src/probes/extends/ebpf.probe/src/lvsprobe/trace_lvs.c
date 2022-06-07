@@ -28,8 +28,10 @@
 
 #include "bpf.h"
 #include "args.h"
-#include "trace_lvs.skel.h"
 #include "trace_lvs.h"
+
+#ifdef KERNEL_SUPPORT_LVS
+#include "trace_lvs.skel.h"
 
 #define METRIC_NAME_LVS_LINK "ipvs_link"
 
@@ -179,13 +181,11 @@ static void print_ipvs_collect(int map_fd)
     (void)fflush(stdout);
     return;
 }
-
+#endif
 int main(int argc, char **argv)
 {
-    int collect_map_fd = -1;
-    int err = -1;
-
-    err = args_parse(argc, argv, &params);
+#ifdef KERNEL_SUPPORT_LVS
+    int err = args_parse(argc, argv, &params);
     if (err != 0)
         return -1;
 
@@ -200,7 +200,7 @@ int main(int argc, char **argv)
     }
 
     /* create collect hash map */
-    collect_map_fd =
+    int collect_map_fd =
         bpf_create_map(BPF_MAP_TYPE_HASH, sizeof(struct collect_key),
                         sizeof(struct collect_value), IPVS_MAX_ENTRIES, 0);
     if (collect_map_fd < 0) {
@@ -218,5 +218,8 @@ int main(int argc, char **argv)
 
 err:
     UNLOAD(trace_lvs);
+#else
+    printf("Kernel not support lvs.\n");
+#endif
     return 0;
 }
