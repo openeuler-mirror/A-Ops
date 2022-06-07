@@ -59,16 +59,18 @@ int IMDB_MetricSetValue(IMDB_Metric *metric, char *val)
 {
     int ret = 0;
     ret = snprintf(metric->val, MAX_IMDB_METRIC_VAL_LEN, val);
-    if (ret < 0)
+    if (ret < 0) {
         return -1;
+    }
 
     return 0;
 }
 
 void IMDB_MetricDestroy(IMDB_Metric *metric)
 {
-    if (metric == NULL)
+    if (metric == NULL) {
         return;
+    }
 
     free(metric);
     return;
@@ -99,8 +101,9 @@ IMDB_Record *IMDB_RecordCreate(uint32_t capacity)
 
 IMDB_Record *IMDB_RecordCreateWithKey(uint32_t capacity, uint32_t keySize)
 {
-    if (keySize == 0)
+    if (keySize == 0) {
         return NULL;
+    }
 
     IMDB_Record *record = IMDB_RecordCreate(capacity);
 
@@ -119,8 +122,9 @@ IMDB_Record *IMDB_RecordCreateWithKey(uint32_t capacity, uint32_t keySize)
 
 int IMDB_RecordAddMetric(IMDB_Record *record, IMDB_Metric *metric)
 {
-    if (record->metricsNum == record->metricsCapacity)
+    if (record->metricsNum == record->metricsCapacity) {
         return -1;
+    }
 
     record->metrics[record->metricsNum] = metric;
     record->metricsNum++;
@@ -132,12 +136,14 @@ int IMDB_RecordAppendKey(IMDB_Record *record, uint32_t keyIdx, char *val)
     int ret = 0;
     uint32_t offset = keyIdx * MAX_IMDB_METRIC_VAL_LEN;
 
-    if (offset + MAX_IMDB_METRIC_VAL_LEN > record->keySize)
+    if (offset + MAX_IMDB_METRIC_VAL_LEN > record->keySize) {
         return -1;
+    }
 
     ret = snprintf(record->key + offset, MAX_IMDB_METRIC_VAL_LEN, val);
-    if (ret < 0)
+    if (ret < 0) {
         return -1;
+    }
 
     return 0;
 }
@@ -153,8 +159,9 @@ void IMDB_RecordDestroy(IMDB_Record *record)
     if (record == NULL)
         return;
 
-    if (record->key != NULL)
+    if (record->key != NULL) {
         free(record->key);
+    }
 
     if (record->metrics != NULL) {
         for (int i = 0; i < record->metricsNum; i++) {
@@ -170,8 +177,9 @@ IMDB_Table *IMDB_TableCreate(char *name, uint32_t capacity)
 {
     IMDB_Table *table = NULL;
     table = (IMDB_Table *)malloc(sizeof(IMDB_Table));
-    if (table == NULL)
+    if (table == NULL) {
         return NULL;
+    }
     memset(table, 0, sizeof(IMDB_Table));
 
     table->records = (IMDB_Record **)malloc(sizeof(IMDB_Record *));
@@ -220,16 +228,18 @@ int IMDB_TableAddRecord(IMDB_Table *table, IMDB_Record *record)
 
 void IMDB_TableDestroy(IMDB_Table *table)
 {
-    if (table == NULL)
+    if (table == NULL) {
         return;
+    }
 
     if (table->records != NULL) {
         HASH_deleteAndFreeRecords(table->records);
         free(table->records);
     }
 
-    if (table->meta != NULL)
+    if (table->meta != NULL) {
         IMDB_RecordDestroy(table->meta);
+    }
 
     free(table);
     return;
@@ -240,15 +250,17 @@ static int IMDB_GetMachineId(char *buffer, size_t size)
     FILE *fp = NULL;
 
     fp = popen("cat /etc/machine-id", "r");
-    if (fp == NULL)
+    if (fp == NULL) {
         return -1;
+    }
 
     if (fgets(buffer, (int)size, fp) == NULL) {
         pclose(fp);
         return -1;
     }
-    if (strlen(buffer) > 0 && buffer[strlen(buffer) - 1] == '\n')
+    if (strlen(buffer) > 0 && buffer[strlen(buffer) - 1] == '\n') {
         buffer[strlen(buffer) - 1] = '\0';
+    }
 
     pclose(fp);
     return 0;
@@ -259,8 +271,9 @@ IMDB_DataBaseMgr *IMDB_DataBaseMgrCreate(uint32_t capacity)
     int ret = 0;
     IMDB_DataBaseMgr *mgr = NULL;
     mgr = (IMDB_DataBaseMgr *)malloc(sizeof(IMDB_DataBaseMgr));
-    if (mgr == NULL)
+    if (mgr == NULL) {
         return NULL;
+    }
 
     memset(mgr, 0, sizeof(IMDB_DataBaseMgr));
 
@@ -297,16 +310,18 @@ IMDB_DataBaseMgr *IMDB_DataBaseMgrCreate(uint32_t capacity)
 
 void IMDB_DataBaseMgrSetRecordTimeout(uint32_t timeout)
 {
-    if (timeout > 0)
+    if (timeout > 0) {
         g_recordTimeout = timeout;
+    }
 
     return;
 }
 
 void IMDB_DataBaseMgrDestroy(IMDB_DataBaseMgr *mgr)
 {
-    if (mgr == NULL)
+    if (mgr == NULL) {
         return;
+    }
 
     if (mgr->tables != NULL) {
         for (int i = 0; i < mgr->tablesNum; i++) {
@@ -370,10 +385,11 @@ static int IMDB_DataBaseMgrParseContent(IMDB_DataBaseMgr *mgr, IMDB_Table *table
             break;
 
         if (strcmp(token, "") == 0) {
-            if (index == 0)
+            if (index == 0) {
                 continue;   // first metrics
-            else
+            } else {
                 token = INVALID_METRIC_VALUE;
+            }
         }
 
         // if index > metricNum, it's invalid
@@ -385,18 +401,21 @@ static int IMDB_DataBaseMgrParseContent(IMDB_DataBaseMgr *mgr, IMDB_Table *table
                                    table->meta->metrics[index]->description,
                                    table->meta->metrics[index]->type);
         if (metric == NULL) {
-            ERROR("[IMDB] Can't create metrics.\n");
+            ERROR("[IMDB] Can't create metrics(%s, %s).\n", table->name,
+                table->meta->metrics[index]->name);
             goto ERR;
         }
 
         ret = IMDB_MetricSetValue(metric, token);
         if (ret != 0) {
+            ERROR("[IMDB] Set metrics value failed.(%s, %s).\n", table->name, metric->name);
             IMDB_MetricDestroy(metric);
             goto ERR;
         }
 
         ret = IMDB_RecordAddMetric(record, metric);
         if (ret != 0) {
+            ERROR("[IMDB] Add metrics failed.(%s, %s).\n", table->name, metric->name);
             IMDB_MetricDestroy(metric);
             goto ERR;
         }
@@ -412,16 +431,17 @@ static int IMDB_DataBaseMgrParseContent(IMDB_DataBaseMgr *mgr, IMDB_Table *table
 
         index += 1;
     }
-    if (buffer_head != NULL)
+    if (buffer_head != NULL) {
         free(buffer_head);
+    }
     return 0;
 
 ERR:
-    if (buffer_head != NULL)
+    if (buffer_head != NULL) {
         free(buffer_head);
+    }
     return -1;
 }
-
 
 IMDB_Record* IMDB_DataBaseMgrCreateRec(IMDB_DataBaseMgr *mgr, IMDB_Table *table, char *content)
 {
@@ -450,8 +470,9 @@ IMDB_Record* IMDB_DataBaseMgrCreateRec(IMDB_DataBaseMgr *mgr, IMDB_Table *table,
 
 ERR:
     pthread_rwlock_unlock(&mgr->rwlock);
-    if (record != NULL)
+    if (record != NULL) {
         IMDB_RecordDestroy(record);
+    }
 
     return NULL;
 }
@@ -482,15 +503,16 @@ int IMDB_DataBaseMgrAddRecord(IMDB_DataBaseMgr *mgr, char *recordStr)
     // start analyse record string
     for (token = strsep(&buffer, delim); token != NULL; token = strsep(&buffer, delim)) {
         if (strcmp(token, "") == 0) {
-            if (index == -1)
+            if (index == -1) {
                 continue;
-            else
+            } else {
                 token = INVALID_METRIC_VALUE;
+            }
         }
 
-        if (strcmp(token, "\n") == 0)
+        if (strcmp(token, "\n") == 0) {
             continue;
-
+        }
         // mark table name as the -1 substring so that metrics start at 0
         // find table by the first substring
         if (index == -1) {
@@ -571,61 +593,11 @@ int IMDB_DataBaseMgrAddRecord(IMDB_DataBaseMgr *mgr, char *recordStr)
     return 0;
 ERR:
     pthread_rwlock_unlock(&mgr->rwlock);
-    if (record != NULL)
+    if (record != NULL) {
         IMDB_RecordDestroy(record);
+    }
     return -1;
 }
-
-
-#if 0
-static int IMDB_MetricValue2String(const IMDB_Metric *metric, char *buffer, uint32_t maxLen, 
-                                    const char *tableName, const char *labels)
-{
-    time_t now;
-    (void)time(&now);
-    return snprintf(buffer, maxLen, "gala_gopher_%s_%s%s %s %lld\n",
-                    tableName, metric->name, labels, metric->val, now * THOUSAND);
-}
-
-static int IMDB_Metric2String(IMDB_Metric *metric, char *buffer, uint32_t maxLen, char *tableName, char *labels)
-{
-    int ret = 0;
-    int total = 0;
-    char *curBuffer = buffer;
-    uint32_t curMaxLen = maxLen;
-#if 0
-    ret = IMDB_MetricDesc2String(metric, curBuffer, curMaxLen, tableName);
-    if (ret < 0 || ret >= curMaxLen) {
-        return -1;
-    }
-    curBuffer += ret;
-    curMaxLen -= ret;
-    total += ret;
-
-    ret = IMDB_MetricType2String(metric, curBuffer, curMaxLen, tableName);
-    if (ret < 0 || ret >= curMaxLen){
-        return -1;
-    }
-    curBuffer += ret;
-    curMaxLen -= ret;
-    total += ret;
-#endif
-    ret = IMDB_MetricValue2String(metric, curBuffer, curMaxLen, tableName, labels);
-    if (ret < 0) {
-        /* snprintf error */
-        return -1;
-    }
-    if (ret >= curMaxLen) {
-        /* record's len > curMaxLen, delete record in buffer */
-        *curBuffer = '\0';
-        return 0;
-    }
-    /* record to buffer success */
-    total += ret;
-
-    return total;
-}
-#endif
 
 // return 0 if satisfy, return -1 if not
 static int MetricTypeSatisfyPrometheus(IMDB_Metric *metric)
@@ -639,8 +611,9 @@ static int MetricTypeSatisfyPrometheus(IMDB_Metric *metric)
 
     int size = sizeof(prometheusTypes) / sizeof(prometheusTypes[0]);
     for (int i = 0; i < size; i++) {
-        if (strcmp(metric->type, prometheusTypes[i]) == 0)
+        if (strcmp(metric->type, prometheusTypes[i]) == 0) {
             return 0;
+        }
     }
 
     return -1;
@@ -650,8 +623,9 @@ static int MetricTypeIsLabel(IMDB_Metric *metric)
 {
     const char *label[] = {METRIC_TYPE_LABEL, METRIC_TYPE_KEY};
     for (int i = 0; i < sizeof(label) / sizeof(label[0]); i++) {
-        if (strcmp(metric->type, label[i]) == 0)
+        if (strcmp(metric->type, label[i]) == 0) {
             return 1;
+        }
     }
 
     return 0;
@@ -665,15 +639,17 @@ static int __snprintf(char **buf, const int bufLen, int *remainLen, const char *
     char *p = *buf;
     va_list args;
 
-    if (bufLen <= 0)
+    if (bufLen <= 0) {
         return -1;
+    }
 
     va_start(args, format);
     len = vsnprintf(p, (const unsigned int)bufLen, format, args);
     va_end(args);
 
-    if (len >= bufLen || len < 0)
+    if (len >= bufLen || len < 0) {
         return -1;
+    }
 
     *buf += len;
     *remainLen = bufLen - len;
@@ -689,8 +665,9 @@ static int IMDB_BuildEntiyID(const IMDB_DataBaseMgr *mgr,
     char *p = buffer;
     const char *fmt = "%s_%s_%s";  // TABLE_MACHINEID_ENTITYID
 
-    if (tblName == NULL || entityId == NULL)
+    if (tblName == NULL || entityId == NULL) {
         return -1;
+    }
 
     return __snprintf(&p, size, &size, fmt, tblName, mgr->nodeInfo.machineId, entityId);
 }
@@ -714,8 +691,9 @@ static int IMDB_BuildMetrics(const char *tblName,
     int size = (int)maxLen;
     const char *fmt = "gala_gopher_%s_%s";  // tblName_metricsName
 
-    if (tblName == NULL || metrcisName == NULL)
+    if (tblName == NULL || metrcisName == NULL) {
         return -1;
+    }
 
     return __snprintf(&buffer, size, &size, fmt, tblName, metrcisName);
 }
@@ -759,12 +737,14 @@ static int IMDB_BuildPrometheusLabel(const IMDB_DataBaseMgr *mgr,
     char first_flag = 1;
 
     ret = __snprintf(&p, size, &size, "%s", "{");
-    if (ret < 0)
+    if (ret < 0) {
         goto err;
+    }
 
     for (int i = 0; i < record->metricsNum; i++) {
-        if (MetricTypeIsLabel(record->metrics[i]) == 0)
+        if (MetricTypeIsLabel(record->metrics[i]) == 0) {
             continue;
+        }
 
         if (first_flag) {
             ret = __snprintf(&p, size, &size, "%s=\"%s\"",
@@ -773,80 +753,29 @@ static int IMDB_BuildPrometheusLabel(const IMDB_DataBaseMgr *mgr,
             ret = __snprintf(&p, size, &size, ",%s=\"%s\"",
                             record->metrics[i]->name, record->metrics[i]->val);
         }
-        if (ret < 0)
+        if (ret < 0) {
             goto err;
-
+        }
         first_flag = 0;
     }
 
     // append machine_id and hostname
     ret = __snprintf(&p, size, &size, ",machine_id=\"%s\",hostname=\"%s\"",
                     mgr->nodeInfo.machineId, mgr->nodeInfo.hostName);
-    if (ret < 0)
+    if (ret < 0) {
         goto err;
+    }
 
     ret = __snprintf(&p, size, &size, "%s", "}");
-    if (ret < 0)
+    if (ret < 0) {
         goto err;
+    }
 
     return 0;
 err:
     return ret;
 }
 
-#endif
-
-#if 0
-// name{label1="label1",label2="label2",label2="label2"} value time
-static int IMDB_Prometheus_BuildLabel(const IMDB_DataBaseMgr *mgr, IMDB_Record *record, char *buffer, uint32_t maxLen)
-{
-    char labels[MAX_LABELS_BUFFER_SIZE] = {0};
-    uint32_t labell = MAX_LABELS_BUFFER_SIZE;
-    int ret = 0;
-    int total = 0;
-    char write_comma = 0;
-    uint32_t curMaxLen = maxLen;
-
-    for (int i = 0; i < record->metricsNum; i++) {
-        ret = MetricTypeIsLabel(record->metrics[i]);
-        if (ret == 0)
-            continue;
-
-        if (write_comma != 0) {
-            ret = snprintf(labels + total, labell, "%s", ",");
-            if (ret < 0 || ret >= labell) {
-                goto ERR;
-            }
-            total += ret;
-            labell -= ret;
-        }
-
-        ret = snprintf(labels + total, labell, "%s=\"%s\"", record->metrics[i]->name, record->metrics[i]->val);
-        if (ret < 0 || ret >= labell) {
-            goto ERR;
-        }
-        total += ret;
-        labell -= ret;
-        write_comma = 1;
-    }
-
-    // append machine_id and hostname
-    ret = snprintf(labels + total, labell, ",%s=\"%s\",%s=\"%s\"",
-                    "machine_id", mgr->nodeInfo.machineId,
-                    "hostname", mgr->nodeInfo.hostName);
-    if (ret < 0 || ret >= labell) {
-        goto ERR;
-    }
-
-    ret = snprintf(buffer, curMaxLen, "{%s}", labels);
-    if (ret < 0 || ret >= curMaxLen) {
-        goto ERR;
-    }
-    //curMaxLen -= ret;
-
-ERR:
-    return ret;
-}
 #endif
 
 static int IMDB_Rec2Prometheus(IMDB_DataBaseMgr *mgr, IMDB_Record *record, char *buffer, uint32_t maxLen, char *tableName)
@@ -912,7 +841,7 @@ static int IMDB_Tbl2Prometheus(IMDB_DataBaseMgr *mgr, IMDB_Table *table, char *b
         }
 
         ret = IMDB_Rec2Prometheus(mgr, record, curBuffer, curMaxLen, table->name);
-        if (ret <= 0) {
+        if (ret < 0) {
             ERROR("[IMDB] table(%s) record to string fail.\n", table->name);
             return -1;
         }
@@ -981,45 +910,55 @@ static int IMDB_Record2Json(const IMDB_DataBaseMgr *mgr, const IMDB_Table *table
 
     jsonStr[0] = 0;
     ret = snprintf(json_cursor, maxLen, "{\"timestamp\": %lld", now * THOUSAND);
-    if (ret < 0)
+    if (ret < 0)  {
         return -1;
+    }
     json_cursor += ret;
     maxLen -= ret;
-    if (maxLen < 0)
+    if (maxLen < 0)  {
         return -1;
+    }
 
     ret = snprintf(json_cursor, maxLen, ", \"machine_id\": \"%s\"", mgr->nodeInfo.machineId);
-    if (ret < 0)
+    if (ret < 0)  {
         return -1;
+    }
     json_cursor += ret;
     maxLen -= ret;
-    if (maxLen < 0)
+    if (maxLen < 0)  {
         return -1;
+    }
 
     ret = snprintf(json_cursor, maxLen, ", \"hostname\": \"%s\"", mgr->nodeInfo.hostName);
-    if (ret < 0)
+    if (ret < 0)  {
         return -1;
+    }
     json_cursor += ret;
     maxLen -= ret;
-    if (maxLen < 0)
+    if (maxLen < 0)  {
         return -1;
+    }
 
     ret = snprintf(json_cursor, maxLen, ", \"table_name\": \"%s\"", table->name);
-    if (ret < 0)
+    if (ret < 0)  {
         return -1;
+    }
     json_cursor += ret;
     maxLen -= ret;
-    if (maxLen < 0)
+    if (maxLen < 0)  {
         return -1;
+    }
 
     for (int i = 0; i < record->metricsNum; i++) {
         ret = snprintf(json_cursor, maxLen, ", \"%s\": \"%s\"", record->metrics[i]->name, record->metrics[i]->val);
-        if (ret < 0)
+        if (ret < 0)  {
             return -1;
+        }
         json_cursor += ret;
         maxLen -= ret;
-        if (maxLen < 0)
+        if (maxLen < 0)  {
             return -1;
+        }
     }
 
     ret = snprintf(json_cursor, maxLen, "}");
@@ -1029,69 +968,6 @@ static int IMDB_Record2Json(const IMDB_DataBaseMgr *mgr, const IMDB_Table *table
 
     return 0;
 }
-
-#if 0
-static int IMDB_RecordEvent2Json(const IMDB_DataBaseMgr *mgr, IMDB_Table *table, IMDB_Record *record,
-                                char *jsonStr, uint32_t jsonStrLen)
-{
-    int ret = 0;
-    char *json_cursor = jsonStr;
-    int maxLen = (int)jsonStrLen;
-    char name[MAX_IMDB_METRIC_NAME_LEN];
-    char value[MAX_IMDB_METRIC_VAL_LEN];
-
-    jsonStr[0] = 0;
-    ret = snprintf(json_cursor, maxLen, "{");
-    if (ret < 0)
-        return -1;
-
-    json_cursor += ret;
-    maxLen -= ret;
-    if (maxLen < 0)
-        return -1;
-
-    for (int i = 0; i < record->metricsNum; i++) {
-        name[0] = 0;
-        value[0] = 0;
-        (void)strncpy(name, record->metrics[i]->name, MAX_IMDB_METRIC_NAME_LEN - 1);
-        (void)strncpy(value, record->metrics[i]->val, MAX_IMDB_METRIC_VAL_LEN - 1);
-
-        if (strcmp(name, "Body") == 0) {
-            ret = snprintf(json_cursor, maxLen,
-                           "\"Resource\": {\"host.hostname\": \"%s\", \"host.machineid\": \"%s\"}, ",
-                           mgr->nodeInfo.hostName, mgr->nodeInfo.machineId);
-            if (ret < 0)
-                return -1;
-            json_cursor += ret;
-            maxLen -= ret;
-            if (maxLen < 0)
-                return -1;
-            
-            ret = snprintf(json_cursor, maxLen, "\"%s\": \"%s\"", name, value);
-            if (ret < 0)
-                return -1;
-            json_cursor += ret;
-            maxLen -= ret;
-            if (maxLen < 0)
-                return -1;
-        } else {
-            ret = snprintf(json_cursor, maxLen, "\"%s\": \"%s\", ", name, value);
-            if (ret < 0)
-                return -1;
-            json_cursor += ret;
-            maxLen -= ret;
-            if (maxLen < 0)
-                return -1;
-        }
-    }
-
-    ret = snprintf(json_cursor, maxLen, "}");
-    if (ret < 0)
-        return -1;
-    
-    return 0;
-}
-#endif
 
 #define __EVT_TBL_TBLNAME "tblName"
 #define __EVT_TBL_ENTITYID "EntityID"
@@ -1105,8 +981,9 @@ static const char* IMDB_GetEvtVal(IMDB_Record *record, const char *metricsName)
     int i;
 
     for (i = 0; i < record->metricsNum; i++) {
-        if (strcmp(record->metrics[i]->name, metricsName) == 0)
+        if (strcmp(record->metrics[i]->name, metricsName) == 0) {
             return (const char *)record->metrics[i]->val;
+        }
     }
     return NULL;
 }
@@ -1147,12 +1024,14 @@ static int IMDB_Evt2Json(const IMDB_DataBaseMgr *mgr,
     const char *body = IMDB_GetEvtVal(record, __EVT_TBL_BODY);
 
     ret = __snprintf(&p, len, &len, "%s", "{");
-    if (ret < 0)
+    if (ret < 0) {
         goto err;
+    }
 
     ret = IMDB_BuildTmStamp(p, len);
-    if (ret < 0)
+    if (ret < 0) {
         goto err;
+    }
 
     // Readdressing end of string
     len = strlen(jsonStr);
@@ -1160,12 +1039,14 @@ static int IMDB_Evt2Json(const IMDB_DataBaseMgr *mgr,
     len = jsonStrLen - len;
 
     ret = __snprintf(&p, len, &len, "%s", ", \"Attributes\": { \"Entity ID\": \"");
-    if (ret < 0)
+    if (ret < 0) {
         goto err;
+    }
 
     ret = IMDB_BuildEntiyID(mgr, tblName, entityID, p, len);
-    if (ret < 0)
+    if (ret < 0) {
         goto err;
+    }
 
     // Readdressing end of string
     len = strlen(jsonStr);
@@ -1173,12 +1054,14 @@ static int IMDB_Evt2Json(const IMDB_DataBaseMgr *mgr,
     len = jsonStrLen - len;
 
     ret = __snprintf(&p, len, &len, "%s", "\",}, \"Resource\": { \"metrics\": \"");
-    if (ret < 0)
+    if (ret < 0) {
         goto err;
+    }
 
     ret = IMDB_BuildMetrics(tblName, metrics, p, len);
-    if (ret < 0)
+    if (ret < 0) {
         goto err;
+    }
 
     // Readdressing end of string
     len = strlen(jsonStr);
@@ -1186,12 +1069,14 @@ static int IMDB_Evt2Json(const IMDB_DataBaseMgr *mgr,
     len = jsonStrLen - len;
 
     ret = __snprintf(&p, len, &len, "\",}, \"SeverityText\": \"%s\",", secTxt);
-    if (ret < 0)
+    if (ret < 0) {
         goto err;
+    }
 
     ret = __snprintf(&p, len, &len, "\"SeverityNumber\": %s,", secNum);
-    if (ret < 0)
+    if (ret < 0) {
         goto err;
+    }
 
     ret = __snprintf(&p, len, &len, "\"Body\": \"%s\"}", body);
 
@@ -1231,121 +1116,17 @@ int IMDB_Rec2Json(IMDB_DataBaseMgr *mgr, IMDB_Table *table,
         goto ERR;
     }
 
-    if (createRecFlag)
+    if (createRecFlag) {
         IMDB_RecordDestroy(record);
+    }
 
     return 0;
 ERR:
-    if (createRecFlag)
+    if (createRecFlag) {
         IMDB_RecordDestroy(record);
+    }
     return -1;
 }
-
-#if 0
-int IMDB_DataStr2Json(IMDB_DataBaseMgr *mgr, const char *recordStr, char *jsonStr, uint32_t jsonStrLen)
-{
-    pthread_rwlock_wrlock(&mgr->rwlock);
-
-    int ret = 0;
-    IMDB_Table *table = NULL;
-    IMDB_Record *record = NULL;
-    IMDB_Metric *metric = NULL;
-
-    int index = -1;
-    char *token = NULL;
-    char delim[] = "|";
-    char *buffer = NULL;
-    char *buffer_head = NULL;
-
-    buffer = strdup(recordStr);
-    if (buffer == NULL)
-        goto ERR;
-
-    buffer_head = buffer;
-
-    // start analyse record string
-    for (token = strsep(&buffer, delim); token != NULL; token = strsep(&buffer, delim)) {
-        if (strcmp(token, "") == 0) {
-            if (index == -1)
-                continue;
-            else
-                token = INVALID_METRIC_VALUE;
-        }
-
-        if (strcmp(token, "\n") == 0)
-            continue;
-
-        // mark table name as the -1 substring so that metrics start at 0
-        // find table by the first substring
-        if (index == -1) {
-            table = IMDB_DataBaseMgrFindTable(mgr, token);
-            if (table == NULL) {
-                ERROR("[IMDB] Can not find table named %s.\n", token);
-                free(buffer_head);
-                goto ERR;
-            }
-
-            record = IMDB_RecordCreate(table->meta->metricsCapacity);
-            if (record == NULL) {
-                free(buffer_head);
-                goto ERR;
-            }
-
-            index += 1;
-            continue;
-        }
-
-        // if index > metricNum, it's invalid
-        if (index >= table->meta->metricsNum) {
-            continue;
-        }
-        // fill record by the rest substrings
-        metric = IMDB_MetricCreate(table->meta->metrics[index]->name,
-                                   table->meta->metrics[index]->description,
-                                   table->meta->metrics[index]->type);
-        if (metric == NULL) {
-            ERROR("[IMDB] Can't create metrics.\n");
-            free(buffer_head);
-            goto ERR;
-        }
-
-        ret = IMDB_MetricSetValue(metric, token);
-        if (ret != 0) {
-            free(buffer_head);
-            goto ERR;
-        }
-
-        ret = IMDB_RecordAddMetric(record, metric);
-        if (ret != 0) {
-            free(buffer_head);
-            goto ERR;
-        }
-
-        index += 1;
-    }
-
-    // ‘event’ log to json
-    if (strcmp(table->name, "event") == 0) {
-        ret = IMDB_RecordEvent2Json(mgr, table, record, jsonStr, jsonStrLen);
-    } else {
-        ret = IMDB_Record2Json(mgr, table, record, jsonStr, jsonStrLen);
-    }
-
-    if (ret != 0) {
-        free(buffer_head);
-        goto ERR;
-    }
-
-    free(buffer_head);
-    IMDB_RecordDestroy(record);
-    pthread_rwlock_unlock(&mgr->rwlock);
-    return 0;
-ERR:
-    pthread_rwlock_unlock(&mgr->rwlock);
-    IMDB_RecordDestroy(record);
-    return -1;
-}
-#endif
 
 IMDB_Record *HASH_findRecord(const IMDB_Record **records, const IMDB_Record *record)
 {
@@ -1362,8 +1143,9 @@ void HASH_addRecord(IMDB_Record **records, IMDB_Record *record)
 
 void HASH_deleteRecord(IMDB_Record **records, IMDB_Record *record)
 {
-    if (records == NULL || record == NULL)
+    if (records == NULL || record == NULL)  {
         return;
+    }
 
     HASH_DEL(*records, record);
     return;
@@ -1371,8 +1153,9 @@ void HASH_deleteRecord(IMDB_Record **records, IMDB_Record *record)
 
 void HASH_deleteAndFreeRecords(IMDB_Record **records)
 {
-    if (records == NULL)
+    if (records == NULL)  {
         return;
+    }
 
     IMDB_Record *r, *tmp;
     HASH_ITER(hh, *records, r, tmp) {

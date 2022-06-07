@@ -117,8 +117,8 @@ static __always_inline int get_tcp_link_key(struct tcp_link_s *link, struct sock
             link->c_ip = _(sk->sk_rcv_saddr);
             link->s_ip = _(sk->sk_daddr);
         } else {
-            bpf_probe_read_user(link->c_ip6, IP6_LEN, &sk->sk_v6_rcv_saddr);
-            bpf_probe_read_user(link->s_ip6, IP6_LEN, &sk->sk_v6_daddr);
+            (void)bpf_probe_read(&link->c_ip6, IP6_LEN, &sk->sk_v6_rcv_saddr);
+            (void)bpf_probe_read(&link->s_ip6, IP6_LEN, &sk->sk_v6_daddr);
         }
         link->s_port = bpf_ntohs(_(sk->sk_dport));
         if (link->c_flag == 1) {
@@ -131,8 +131,8 @@ static __always_inline int get_tcp_link_key(struct tcp_link_s *link, struct sock
             link->s_ip = _(sk->sk_rcv_saddr);
             link->c_ip = _(sk->sk_daddr);
         } else {
-            bpf_probe_read_user(link->s_ip6, IP6_LEN, &sk->sk_v6_rcv_saddr);
-            bpf_probe_read_user(link->c_ip6, IP6_LEN, &sk->sk_v6_daddr);
+            (void)bpf_probe_read(&link->s_ip6, IP6_LEN, &sk->sk_v6_rcv_saddr);
+            (void)bpf_probe_read(&link->c_ip6, IP6_LEN, &sk->sk_v6_daddr);
         }
         link->s_port = _(sk->sk_num);
         if (link->c_flag == 1) {
