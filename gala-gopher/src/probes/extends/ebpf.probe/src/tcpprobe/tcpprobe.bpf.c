@@ -385,6 +385,10 @@ static void get_tcp_health(struct sock *sk, struct tcp_health* health)
     u32 tmp;
     struct tcp_sock *tcp_sk = (struct tcp_sock *)sk;
 
+    health->segs_in = _(tcp_sk->segs_in);
+
+    health->segs_out = _(tcp_sk->segs_out);
+
     health->sk_drops = _(sk->sk_drops.counter);
 
     tmp = _(tcp_sk->lost_out);

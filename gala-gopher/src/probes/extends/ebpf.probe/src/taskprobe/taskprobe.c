@@ -157,7 +157,7 @@ out:
 static void load_period(int period_fd, __u32 value)
 {
     __u32 key = 0;
-    __u64 period = (__u64)value * 1000000000;
+    __u64 period = NS(value);
     (void)bpf_map_update_elem(period_fd, &key, &period, BPF_ANY);
 }
 

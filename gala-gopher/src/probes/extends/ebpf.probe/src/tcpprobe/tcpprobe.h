@@ -60,6 +60,9 @@ struct tcp_health {
 
     int sk_err;             // FROM sock.sk_err
     int sk_err_soft;        // FROM sock.sk_err_soft
+
+    __u32 segs_out;         // total number of segments sent
+    __u32 segs_in;          // total number of segments in
 };
 
 struct tcp_state {

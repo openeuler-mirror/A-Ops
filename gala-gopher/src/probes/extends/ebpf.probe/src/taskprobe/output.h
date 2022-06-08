@@ -43,7 +43,7 @@ struct bpf_map_def SEC("maps") period_map = {
     .max_entries = 1,
 };
 
-#define PERIOD ((u64)30 * 1000000000)
+#define PERIOD NS(30)
 static __always_inline u64 get_period()
 {
     u32 key = 0;
