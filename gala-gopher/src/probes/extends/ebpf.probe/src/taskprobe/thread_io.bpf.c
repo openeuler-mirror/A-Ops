@@ -17,7 +17,7 @@
 #endif
 #define BPF_PROG_KERN
 #include "bpf.h"
-#include "task.h"
+#include "output.h"
 
 #define MAX_CPU 8
 #define TASK_REQUEST_MAX 100
@@ -39,12 +39,12 @@ static __always_inline void update_task_count_entry(struct task_data *data, stru
 {
     struct gendisk *gd;
 
-    __sync_fetch_and_add(&(data->io.t_io_data.task_io_count), 1);
-    __sync_fetch_and_add(&(data->io.t_io_data.task_io_time_us), delta_us);
+    __sync_fetch_and_add(&(data->io.task_io_count), 1);
+    __sync_fetch_and_add(&(data->io.task_io_time_us), delta_us);
     
     gd = _(request->rq_disk);
-    data->io.t_io_data.major = _(gd->major);
-    data->io.t_io_data.minor = _(gd->first_minor);
+    data->io.major = _(gd->major);
+    data->io.minor = _(gd->first_minor);
     
     if (rwflag) {
         // __sync_fetch_and_add(&(io_statsp->write_bytes), _(request->__data_len));
@@ -82,12 +82,13 @@ KPROBE(blk_account_io_completion, pt_regs)
     u64 delta_us = (bpf_ktime_get_ns() - *tsp) / 1000;
 
     key.pid = (int)bpf_get_current_pid_tgid();
-    data = (struct task_data *)bpf_map_lookup_elem(&__task_map, &key);
+    data = (struct task_data *)get_task_entry(&key);
 
     rwflag = !!((request->cmd_flags & REQ_OP_MASK) == REQ_OP_WRITE);
     
     if (data != (struct task_data *)0) {
         update_task_count_entry(data, request, delta_us, rwflag);
+        report(ctx, data);
     }
 }
 
@@ -97,9 +98,10 @@ KRAWTRACE(sched_stat_iowait, bpf_raw_tracepoint_args)
     u64 delta = (u64)ctx->args[1];
 
     struct task_key key = {.pid = _(task->pid)};
-    struct task_data *data = (struct task_data *)bpf_map_lookup_elem(&__task_map, &key);
+    struct task_data *data = (struct task_data *)get_task_entry(&key);
     if (data) {
-        __sync_fetch_and_add(&(data->io.t_io_data.task_io_wait_time_us), delta);
+        __sync_fetch_and_add(&(data->io.task_io_wait_time_us), delta);
+        report(ctx, data);
     }
 }
 
@@ -107,8 +109,9 @@ KRAWTRACE(sched_process_hang, bpf_raw_tracepoint_args)
 {
     struct task_struct* task = (struct task_struct*)ctx->args[0];
     struct task_key key = {.pid = _(task->pid)};
-    struct task_data *data = (struct task_data *)bpf_map_lookup_elem(&__task_map, &key);
+    struct task_data *data = (struct task_data *)get_task_entry(&key);
     if (data) {
-        __sync_fetch_and_add(&(data->io.t_io_data.task_hang_count), 1);
+        __sync_fetch_and_add(&(data->io.task_hang_count), 1);
+        report(ctx, data);
     }
 }
