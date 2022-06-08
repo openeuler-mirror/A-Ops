@@ -23,13 +23,18 @@
 
 #define METRICS_PROC_NAME   "system_proc"
 #define PROC_PATH           "/proc"
+#define PROC_COMM           "/proc/%s/comm"
 #define PROC_COMM_CMD       "/usr/bin/cat /proc/%s/comm"
-#define PROC_START_TIME     "/usr/bin/cat /proc/%s/stat | awk '{print $22}'"
+#define PROC_STAT           "/proc/%s/stat"
+#define PROC_START_TIME_CMD "/usr/bin/cat /proc/%s/stat | awk '{print $22}'"
 #define PROC_CMDLINE_CMD    "/proc/%s/cmdline"
+#define PROC_FD             "/proc/%s/fd"
 #define PROC_FD_CNT_CMD     "/usr/bin/ls -l /proc/%s/fd | wc -l"
+#define PROC_IO             "/proc/%s/io"
 #define PROC_IO_CMD         "/usr/bin/cat /proc/%s/io"
+#define PROC_SMAPS          "/proc/%s/smaps_rollup"
 #define PROC_SMAPS_CMD      "/usr/bin/cat /proc/%s/smaps_rollup"
-#define PROC_STAT           "/usr/bin/cat /proc/%s/stat | awk '{print $10\":\"$12\":\"$14\":\"$15\":\"$23\":\"$24}'"
+#define PROC_STAT_CMD       "/usr/bin/cat /proc/%s/stat | awk '{print $10\":\"$12\":\"$14\":\"$15\":\"$23\":\"$24}'"
 #define PROC_NAME_MAX       64
 #define LINE_BUF_LEN        128
 #define PROC_IN_PROBE_RANGE 1
@@ -191,16 +196,22 @@ static int is_proc_subdir(const char *pid)
     return -1;
 }
 
-static int do_read_line(const char* pid, const char *command, char *buf, unsigned int buf_len)
+static int do_read_line(const char* pid, const char *command, const char *fname, char *buf, unsigned int buf_len)
 {
     FILE *f = NULL;
-    char cmd[LINE_BUF_LEN];
+    char fname_or_cmd[LINE_BUF_LEN];
     char line[LINE_BUF_LEN];
 
-    cmd[0] = 0;
+    fname_or_cmd[0] = 0;
+    (void)snprintf(fname_or_cmd, LINE_BUF_LEN, fname, pid);
+    if (access((const char *)fname_or_cmd, 0) != 0) {
+        return -1;
+    }
+
+    fname_or_cmd[0] = 0;
     line[0] = 0;
-    (void)snprintf(cmd, LINE_BUF_LEN, command, pid);
-    f = popen(cmd, "r");
+    (void)snprintf(fname_or_cmd, LINE_BUF_LEN, command, pid);
+    f = popen(fname_or_cmd, "r");
     if (f == NULL) {
         printf("[SYSTEM_PROBE] proc cat fail, popen error.\n");
         return -1;
@@ -219,12 +230,71 @@ static int do_read_line(const char* pid, const char *command, char *buf, unsigne
 
 static int get_proc_comm(const char* pid, char *buf)
 {
-    return do_read_line(pid, PROC_COMM_CMD, buf, PROC_NAME_MAX);
+    return do_read_line(pid, PROC_COMM_CMD, PROC_COMM, buf, PROC_NAME_MAX);
 }
 
 static int get_proc_start_time(const char* pid, char *buf)
 {
-    return do_read_line(pid, PROC_START_TIME, buf, PROC_NAME_MAX);
+    return do_read_line(pid, PROC_START_TIME_CMD, PROC_STAT, buf, PROC_NAME_MAX);
+}
+
+#define JINFO_NOT_INSTALLED 0
+#define JINFO_IS_INSTALLED  1
+
+static int is_jinfo_installed()
+{
+    FILE *f = NULL;
+    char cmd[LINE_BUF_LEN];
+    char line[LINE_BUF_LEN];
+    int is_installed = JINFO_NOT_INSTALLED;
+
+    cmd[0] = 0;
+    (void)snprintf(cmd, LINE_BUF_LEN, "which jinfo");
+    f = popen(cmd, "r");
+    if (f == NULL) {
+        goto out;
+    }
+    if (fgets(line, LINE_BUF_LEN, f) == NULL) {
+        goto out;
+    }
+    if (strstr(line, "no jinfo in") == NULL) {
+        is_installed = JINFO_IS_INSTALLED;
+    }
+out:
+    if (f != NULL) {
+        (void)pclose(f);
+    }
+    return is_installed;
+}
+
+#define TASK_PROBE_JAVA_COMMAND "sun.java.command"
+static void get_java_proc_cmd(const char* pid, proc_info_t *proc_info)
+{
+    FILE *f = NULL;
+    char cmd[LINE_BUF_LEN];
+    char line[LINE_BUF_LEN];
+    if (is_jinfo_installed() == JINFO_NOT_INSTALLED) {
+        printf("[SYSTEM_PROBE] jinfo not installed, please check.\n");
+        return;
+    }
+    cmd[0] = 0;
+    (void)snprintf(cmd, LINE_BUF_LEN, "jinfo %s | grep %s | awk '{print $3}'", pid, TASK_PROBE_JAVA_COMMAND);
+    f = popen(cmd, "r");
+    if (f == NULL) {
+        goto out;
+    }
+    if (fgets(line, LINE_BUF_LEN, f) == NULL) {
+        goto out;
+    }
+    SPLIT_NEWLINE_SYMBOL(line);
+    proc_info->cmdline = (char *)malloc(LINE_BUF_LEN);
+    (void)memset(proc_info->cmdline, 0, LINE_BUF_LEN);
+    (void)strncpy(proc_info->cmdline, line, LINE_BUF_LEN - 1);
+out:
+    if (f != NULL) {
+        (void)pclose(f);
+    }
+    return;
 }
 
 static int get_proc_cmdline(const char* pid, proc_info_t *proc_info)
@@ -259,6 +329,7 @@ static int get_proc_cmdline(const char* pid, proc_info_t *proc_info)
         goto out;
     }
     proc_info->cmdline = (char *)malloc(LINE_BUF_LEN);
+    (void)memset(proc_info->cmdline, 0, LINE_BUF_LEN);
     (void)strncpy(proc_info->cmdline, line, LINE_BUF_LEN - 1);
 out:
     (void)fclose(f);
@@ -269,7 +340,7 @@ static int get_proc_fdcnt(const char *pid, proc_info_t *proc_info)
 {
     char buffer[LINE_BUF_LEN];
     buffer[0] = 0;
-    int ret = do_read_line(pid, PROC_FD_CNT_CMD, buffer, LINE_BUF_LEN);
+    int ret = do_read_line(pid, PROC_FD_CNT_CMD, PROC_FD, buffer, LINE_BUF_LEN);
     if (ret < 0) {
         return -1;
     }
@@ -311,7 +382,7 @@ static int get_proc_stat(const char *pid, proc_info_t *proc_info)
     char *p = NULL;
     int index = 0;
     buffer[0] = 0;
-    int ret = do_read_line(pid, PROC_STAT, buffer, LINE_BUF_LEN);
+    int ret = do_read_line(pid, PROC_STAT_CMD, PROC_STAT, buffer, LINE_BUF_LEN);
 
     if (ret < 0) {
         return -1;
@@ -361,12 +432,17 @@ int get_proc_io(const char *pid, proc_info_t *proc_info)
     FILE *f = NULL;
     int index = 0;
     unsigned long long value = 0;
-    char cmd[LINE_BUF_LEN];
+    char fname_or_cmd[LINE_BUF_LEN];
     char line[LINE_BUF_LEN];
 
-    cmd[0] = 0;
-    (void)snprintf(cmd, LINE_BUF_LEN, PROC_IO_CMD, pid);
-    f = popen(cmd, "r");
+    fname_or_cmd[0] = 0;
+    (void)snprintf(fname_or_cmd, LINE_BUF_LEN, PROC_IO, pid);
+    if (access((const char *)fname_or_cmd, 0) != 0) {
+        goto out;
+    }
+    fname_or_cmd[0] = 0;
+    (void)snprintf(fname_or_cmd, LINE_BUF_LEN, PROC_IO_CMD, pid);
+    f = popen(fname_or_cmd, "r");
     if (f == NULL) {
         goto out;
     }
@@ -427,12 +503,17 @@ int get_proc_mss(const char *pid, proc_info_t *proc_info)
     FILE *f = NULL;
     int index = 0;
     unsigned long value = 0;
-    char cmd[LINE_BUF_LEN];
+    char fname_or_cmd[LINE_BUF_LEN];
     char line[LINE_BUF_LEN];
 
-    cmd[0] = 0;
-    (void)snprintf(cmd, LINE_BUF_LEN, PROC_SMAPS_CMD, pid);
-    f = popen(cmd, "r");
+    fname_or_cmd[0] = 0;
+    (void)snprintf(fname_or_cmd, LINE_BUF_LEN, PROC_SMAPS, pid);
+    if (access((const char *)fname_or_cmd, 0) != 0) {
+        goto out;
+    }
+    fname_or_cmd[0] = 0;
+    (void)snprintf(fname_or_cmd, LINE_BUF_LEN, PROC_SMAPS_CMD, pid);
+    f = popen(fname_or_cmd, "r");
     if (f == NULL) {
         goto out;
     }
@@ -484,9 +565,9 @@ static int update_proc_infos(const char *pid, proc_info_t *proc_info)
 
 static int check_proc_probe_flag(const char *comm)
 {
-    int index = 0, size = sizeof(proc_range) / sizeof(proc_range[0]);
+    int index, size = sizeof(proc_range) / sizeof(proc_range[0]);
     for (index = 0; index < size; index++) {
-        if (strstr(comm, proc_range[index]) != NULL) {
+        if (strcmp(comm, proc_range[index]) == 0) {
             return 1;
         }
     }
@@ -564,9 +645,8 @@ int system_proc_probe()
         (void)memset(comm, 0, PROC_NAME_MAX);
         (void)get_proc_comm(entry->d_name, comm);
 
-        /* get flag(whether this proc is to be probed) by lookup proc_range list */
-        int flag = check_proc_probe_flag(comm);
-        if (flag != PROC_IN_PROBE_RANGE) {
+        /* check proc whether in proc_range, if in this proc should be probed */
+        if (check_proc_probe_flag(comm) != PROC_IN_PROBE_RANGE) {
             continue;
         } else {
             l = (proc_hash_t *)malloc(sizeof *l);
@@ -575,7 +655,11 @@ int system_proc_probe()
             l->key.start_time = (unsigned long long)atoll(stime);
             (void)strncpy(l->info.comm, comm, PROC_NAME_MAX - 1);
             l->flag = PROC_IN_PROBE_RANGE;
-            (void)get_proc_cmdline(entry->d_name, &l->info);
+            if (strcmp(comm, "java") == 0) {
+                (void)get_java_proc_cmd(entry->d_name, &l->info);
+            } else {
+                (void)get_proc_cmdline(entry->d_name, &l->info);
+            }
         }
 
         (void)update_proc_infos(entry->d_name, &l->info);

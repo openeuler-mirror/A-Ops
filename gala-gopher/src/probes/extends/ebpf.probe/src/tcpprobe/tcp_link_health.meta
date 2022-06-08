@@ -41,6 +41,16 @@ measurements:
                 name: "protocol",
             },
             {
+                description: "total number of segments rcvd",
+                type: "counter",
+                name: "segs_in",
+            },
+            {
+                description: "total number of segments sent",
+                type: "counter",
+                name: "segs_out",
+            },
+            {
                 description: "retrans packets",
                 type: "gauge",
                 name: "retran_packets",
