@@ -22,7 +22,7 @@
 #include <bpf/bpf.h>
 #include <sys/resource.h>
 #include "elf_reader.h"
-#include "util.h"
+#include "common.h"
 
 #define EBPF_RLIM_LIMITED  100*1024*1024 // 100M
 #define EBPF_RLIM_INFINITY (~0UL)

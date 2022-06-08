@@ -13,7 +13,7 @@
 
 #include "fileprobe.skel.h"
 #include "fileprobe.h"
-#include "util.h"
+#include "common.h"
 
 #define PROBE_NAME "file_snoop"
 #define FILE_TO_INODE "/usr/bin/ls -i %s | awk '{print $1}'"

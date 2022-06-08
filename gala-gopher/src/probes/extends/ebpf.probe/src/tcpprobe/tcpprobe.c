@@ -12,12 +12,18 @@
  * Create: 2021-05-22
  * Description: tcp_probe user prog
  ******************************************************************************/
+#define _GNU_SOURCE
 #include <errno.h>
 #include <signal.h>
 #include <stdio.h>
 #include <unistd.h>
+#include <ctype.h>
 #include <string.h>
 #include <sys/resource.h>
+#include <sys/syscall.h>
+#include <sys/stat.h>
+#include <sched.h>
+#include <fcntl.h>
 
 #ifdef BPF_PROG_KERN
 #undef BPF_PROG_KERN
@@ -31,14 +37,183 @@
 #include "tcp.h"
 #include "args.h"
 #include "tcpprobe.skel.h"
-#include "tcpprobe.h"
 #include "event.h"
+#include "task.h"
+#include "container.h"
+#include "tcpprobe.h"
 
 #define OO_TYPE_HEALTH "tcp_link_health"
 #define OO_TYPE_INFO "tcp_link_info"
 
+#ifndef __NR_pidfd_open
+#define __NR_pidfd_open 434     // System call # on most architectures
+#endif
+
 static struct probe_params params = {.period = DEFAULT_PERIOD,
                                      .cport_flag = 0};
+static int netns_fd = 0;
+static int tcp_map_fd = 0;
+static int task_map_fd = 0;
+
+static int pidfd_open(pid_t pid, unsigned int flags)
+{
+    return syscall(__NR_pidfd_open, pid, flags);
+}
+
+static int get_netns_fd(void)
+{
+    const char *fmt = "/proc/%u/ns/net";
+    char path[PATH_LEN];
+
+    path[0] = 0;
+    (void)snprintf(path, PATH_LEN, fmt, getpid());
+    return open(path, O_RDONLY);
+}
+
+static int set_netns_by_pid(pid_t pid)
+{
+    int fd = pidfd_open(pid, 0);
+    return setns(fd, CLONE_NEWNET);
+}
+
+static int set_netns_by_fd(int fd)
+{
+    return setns(fd, CLONE_NEWNET);
+}
+
+static int enter_container_netns(const char *container_id)
+{
+    int ret;
+    u32 pid;
+
+    ret = get_container_pid(container_id, &pid);
+    if (ret) {
+        ERROR("ERROR: get container pid failed.(%s, ret = %d)\n", container_id, ret);
+        return ret;
+    }
+
+    return set_netns_by_pid((pid_t)pid);
+}
+
+static int exit_container_netns(void)
+{
+    return set_netns_by_fd(netns_fd);
+}
+
+static int is_valid_tgid(struct probe_params *args, u32 pid)
+{
+    int ret;
+    struct task_key k = {.pid = (int)pid};
+    struct task_data d = {0};
+    if (args->filter_task_probe) {
+        ret = bpf_map_lookup_elem(task_map_fd, &k, &d);
+        return (!ret);
+    }
+
+    if (args->filter_pid != 0) {
+        return (pid == args->filter_pid);
+    }
+    return 1;
+}
+
+static void do_load_tcp_fd(int map_fd, u32 tgid, int fd, u8 role)
+{
+    struct tcp_fd_info tcp_fd_s = {0};
+    char *role_name[LINK_ROLE_MAX] = {"client", "server"};
+
+    if (!is_valid_tgid(&params, tgid)) {
+        return;
+    }
+
+    (void)bpf_map_lookup_elem(map_fd, &tgid, &tcp_fd_s);
+    if (tcp_fd_s.cnt >= TCP_FD_PER_PROC_MAX) {
+        return;
+    }
+
+    tcp_fd_s.fds[tcp_fd_s.cnt] = fd;
+    tcp_fd_s.fd_role[tcp_fd_s.cnt] = role;
+    tcp_fd_s.cnt++;
+    (void)bpf_map_update_elem(map_fd, &tgid, &tcp_fd_s, BPF_ANY);
+    INFO("Update establish(tgid = %u, fd = %d, role = %s).\n", 
+            tgid, fd, role_name[role]);
+}
+
+static void load_tcp_fd()
+{
+    int i, j;
+    u8 role;
+    struct tcp_listen_ports* tlps;
+    struct tcp_estabs* tes = NULL;
+
+    tlps = get_listen_ports();
+    if (tlps == NULL) {
+        goto err;
+    }
+
+    tes = get_estab_tcps(tlps);
+    if (tes == NULL) {
+        goto err;
+    }
+
+    /* insert tcp establish into map */
+    for (i = 0; i < tes->te_num; i++) {
+        role = tes->te[i]->is_client == 1 ? LINK_ROLE_CLIENT : LINK_ROLE_SERVER;
+        for (j = 0; j < tes->te[i]->te_comm_num; j++) {
+            do_load_tcp_fd(tcp_map_fd,
+                (__u32)tes->te[i]->te_comm[j]->pid,
+                (int)tes->te[i]->te_comm[j]->fd, role);
+        }
+    }
+
+err:
+    if (tlps) {
+        free_listen_ports(&tlps);
+    }
+
+    if (tes) {
+        free_estab_tcps(&tes);
+    }
+
+    return;
+}
+
+static int do_load_established_tcp(const char *container_id)
+{
+    int ret;
+
+    if (container_id) {
+        ret = enter_container_netns(container_id);
+        if (ret) {
+            ERROR("ERROR: enter container netns failed.(%s, ret = %d)\n",
+                    container_id, ret);
+            return ret;
+        }
+    }
+
+    load_tcp_fd();
+
+    if (container_id) {
+        (void)exit_container_netns();
+    }
+    return 0;
+}
+
+static void load_established_tcp(void)
+{
+    int i;
+
+    container_tbl* cstbl = get_all_container();
+    if (cstbl != NULL) {
+        container_info *p = cstbl->cs;
+        for (i = 0; i < cstbl->num; i++) {
+            (void)do_load_established_tcp((const char *)p->abbrContainerId);
+            p++;
+        }
+        free_container_tbl(&cstbl);
+    }
+
+    (void)do_load_established_tcp(NULL);
+}
 
 static void build_entity_id(struct tcp_link_s *link, char *buf, int buf_len)
 {
@@ -49,13 +224,13 @@ static void build_entity_id(struct tcp_link_s *link, char *buf, int buf_len)
     ip_str(link->family, (unsigned char *)&(link->s_ip), dst_ip_str, INET6_ADDRSTRLEN);
 
     (void)snprintf(buf, buf_len, "%u_%u_%s_%s_%u_%u_%u",
-                        link->tgid,
-                        link->role,
-                        src_ip_str,
-                        dst_ip_str,
-                        link->c_port,
-                        link->s_port,
-                        link->family);
+                    link->tgid,
+                    link->role,
+                    src_ip_str,
+                    dst_ip_str,
+                    link->c_port,
+                    link->s_port,
+                    link->family);
 }
 
 #define __ENTITY_ID_LEN 128
@@ -65,8 +240,9 @@ static void report_tcp_health(struct tcp_metrics_s *metrics)
     struct tcp_health *th;
     char entityId[__ENTITY_ID_LEN];
 
-    if (params.logs == 0)
+    if (params.logs == 0) {
         return;
+    }
 
     entityId[0] = 0;
 
@@ -82,9 +258,9 @@ static void report_tcp_health(struct tcp_metrics_s *metrics)
     }
 
     if ((params.drops_count_thr != 0) && (th->backlog_drops > params.drops_count_thr)) {
-        if (entityId[0] != 0)
+        if (entityId[0] != 0) {
             build_entity_id(&metrics->link, entityId, __ENTITY_ID_LEN);
-
+        }
         report_logs(OO_TYPE_HEALTH,
                     entityId,
                     "backlog_drops",
@@ -94,9 +270,9 @@ static void report_tcp_health(struct tcp_metrics_s *metrics)
     }
 
     if ((params.drops_count_thr != 0) && (th->filter_drops > params.drops_count_thr)) {
-        if (entityId[0] != 0)
+        if (entityId[0] != 0) {
             build_entity_id(&metrics->link, entityId, __ENTITY_ID_LEN);
-
+        }
         report_logs(OO_TYPE_HEALTH,
                     entityId,
                     "backlog_drops",
@@ -112,8 +288,9 @@ static void report_tcp_status(struct tcp_metrics_s *metrics)
     char entityId[__ENTITY_ID_LEN];
     unsigned int latency_thr_us;
 
-    if (params.logs == 0)
+    if (params.logs == 0) {
         return;
+    }
 
     entityId[0] = 0;
 
@@ -144,7 +321,7 @@ static void print_link_metrics(void *ctx, int cpu, void *data, __u32 size)
     ip_str(link->family, (unsigned char *)&(link->s_ip), dst_ip_str, INET6_ADDRSTRLEN);
 
     // health infos
-    fprintf(stdout,
+    (void)fprintf(stdout,
         "|%s|%u|%u|%s|%s|%u|%u|%u|%u|%u|%u|%u|%u|%u|%u|%u|%u|%u|%u|%u|%u|%u|%u|%d|%d|\n",
         OO_TYPE_HEALTH,
         link->tgid,
@@ -173,7 +350,7 @@ static void print_link_metrics(void *ctx, int cpu, void *data, __u32 size)
         metrics->data.health.sk_err_soft);
 
     // tcp infos
-    fprintf(stdout,
+    (void)fprintf(stdout,
         "|%s|%u|%u|%s|%s|%u|%u|%u|%llu|%llu|%u|%u|%u|%u|%u"
         "|%u|%u|%u|%u|%u|%u|%u|%u|%u|%llu|%u|%u|%u|%u|%u|%u|%u|%u|%u|%u|%u|%u|%u|\n",
         OO_TYPE_INFO,
@@ -222,65 +399,15 @@ static void print_link_metrics(void *ctx, int cpu, void *data, __u32 size)
 
 static void load_args(int args_fd, struct probe_params* params)
 {
-    __u32 key = 0;
+    u32 key = 0;
     struct tcp_args_s args = {0};
 
-    args.cport_flag = (__u32)params->cport_flag;
-    args.period = (__u64)params->period * 1000000000;
-    args.filter_by_task = (__u32)params->filter_task_probe;
-    args.filter_by_tgid = (__u32)params->filter_pid;
+    args.cport_flag = (u32)params->cport_flag;
+    args.period = (u64)params->period * 1000000000;
+    args.filter_by_task = (u32)params->filter_task_probe;
+    args.filter_by_tgid = (u32)params->filter_pid;
 
     (void)bpf_map_update_elem(args_fd, &key, &args, BPF_ANY);
-}
-
-static void do_load_tcp_fd(int tcp_fd_map_fd, __u32 tgid, int fd, __u8 role)
-{
-    struct tcp_fd_info tcp_fd_s = {0};
-    char *role_name[LINK_ROLE_MAX] = {"client", "server"};
-
-    (void)bpf_map_lookup_elem(tcp_fd_map_fd, &tgid, &tcp_fd_s);
-    if (tcp_fd_s.cnt >= TCP_FD_PER_PROC_MAX)
-        return;
-
-    tcp_fd_s.fds[tcp_fd_s.cnt] = fd;
-    tcp_fd_s.fd_role[tcp_fd_s.cnt] = role;
-    tcp_fd_s.cnt++;
-    (void)bpf_map_update_elem(tcp_fd_map_fd, &tgid, &tcp_fd_s, BPF_ANY);
-    INFO("Update establish(tgid = %u, fd = %d, role = %s).\n", tgid, fd, role_name[role]);
-}
-
-static void load_tcp_fd(int tcp_fd_map_fd)
-{
-    int i, j;
-    __u8 role;
-    struct tcp_listen_ports* tlps;
-    struct tcp_estabs* tes = NULL;
-
-    tlps = get_listen_ports();
-    if (tlps == NULL)
-        goto err;
-
-    tes = get_estab_tcps(tlps);
-    if (tes == NULL)
-        goto err;
-
-    /* insert tcp establish into map */
-    for (i = 0; i < tes->te_num; i++) {
-        role = tes->te[i]->is_client == 1 ? LINK_ROLE_CLIENT : LINK_ROLE_SERVER;
-        for (j = 0; j < tes->te[i]->te_comm_num; j++) {
-            do_load_tcp_fd(tcp_fd_map_fd,
-                (__u32)tes->te[i]->te_comm[j]->pid, (int)tes->te[i]->te_comm[j]->fd, role);
-        }
-    }
-
-err:
-    if (tlps)
-        free_listen_ports(&tlps);
-
-    if (tes)
-        free_estab_tcps(&tes);
-
-    return;
 }
 
 int main(int argc, char **argv)
@@ -290,8 +417,9 @@ int main(int argc, char **argv)
     struct perf_buffer* pb = NULL;
 
     err = args_parse(argc, argv, &params);
-    if (err != 0)
+    if (err != 0) {
         return -1;
+    }
 
     printf("arg parse interval time:%us\n", params.period);
     printf("arg parse cport flag:%u\n", params.cport_flag);
@@ -306,7 +434,14 @@ int main(int argc, char **argv)
         goto err;
     }
 
-    load_tcp_fd(GET_MAP_FD(tcpprobe, tcp_fd_map));
+    task_map_fd = GET_MAP_FD(tcpprobe, __task_map);
+    tcp_map_fd = GET_MAP_FD(tcpprobe, tcp_fd_map);
+    netns_fd = get_netns_fd();
+    if (netns_fd <= 0) {
+        fprintf(stderr, "ERROR: get netns fd failed.\n");
+        goto err;
+    }
+    load_established_tcp();
     load_args(GET_MAP_FD(tcpprobe, args_map), &params);
 
     printf("Successfully started!\n");
@@ -314,8 +449,9 @@ int main(int argc, char **argv)
     poll_pb(pb, THOUSAND);
 
 err:
-    if (pb)
+    if (pb) {
         perf_buffer__free(pb);
+    }
 
     UNLOAD(tcpprobe);
     return -err;
