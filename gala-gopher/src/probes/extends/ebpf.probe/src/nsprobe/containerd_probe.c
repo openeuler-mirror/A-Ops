@@ -310,6 +310,7 @@ static void update_current_containers_info(struct container_hash_t **pphead)
         container_info *p = cstbl->cs;
         for (i = 0; i < cstbl->num; i++) {
             if (p->status != CONTAINER_STATUS_RUNNING) {
+                p++;
                 continue;
             }
 

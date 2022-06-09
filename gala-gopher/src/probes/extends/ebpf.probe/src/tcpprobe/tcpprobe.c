@@ -453,6 +453,10 @@ err:
         perf_buffer__free(pb);
     }
 
+    if (netns_fd > 0) {
+        (void)close(netns_fd);
+    }
+
     UNLOAD(tcpprobe);
     return -err;
 }
