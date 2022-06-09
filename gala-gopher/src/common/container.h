@@ -22,12 +22,7 @@ enum container_status_e {
 };
 
 typedef struct container_info_s {
-    unsigned int pid;
-    unsigned int netns;
-    unsigned int mntns;
     enum container_status_e status;
-    char pod[POD_NAME_LEN];
-    char comm[TASK_COMM_LEN];
     char abbrContainerId[CONTAINER_ID_LEN];
 } container_info;
 
@@ -51,5 +46,6 @@ int get_container_netns_id(const char *abbr_container_id, unsigned int *id);
 int get_container_mntns_id(const char *abbr_container_id, unsigned int *id);
 int get_container_pid(const char *abbr_container_id, unsigned int *pid);
 int get_container_name(const char *abbr_container_id, char name[], unsigned int len);
+int get_container_pod(const char *abbr_container_id, char pod[], unsigned int len);
 
 #endif

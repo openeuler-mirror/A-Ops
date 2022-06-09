@@ -20,7 +20,11 @@
 #define LINK_ROLE_CLIENT 1
 #define LINK_ROLE_MAX 2
 
+#if (CURRENT_KERNEL_VERSION < KERNEL_VERSION(5, 10, 0))
 #define TCP_FD_PER_PROC_MAX (10)
+#else
+#define TCP_FD_PER_PROC_MAX (100)
+#endif
 
 #define BPF_F_INDEX_MASK    0xffffffffULL
 #define BPF_F_CURRENT_CPU   BPF_F_INDEX_MASK

@@ -49,6 +49,8 @@ SET(SOURCES main.c daemon.c
     ${CMD_DIR}/server.c
     ${COMMON_DIR}/kern_config.c
     ${COMMON_DIR}/args.c
+    ${COMMON_DIR}/container.c
+    ${COMMON_DIR}/util.c
 )
 
 SET(SOURCE_CMD ${CMD_DIR}/client.c)
