@@ -74,7 +74,7 @@ gala-gopher是基于eBPF的低负载探针框架，致力于提供裸机/虚机/
   ```
   注：在编译过程中出现如下信息，表示bpf探针编译需要的vmlinux.h文件缺失；
 
-  ![build_err](D:\code\A-Ops\gala-gopher\doc\pic\build_err.png)
+  ![build_err](doc/pic/build_err.png)
 
   ​	vmlinux.h文件包含了系统运行Linux内核源码中使用的所有类型定义，可以利用bpftool工具生成；我们已经预生成了几个LTS版本的vmlinux.h文件在`src\probes\extends\ebpf.probe\src\include`目录，请根据内核版本、CPU架构选择相应的文件，并手动软链接到vmlinux.h；例如：
 

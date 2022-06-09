@@ -160,22 +160,23 @@ static void load_period(int period_fd, __u32 value)
     __u64 period = NS(value);
     (void)bpf_map_update_elem(period_fd, &key, &period, BPF_ANY);
 }
-
-static void print_task_metrics(void *ctx, int cpu, struct task_data *data, __u32 size)
+static void print_task_metrics(void *ctx, int cpu, void *data, __u32 size)
 {
+    struct task_data *value = (struct task_data *)data;
+
     fprintf(stdout,
         "|%s|%d|%d|%s|%d|%d|%u|%llu|%llu|%u|%llu|\n",
         OO_THREAD_NAME,
-        data->id.pid,
-        data->id.tgid,
-        data->id.comm,
-        data->io.major,
-        data->io.minor,
-        data->fork_count,
-        data->io.task_io_count,
-        data->io.task_io_time_us,
-        data->io.task_hang_count,
-        data->io.task_io_wait_time_us);
+        value->id.pid,
+        value->id.tgid,
+        value->id.comm,
+        value->io.major,
+        value->io.minor,
+        value->fork_count,
+        value->io.task_io_count,
+        value->io.task_io_time_us,
+        value->io.task_hang_count,
+        value->io.task_io_wait_time_us);
 
     (void)fflush(stdout);
     return;
