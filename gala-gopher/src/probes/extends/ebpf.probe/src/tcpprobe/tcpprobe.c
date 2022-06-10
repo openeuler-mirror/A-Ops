@@ -456,7 +456,7 @@ err:
     if (netns_fd > 0) {
         (void)close(netns_fd);
     }
-
+    netns_fd = 0;
     UNLOAD(tcpprobe);
     return -err;
 }
