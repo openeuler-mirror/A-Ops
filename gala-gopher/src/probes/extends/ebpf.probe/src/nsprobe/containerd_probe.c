@@ -27,11 +27,46 @@
 
 #include "bpf.h"
 #include "args.h"
+#include "task.h"
 #include "hash.h"
 #include "container.h"
 #include "containerd_probe.h"
 
 #define METRIC_NAME_RUNC_TRACE    "container_data"
+
+static struct probe_params *params;
+static int task_map_fd;
+
+static int is_valid_tgid(struct probe_params *p, u32 pid)
+{
+    int ret;
+    struct task_key k = {.pid = (int)pid};
+    struct task_data d = {0};
+    if (p->filter_task_probe) {
+        ret = bpf_map_lookup_elem(task_map_fd, &k, &d);
+        return (!ret);
+    }
+
+    if (p->filter_pid != 0) {
+        return (pid == p->filter_pid);
+    }
+    return 1;
+}
+
+static int filter_conatiner(const char *container_id)
+{
+    u32 pid;
+    int ret = get_container_pid(container_id, &pid);
+    if (ret) {
+        return 1;
+    }
+
+    if (is_valid_tgid(params, pid)) {
+        return 0;
+    }
+
+    return 1;
+}
 
 static void init_container(const char *container_id, struct container_value *container)
 {
@@ -314,6 +349,11 @@ static void update_current_containers_info(struct container_hash_t **pphead)
                 continue;
             }
 
+            if (filter_conatiner((const char *)p->abbrContainerId)) {
+                p++;
+                continue;
+            }
+
             item = find_container((const char *)p->abbrContainerId, pphead);
             if (item == NULL) {
                 (void)add_container(p->abbrContainerId, pphead);
@@ -329,14 +369,18 @@ static void update_current_containers_info(struct container_hash_t **pphead)
     clear_invalid_items(pphead);
 }
 
-void output_containers_info(void)
+void output_containers_info(struct probe_params *p, int filter_fd)
 {
+    params = p;
+    task_map_fd = filter_fd;
     update_current_containers_info(&head);
     print_container_metric(&head);
 }
 
 void free_containers_info(void)
 {
+    params = NULL;
+    task_map_fd = 0;
     clear_container_tbl(&head);
 }
 

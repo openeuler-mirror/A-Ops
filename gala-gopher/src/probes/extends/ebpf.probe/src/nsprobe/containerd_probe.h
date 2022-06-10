@@ -15,6 +15,8 @@
 #ifndef __CONTAINERPROBE__H
 #define __CONTAINERPROBE__H
 
+#include "args.h"
+
 #define CONTAINER_KEY_LEN (CONTAINER_ABBR_ID_LEN + 4)
 struct container_key {
     char container_id[CONTAINER_KEY_LEN];
@@ -44,7 +46,7 @@ struct container_value {
     char pidcg_dir[PATH_LEN];
 };
 
-void output_containers_info(void);
+void output_containers_info(struct probe_params *p, int filter_fd);
 void free_containers_info(void);
 
 #endif /* __TRACE_CONTAINERD__H */

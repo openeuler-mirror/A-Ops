@@ -56,11 +56,32 @@ static __always_inline int is_ingress_qdisc(struct Qdisc* q)
     return (flags & TCQ_F_INGRESS);
 }
 
+static __always_inline int is_loopback_dev(struct Qdisc* q)
+{
+    char dev_name[IFNAMSIZ] = {0};
+    struct netdev_queue *dev_queue = _(q->dev_queue);
+    if (dev_queue == NULL)
+        return 1;
+
+    struct net_device *dev = _(dev_queue->dev);
+    if (dev == NULL) {
+        return 1;
+    }
+
+    char *name = _(dev->name);
+    (void)bpf_probe_read_str(&dev_name, IFNAMSIZ, name);
+    if (dev_name[0] == 'l' && dev_name[1] == 'o' && dev_name[2] == 0) {
+        return 1;
+    }
+    return 0;
+}
+
 static __always_inline void get_qdisc_info(struct qdisc* qdisc, struct Qdisc* q)
 {
     struct netdev_queue *dev_queue = _(q->dev_queue);
-    if (dev_queue == NULL)
+    if (dev_queue == NULL) {
         return;
+    }
 
     struct net_device *dev = _(dev_queue->dev);
     if (dev == NULL) {
@@ -131,12 +152,15 @@ static __always_inline struct qdisc* lkup_qdisc(struct Qdisc *q)
         return NULL;
     }
 
-    if (is_ingress_qdisc(q)) {
-        return NULL;
-    }
-
     qdisc = get_qdisc(q);
     if (qdisc == NULL) {
+        if (is_ingress_qdisc(q)) {
+            return NULL;
+        }
+
+        if (is_loopback_dev(q)) {
+            return NULL;
+        }
         (void)create_qdisc(q);
         qdisc = get_qdisc(q);
         if (qdisc == NULL) {
