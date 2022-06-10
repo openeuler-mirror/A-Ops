@@ -57,6 +57,18 @@ struct bpf_map_def SEC("maps") args_map = {
     .max_entries = 1,
 };
 
+static __always_inline int is_gopher_comm(void)
+{
+    char comm[TASK_COMM_LEN] = {0};
+
+    (void)bpf_get_current_comm(&comm, sizeof(comm));
+
+    if (comm[0] == 'M' && comm[1] == 'H' && comm[2] == 'D' && comm[3] == '-') {
+        return 1;
+    }
+    return 0;
+}
+
 static __always_inline struct tcp_sock_info *get_sock_data(struct sock *sk)
 {
     return (struct tcp_sock_info *)bpf_map_lookup_elem(&sock_map, &sk);
@@ -206,6 +218,10 @@ static __always_inline struct tcp_metrics_s *get_tcp_metrics(struct sock *sk, u3
 
 static __always_inline int create_sock_obj(u32 tgid, struct sock *sk, struct tcp_sock_info *info)
 {
+    if (is_gopher_comm()) {
+        return 0;
+    }
+
     info->tgid = tgid;
     return bpf_map_update_elem(&sock_map, &sk, info, BPF_ANY);
 }

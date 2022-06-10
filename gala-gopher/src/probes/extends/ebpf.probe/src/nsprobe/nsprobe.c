@@ -89,6 +89,7 @@ int main(int argc, char **argv)
     int err = -1;
     struct perf_buffer* pb = NULL;
     FILE *fp = NULL;
+    int task_map_fd;
 
     fp = popen(RM_BPF_PATH, "r");
     if (fp != NULL) {
@@ -111,6 +112,7 @@ int main(int argc, char **argv)
     INIT_BPF_APP(nsprobe, EBPF_RLIM_LIMITED);
     __LOAD_NS_PROBE(qdisc, err, 1);
 
+    task_map_fd = GET_MAP_FD(qdisc, __task_map);
     load_args(GET_MAP_FD(qdisc, args_map), &params);
     pb = create_pref_buffer(GET_MAP_FD(qdisc, output), print_ns_metrics);
     if (pb == NULL) {
@@ -124,7 +126,7 @@ int main(int argc, char **argv)
         if ((err = perf_buffer__poll(pb, THOUSAND)) < 0) {
             break;
         }
-        output_containers_info();
+        output_containers_info(&params, task_map_fd);
         sleep(params.period);
     }
 
