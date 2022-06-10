@@ -1,0 +1,38 @@
+- hosts: total_hosts
+  gather_facts: false
+  tasks:
+  - name: copy script
+    become: true
+    become_user: root
+    copy:
+      src: check.sh
+      dest: /tmp/check.sh
+      owner: root
+      group: root
+      mode: a+x
+
+- hosts: total_hosts
+  gather_facts: false
+  tasks:
+  - name: check memory
+    become: true
+    become_user: root
+    shell: sh /tmp/check.sh memory
+    register: check_memory_result
+    ignore_errors: yes
+
+- hosts: total_hosts
+  gather_facts: false
+  tasks:
+  - name: copy repo
+    become: true
+    become_user: root
+    copy:
+      src: /etc/yum.repos.d/openEuler.repo
+      dest: /etc/yum.repos.d/aops-update.repo
+    when: check_memory_result.rc == 0
+  - name: set repo
+    become: true
+    become_user: root
+    shell: yum makecache
+    when: check_memory_result.rc == 0
