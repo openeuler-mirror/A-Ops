@@ -89,25 +89,40 @@ observe_entities:
           -
             type: appinstance
   -
-    type: process
+    type: system_proc
     keys:
-      - tgid
+      - pid
       - machine_id
     labels:
       - pgid
       - &process_name comm
+      - cmdline
       - exe_file
       - exec_file
     name: *process_name
     metrics:
-      - fork_count
-      - task_rchar_bytes
-      - task_wchar_bytes
-      - task_syscr_count
-      - task_syscw_count
-      - task_read_bytes
-      - task_write_bytes
-      - task_cancelled_write_bytes
+      - fd_count
+      - proc_rchar_bytes
+      - proc_wchar_bytes
+      - proc_syscr_count
+      - proc_syscw_count
+      - proc_read_bytes
+      - proc_write_bytes
+      - proc_cancelled_write_bytes
+      - proc_shared_clean_size
+      - proc_shared_dirty_size
+      - proc_private_clean_size
+      - proc_private_dirty_size
+      - proc_referenced_size
+      - proc_lazyfree_size
+      - proc_swap_data_size
+      - proc_swap_data_pss_size
+      - proc_utime_jiffies
+      - proc_stime_jiffies
+      - proc_minor_pagefault_count
+      - proc_major_pagefault_count
+      - proc_vm_size
+      - proc_pm_size
     level: PROCESS
     dependingitems:
       -
@@ -128,7 +143,7 @@ observe_entities:
         layer: indirect
         toTypes:
           -
-            type: process
+            type: system_proc
   -
     type: thread
     keys:
@@ -146,8 +161,6 @@ observe_entities:
       - task_io_count
       - task_io_time_us
       - task_hang_count
-      - kfree_skb_cnt
-      - kfree_skb_ret_addr
     level: PROCESS
     dependingitems:
       -
@@ -155,11 +168,11 @@ observe_entities:
         layer: direct
         toTypes:
           -
-            type: process
+            type: system_proc
             matches:
               -
                 from: tgid
-                to: tgid
+                to: pid
               -
                 from: machine_id
                 to: machine_id
@@ -181,11 +194,11 @@ observe_entities:
         layer: direct
         toTypes:
           -
-            type: process
+            type: system_proc
             matches:
               -
                 from: tgid
-                to: tgid
+                to: pid
               -
                 from: machine_id
                 to: machine_id
@@ -207,11 +220,11 @@ observe_entities:
         layer: direct
         toTypes:
           -
-            type: process
+            type: system_proc
             matches:
               -
                 from: tgid
-                to: tgid
+                to: pid
               -
                 from: machine_id
                 to: machine_id
@@ -231,11 +244,11 @@ observe_entities:
         layer: direct
         toTypes:
           -
-            type: process
+            type: system_proc
             matches:
               -
                 from: tgid
-                to: tgid
+                to: pid
               -
                 from: machine_id
                 to: machine_id
@@ -257,11 +270,11 @@ observe_entities:
         layer: direct
         toTypes:
           -
-            type: process
+            type: system_proc
             matches:
               -
                 from: tgid
-                to: tgid
+                to: pid
               -
                 from: machine_id
                 to: machine_id
@@ -271,54 +284,58 @@ observe_entities:
       - server_ip
       - server_port
       - client_ip
+      - client_port
       - tgid
       - role
-      - machine_id
-    labels:
       - protocol
+      - machine_id
     metrics:
-      - health_rx_bytes
-      - health_tx_bytes
+      - health_segs_in
+      - health_segs_out
       - health_retran_packets
-      - health_retran_synacks
       - health_sk_drops
-      - health_backlog_drops
-      - health_md5_hash_drops
+      - health_lost_out
+      - health_sacked_out
       - health_filter_drops
       - health_tmout_count
-      - health_rcv_que_full_count
       - health_snd_buf_limit_count
       - health_attempt_fails
       - health_rmem_scheduls
       - health_tcp_oom
+      - health_send_rsts
+      - health_receive_rsts
       - health_sk_err
       - health_sk_err_soft
-      - status_srtt_last
-      - status_srtt_max
-      - status_srtt_min
-      - status_syn_srtt_last
-      - status_syn_srtt_max
-      - status_syn_srtt_min
-      - status_rcv_wnd_last
-      - status_rcv_wnd_max
-      - status_rcv_wnd_min
-      - status_snd_wnd_last
-      - status_send_rsts
-      - status_receive_rsts
-      - status_wmem_alloc_last
-      - status_wmem_alloc_max
-      - status_wmem_alloc_min
-      - status_rmem_alloc_last
-      - status_rmem_alloc_max
-      - status_rmem_alloc_min
-      - status_omem_alloc
-      - status_forward_alloc
-      - status_rcv_buf_limit
-      - status_snd_buf_limit
-      - status_pacing_rate_last
-      - status_pacing_rate_max
-      - status_pacing_rate_min
-      - status_ecn_flags
+      - info_rx_bytes
+      - info_tx_bytes
+      - info_rto
+      - info_ato
+      - info_srtt
+      - info_snd_ssthresh
+      - info_rcv_ssthresh
+      - info_snd_cwnd
+      - info_advmss
+      - info_reordering
+      - info_rcv_rtt
+      - info_rcv_space
+      - info_notsent_bytes
+      - info_notack_bytes
+      - info_snd_wnd
+      - info_rcv_wnd
+      - info_delivery_rate
+      - info_busy_time
+      - info_rwnd_limited
+      - info_sndbuf_limited
+      - info_pacing_rate
+      - info_max_pacing_rate
+      - info_sk_err_que_size
+      - info_sk_rcv_que_size
+      - info_sk_wri_que_size
+      - info_syn_srtt_last
+      - info_sk_backlog_size
+      - info_sk_omem_size
+      - info_sk_forward_size
+      - info_sk_wmem_size
     level: RPC
     dependingitems:
       -
@@ -326,11 +343,11 @@ observe_entities:
         layer: direct
         toTypes:
           -
-            type: process
+            type: system_proc
             matches:
               -
                 from: tgid
-                to: tgid
+                to: pid
               -
                 from: machine_id
                 to: machine_id
@@ -467,3 +484,40 @@ observe_entities:
           -
             type: thread
             matches: *lb_link_belong_task
+  -
+    type: redis_client
+    keys:
+      - client_ip
+      - client_port
+      - server_ip
+      - server_port
+    labels:
+      - tgid
+    metrics:
+      - recent_rtt
+      - send_queue_nums
+  -
+    type: ksliprobe
+    keys:
+      - tgid
+      - conn_fd
+    labels:
+      - protocol
+      - server_ip
+      - server_port
+      - client_ip
+      - client_port
+    metrics:
+      - recent_rtt_nsec
+    level: PROCESS
+    dependingitems:
+      -
+        id: belongs_to
+        layer: direct
+        toTypes:
+          -
+            type: system_proc
+            matches:
+              -
+                from: tgid
+                to: pid

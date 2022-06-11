@@ -64,7 +64,7 @@ class ObserveEntityCreator:
 
         for entity in observe_entities:
             host = ObserveEntityCreator._create_entity_from(entity, host_meta)
-            if not host.id:
+            if not host or not host.id:
                 continue
             entity_map.setdefault(host.id, host)
 
@@ -77,7 +77,7 @@ class ObserveEntityCreator:
 
         for process in processes:
             entity = ObserveEntityCreator._create_entity_from(process, app_inst_meta)
-            if not entity.id:
+            if not entity or not entity.id:
                 continue
 
             entity_map.setdefault(entity.id, entity)
@@ -91,8 +91,9 @@ class ObserveEntityCreator:
     def _create_entity_from(src_entity: ObserveEntity, target_entity_meta: ObserveMeta) -> ObserveEntity:
         target_attrs = {}
         for key in target_entity_meta.keys:
-            if key in src_entity.attrs:
-                target_attrs[key] = src_entity.attrs.get(key)
+            if key not in src_entity.attrs:
+                return None
+            target_attrs[key] = src_entity.attrs.get(key)
         for label in target_entity_meta.labels:
             if label in src_entity.attrs:
                 target_attrs[label] = src_entity.attrs.get(label)
