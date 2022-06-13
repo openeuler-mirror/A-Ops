@@ -9,7 +9,17 @@ measurements:
             {
                 description: "id of process",
                 type: "key",
-                name: "pid",
+                name: "tgid",
+            },
+            {
+                description: "process group id",
+                type: "key",
+                name: "pgid",
+            },
+            {
+                description: "parent id of process",
+                type: "key",
+                name: "ppid",
             },
             {
                 description: "comm of the process",
