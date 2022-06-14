@@ -35,7 +35,9 @@
 #define PROC_SMAPS          "/proc/%s/smaps_rollup"
 #define PROC_SMAPS_CMD      "/usr/bin/cat /proc/%s/smaps_rollup"
 #define PROC_STAT_CMD       "/usr/bin/cat /proc/%s/stat | awk '{print $10\":\"$12\":\"$14\":\"$15\":\"$23\":\"$24}'"
+#define PROC_ID_CMD         "ps -eo pid,ppid,pgid,comm | grep -w \"%s\" | awk '{print $2 \"|\" $3}'"
 #define PROC_NAME_MAX       64
+#define PROC_MAX_RANGE      64
 #define LINE_BUF_LEN        128
 #define PROC_IN_PROBE_RANGE 1
 #define PROBE_TIMES_MAX     200
@@ -99,6 +101,8 @@ typedef struct {
 
 typedef struct {
     char comm[PROC_NAME_MAX];
+    int pgid;
+    int ppid;
     char *cmdline;
     unsigned int fd_count;              // FROM '/usr/bin/ls -l /proc/[PID]/fd | wc -l'
     unsigned int proc_syscr_count;      // FROM same as 'task_rchar_bytes'
@@ -136,22 +140,18 @@ static int g_probed_times = 0;
 
 static proc_hash_t *g_procmap = NULL;
 
-static char proc_range[][PROC_NAME_MAX] = {
+static char proc_range[PROC_MAX_RANGE][PROC_NAME_MAX] = {
     "go",
     "java",
     "python",
     "python3",
-    "nginx",
-    "redis",
-    "redis-server",
-    "redis-client",
-    "redis-cli",
     "dhclient",
     "NetworkManager",
     "dbus",
     "rpcbind",
     "systemd"
 };
+static int g_proc_range_len = 0;
 
 static void hash_add_proc(proc_hash_t *one_proc)
 {
@@ -236,6 +236,40 @@ static int get_proc_comm(const char* pid, char *buf)
 static int get_proc_start_time(const char* pid, char *buf)
 {
     return do_read_line(pid, PROC_START_TIME_CMD, PROC_STAT, buf, PROC_NAME_MAX);
+}
+
+static void get_proc_id(proc_info_t *proc_info)
+{
+    FILE *f = NULL;
+    char cmd[LINE_BUF_LEN];
+    char line[LINE_BUF_LEN];
+
+    if (strlen(proc_info->comm) == 0) {
+        /* comm is NULL, return */
+        return;
+    }
+
+    cmd[0] = 0;
+    (void)snprintf(cmd, LINE_BUF_LEN, PROC_ID_CMD, proc_info->comm);
+    f = popen(cmd, "r");
+    if (f == NULL) {
+        goto out;
+    }
+    while (!feof(f)) {
+        line[0] = 0;
+        if (fgets(line, LINE_BUF_LEN, f) == NULL) {
+            goto out;
+        }
+        SPLIT_NEWLINE_SYMBOL(line);
+
+        (void)sscanf(line, "%d %*c %d", &proc_info->ppid, &proc_info->pgid);
+    }
+
+out:
+    if (f != NULL) {
+        pclose(f);
+    }
+    return;
 }
 
 #define JINFO_NOT_INSTALLED 0
@@ -540,6 +574,8 @@ static int update_proc_infos(const char *pid, proc_info_t *proc_info)
 {
     int ret = 0;
 
+    (void)get_proc_id(proc_info);
+
     ret = get_proc_fdcnt(pid, proc_info);
     if (ret < 0) {
         return -1;
@@ -565,8 +601,8 @@ static int update_proc_infos(const char *pid, proc_info_t *proc_info)
 
 static int check_proc_probe_flag(const char *comm)
 {
-    int index, size = sizeof(proc_range) / sizeof(proc_range[0]);
-    for (index = 0; index < size; index++) {
+    int index;
+    for (index = 0; index < g_proc_range_len; index++) {
         if (strcmp(comm, proc_range[index]) == 0) {
             return 1;
         }
@@ -577,9 +613,11 @@ static int check_proc_probe_flag(const char *comm)
 static void output_proc_infos(proc_hash_t *one_proc)
 {
     fprintf(stdout,
-        "|%s|%lu|%s|%s|%u|%llu|%llu|%u|%u|%llu|%llu|%llu|%lu|%lu|%lu|%lu|%lu|%lu|%lu|%lu|%llu|%llu|%llu|%llu|%llu|%llu|\n",
+        "|%s|%lu|%d|%d|%s|%s|%u|%llu|%llu|%u|%u|%llu|%llu|%llu|%lu|%lu|%lu|%lu|%lu|%lu|%lu|%lu|%llu|%llu|%llu|%llu|%llu|%llu|\n",
         METRICS_PROC_NAME,
         one_proc->key.pid,
+        one_proc->info.pgid,
+        one_proc->info.ppid,
         one_proc->info.comm,
         one_proc->info.cmdline == NULL ? "" : one_proc->info.cmdline,
         one_proc->info.fd_count,
@@ -677,7 +715,13 @@ void system_proc_init(char *task_whitelist)
 {
     FILE *f = NULL;
     char line[PROC_NAME_MAX];
-    unsigned int len = sizeof(proc_range) / sizeof(proc_range[0]);
+    
+    for (int i = 0; i < PROC_MAX_RANGE; i++) {
+        if (strlen(proc_range[i]) == 0) {
+            g_proc_range_len = i;       // init proc_range's length
+            break;
+        }
+    }
 
     if (task_whitelist == NULL || strlen(task_whitelist) == 0) {
         return;
@@ -697,7 +741,8 @@ void system_proc_init(char *task_whitelist)
             continue;
         }
         /* update procname to proc_range list */
-        (void)strncpy(proc_range[len++], line, PROC_NAME_MAX - 1);
+        (void)strncpy(proc_range[g_proc_range_len], line, PROC_NAME_MAX - 1);
+        g_proc_range_len++;
     }
 out:
     fclose(f);

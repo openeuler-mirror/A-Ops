@@ -35,8 +35,9 @@ static char __is_digit_str(const char *s)
 {
     int len = (int)strlen(s);
     for (int i = 0; i < len; i++) {
-        if (!(isdigit(s[i])))
+        if (!(isdigit(s[i]))) {
             return 0;
+        }
     }
     return 1;
 }
@@ -72,12 +73,14 @@ static int __period_arg_parse(char opt, char *arg, struct probe_params *params)
             params->period = interval;
             break;
         case 'p':
-            if (arg != NULL)
+            if (arg != NULL) {
                 (void)snprintf((void *)params->elf_path, MAX_PATH_LEN, "%s", arg);
+            }
             break;
         case 'w':
-            if (arg != NULL)
+            if (arg != NULL) {
                 (void)snprintf((void *)params->task_whitelist, MAX_PATH_LEN, "%s", arg);
+            }
             break;
         case 'c':
             cport_flag = (unsigned int)atoi(arg);
@@ -112,8 +115,9 @@ static int __period_arg_parse(char opt, char *arg, struct probe_params *params)
             params->logs = 1;
             break;
         case 'n':
-            if (arg != NULL)
+            if (arg != NULL) {
                 (void)snprintf((void *)params->netcard_list, MAX_PATH_LEN, "%s", arg);
+            }
             break;
         default:
             return -1;
@@ -126,8 +130,9 @@ static int __args_parse(int argc, char **argv, char *opt_str, struct probe_param
 {
     int ch = -1;
 
-    if (opt_str == NULL)
+    if (opt_str == NULL) {
         return -1;
+    }
 
     while ((ch = getopt(argc, argv, opt_str)) != -1) {
         if (!optarg) {
@@ -135,8 +140,9 @@ static int __args_parse(int argc, char **argv, char *opt_str, struct probe_param
             return -1;
         }
 
-        if (__period_arg_parse(ch, optarg, params) != 0)
+        if (__period_arg_parse(ch, optarg, params) != 0) {
             return -1;
+        }
     }
     return 0;
 }
@@ -153,41 +159,50 @@ static void __params_val_parse(char *p, char params_val[], size_t params_len)
     size_t index = 0;
     size_t len = strlen(p);
     for (int i = 1; i < len; i++) {
-        if (p[i] == '-') {
-            break;
-        }
         if ((p[i] != ' ') && (index < params_len)) {
             params_val[index++] = p[i];
         }
     }
-    if (index < params_len)
-        params_val[index] = 0;
+    if (index < params_len) {
+        params_val[index] = '\0';
+    }
 }
 
 /*
   -p val -c val2
 */
+#define ARGS_SPILT_STRING   " -"
 int params_parse(char *s, struct probe_params *params)
 {
-    char *p;
     char opt;
     char params_val[MAX_PARAM_LEN];
     char temp[MAX_PARAM_LEN];
-
-    temp[0] = 0;
-    (void)strcpy(temp, s);
+    int slen = strlen(s);
+    int split_len = strlen(ARGS_SPILT_STRING);
+    int i, j, start;
 
     __set_default_params(params);
 
-    p = strtok(temp, "-");
-    while (p != NULL) {
-        opt = *p;
-        params_val[0] = 0;
-        __params_val_parse(p, params_val, MAX_PARAM_LEN);
-        if (__period_arg_parse(opt, params_val, params) != 0)
-            return -1;
+    for (i = 0; i < slen; i++) {
+        if (s[i] == '-') {
+            break;
+        }
+    }
+    start = i + 1;
 
-        p = strtok(NULL, "-");
+    for (j = start; j <= slen; j++) {
+        if ((strncmp(s + j, ARGS_SPILT_STRING, split_len) == 0) || (s[j] == '\0')) {
+            (void)memset(temp, 0, MAX_PARAM_LEN);
+            (void)strncpy(temp, s + start, j - start);
+            start = j + split_len;
+
+            opt = temp[0];
+            params_val[0] = 0;
+            __params_val_parse((char *)temp, params_val, MAX_PARAM_LEN);
+            if (__period_arg_parse(opt, params_val, params) != 0) {
+                return -1;
+            }
+        }
     }
     return 0;
 }
