@@ -29,7 +29,7 @@ ConfigMgr *configMgr = NULL;
 
 static void TestKafkaMgrCreate(void)
 {
-    KafkaMgr *mgr = KafkaMgrCreate(configMgr);
+    KafkaMgr *mgr = KafkaMgrCreate(configMgr, "kafka_topic");
 
     CU_ASSERT(mgr != NULL);
     CU_ASSERT(strcmp(mgr->kafkaBroker, KAFKA_BROKER) == 0);
@@ -40,7 +40,7 @@ static void TestKafkaMsgProduce(void)
 {
     uint32_t ret = 0;
     char msg[] = "deadbeaf";
-    KafkaMgr *mgr = KafkaMgrCreate(configMgr);
+    KafkaMgr *mgr = KafkaMgrCreate(configMgr, "kafka_topic");
     CU_ASSERT(mgr != NULL);
 
     ret = KafkaMsgProduce(mgr, msg, strlen(msg));
@@ -59,7 +59,7 @@ int init_config()
     }
 
     (void)strncpy(configMgr->kafkaConfig->broker, KAFKA_BROKER, MAX_KAFKA_BROKER_LEN - 1);
-    (void)strncpy(configMgr->kafkaConfig->topic, KAFKA_TOPIC, MAX_KAFKA_TOPIC_LEN - 1);
+    (void)strncpy(configMgr->kafkaConfig->metric_topic, KAFKA_TOPIC, MAX_KAFKA_TOPIC_LEN - 1);
     configMgr->kafkaConfig->batchNumMessages = KAFKA_BATCH_NUM_MESSAGES;
     (void)strncpy(configMgr->kafkaConfig->compressionCodec, "none", KAFKA_COMPRESSION_CODEC_LEN - 1);
     configMgr->kafkaConfig->queueBufferingMaxMessages = KAFKA_QUEUE_BUFFER_MESSAGES;

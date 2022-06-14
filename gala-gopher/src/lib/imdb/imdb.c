@@ -17,7 +17,6 @@
 #include <stdlib.h>
 #include <string.h>
 #include <time.h>
-#include <stdarg.h>
 #include <unistd.h>
 
 #include "imdb.h"
@@ -632,29 +631,6 @@ static int MetricTypeIsLabel(IMDB_Metric *metric)
 }
 
 #if 1
-
-static int __snprintf(char **buf, const int bufLen, int *remainLen, const char * format, ...)
-{
-    int len;
-    char *p = *buf;
-    va_list args;
-
-    if (bufLen <= 0) {
-        return -1;
-    }
-
-    va_start(args, format);
-    len = vsnprintf(p, (const unsigned int)bufLen, format, args);
-    va_end(args);
-
-    if (len >= bufLen || len < 0) {
-        return -1;
-    }
-
-    *buf += len;
-    *remainLen = bufLen - len;
-    return 0;
-}
 
 static int IMDB_BuildEntiyID(const IMDB_DataBaseMgr *mgr,
                                     const char *tblName,

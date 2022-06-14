@@ -25,7 +25,7 @@ static void dr_msg_cb(rd_kafka_t *rk, const rd_kafka_message_t *rkmessage, void 
     }/* rkmessage被librdkafka自动销毁 */
 }
 
-KafkaMgr *KafkaMgrCreate(const ConfigMgr *configMgr)
+KafkaMgr *KafkaMgrCreate(const ConfigMgr *configMgr, const char *topic_type)
 {
     rd_kafka_conf_res_t ret;
     KafkaMgr *mgr = NULL;
@@ -36,10 +36,29 @@ KafkaMgr *KafkaMgrCreate(const ConfigMgr *configMgr)
         ERROR("malloc memory for egress_kafka_mgr failed.\n");
         return NULL;
     }
-
     memset(mgr, 0, sizeof(KafkaMgr));
+
+    if (topic_type == NULL) {
+        ERROR("input kafka topic_type NULL, please input valid topic type.\n");
+        free(mgr);
+        return NULL;
+    }
+    if (strcmp(topic_type, "kafka_topic") == 0) {
+        /* metric topic */
+        (void)strncpy(mgr->kafkaTopic, configMgr->kafkaConfig->metric_topic, MAX_KAFKA_TOPIC_LEN - 1);
+    } else if (strcmp(topic_type, "metadata_topic") == 0) {
+        /* metadata topic */
+        (void)strncpy(mgr->kafkaTopic, configMgr->kafkaConfig->metadata_topic, MAX_KAFKA_TOPIC_LEN - 1);
+    } else if (strcmp(topic_type, "event_topic") == 0) {
+        /* event topic */
+        (void)strncpy(mgr->kafkaTopic, configMgr->kafkaConfig->event_topic, MAX_KAFKA_TOPIC_LEN - 1);
+    } else {
+        ERROR("input kafka topic_type(%s) error.\n", topic_type);
+        free(mgr);
+        return NULL;
+    }
+
     (void)strncpy(mgr->kafkaBroker, configMgr->kafkaConfig->broker, MAX_KAFKA_BROKER_LEN - 1);
-    (void)strncpy(mgr->kafkaTopic, configMgr->kafkaConfig->topic, MAX_KAFKA_TOPIC_LEN - 1);
     (void)strncpy(mgr->compressionCodec, configMgr->kafkaConfig->compressionCodec, KAFKA_COMPRESSION_CODEC_LEN - 1);
     mgr->batchNumMessages = configMgr->kafkaConfig->batchNumMessages;
     mgr->queueBufferingMaxKbytes = configMgr->kafkaConfig->queueBufferingMaxKbytes;

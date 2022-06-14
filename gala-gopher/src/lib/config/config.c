@@ -208,7 +208,21 @@ static int ConfigMgrLoadKafkaConfig(void *config, config_setting_t *settings)
         ERROR("[CONFIG] load config for kafka_topic failed.\n");
         return -1;
     }
-    (void)strncpy(kafkaConfig->topic, strVal, MAX_KAFKA_TOPIC_LEN - 1);
+    (void)strncpy(kafkaConfig->metric_topic, strVal, MAX_KAFKA_TOPIC_LEN - 1);
+
+    ret = config_setting_lookup_string(settings, "metadata_topic", &strVal);
+    if (ret == 0) {
+        ERROR("[CONFIG] load config for metadata_topic failed.\n");
+        return -1;
+    }
+    (void)strncpy(kafkaConfig->metadata_topic, strVal, MAX_KAFKA_TOPIC_LEN - 1);
+
+    ret = config_setting_lookup_string(settings, "event_topic", &strVal);
+    if (ret == 0) {
+        ERROR("[CONFIG] load config for event_topic failed.\n");
+        return -1;
+    }
+    (void)strncpy(kafkaConfig->event_topic, strVal, MAX_KAFKA_TOPIC_LEN - 1);
 
     ret = config_setting_lookup_int(settings, "batch_num_messages", &intVal);
     if (ret == 0) {

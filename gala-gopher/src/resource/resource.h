@@ -50,7 +50,11 @@ typedef struct {
     FifoMgr *fifoMgr;
 
     // outer component
-    KafkaMgr *kafkaMgr;
+    KafkaMgr *metric_kafkaMgr;  // output metric's data
+
+    KafkaMgr *meta_kafkaMgr;    // output metadata
+
+    KafkaMgr *event_kafkaMgr;   // output abnormal event
 
     // thread handler
     IngressMgr *ingressMgr;
@@ -71,6 +75,8 @@ void ResourceMgrDestroy(ResourceMgr *resourceMgr);
 
 int ResourceMgrInit(ResourceMgr *resourceMgr);
 void ResourceMgrDeinit(ResourceMgr *resourceMgr);
+
+int ReportMeteData(const ResourceMgr *resourceMgr);
 
 #endif
 
