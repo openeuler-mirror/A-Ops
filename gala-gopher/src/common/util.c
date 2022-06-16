@@ -18,6 +18,7 @@
 #include <signal.h>
 #include <unistd.h>
 #include <string.h>
+#include <stdarg.h>
 #include "common.h"
 
 char *get_cur_time(void)
@@ -105,3 +106,26 @@ int exec_cmd(const char *cmd, char *buf, unsigned int buf_len)
     return 0;
 }
 
+int __snprintf(char **buf, const int bufLen, int *remainLen, const char *format, ...)
+{
+    int len;
+    char *p = *buf;
+    va_list args;
+
+    if (bufLen <= 0) {
+        return -1;
+    }
+
+    va_start(args, format);
+    len = vsnprintf(p, (const unsigned int)bufLen, format, args);
+    va_end(args);
+
+    if (len >= bufLen || len < 0) {
+        return -1;
+    }
+
+    *buf += len;
+    *remainLen = bufLen - len;
+
+    return 0;
+}

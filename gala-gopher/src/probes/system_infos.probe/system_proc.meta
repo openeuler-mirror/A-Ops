@@ -13,12 +13,12 @@ measurements:
             },
             {
                 description: "process group id",
-                type: "key",
+                type: "label",
                 name: "pgid",
             },
             {
                 description: "parent id of process",
-                type: "key",
+                type: "label",
                 name: "ppid",
             },
             {

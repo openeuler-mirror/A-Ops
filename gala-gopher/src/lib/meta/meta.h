@@ -26,7 +26,7 @@ typedef struct {
 
 typedef struct {
     char name[MAX_MEASUREMENT_NAME_LEN];
-
+    char version[MAX_META_VERSION_LEN];
     uint32_t fieldsNum;
     Field fields[MAX_FIELDS_NUM];
 } Measurement;

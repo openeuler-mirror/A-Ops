@@ -36,6 +36,7 @@
 #define MAX_FIELD_NAME_LEN          64
 #define MAX_MEASUREMENT_NAME_LEN    64
 #define MAX_FIELDS_NUM              128
+#define MAX_META_VERSION_LEN        16
 
 // ingress
 #define MAX_EPOLL_SIZE        1024

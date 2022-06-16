@@ -17,7 +17,6 @@
 #include <stdlib.h>
 #include <string.h>
 #include <dirent.h>
-
 #include <libconfig.h>
 #include "meta.h"
 
@@ -176,6 +175,7 @@ int MeasurementMgrLoadSingleMeta(MeasurementMgr *mgr, const char *metaPath)
     int ret = 0;
     config_t cfg;
     config_setting_t *measurements = NULL;
+    const char *version = NULL;
 
     char *name = NULL;
     char *field = NULL;
@@ -186,6 +186,13 @@ int MeasurementMgrLoadSingleMeta(MeasurementMgr *mgr, const char *metaPath)
     ret = config_read_file(&cfg, metaPath);
     if (ret == 0) {
         ERROR("[META] config read file %s failed.\n", metaPath);
+        config_destroy(&cfg);
+        return -1;
+    }
+
+    ret = config_lookup_string(&cfg, "version", &version);
+    if (ret <= 0) {
+        ERROR("[META] get version failed.\n");
         config_destroy(&cfg);
         return -1;
     }
@@ -207,6 +214,8 @@ int MeasurementMgrLoadSingleMeta(MeasurementMgr *mgr, const char *metaPath)
             config_destroy(&cfg);
             return -1;
         }
+        (void)memset(mm->version, 0, MAX_META_VERSION_LEN);
+        (void)strncpy(mm->version, version, MAX_META_VERSION_LEN - 1);
 
         ret = MeasurementLoad(mgr, mm, measurement);
         if (ret != 0) {
@@ -264,4 +273,3 @@ int MeasurementMgrLoad(const MeasurementMgr *mgr, const char *metaDir)
     closedir(d);
     return 0;
 }
-

@@ -317,25 +317,52 @@ static int KafkaMgrInit(ResourceMgr *resourceMgr)
 
     configMgr = resourceMgr->configMgr;
 
+    /* init metric_kafka */
     if (configMgr->kafkaConfig->kafkaSwitch == KAFKA_SWITCH_OFF) {
-        ERROR("[RESOURCE] kafka switch off, skip kafka mgr create.\n");
-        return 0;
+        ERROR("[RESOURCE] kafka switch off, skip kafkaMgr(topic:kafka_topic) create.\n");
+    } else {
+        kafkaMgr = KafkaMgrCreate(configMgr, "kafka_topic");
+        if (kafkaMgr == NULL) {
+            ERROR("[RESOURCE] create kafkaMgr(topic:kafka_topic) failed.\n");
+            return -1;
+        }
+        resourceMgr->metric_kafkaMgr = kafkaMgr;
+        INFO("[RESOURCE] create kafkaMgr(topic:kafka_topic) success.\n");
     }
-
-    kafkaMgr = KafkaMgrCreate(configMgr);
+    /* init meta_kafka */
+    kafkaMgr = NULL;
+    kafkaMgr = KafkaMgrCreate(configMgr, "metadata_topic");
     if (kafkaMgr == NULL) {
-        ERROR("[RESOURCE] create kafkaMgr failed.\n");
+        ERROR("[RESOURCE] create kafkaMgr(topic:metadata_topic) failed.\n");
         return -1;
     }
+    resourceMgr->meta_kafkaMgr = kafkaMgr;
+    INFO("[RESOURCE] create kafkaMgr(topic:metadata_topic) success.\n");
 
-    resourceMgr->kafkaMgr = kafkaMgr;
+    /* init event_kafka */
+    kafkaMgr = NULL;
+    kafkaMgr = KafkaMgrCreate(configMgr, "event_topic");
+    if (kafkaMgr == NULL) {
+        ERROR("[RESOURCE] create kafkaMgr(topic:event_topic) failed.\n");
+        return -1;
+    }
+    resourceMgr->event_kafkaMgr = kafkaMgr;
+    INFO("[RESOURCE] create kafkaMgr(topic:event_topic) success.\n");
+
     return 0;
 }
 
 static void KafkaMgrDeinit(ResourceMgr *resourceMgr)
 {
-    KafkaMgrDestroy(resourceMgr->kafkaMgr);
-    resourceMgr->kafkaMgr = NULL;
+    KafkaMgrDestroy(resourceMgr->metric_kafkaMgr);
+    resourceMgr->metric_kafkaMgr = NULL;
+
+    KafkaMgrDestroy(resourceMgr->meta_kafkaMgr);
+    resourceMgr->meta_kafkaMgr = NULL;
+
+    KafkaMgrDestroy(resourceMgr->event_kafkaMgr);
+    resourceMgr->event_kafkaMgr = NULL;
+
     return;
 }
 
@@ -468,7 +495,7 @@ static int EgressMgrInit(ResourceMgr *resourceMgr)
         return -1;
     }
 
-    egressMgr->kafkaMgr = resourceMgr->kafkaMgr;
+    egressMgr->kafkaMgr = resourceMgr->metric_kafkaMgr;
     egressMgr->interval = resourceMgr->configMgr->egressConfig->interval;
     egressMgr->timeRange = resourceMgr->configMgr->egressConfig->timeRange;
 
@@ -511,5 +538,290 @@ static void WebServerDeinit(ResourceMgr *resourceMgr)
     return;
 }
 
+#endif
+
+#if GALA_GOPHER_INFO("report_meta_to_kafka func")
+static int metadata_build_timestamp(char *json_str, int max_len)
+{
+    char *str = json_str;
+    int str_len = max_len;
+    time_t now;
+    const char *fmt = "{\"timestamp\": %lld";    // "timestamp": 1655211859000
+
+    (void)time(&now);
+    if (__snprintf(&str, str_len, &str_len, fmt, now * THOUSAND) < 0) {
+        return -1;
+    }
+    return max_len > str_len ? (max_len - str_len) : -1;
+}
+
+static int metadata_build_metaname(const Measurement *mm, char *json_str, int max_len)
+{
+    char *str = json_str;
+    int str_len = max_len;
+    const char *fmt = ", \"meta_name\": \"%s\""; // "meta_name": "block",
+
+    if (__snprintf(&str, str_len, &str_len, fmt, mm->name) < 0) {
+        return -1;
+    }
+    return max_len > str_len ? (max_len - str_len) : -1;
+}
+
+static int metadata_build_vrsion(const Measurement *mm, char *json_str, int max_len)
+{
+    char *str = json_str;
+    int str_len = max_len;
+    const char *fmt = ", \"version\": \"%s\""; // "version": "1.0.0",
+
+    if (__snprintf(&str, str_len, &str_len, fmt, mm->version) < 0) {
+        return -1;
+    }
+    return max_len > str_len ? (max_len - str_len) : -1;
+}
+
+/* "keys": ["machine_id", "tgid"] */
+#define META_FIELD_TYPE_KEY "key"
+static int metadata_build_keys(const Measurement *mm, char *json_str, int max_len)
+{
+    int i, ret;
+    char *str = json_str;
+    int str_len = max_len;
+    int total_len = 0;
+
+    ret = snprintf(str, str_len, ", \"keys\": [\"machine_id\"");
+    if (ret < 0 || ret >= str_len) {
+        return -1;
+    }
+    str += ret;
+    str_len -= ret;
+    total_len += ret;
+
+    for (i = 0; i < mm->fieldsNum; i++) {
+        if (strcmp(mm->fields[i].type, META_FIELD_TYPE_KEY) == 0) {
+            ret = snprintf(str, str_len, ", \"%s\"", mm->fields[i].name);
+            if (ret < 0 || ret >= str_len) {
+                return -1;
+            }
+            str += ret;
+            str_len -= ret;
+            total_len += ret;
+        }
+    }
+    ret = snprintf(str, str_len, "]");
+    if (ret < 0 || ret >= str_len) {
+        return -1;
+    }
+    total_len += ret;
+
+    return total_len;
+}
+
+/* "labels": ["hostname", "blk_type", "comm"] */
+#define META_FIELD_TYPE_LABEL "label"
+static int metadata_build_labels(const Measurement *mm, char *json_str, int max_len)
+{
+    int i, ret;
+    char *str = json_str;
+    int str_len = max_len;
+    int total_len = 0;
+
+    ret = snprintf(str, str_len, ", \"labels\": [\"hostname\"");
+    if (ret < 0 || ret >= str_len) {
+        return -1;
+    }
+    str += ret;
+    str_len -= ret;
+    total_len += ret;
+
+    for (i = 0; i < mm->fieldsNum; i++) {
+        if (strcmp(mm->fields[i].type, META_FIELD_TYPE_LABEL) == 0) {
+            ret = snprintf(str, str_len, ", \"%s\"", mm->fields[i].name);
+            if (ret < 0 || ret >= str_len) {
+                return -1;
+            }
+            str += ret;
+            str_len -= ret;
+            total_len += ret;
+        }
+    }
+    ret = snprintf(str, str_len, "]");
+    if (ret < 0 || ret >= str_len) {
+        return -1;
+    }
+    total_len += ret;
+
+    return total_len;
+}
+
+static int is_filed_type_metric(char *field_type)
+{
+    int i;
+
+    const char meta_fileld_type_metric[][MAX_FIELD_TYPE_LEN] = {
+        "counter",
+        "gauge"
+    };
+    int size = sizeof(meta_fileld_type_metric) / sizeof(meta_fileld_type_metric[0]);
+
+    for (i = 0; i < size; i++) {
+        if (strcmp(field_type, meta_fileld_type_metric[i]) == 0) {
+            return 1;
+        }
+    }
+    return 0;
+}
+
+/* "metrics": ["rx_bytes", "tx_bytes"] */
+static int metadata_build_metrics(const Measurement *mm, char *json_str, int max_len)
+{
+    int i, j, ret;
+    char *str = json_str;
+    int str_len = max_len;
+    int total_len = 0;
+    int first_metric = 1;
+
+    ret = snprintf(str, str_len, ", \"metrics\": [");
+    if (ret < 0 || ret >= str_len) {
+        return -1;
+    }
+    str += ret;
+    str_len -= ret;
+    total_len += ret;
+
+    for (i = 0; i < mm->fieldsNum; i++) {
+        if (is_filed_type_metric((char *)mm->fields[i].type) == 0) {
+            /* not metric, continue */
+            continue;
+        }
+        if (first_metric == 1) {
+            ret = snprintf(str, str_len, "\"%s\"", mm->fields[i].name);
+            first_metric = 0;
+        } else {
+            ret = snprintf(str, str_len, ", \"%s\"", mm->fields[i].name);
+        }
+        if (ret < 0 || ret >= str_len) {
+            return -1;
+        }
+        str += ret;
+        str_len -= ret;
+        total_len += ret;
+    }
+
+    ret = snprintf(str, str_len, "]}");
+    if (ret < 0 || ret >= str_len) {
+        return -1;
+    }
+    total_len += ret;
+
+    return total_len;
+}
+
+static int metadata_to_json(const Measurement *mm, char *json_str, int max_json_len)
+{
+    int ret;
+    char *str = json_str;
+    int str_len = max_json_len;
+
+    ret = metadata_build_timestamp(str, str_len);
+    if (ret < 0) {
+        return -1;
+    }
+    str += ret;
+    str_len -= ret;
+
+    ret = metadata_build_metaname(mm, str, str_len);
+    if (ret < 0) {
+        return -1;
+    }
+    str += ret;
+    str_len -= ret;
+
+    ret = metadata_build_vrsion(mm, str, str_len);
+    if (ret < 0) {
+        return -1;
+    }
+    str += ret;
+    str_len -= ret;
+
+    ret = metadata_build_keys(mm, str, str_len);
+    if (ret < 0) {
+        return -1;
+    }
+    str += ret;
+    str_len -= ret;
+
+    ret = metadata_build_labels(mm, str, str_len);
+    if (ret < 0) {
+        return -1;
+    }
+    str += ret;
+    str_len -= ret;
+
+    ret = metadata_build_metrics(mm, str, str_len);
+    if (ret < 0) {
+        return -1;
+    }
+    str += ret;
+    str_len -= ret;
+
+    return 0;
+}
+
+static int report_one_metadata(const ResourceMgr *resourceMgr, const Measurement *mm)
+{
+    int ret;
+    char *json_str = NULL;
+
+    KafkaMgr *meta_kafka = resourceMgr->meta_kafkaMgr;
+    if (meta_kafka == NULL) {
+        ERROR("[Resource] kafka topic(metadata_topic) is NULL\n");
+        return -1;
+    }
+
+    json_str = (char *)malloc(MAX_DATA_STR_LEN);
+    if (json_str == NULL) {
+        return -1;
+    }
+    json_str[0] = 0;
+
+    ret = metadata_to_json(mm, json_str, MAX_DATA_STR_LEN);
+    if (ret < 0) {
+        ERROR("[Resource] metadata to json failed.\n");
+        goto err;
+    }
+
+    (void)KafkaMsgProduce(meta_kafka, json_str, strlen(json_str));
+    DEBUG("[Resource] kafka metadata_topic produce one data: %s\n", json_str);
+    return 0;
+
+err:
+    if (json_str != NULL) {
+        (void)free(json_str);
+    }
+    return -1;
+}
+
+int ReportMeteData(const ResourceMgr *resourceMgr)
+{
+    MeasurementMgr *mm_mgr = NULL;
+    Measurement *mm = NULL;
+    int i, meta_num;
+
+    mm_mgr = resourceMgr->mmMgr;
+    if (mm_mgr == NULL) {
+        ERROR("[Resource] measurement mgr is NULL\n");
+        return -1;
+    }
+    meta_num = mm_mgr->measurementsNum;
+
+    for (i = 0; i < meta_num; i++) {
+        mm = mm_mgr->measurements[i];
+        if (report_one_metadata(resourceMgr, mm) != 0) {
+            ERROR("[Resource] report one metadata to kafka fail.\n");
+            return -1;
+        }
+    }
+    return 0;
+}
 #endif
 
