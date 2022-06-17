@@ -24,6 +24,7 @@
 
 #include "__share_map_task.h"
 #include "__share_map_match.h"
+#include "__obj_map.h"
 #include "__bpf_kern.h"
 #include "__bpf_usr.h"
 #include "__libbpf.h"

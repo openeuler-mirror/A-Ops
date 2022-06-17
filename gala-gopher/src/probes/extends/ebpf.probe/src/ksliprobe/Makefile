@@ -29,7 +29,7 @@ deps: $(DEPS)
 
 app: $(APP)
 %: %.c $(SRC_C)
-	$(CC) $(CFLAGS) $(INCLUDES) $^ -lbpf -lelf -lz -lpthread -o $@
+	$(CC) $(CFLAGS) $(INCLUDES) $^ $(LINK_TARGET) -o $@
 
 clean:
 	rm -rf $(DEPS)

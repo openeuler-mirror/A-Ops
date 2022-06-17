@@ -51,6 +51,7 @@ SET(SOURCES main.c daemon.c
     ${COMMON_DIR}/args.c
     ${COMMON_DIR}/container.c
     ${COMMON_DIR}/util.c
+    ${COMMON_DIR}/object.c
 )
 
 SET(SOURCE_CMD ${CMD_DIR}/client.c)
@@ -87,5 +88,5 @@ TARGET_INCLUDE_DIRECTORIES(${EXECUTABLE_TARGET} PRIVATE
     ${COMMON_DIR}
 )
 
-TARGET_LINK_LIBRARIES(${EXECUTABLE_TARGET} PRIVATE config pthread rt dl rdkafka microhttpd)
+TARGET_LINK_LIBRARIES(${EXECUTABLE_TARGET} PRIVATE config pthread rt dl bpf rdkafka microhttpd)
 

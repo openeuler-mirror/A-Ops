@@ -29,6 +29,7 @@
 #include "args.h"
 #include "task.h"
 #include "hash.h"
+#include "object.h"
 #include "container.h"
 #include "containerd_probe.h"
 
@@ -36,6 +37,66 @@
 
 static struct probe_params *params;
 static int task_map_fd;
+
+static void add_cgrp_obj(struct container_value *container)
+{
+    struct cgroup_s obj = {0};
+
+    obj.knid = container->cpucg_inode;
+    obj.type = CGP_TYPE_CPUACCT;
+    (void)cgrp_add(&obj);
+
+    obj.knid = container->memcg_inode;
+    obj.type = CGP_TYPE_MEM;
+    (void)cgrp_add(&obj);
+
+    obj.knid = container->pidcg_inode;
+    obj.type = CGP_TYPE_PIDS;
+    (void)cgrp_add(&obj);
+}
+
+static void put_cgrp_obj(struct container_value *container)
+{
+    struct cgroup_s obj = {0};
+
+    obj.knid = container->cpucg_inode;
+    obj.type = CGP_TYPE_CPUACCT;
+    (void)cgrp_put(&obj);
+
+    obj.knid = container->memcg_inode;
+    obj.type = CGP_TYPE_MEM;
+    (void)cgrp_put(&obj);
+
+    obj.knid = container->pidcg_inode;
+    obj.type = CGP_TYPE_PIDS;
+    (void)cgrp_put(&obj);
+}
+
+static void add_nm_obj(struct container_value *container)
+{
+    struct nm_s obj = {0};
+
+    obj.id = container->mnt_ns_id;
+    obj.type = NM_TYPE_MNT;
+    (void)nm_add(&obj);
+
+    obj.id = container->net_ns_id;
+    obj.type = NM_TYPE_NET;
+    (void)nm_add(&obj);
+}
+
+static void put_nm_obj(struct container_value *container)
+{
+    struct nm_s obj = {0};
+
+    obj.id = container->mnt_ns_id;
+    obj.type = NM_TYPE_MNT;
+    (void)nm_put(&obj);
+
+    obj.id = container->net_ns_id;
+    obj.type = NM_TYPE_NET;
+    (void)nm_put(&obj);
+}
 
 static int is_valid_tgid(struct probe_params *p, u32 pid)
 {
@@ -131,6 +192,8 @@ static void clear_container_tbl(struct container_hash_t **pphead)
     }
 
     H_ITER(*pphead, item, tmp) {
+        put_cgrp_obj(&(item->v));
+        put_nm_obj(&(item->v));
         H_DEL(*pphead, item);
         (void)free(item);
     }
@@ -145,6 +208,8 @@ static void clear_invalid_items(struct container_hash_t **pphead)
 
     H_ITER(*pphead, item, tmp) {
         if (!(item->v.flags & CONTAINER_FLAGS_VALID)) {
+            put_cgrp_obj(&(item->v));
+            put_nm_obj(&(item->v));
             H_DEL(*pphead, item);
             (void)free(item);
         }
@@ -167,8 +232,6 @@ static struct container_hash_t* add_container(const char *container_id, struct c
 {
     struct container_hash_t *item;
 
-    INFO("Create new container %s.\n", container_id);
-
     item = malloc(sizeof(struct container_hash_t));
     if (item == NULL) {
         return NULL;
@@ -180,6 +243,9 @@ static struct container_hash_t* add_container(const char *container_id, struct c
     H_ADD_KEYPTR(*pphead, item->k.container_id, CONTAINER_ABBR_ID_LEN, item);
 
     init_container((const char *)item->k.container_id, &(item->v));
+
+    add_cgrp_obj(&(item->v));
+    add_nm_obj(&(item->v));
     return item;
 }
 
