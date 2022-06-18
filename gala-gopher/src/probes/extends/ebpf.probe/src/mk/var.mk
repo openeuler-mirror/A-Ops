@@ -25,6 +25,7 @@ KER_VER_MAJOR = $(shell echo $(KER_VER) | awk -F'.' '{print $$1}')
 KER_VER_MINOR = $(shell echo $(KER_VER) | awk -F'.' '{print $$2}')
 KER_VER_PATCH = $(shell echo $(KER_VER) | awk -F'.' '{print $$3}')
 
+LINK_TARGET ?= -lpthread -lbpf -lelf -lz
 EXTRA_CFLAGS ?= -g -O2 -Wall
 EXTRA_CDEFINE ?= -D__TARGET_ARCH_$(ARCH)
 CFLAGS := $(EXTRA_CFLAGS) $(EXTRA_CDEFINE)

@@ -34,7 +34,7 @@ deps: $(DEPS)
 
 app: $(APP)
 %_$(REDIS_VERSION): %.c $(SRC_C)
-	$(CC) $(CFLAGS) $(INCLUDES) $^ -lbpf -lelf -lz -lpthread -o $@
+	$(CC) $(CFLAGS) $(INCLUDES) $^ $(LINK_TARGET) -o $@
 
 clean:
 	rm -rf $(DEPS)

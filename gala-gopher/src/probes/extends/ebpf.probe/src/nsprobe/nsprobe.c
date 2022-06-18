@@ -32,6 +32,7 @@
 #include "qdisc.skel.h"
 #include "qdisc.h"
 #include "containerd_probe.h"
+#include "object.h"
 #include "nsprobe.h"
 
 #define QDISC "qdisc"
@@ -121,6 +122,7 @@ int main(int argc, char **argv)
     }
 
     printf("Successfully started!\n");
+    obj_module_init();
 
     while (!g_stop) {
         if ((err = perf_buffer__poll(pb, THOUSAND)) < 0) {
@@ -136,5 +138,6 @@ err:
     }
     UNLOAD(qdisc);
     free_containers_info();
+    obj_module_exit();
     return -err;
 }

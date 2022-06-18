@@ -22,6 +22,7 @@
 #include <bpf/bpf.h>
 #include <sys/resource.h>
 #include "elf_reader.h"
+#include "object.h"
 #include "common.h"
 
 #define EBPF_RLIM_LIMITED  100*1024*1024 // 100M
@@ -65,6 +66,9 @@ static __always_inline int set_memlock_rlimit(unsigned long limit)
 #define __PIN_SHARE_MAP_ALL(probe_name) \
         do { \
             __MAP_SET_PIN_PATH(probe_name, __task_map, SHARE_MAP_TASK_PATH); \
+            __MAP_SET_PIN_PATH(probe_name, cgrp_obj_map, CGRP_MAP_PATH); \
+            __MAP_SET_PIN_PATH(probe_name, nm_obj_map, NM_MAP_PATH); \
+            __MAP_SET_PIN_PATH(probe_name, proc_obj_map, PROC_MAP_PATH); \
         } while (0)
 
 #define INIT_BPF_APP(app_name, limit) \
