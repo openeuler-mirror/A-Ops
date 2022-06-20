@@ -1,0 +1,25 @@
+version = "1.0.0"
+measurements:
+(
+    {
+        name: "cgprobe",
+        fields:
+        (
+            {
+                description: "inode of the memory cgroup",
+                type: "key",
+                name: "cgroup_id",
+            },
+            {
+                description: "max pages that memory cgroup is charging in a sampling period",
+                type: "gauge",
+                name: "pages",
+            },
+            {
+                description: "the times oom occurs in a sampling period",
+                type: "gauge",
+                name: "ooms",
+            },
+        )
+    }
+)
