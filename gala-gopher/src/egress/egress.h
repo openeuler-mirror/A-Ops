@@ -22,12 +22,14 @@
 #include "kafka.h"
 
 typedef struct {
-    KafkaMgr *kafkaMgr;
+    KafkaMgr *metric_kafkaMgr;
+    KafkaMgr *event_kafkaMgr;
 
     uint32_t interval;
     uint32_t timeRange;
 
-    Fifo *fifo;
+    Fifo *metric_fifo;
+    Fifo *event_fifo;
     int epoll_fd;
     pthread_t tid;
 } EgressMgr;

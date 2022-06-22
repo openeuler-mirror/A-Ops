@@ -95,28 +95,43 @@ static int IngressData2Egress(IngressMgr *mgr, IMDB_Table *table, IMDB_Record* r
     char *jsonStr = malloc(MAX_DATA_STR_LEN);
     if (jsonStr == NULL) {
         ERROR("[INGRESS] alloc jsonStr failed.\n");
+        return -1;
     }
     ret = IMDB_Rec2Json(mgr->imdbMgr, table, rec, dataStr, jsonStr, MAX_DATA_STR_LEN);
     if (ret != 0) {
         ERROR("[INGRESS] reformat dataStr to json failed.\n");
-        free(jsonStr);
-        return -1;
-    }
-    ret = FifoPut(mgr->egressMgr->fifo, (void *)jsonStr);
-    if (ret != 0) {
-        ERROR("[INGRESS] egress fifo full.\n");
-        (void)free(jsonStr);
-        return -1;
+        goto err;
     }
 
     uint64_t msg = 1;
-    ret = write(mgr->egressMgr->fifo->triggerFd, &msg, sizeof(uint64_t));
-    if (ret != sizeof(uint64_t)) {
-        ERROR("[INGRESS] send trigger msg to egress eventfd failed.\n");
-        return -1;
+    if (strcmp(table->name, "event") == 0) {
+        ret = FifoPut(mgr->egressMgr->event_fifo, (void *)jsonStr);
+        if (ret != 0) {
+            ERROR("[INGRESS] egress event fifo full.\n");
+            goto err;
+        }
+        ret = write(mgr->egressMgr->event_fifo->triggerFd, &msg, sizeof(uint64_t));
+        if (ret != sizeof(uint64_t)) {
+            ERROR("[INGRESS] send trigger msg to egress event_fifo fd failed.\n");
+            return -1;
+        }
+    } else {
+        ret = FifoPut(mgr->egressMgr->metric_fifo, (void *)jsonStr);
+        if (ret != 0) {
+            ERROR("[INGRESS] egress metric fifo full.\n");
+            goto err;
+        }
+        ret = write(mgr->egressMgr->metric_fifo->triggerFd, &msg, sizeof(uint64_t));
+        if (ret != sizeof(uint64_t)) {
+            ERROR("[INGRESS] send trigger msg to egress metric_fifo fd failed.\n");
+            return -1;
+        }
     }
-
     return 0;
+
+err:
+    (void)free(jsonStr);
+    return -1;
 }
 
 static int GetTableNameAndContent(const char* buf, char *tblName, size_t size, char **content)
@@ -188,7 +203,7 @@ static int IngressDataProcesssInput(Fifo *fifo, IngressMgr *mgr)
             }
         }
 
-        if (mgr->egressMgr && mgr->egressMgr->kafkaMgr) {
+        if (mgr->egressMgr) {
             // send data to egress
             ret = IngressData2Egress(mgr, table, rec, content);
             if (ret != 0) {
