@@ -18,8 +18,7 @@
 #include <unistd.h>
 #include <dirent.h>
 #include <errno.h>
-#include <uthash.h>
-#include "args.h"
+#include "system_procs.h"
 
 #define METRICS_PROC_NAME   "system_proc"
 #define PROC_PATH           "/proc"
@@ -36,105 +35,6 @@
 #define PROC_SMAPS_CMD      "/usr/bin/cat /proc/%s/smaps_rollup"
 #define PROC_STAT_CMD       "/usr/bin/cat /proc/%s/stat | awk '{print $10\":\"$12\":\"$14\":\"$15\":\"$23\":\"$24}'"
 #define PROC_ID_CMD         "ps -eo pid,ppid,pgid,comm | grep -w \"%s\" | awk '{print $2 \"|\" $3}'"
-#define PROC_NAME_MAX       64
-#define PROC_MAX_RANGE      64
-#define LINE_BUF_LEN        128
-#define PROC_IN_PROBE_RANGE 1
-#define PROBE_TIMES_MAX     200
-
-#define SPLIT_NEWLINE_SYMBOL(s) \
-    do { \
-        int __len = strlen(s); \
-        if (__len > 0 && (s)[__len - 1] == '\n') { \
-            (s)[__len - 1] = 0; \
-        } \
-    } while (0)
-
-enum proc_io_e {
-    PROC_IO_RCHAR = 0,
-    PROC_IO_WCHAR,
-    PROC_IO_SYSCR,
-    PROC_IO_SYSCW,
-    PROC_IO_READ_BYTES,
-    PROC_IO_WRITE_BYTES,
-    PROC_IO_CANCEL_WRITE_BYTES,
-
-    PROC_IO_MAX
-};
-
-enum proc_stat_e {
-    PROC_STAT_MIN_FLT = 0,
-    PROC_STAT_MAJ_FLT,
-    PROC_STAT_UTIME,
-    PROC_STAT_STIME,
-    PROC_STAT_VSIZE,
-    PROC_STAT_RSS,
-
-    PROC_STAT_MAX
-};
-
-enum proc_mss_e {
-    PROC_MSS_RESIDENT = 0,
-    PROC_MSS_SHARED_CLEAN,
-    PROC_MSS_SHARED_DIRTY,
-    PROC_MSS_PRIVATE_CLEAN,
-    PROC_MSS_PROVATE_DIRTY,
-    PROC_MSS_REFERENCED,
-    PROC_MSS_ANONYMOUS,
-    PROC_MSS_LAZYFREE,
-    PROC_MSS_ANONYMOUS_THP,
-    PROC_MSS_SWAP,
-    PROC_MSS_SHARED_HUGETLB,
-    PROC_MSS_PRIVATE_HUGETLB,
-    PROC_MSS_PSS,
-    PROC_MSS_PSS_LOCKED,
-    PROC_MSS_SWAP_PSS,
-    PROC_MSS_CHECK_SHNEM_SWAP,
-
-    PROC_MSS_MAX
-};
-
-typedef struct {
-    unsigned long pid;         // process id
-    unsigned long long start_time;  // time the process started
-} proc_key_t;
-
-typedef struct {
-    char comm[PROC_NAME_MAX];
-    int pgid;
-    int ppid;
-    char *cmdline;
-    unsigned int fd_count;              // FROM '/usr/bin/ls -l /proc/[PID]/fd | wc -l'
-    unsigned int proc_syscr_count;      // FROM same as 'task_rchar_bytes'
-    unsigned int proc_syscw_count;      // FROM same as 'task_rchar_bytes'
-    unsigned long long proc_rchar_bytes;    // FROM '/proc/[PID]/io'
-    unsigned long long proc_wchar_bytes;    // FROM same as 'task_rchar_bytes'
-    unsigned long long proc_read_bytes;     // FROM same as 'task_rchar_bytes'
-    unsigned long long proc_write_bytes;    // FROM same as 'task_rchar_bytes'
-    unsigned long long proc_cancelled_write_bytes;  // FROM same as 'task_rchar_bytes'
-    unsigned int proc_oom_score_adj;    // FROM tracepoint 'oom_score_adj_update'
-    unsigned long proc_shared_dirty;    // FROM '/usr/bin/cat /proc/%s/smaps_rollup'
-    unsigned long proc_shared_clean;    // FROM same as proc_shared_dirty
-    unsigned long proc_private_dirty;   // FROM same as proc_shared_dirty
-    unsigned long proc_private_clean;   // FROM same as proc_shared_dirty
-    unsigned long proc_referenced;      // FROM same as proc_shared_dirty
-    unsigned long proc_lazyfree;        // FROM same as proc_shared_dirty
-    unsigned long proc_swap;            // FROM same as proc_shared_dirty
-    unsigned long proc_swappss;         // FROM same as proc_shared_dirty
-    unsigned long long proc_stat_min_flt;   // FROME '/usr/bin/cat /proc/%s/stat'
-    unsigned long long proc_stat_maj_flt;   // FROM same as proc_stat_min_flt
-    unsigned long long proc_stat_utime;     // FROM same as proc_stat_min_flt
-    unsigned long long proc_stat_stime;     // FROM same as proc_stat_min_flt
-    unsigned long long proc_stat_vsize;     // FROM same as proc_stat_min_flt
-    unsigned long long proc_stat_rss;       // FROM same as proc_stat_min_flt
-} proc_info_t;
-
-typedef struct {
-    proc_key_t key;     // key
-    char flag;          // whether in proc_range list, 1:yes/0:no
-    proc_info_t info;  
-    UT_hash_handle hh;
-} proc_hash_t;
 
 static int g_probed_times = 0;
 
@@ -164,8 +64,8 @@ static proc_hash_t *hash_find_proc(const char *pid, const char *stime)
     proc_hash_t *p = NULL;
     proc_hash_t temp = {0};
 
-    temp.key.pid = (unsigned long)atoi(pid);
-    temp.key.start_time = (unsigned long long)atoll(stime);
+    temp.key.pid = (u32)atoi(pid);
+    temp.key.start_time = (u64)atoll(stime);
     HASH_FIND(hh, g_procmap, &temp.key, sizeof(proc_key_t), p);
 
     return p;
@@ -196,7 +96,7 @@ static int is_proc_subdir(const char *pid)
     return -1;
 }
 
-static int do_read_line(const char* pid, const char *command, const char *fname, char *buf, unsigned int buf_len)
+static int do_read_line(const char* pid, const char *command, const char *fname, char *buf, u32 buf_len)
 {
     FILE *f = NULL;
     char fname_or_cmd[LINE_BUF_LEN];
@@ -317,6 +217,7 @@ static void get_java_proc_cmd(const char* pid, proc_info_t *proc_info)
     if (f == NULL) {
         goto out;
     }
+    line[0] = 0;
     if (fgets(line, LINE_BUF_LEN, f) == NULL) {
         goto out;
     }
@@ -378,13 +279,13 @@ static int get_proc_fdcnt(const char *pid, proc_info_t *proc_info)
     if (ret < 0) {
         return -1;
     }
-    proc_info->fd_count = (unsigned int)atoi(buffer);
+    proc_info->fd_count = (u32)atoi(buffer);
     return 0;
 }
 
 static void do_set_proc_stat(proc_info_t *proc_info, char *buf, int index)
 {
-    unsigned long long value = (unsigned long long)atoll(buf);
+    u64 value = (u64)atoll(buf);
     switch (index)
     {
         case PROC_STAT_MIN_FLT:
@@ -431,7 +332,7 @@ static int get_proc_stat(const char *pid, proc_info_t *proc_info)
     return 0;
 }
 
-static void do_set_proc_io(proc_info_t *proc_info, unsigned long long value, int index)
+static void do_set_proc_io(proc_info_t *proc_info, u64 value, int index)
 {
     switch (index)
     {
@@ -465,7 +366,7 @@ int get_proc_io(const char *pid, proc_info_t *proc_info)
 {
     FILE *f = NULL;
     int index = 0;
-    unsigned long long value = 0;
+    u64 value = 0;
     char fname_or_cmd[LINE_BUF_LEN];
     char line[LINE_BUF_LEN];
 
@@ -499,7 +400,7 @@ out:
     return 0;
 }
 
-static void do_set_proc_mss(proc_info_t *proc_info, unsigned long value, int index)
+static void do_set_proc_mss(proc_info_t *proc_info, u32 value, int index)
 {
     switch (index)
     {
@@ -536,7 +437,7 @@ int get_proc_mss(const char *pid, proc_info_t *proc_info)
 {
     FILE *f = NULL;
     int index = 0;
-    unsigned long value = 0;
+    u32 value = 0;
     char fname_or_cmd[LINE_BUF_LEN];
     char line[LINE_BUF_LEN];
 
@@ -645,7 +546,7 @@ static void output_proc_infos(proc_hash_t *one_proc)
     return;
 }
 
-int system_proc_probe()
+int system_proc_probe(void)
 {
     int ret = 0;
     DIR *dir = NULL;
@@ -668,7 +569,7 @@ int system_proc_probe()
             continue;
         }
         /* proc start time(avoid repetition of pid) */
-        (void)memset(stime, 0, PROC_NAME_MAX);
+        stime[0] = 0;
         (void)get_proc_start_time(entry->d_name, stime);
 
         /* if the proc(pid+start_time) is finded in g_procmap, it means
@@ -680,17 +581,17 @@ int system_proc_probe()
             continue;
         }
 
-        (void)memset(comm, 0, PROC_NAME_MAX);
+        comm[0] = 0;
         (void)get_proc_comm(entry->d_name, comm);
 
         /* check proc whether in proc_range, if in this proc should be probed */
         if (check_proc_probe_flag(comm) != PROC_IN_PROBE_RANGE) {
             continue;
         } else {
-            l = (proc_hash_t *)malloc(sizeof *l);
-            (void)memset(l, 0, sizeof *l);
-            l->key.pid = (unsigned long)atoi(entry->d_name);
-            l->key.start_time = (unsigned long long)atoll(stime);
+            l = (proc_hash_t *)malloc(sizeof(proc_hash_t));
+            (void)memset(l, 0, sizeof(proc_hash_t));
+            l->key.pid = (u32)atoi(entry->d_name);
+            l->key.start_time = (u64)atoll(stime);
             (void)strncpy(l->info.comm, comm, PROC_NAME_MAX - 1);
             l->flag = PROC_IN_PROBE_RANGE;
             if (strcmp(comm, "java") == 0) {
@@ -732,7 +633,7 @@ void system_proc_init(char *task_whitelist)
         return;
     }
     while (!feof(f)) {
-        (void)memset(line, 0, PROC_NAME_MAX);
+        line[0] = 0;
         if (fgets(line, PROC_NAME_MAX, f) == NULL) {
             goto out;
         }
