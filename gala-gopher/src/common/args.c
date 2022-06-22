@@ -103,10 +103,10 @@ static int __period_arg_parse(char opt, char *arg, struct probe_params *params)
             params->drops_count_thr = (unsigned int)atoi(arg);
             break;
         case 'U':
-            params->res_percent_upper = (char)atoi(arg) % 100;
+            params->res_percent_upper = (char)atoi(arg);
             break;
         case 'L':
-            params->res_percent_lower = (char)atoi(arg) % 100;
+            params->res_percent_lower = (char)atoi(arg);
             break;
         case 'F':
             __filter_arg_parse(arg, params);

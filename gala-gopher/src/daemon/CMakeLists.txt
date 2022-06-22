@@ -52,6 +52,7 @@ SET(SOURCES main.c daemon.c
     ${COMMON_DIR}/container.c
     ${COMMON_DIR}/util.c
     ${COMMON_DIR}/object.c
+    ${COMMON_DIR}/event.c
 )
 
 SET(SOURCE_CMD ${CMD_DIR}/client.c)
