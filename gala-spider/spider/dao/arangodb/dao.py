@@ -131,7 +131,7 @@ class ArangoRelationDaoImpl(ArangoBaseDaoImpl, RelationDao):
             coll: Collection = self.db.collections[coll_name]
 
             try:
-                coll.bulkSave(edges, overwrite=True)
+                coll.bulkSave(edges)
             except UpdateError as ex:
                 logger.logger.error(ex)
                 return False

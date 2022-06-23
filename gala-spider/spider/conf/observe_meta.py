@@ -24,7 +24,7 @@ class EntityType(ValueCheckEnum):
     HOST = 'host'
     CONTAINER = 'container'
     APPINSTANCE = 'appinstance'
-    PROCESS = 'process'
+    PROCESS = 'system_proc'
     THREAD = 'thread'
     BIND = 'bind'
     UDP = 'udp'
@@ -34,6 +34,8 @@ class EntityType(ValueCheckEnum):
     IPVS_LINK = 'ipvs_link'
     NGINX_LINK = 'nginx_link'
     HAPROXY_LINK = 'haproxy_link'
+    REDIS_CLIENT = 'redis_client'
+    REDIS_SLI = 'ksliprobe'
 
 
 class RelationType(ValueCheckEnum):
@@ -450,15 +452,5 @@ class ObserveMetaMgt(metaclass=Singleton):
 def init_observe_meta_config(observe_conf_path) -> bool:
     observe_meta_mgt = ObserveMetaMgt()
     if not observe_meta_mgt.load_from_yaml(observe_conf_path):
-        print('Load observe metadata failed.')
         return False
-    print('Load observe metadata success.')
     return True
-
-
-# TODO : just for test, to delete
-if __name__ == '__main__':
-    observe_meta_mgt = ObserveMetaMgt()
-    observe_meta_mgt.load_from_yaml("../../config/observe.yaml")
-    for k, v in observe_meta_mgt.observe_meta_map.items():
-        print(k, v)
