@@ -26,49 +26,74 @@ EgressMgr *EgressMgrCreate(void)
 {
     EgressMgr *mgr;
     mgr = (EgressMgr *)malloc(sizeof(EgressMgr));
-    if (mgr == NULL)
-        return NULL;
-
-    memset(mgr, 0, sizeof(EgressMgr));
-
-    mgr->fifo = FifoCreate(MAX_FIFO_SIZE);
-    if (mgr->fifo == NULL) {
-        free(mgr);
+    if (mgr == NULL) {
         return NULL;
     }
+
+    (void)memset(mgr, 0, sizeof(EgressMgr));
+
+    mgr->metric_fifo = FifoCreate(MAX_FIFO_SIZE);
+    if (mgr->metric_fifo == NULL) {
+        (void)free(mgr);
+        return NULL;
+    }
+
+    mgr->event_fifo = FifoCreate(MAX_FIFO_SIZE);
+    if (mgr->event_fifo == NULL) {
+        (void)free(mgr->metric_fifo);
+        (void)free(mgr);
+        return NULL;
+    }
+
     return mgr;
 }
 
 void EgressMgrDestroy(EgressMgr *mgr)
 {
-    if (mgr == NULL)
+    if (mgr == NULL) {
         return;
+    }
 
-    if (mgr->fifo != NULL)
-        FifoDestroy(mgr->fifo);
+    if (mgr->metric_fifo != NULL) {
+        FifoDestroy(mgr->metric_fifo);
+    }
 
-    free(mgr);
+    if (mgr->event_fifo != NULL) {
+        FifoDestroy(mgr->event_fifo);
+    }
+
+    (void)free(mgr);
     return;
 }
 
 static int EgressInit(EgressMgr *mgr)
 {
-    struct epoll_event event;
+    struct epoll_event m_event;
+    struct epoll_event e_event;
     int ret = 0;
 
     mgr->epoll_fd = epoll_create(MAX_EPOLL_SIZE);
-    if (mgr->epoll_fd < 0)
-        return -1;
-
-    event.events = EPOLLIN;
-    event.data.ptr = mgr->fifo;
-
-    ret = epoll_ctl(mgr->epoll_fd, EPOLL_CTL_ADD, mgr->fifo->triggerFd, &event);
-    if (ret < 0) {
-        printf("[EGRESS] add EPOLLIN event failed.\n");
+    if (mgr->epoll_fd < 0) {
         return -1;
     }
-    printf("[EGRESS] add EGRESS FIFO trigger success.\n");
+
+    m_event.events = EPOLLIN;
+    m_event.data.ptr = mgr->metric_fifo;
+    ret = epoll_ctl(mgr->epoll_fd, EPOLL_CTL_ADD, mgr->metric_fifo->triggerFd, &m_event);
+    if (ret < 0) {
+        printf("[EGRESS] add EPOLLIN m_event failed.\n");
+        return -1;
+    }
+    printf("[EGRESS] add EGRESS METRIC FIFO trigger success.\n");
+
+    e_event.events = EPOLLIN;
+    e_event.data.ptr = mgr->event_fifo;
+    ret = epoll_ctl(mgr->epoll_fd, EPOLL_CTL_ADD, mgr->event_fifo->triggerFd, &e_event);
+    if (ret < 0) {
+        printf("[EGRESS] add EPOLLIN e_event failed.\n");
+        return -1;
+    }
+    printf("[EGRESS] add EGRESS EVENT FIFO trigger success.\n");
 
     return 0;
 }
@@ -78,7 +103,8 @@ static int EgressDataProcesssInput(Fifo *fifo, const EgressMgr *mgr)
     // read data from fifo
     char *dataStr = NULL;
     int ret = 0;
-    KafkaMgr *kafkaMgr = mgr->kafkaMgr;
+    KafkaMgr *mkafkaMgr = mgr->metric_kafkaMgr;
+    KafkaMgr *ekafkaMgr = mgr->event_kafkaMgr;
 
     uint64_t val = 0;
     ret = read(fifo->triggerFd, &val, sizeof(val));
@@ -90,9 +116,13 @@ static int EgressDataProcesssInput(Fifo *fifo, const EgressMgr *mgr)
     while (FifoGet(fifo, (void **)&dataStr) == 0) {
         // Add Egress data handlement.
 
-        if (kafkaMgr != NULL) {
-            KafkaMsgProduce(kafkaMgr, dataStr, strlen(dataStr));
-            DEBUG("[EGRESS] kafka produce one data: %s\n", dataStr);
+        if ((mkafkaMgr != NULL) && (fifo->triggerFd == mgr->metric_fifo->triggerFd)) {
+            KafkaMsgProduce(mkafkaMgr, dataStr, strlen(dataStr));
+            DEBUG("[EGRESS] kafka metric_topic produce one data: %s\n", dataStr);
+        }
+        if ((ekafkaMgr != NULL) && (fifo->triggerFd == mgr->event_fifo->triggerFd)) {
+            KafkaMsgProduce(ekafkaMgr, dataStr, strlen(dataStr));
+            DEBUG("[EGRESS] kafka event_topic produce one data: %s\n", dataStr);
         }
     }
 
@@ -113,16 +143,19 @@ static int EgressDataProcess(const EgressMgr *mgr)
     }
 
     for (int i = 0; ((i < events_num) && (i < MAX_EPOLL_EVENTS_NUM)); i++) {
-        if (events[i].events != EPOLLIN)
+        if (events[i].events != EPOLLIN) {
             continue;
+        }
 
         fifo = (Fifo *)events[i].data.ptr;
-        if (fifo == NULL)
+        if (fifo == NULL) {
             continue;
+        }
 
         ret = EgressDataProcesssInput(fifo, mgr);
-        if (ret != 0)
+        if (ret != 0) {
             return -1;
+        }
     }
     return 0;
 }

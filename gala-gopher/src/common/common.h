@@ -55,6 +55,10 @@
     #define DISK_NAME_LEN       32
 #endif
 
+#if !defined TIME_STRING_LEN
+    #define TIME_STRING_LEN     32
+#endif
+
 #ifndef GOPHER_DEBUG
 static inline int __debug_printf(const char *format, ...)
 {

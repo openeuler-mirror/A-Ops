@@ -495,7 +495,8 @@ static int EgressMgrInit(ResourceMgr *resourceMgr)
         return -1;
     }
 
-    egressMgr->kafkaMgr = resourceMgr->metric_kafkaMgr;
+    egressMgr->metric_kafkaMgr = resourceMgr->metric_kafkaMgr;
+    egressMgr->event_kafkaMgr = resourceMgr->event_kafkaMgr;
     egressMgr->interval = resourceMgr->configMgr->egressConfig->interval;
     egressMgr->timeRange = resourceMgr->configMgr->egressConfig->timeRange;
 

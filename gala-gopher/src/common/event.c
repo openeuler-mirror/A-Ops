@@ -19,16 +19,19 @@
 #include <unistd.h>
 #include <time.h>
 #include <stdarg.h>
+#include "common.h"
 #include "event.h"
 
 static void __get_local_time(char *buf, int buf_len)
 {
     time_t rawtime;
-    struct tm* tm;
+    struct tm tm;
+    char time_str[TIME_STRING_LEN];
 
     time(&rawtime);
-    tm = localtime(&rawtime);
-    (void)snprintf(buf, (const int)buf_len, "%s", asctime(tm));
+    asctime_r(localtime_r(&rawtime, &tm), time_str);
+    SPLIT_NEWLINE_SYMBOL(time_str);
+    (void)snprintf(buf, (const int)buf_len, "%s", time_str);
 }
 
 #define __SEC_TXT_LEN  32
@@ -45,11 +48,11 @@ static struct evt_sec_s secs[EVT_SEC_MAX] = {
 };
 
 #define __EVT_BODY_LEN  128
-void report_logs(const char* tblName, 
-                     const char* entityId, 
-                     const char* metrics, 
-                     enum evt_sec_e sec, 
-                     const char * fmt, ...)
+void report_logs(const char* tblName,
+                 const char* entityId,
+                 const char* metrics,
+                 enum evt_sec_e sec,
+                 const char * fmt, ...)
 {
     int len;
     va_list args;
