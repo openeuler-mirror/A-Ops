@@ -15,7 +15,7 @@
 #ifndef __KSLIPROBE_H__
 #define __KSLIPROBE_H__
 
-#define TC_PROG "tc_tstamp.bpf.o"
+#define TC_PROG "/opt/gala-gopher/extend_probes/tc_tstamp.bpf.o"
 
 #define MAX_COMMAND_REQ_SIZE (32 - 1)     // todo:command max待定
 
@@ -40,6 +40,10 @@
 #endif
 
 typedef int NetdevCallback(const char *ethdev);
+
+struct ksli_args_s {
+    __u64 period;               // Sampling period, unit ns
+};
 
 struct TcCmd {
     const char *cmdStr;
