@@ -114,6 +114,16 @@ static int init_conn_mgt_process(int msg_evt_map_fd)
     return 0;
 }
 
+static void load_args(int args_fd, struct probe_params* params)
+{
+    __u32 key = 0;
+    struct ksli_args_s args = {0};
+
+    args.period = NS(params->period);
+
+    (void)bpf_map_update_elem(args_fd, &key, &args, BPF_ANY);
+}
+
 int main(int argc, char **argv)
 {
     int err;
@@ -132,7 +142,8 @@ int main(int argc, char **argv)
 
 	INIT_BPF_APP(ksliprobe, EBPF_RLIM_LIMITED);
     LOAD(ksliprobe, err);
-
+    load_args(GET_MAP_FD(ksliprobe, args_map), &params);
+    
     if (signal(SIGINT, sig_int) == SIG_ERR) {
         fprintf(stderr, "Can't set signal handler: %d\n", errno);
         goto err;

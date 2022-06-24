@@ -40,6 +40,14 @@ struct bpf_map_def SEC("maps") msg_event_map = {
     .value_size = sizeof(u32),
 };
 
+// Data collection args
+struct bpf_map_def SEC("maps") args_map = {
+    .type = BPF_MAP_TYPE_ARRAY,
+    .key_size = sizeof(u32),    // const value 0
+    .value_size = sizeof(struct ksli_args_s),  // args
+    .max_entries = 1,
+};
+
 enum samp_status_t {
     SAMP_INIT = 0,
     SAMP_READ_READY,
@@ -257,25 +265,44 @@ static __always_inline int parse_req(struct conn_data_t *conn_data, const unsign
     return PROTOCOL_UNKNOWN;
 }
 
-#define __PERIOD ((u64)5 * 1000000000) // 5s
+#ifndef __PERIOD
+#define __PERIOD NS(30)
+#endif
+static __always_inline u64 get_period()
+{
+    u32 key = 0;
+    u64 period = __PERIOD;
+
+    struct ksli_args_s *args;
+    args = (struct ksli_args_s *)bpf_map_lookup_elem(&args_map, &key);
+    if (args) {
+        period = args->period;
+    }
+
+    return period; // units from second to nanosecond
+}
+
 static __always_inline void periodic_report(u64 ts_nsec, struct conn_data_t *conn_data, struct pt_regs *ctx)
 {
     long err;
+    u64 period = get_period();
     if (ts_nsec > conn_data->last_report_ts_nsec &&
-        ts_nsec - conn_data->last_report_ts_nsec >= __PERIOD) {
+        ts_nsec - conn_data->last_report_ts_nsec >= period) {
         if (conn_data->sample_num > 0) {
-            struct msg_event_data_t msg_evt_data = {0};
-            msg_evt_data.conn_id = conn_data->id;
-            msg_evt_data.sample_num = conn_data->sample_num;
-            msg_evt_data.server_ip_info = conn_data->id.server_ip_info;
-            msg_evt_data.client_ip_info = conn_data->id.client_ip_info;
-            msg_evt_data.max = conn_data->max;
-            msg_evt_data.min = conn_data->min;
-            msg_evt_data.recent = conn_data->recent;
-            err = bpf_perf_event_output(ctx, &msg_event_map, BPF_F_CURRENT_CPU,
-                                        &msg_evt_data, sizeof(struct msg_event_data_t));
-            if (err < 0) {
-                bpf_printk("message event sent failed.\n");
+            if (conn_data->max.rtt_nsec < period) { // rtt larger than period is considered an invalid value
+                struct msg_event_data_t msg_evt_data = {0};
+                msg_evt_data.conn_id = conn_data->id;
+                msg_evt_data.sample_num = conn_data->sample_num;
+                msg_evt_data.server_ip_info = conn_data->id.server_ip_info;
+                msg_evt_data.client_ip_info = conn_data->id.client_ip_info;
+                msg_evt_data.max = conn_data->max;
+                msg_evt_data.min = conn_data->min;
+                msg_evt_data.recent = conn_data->recent;
+                err = bpf_perf_event_output(ctx, &msg_event_map, BPF_F_CURRENT_CPU,
+                                            &msg_evt_data, sizeof(struct msg_event_data_t));
+                if (err < 0) {
+                    bpf_printk("message event sent failed.\n");
+                }
             }
             conn_data->sample_num = 0;
         }
@@ -454,6 +481,7 @@ KPROBE(tcp_rate_skb_delivered, pt_regs)
     }
 }
 
+#ifdef KERNEL_SUPPORT_TSTAMP
 KPROBE(tcp_recvmsg, pt_regs)
 {
     struct sock *sk;
@@ -472,3 +500,4 @@ KPROBE(tcp_recvmsg, pt_regs)
         }
     }
 }
+#endif
