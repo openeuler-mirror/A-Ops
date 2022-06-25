@@ -160,6 +160,10 @@ gala-gopher是基于eBPF的低负载探针框架，并集成了常用的native�
 
 [如何实现探针编译裁剪](doc/how_to_tail_probe.md)
 
+### API接口文档
+
+[API介绍](doc/api_doc.md)
+
 ### 测试框架介绍
 
 [测试框架介绍](test/README.md)
