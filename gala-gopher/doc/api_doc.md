@@ -1,94 +1,185 @@
-# gala-gopher 数据访问API
+# API介绍
 
-gala-gopher通过三种方式提供收集的原始数据，数据包含实体(被观测对象)数据和实体上的指标数据。API尽量在小版本间保持接口稳定性。
+gala-gopher对外提供了三个接口，分别用于实现指标数据获取、元数据获取和异常结果获取功能。
 
-当前API版本是 `v0.1`
 
-## http方式
 
-本方式仅提供指标数据输出，即产生的每条数据是基于指标粒度上报的。
+## 1. 指标数据获取接口
 
-访问 `/metrics` 地址时返回如下内容：
+gala-gopher支持将采集到的数据上报到Promethous、Kafka等数据库；可以通过配置文件开启/关闭某个数据上报通道。
 
-```
-# HELP gala_gopher_tcp_link_rx_byte byte received of the tcp link.
-# TYPE gala_gopher_tcp_link_rx_byte gauge
-gala_gopher_tcp_link_rx_byte{pid="3426",client_ip="192.168.100.110",client_port="1235",server_ip="192.168.100.110",server_port="22", machine_id="xxxx", hostname="k8s-node1"} 3812 1637823172000
-```
+### 1.1 http方式
 
-返回的数据，由三部分组成：注释（HELP），类型（TYPE）和数据。
+采用本方式每条采集数据是基于指标粒度上报的，通常gala-gopher部署在1个到多个普通节点，管理节点的Promethous可以配置定时拉取各个普通节点的指标数据。
 
-以# HELP开始的内容提供指标名和说明信息：
+#### 默认提供的REST API地址
 
-```
-# HELP <metric_name> <doc_string>
+```http
+http://localhost:port
 ```
 
-以# TYPE开始的内容提供指标名和指标类型，TYPE注释行必须出现在指标的第一个样本之前。
+支持自定义配置，详情参考[配置文件](conf_introduction.md)中 `webServer`部分。
 
-```
-# TYPE <metrics_name> <metrics_type>
-```
+#### 输出数据格式
 
-除了# 开头的所有行是样本数据，遵循以下格式规范:
+指标数据遵循以下格式：
 
-```
-metric_name [
-  "{" label_name "=" `"` label_value `"` { "," label_name "=" `"` label_value `"` } [ "," ] "}"
-] value [ timestamp ]
+```basic
+metric_name {"key1"="xx","key2"="xx","label1"="xx","label2"="xx",...} metric_value timestamp
 ```
 
-metric_name和label_name必须遵循gala-gopher的观测对象和观测指标命名规范。value是一个float格式的数据，timestamp的类型为int64（从1970-01-01 00:00:00以来的毫秒数），timestamp默认为当前时间。具有相同metric_name的数据按照组的形式排列，每行由指标名称和标签键值对组合唯一确定。
+metirc_name即指标名，遵循如下指标命名规范：gala_gopher_<table_name>_<metric_name>。metric_value即指标的值是一个float格式的数据。timestamp默认为当前时间(从1970-01-01 00:00:00以来的毫秒数)。每条数据由指标名metric_name和标签{key..label..}组合唯一确定。
 
-## kafka方式
+#### 请求示例
 
-本方式提供观测对象数据输出，即产生的每条数据是观测对象的一个实例信息，包括观测对象类型、标签、指标等信息。
+##### 输入示例
 
-gala-gopher产生的kafka数据内容如下：
-
-```
-{"table_name": "tcp_link", "timestamp": 1301469816, "machine_id": "5002b12c68744d1a8e0309f7d00462a2", "pid": "35331", "process_name": "curl", "role": "1", "client_ip": "192.168.100.110", "client_port": "1235", "server_ip": "192.168.100.111", "server_port": "80", "protocol": "2", "rx_bytes": "1710139", "tx_bytes": "94", "packets_in": "324", "packets_out": "282", "retran_packets": "0", "lost_packets": "0", "rtt": "404", ...}
+```shell
+curl http://localhost:8888
 ```
 
-遵循以下格式规范：
+##### 输出示例
 
-```
-{"table_name": tablename, "timestamp": timestamp, "machine_id": machine_id, "key": value, ...}
-```
-
-## file方式
-
-本方式仅提供实体数据输出。
-提供gala-gopher.output.meta和gala-gopher.output.data文件分别描述元数据和数据，文件路径可配置。
-
-文件gala-gopher.output.meta中内容：
-
-```
-tcp-link timestamp machine_id pid client_ip server_ip server_port [rx_bytes tx_bytes packets_in packets_out ...]
-udp-link timestamp machine_id pid client_ip server_ip server_port [rx_bytes tx_bytes packets_in packets_out ...]
-nginx-link timestamp machine_id pid client_ip virtual_ip virtual_port server_ip server_port ...
-lvs-fullnat-link timestamp machine_id client_ip virtual_ip virtual_port local_ip server_ip server_port ...
-lvs-dr-link timestamp machine_id client_ip virtual_ip virtual_port server_mac ...
-haproxy-link timestamp machine_id pid client_ip virtual_ip virtual_port local_ip server_ip server_port ...
-kafka-link timestamp machine_id pid producer_ip topic kafka_ip kafka_port consumer_ip consumer_port ...
-rabbitmq-link timestamp machine_id pid producer_ip queue rabbit_ip rabbit_port consumer_ip consumer_port ...
-etcd-link timestamp machine_id pid producer_ip url etcd_ip etcd_port watch_ip watch_port ...
-process timestamp machine_id pid cmd path ...
-container timestamp machine_id container_id [pids] ...
-virtual_machine timestamp machine_id hostname [container_ids] [pids] [ips] [macs] ...
-bare_matal timestamp machine_id hostname [vm_names] [container_ids] [pids] [ips] [macs] ...
-
-```
-每一行以实体类型开头，后面是该实体类型的属性以及指标，指标是可选的。
-
-文件gala-gopher.output.data中内容：
-```
-tcp-link 1631351950 5002b12c68744d1a8e0309f7d00462a2 342695 192.168.100.110 1235 192.168.100.111 22 1710139 94 324 282 0 0 404
-tcp-link 1631351950 5002b12c68744d1a8e0309f7d00462a2 342696 192.168.100.110 1238 192.168.100.111 80 1710139 94 324 282 0 0 404
+```basic
+gala_gopher_thread_fork_count{pid="2494",tgid="2494",comm="hello",major="8",minor="0",machine_id="xxxxx",hostname="localhost.master"} 2 1656060116000
+gala_gopher_thread_task_io_time_us{pid="2494",tgid="2494",comm="hello",major="8",minor="0",machine_id="xxxxx",hostname="localhost.master"} 3 1656060116000
 ```
 
-## 命名规范
+### 1.2 kafka方式
 
-### 观测对象命名规范
+本方式输出的数据是基于观测对象粒度的，即每条数据是观测对象的一个实例信息，包含了：观测对象名(table_name)和全量的keys、lables和metrics信息。
 
-### 观测指标命名规范
+#### 默认提供的topic
+
+```basic
+gala_gopher
+```
+
+支持自定义配置，详情参考[配置文件](conf_introduction.md)中 ` kafka`部分。
+
+#### 输出数据格式
+
+```json
+{
+    "table_name": "xxxx",
+    "timestamp": 1234567890,
+    "machine_id": "xxxxx",
+    "key1": "xx",
+    "key2": "xx",
+    ...,
+    "label1": "xx",
+    "label2": "xx",
+    ...,
+    "metric1": "xx",
+    "metric2": "xx",
+    ...
+}
+```
+
+#### 请求示例
+
+##### 输入示例
+
+```shell
+./bin/kafka-console-consumer.sh --bootstrap-server 10.10.10.10:9092 --topic gala_gopher
+```
+
+##### 输出示例
+
+```json
+ {"timestamp": 165606384400, "machine_id": "xxxxx", "hostname": "localhost.master","table_name": "thread","pid": "2494", "tgid": "2494", "comm": "hello", "major": "8", "minor": "0", "fd_count": "2", "task_io_wait_time_us": "1", "task_io_count": "2", "task_io_time_us": "3", "task_hang_count": "4"}
+```
+
+
+
+## 2. 元数据获取接口
+
+元数据主要描述了每个观测对象的基本信息，如：观测对象名(table_name)、版本号，以及键值keys有哪些、标签labels有哪些、指标metrics有哪些。元数据会上报到kafka。
+
+#### 默认提供的topic
+
+```basic
+gala_gopher_metadata
+```
+
+支持自定义配置，详情参考[配置文件](conf_introduction.md)中 ` kafka`部分。
+
+#### 输出数据格式
+
+```json
+{
+	"timestamp": 1234567890,
+	"meta_name": "xxx",
+	"version": "1.0.0",
+	"keys": ["key1", "key2", ...],
+	"labels": ["label1", "label2", ...],
+	"metrics": ["metric1", "metric2", ...]
+}
+```
+
+#### 请求示例
+
+##### 输入示例
+
+```shell
+./bin/kafka-console-consumer.sh --bootstrap-server 10.10.10.10:9092 --topic gala_gopher_metadata
+```
+
+##### 输出示例
+
+```json
+{"timestamp": 1655888408000, "meta_name": "thread", "version": "1.0.0", "keys": ["machine_id", "pid"], "labels": ["hostname", "tgid", "comm", "major", "minor"], "metrics": ["fork_count", "task_io_wait_time_us", "task_io_count", "task_io_time_us", "task_hang_count"]}
+```
+
+
+
+## 3. 异常事件获取接口
+
+gala-gopher运行中，如果开启了异常上报功能，就会在探测到数据根据入参阈值后进行检查，超出阈值就会上报异常事件到kafka，上报通道是单独的。
+
+#### 默认提供的topic
+
+```basic
+gala_gopher_event
+```
+
+支持自定义配置，详情参考[配置文件](conf_introduction.md)中 ` kafka`部分。
+
+#### 输出数据格式
+
+```json
+{
+	"Timestamp": "1234567890",
+	"Attributes": {
+		"Entity ID": "<table_name>_<machine_id>_<key1>_<key2>_..."
+	},
+	"Resource": {
+		"metrics": "<metric_name>"
+	},
+	"SeverityText": "WARN",
+	"SeverityNumber": 13,
+	"Body": "descriptions."
+}
+```
+
+输出数据解释：
+
+| 输出参数                    | 参数含义 | 描述                                                  |
+| --------------------------- | -------- | ----------------------------------------------------- |
+| Entity ID                   | 实体ID   | 命名规则：<table_name>_<machine_id>_<key1>_<key2>_... |
+| metrics                     | 指标名   | 命名规则：gala_gopher_<table_name>_<metric_name>      |
+| SeverityText/SeverityNumber | 异常事件 | INFO/9   WARN/13   ERROR/17   FATAL/21                |
+| Body                        | 事件信息 | 字符串，描述了当前时间、异常事件等级以及具体时间信息  |
+
+##### 输入示例
+
+```shell
+./bin/kafka-console-consumer.sh --bootstrap-server 10.10.10.10:9092 --topic gala_gopher_event
+```
+
+##### 输出示例
+
+```json
+{"Timestamp": "1656123876000", "Attributes": { "Entity ID": "system_disk_xxx_/honme"}, "Resource": { "metrics": "gala_gopher_system_disk_block_userd_per"}, "SeverityText": "WARN","SeverityNumber": 13,"Body": "Sat Jun 25 10:24:36 2022 WARN Entity(/home) Too many Blocks used(82%)."}
+```
+
