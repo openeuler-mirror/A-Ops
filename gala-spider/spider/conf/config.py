@@ -10,6 +10,7 @@ class SpiderConfig(metaclass=Singleton):
         print('Spider config init')
         super().__init__()
         self.db_agent = None
+        self.data_agent = None
         self.observe_conf_path = None
 
         self.spider_server = None
@@ -23,9 +24,9 @@ class SpiderConfig(metaclass=Singleton):
         }
 
         self.kafka_conf = {
-            'topic': None,
-            'broker': None,
-            'group_id': None,
+            'server': None,
+            'metadata_topic': None,
+            'metadata_group_id': None,
         }
 
         self.prometheus_conf = {
@@ -55,6 +56,7 @@ class SpiderConfig(metaclass=Singleton):
 
         global_conf = result.get('global', {})
         self.db_agent = global_conf.get('data_source')
+        self.data_agent = global_conf.get('data_agent')
         self.observe_conf_path = global_conf.get('observe_conf_path')
 
         spider_conf = result.get('spider', {})
@@ -77,9 +79,3 @@ def init_spider_config(spider_conf_path) -> bool:
         return False
     print('Load spider config success.')
     return True
-
-
-if __name__ == '__main__':
-    config = SpiderConfig()
-    config.load_from_yaml('../../config/gala-spider.yaml')
-    print(config.__dict__)

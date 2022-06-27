@@ -26,10 +26,15 @@ def _get_doc_id(collection_name, doc_key):
     return '{}/{}'.format(collection_name, doc_key)
 
 
+# arangodb 对文档的 _key 有命名约束，需要对 key 中出现的特殊字符进行替换
+def _transfer_doc_key(key: str):
+    doc_key = key.replace('/', ':')
+    return doc_key
+
+
 def transfer_observe_entity_to_document_dict(observe_entity: ObserveEntity) -> dict:
     doc_dict = {
-        '_key': observe_entity.id,
-        'name': observe_entity.name,
+        '_key': _transfer_doc_key(observe_entity.id),
         'type': observe_entity.type,
         'level': observe_entity.level,
         'timestamp': observe_entity.timestamp,
@@ -41,9 +46,12 @@ def transfer_observe_entity_to_document_dict(observe_entity: ObserveEntity) -> d
 def transfer_relation_to_edge_dict(relation: Relation, ts_sec) -> dict:
     edge_dict = {
         'type': relation.type,
+        'timestamp': ts_sec,
         'layer': relation.layer,
-        '_from': _get_doc_id(_get_collection_name(_OBSERVE_ENTITY_COLL_PREFIX, ts_sec), relation.sub_entity.id),
-        '_to': _get_doc_id(_get_collection_name(_OBSERVE_ENTITY_COLL_PREFIX, ts_sec), relation.obj_entity.id),
+        '_from': _get_doc_id(_get_collection_name(_OBSERVE_ENTITY_COLL_PREFIX, ts_sec),
+                             _transfer_doc_key(relation.sub_entity.id)),
+        '_to': _get_doc_id(_get_collection_name(_OBSERVE_ENTITY_COLL_PREFIX, ts_sec),
+                           _transfer_doc_key(relation.obj_entity.id)),
     }
     return edge_dict
 
@@ -100,10 +108,11 @@ class ArangoObserveEntityDaoImpl(ArangoBaseDaoImpl, ObserveEntityDao):
         coll: Collection = self.db.collections[coll_name]
 
         try:
-            coll.bulkSave(docs, overwrite=True)
+            count = coll.bulkSave(docs, overwrite=True)
         except UpdateError as ex:
             logger.logger.error(ex)
             return False
+        logger.logger.debug('Total {} documents created.'.format(count))
 
         return True
 
@@ -131,9 +140,10 @@ class ArangoRelationDaoImpl(ArangoBaseDaoImpl, RelationDao):
             coll: Collection = self.db.collections[coll_name]
 
             try:
-                coll.bulkSave(edges)
+                count = coll.bulkSave(edges)
             except UpdateError as ex:
                 logger.logger.error(ex)
                 return False
+            logger.logger.debug('Total {} edges of {} created.'.format(count, coll_name))
 
         return True

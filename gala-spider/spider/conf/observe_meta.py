@@ -9,6 +9,7 @@ from dataclasses import field
 import yaml
 
 from spider.util.singleton import Singleton
+from spider.util import logger
 
 
 class ValueCheckEnum(Enum):
@@ -113,25 +114,36 @@ class ObserveMeta:
     keys: List[str]
     labels: List[str]
     metrics: List[str]
-    name: str
-    level: str
-    depending_items: List[RelationMeta]
+    name: str = ''
+    level: str = ''
+    version: str = ''
+    depending_items: List[RelationMeta] = field(default_factory=list)
+
+    def ver_cmp(self, another) -> int:
+        if not isinstance(another, ObserveMeta):
+            raise TypeError('The type of the param another is not ObserverMeta.')
+        if self.version < another.version:
+            return -1
+        elif self.version == another.version:
+            return 0
+        else:
+            return 1
 
 
 def _check_relation_match(data) -> bool:
     if not isinstance(data, dict):
-        print("Relation match must be a dict.")
+        logger.logger.error("Relation match must be a dict.")
         return False
 
     from_ = data.get("from")
     to = data.get("to")
 
     if not isinstance(from_, str):
-        print("Match from must be a string.")
+        logger.logger.error("Match from must be a string.")
         return False
 
     if not isinstance(to, str):
-        print("Match to must be a string.")
+        logger.logger.error("Match to must be a string.")
         return False
 
     return True
@@ -139,22 +151,22 @@ def _check_relation_match(data) -> bool:
 
 def _check_relation_require(data) -> bool:
     if not isinstance(data, dict):
-        print("Relation require must be a dict.")
+        logger.logger.error("Relation require must be a dict.")
         return False
 
     side = data.get("side")
     label = data.get("label")
 
     if not RelationSideType.check_value(side):
-        print("Unsupported require side.")
+        logger.logger.error("Unsupported require side.")
         return False
 
     if not isinstance(label, str):
-        print("Require label must be a string.")
+        logger.logger.error("Require label must be a string.")
         return False
 
     if "value" not in data:
-        print("Require value must be set.")
+        logger.logger.error("Require value must be set.")
         return False
 
     return True
@@ -162,18 +174,18 @@ def _check_relation_require(data) -> bool:
 
 def _check_relation_conflict(data) -> bool:
     if not isinstance(data, dict):
-        print("Relation conflict must be a dict.")
+        logger.logger.error("Relation conflict must be a dict.")
         return False
 
     from_ = data.get("from")
     to = data.get("to")
 
     if not isinstance(from_, str):
-        print("Conflict from must be a string.")
+        logger.logger.error("Conflict from must be a string.")
         return False
 
     if not isinstance(to, str):
-        print("Conflict to must be a string.")
+        logger.logger.error("Conflict to must be a string.")
         return False
 
     return True
@@ -181,7 +193,7 @@ def _check_relation_conflict(data) -> bool:
 
 def _check_relation_object(data) -> bool:
     if not isinstance(data, dict):
-        print("Relation toType must be a dict.")
+        logger.logger.error("Relation toType must be a dict.")
         return False
 
     type_ = data.get("type")
@@ -190,31 +202,31 @@ def _check_relation_object(data) -> bool:
     conflicts = data.get("conflicts", [])
 
     if not EntityType.check_value(type_):
-        print("Unsupported relation object type: {}".format(type_))
+        logger.logger.error("Unsupported relation object type: {}".format(type_))
         return False
 
     if not isinstance(matches, list):
-        print("Relation matches must be a list.")
+        logger.logger.error("Relation matches must be a list.")
         return False
     for match in matches:
         if not _check_relation_match(match):
-            print("Relation match check failed, which is: {}.".format(match))
+            logger.logger.error("Relation match check failed, which is: {}.".format(match))
             return False
 
     if not isinstance(requires, list):
-        print("Relation requires must be a list.")
+        logger.logger.error("Relation requires must be a list.")
         return False
     for require in requires:
         if not _check_relation_require(require):
-            print("Relation require check failed, which is: {}.".format(require))
+            logger.logger.error("Relation require check failed, which is: {}.".format(require))
             return False
 
     if not isinstance(conflicts, list):
-        print("Relation conflicts must be a list.")
+        logger.logger.error("Relation conflicts must be a list.")
         return False
     for conflict in conflicts:
         if not _check_relation_conflict(conflict):
-            print("Relation conflict check failed, which is: {}.".format(conflict))
+            logger.logger.error("Relation conflict check failed, which is: {}.".format(conflict))
             return False
 
     return True
@@ -222,7 +234,7 @@ def _check_relation_object(data) -> bool:
 
 def _check_depending_item(data) -> bool:
     if not isinstance(data, dict):
-        print("Entity depending item must be a dict.")
+        logger.logger.error("Entity depending item must be a dict.")
         return False
 
     id_ = data.get("id")
@@ -230,95 +242,124 @@ def _check_depending_item(data) -> bool:
     to_types = data.get("toTypes")
 
     if not RelationType.check_value(id_):
-        print("Unsupported relation type: {}.".format(id_))
+        logger.logger.error("Unsupported relation type: {}.".format(id_))
         return False
 
     if not RelationLayerType.check_value(layer):
-        print("Unsupported relation layer: {}.".format(layer))
+        logger.logger.error("Unsupported relation layer: {}.".format(layer))
         return False
 
     if not isinstance(to_types, list):
-        print("Relation toTypes must be a list.")
+        logger.logger.error("Relation toTypes must be a list.")
         return False
     if len(to_types) == 0:
-        print("Relation toTypes can't be empty")
+        logger.logger.error("Relation toTypes can't be empty")
         return False
     for to_type in to_types:
         if not _check_relation_object(to_type):
-            print("Relation toType check failed, to_type is: {}.".format(to_type))
+            logger.logger.error("Relation toType check failed, to_type is: {}.".format(to_type))
             return False
+
+    return True
+
+
+def _check_depending_items(data) -> bool:
+    if not isinstance(data, list):
+        logger.logger.error("Entity depending items must be a list.")
+        return False
+
+    for depending_item in data:
+        if not _check_depending_item(depending_item):
+            logger.logger.error("Entity depending item check failed, which is: {}.".format(depending_item))
+            return False
+
+    return True
+
+
+def _check_relation(data) -> bool:
+    if not isinstance(data, dict):
+        logger.logger.error("Relation must be a dict.")
+        return False
+
+    from_type = data.get("type", "")
+    depending_items = data.get("dependingitems", [])
+
+    if not EntityType.check_value(from_type):
+        logger.logger.error("From type of the relation must be not empty.")
+        return False
+
+    if not _check_depending_items(depending_items):
+        return False
 
     return True
 
 
 def _check_observe_entity(data) -> bool:
     if not isinstance(data, dict):
-        print("Entity must be a dict.")
+        logger.logger.error("Entity must be a dict.")
         return False
 
     type_ = data.get("type")
     keys = data.get("keys")
     labels = data.get("labels", [])
-    name = data.get("name", "")
     metrics = data.get("metrics", [])
-    level = data.get("level", "")
-    depending_items = data.get("dependingitems", [])
 
     if not EntityType.check_value(type_):
-        print("Unsupported entity type: {}.".format(type_))
+        logger.logger.error("Unsupported entity type: {}.".format(type_))
         return False
 
     if not isinstance(keys, list):
-        print("Entity keys must be a list.")
+        logger.logger.error("Entity keys must be a list.")
         return False
     if len(keys) == 0:
-        print("Entity keys can't be empty.")
+        logger.logger.error("Entity keys can't be empty.")
         return False
 
     if not isinstance(labels, list):
-        print("Entity labels must be a list.")
-        return False
-
-    if not isinstance(name, str):
-        print("Entity name must be a string.")
+        logger.logger.error("Entity labels must be a list.")
         return False
 
     if not isinstance(metrics, list):
-        print("Entity metrics must be a list.")
+        logger.logger.error("Entity metrics must be a list.")
         return False
-
-    if level and not TopologyLevelType.check_value(level):
-        print("Unsupported topology level: {}.".format(level))
-        return False
-
-    if not isinstance(depending_items, list):
-        print("Entity depending_items must be a list.")
-        return False
-    for depending_item in depending_items:
-        if not _check_depending_item(depending_item):
-            print("Entity depending item check failed, which is: {}.".format(depending_item))
-            return False
 
     return True
 
 
-def _check_yaml_type(data) -> bool:
-    data_agent = data.get("data_agent")
+def _check_observe_meta_yaml_type(data) -> bool:
     observe_entities = data.get("observe_entities", [])
 
-    if not isinstance(data_agent, str):
-        print("Data_agent must be a string.")
-        return False
-
     if not isinstance(observe_entities, list):
-        print("Observe_entities must be a list.")
+        logger.logger.error("Observe_entities must be a list.")
         return False
     for item in observe_entities:
         if not _check_observe_entity(item):
-            print("Observe entity check failed, which is: {}.".format(item))
+            logger.logger.error("Observe entity check failed, which is: {}.".format(item))
             return False
 
     return True
+
+
+def _check_relation_yaml_type(data) -> bool:
+    relations = data.get("topo_relations")
+
+    if not isinstance(relations, list):
+        logger.logger.error("Relations must be a list.")
+        return False
+
+    for relation in relations:
+        if not _check_relation(relation):
+            logger.logger.error("Relation check failed, which is: {}.".format(relation))
+            return False
+
+    return True
+
+
+def _merge_tcp_link_meta(old_obsv_meta, new_obsv_meta):
+    metric_set = set(old_obsv_meta.metrics)
+    for metric in new_obsv_meta.metrics:
+        if metric not in metric_set:
+            old_obsv_meta.metrics.append(metric)
 
 
 class ObserveMetaMgt(metaclass=Singleton):
@@ -326,48 +367,103 @@ class ObserveMetaMgt(metaclass=Singleton):
         self.data_agent = ""
         self.observe_meta_map: Dict[str, ObserveMeta] = {}
         self.relation_meta_set: Set[RelationMeta] = set()
+        self.sub_relations: Dict[str, RelationMeta] = {}
 
-    def load_from_yaml(self, observe_path: str) -> bool:
+    def set_data_agent(self, data_agent):
+        self.data_agent = data_agent
+
+    def load_ext_observe_meta_from_yaml(self, observe_path: str) -> bool:
+        observe_path = os.path.abspath(observe_path)
+        if not os.path.exists(observe_path):
+            return True
+
         try:
-            observe_path = os.path.abspath(observe_path)
             with open(observe_path, 'r') as file:
                 data = yaml.safe_load(file)
         except IOError as ex:
-            print("Unable to open observe config file: {}.".format(ex))
+            logger.logger.error("Unable to open observe config file: {}.".format(ex))
             return False
 
-        if not _check_yaml_type(data):
-            print("Observe config file check failed: {}.".format(observe_path))
-            return False
-
-        data_agent = data.get("data_agent")
-        if not data_agent:
-            print("No data agent set.")
+        if not _check_observe_meta_yaml_type(data):
+            logger.logger.error("Observe config file check failed: {}.".format(observe_path))
             return False
 
         observe_entities = data.get("observe_entities", [])
-        observe_meta_map: Dict[str, ObserveMeta] = {}
         for item in observe_entities:
             entity_type = item.get("type")
-            if entity_type in observe_meta_map:
-                print("Duplicate observe entity type defined: {}.".format(entity_type))
+            if entity_type in self.observe_meta_map:
+                logger.logger.error("Duplicate observe entity type defined: {}.".format(entity_type))
                 return False
             observe_meta = ObserveMetaMgt._get_observe_meta_from_dict(item)
             if observe_meta is None:
-                print("Observe metadata config error.")
+                logger.logger.error("Observe metadata config error.")
                 return False
-            observe_meta_map.setdefault(entity_type, observe_meta)
-
-        self.data_agent = data_agent
-        self.observe_meta_map = observe_meta_map
-        for observe_meta in self.observe_meta_map.values():
-            for relation_meta in observe_meta.depending_items:
-                self.relation_meta_set.add(relation_meta)
+            observe_meta.depending_items = self.sub_relations.get(entity_type, [])
+            self.observe_meta_map.setdefault(entity_type, observe_meta)
 
         return True
 
+    def load_topo_relation_from_yaml(self, relation_path: str) -> bool:
+        relation_path = os.path.abspath(relation_path)
+        if not os.path.exists(relation_path):
+            return True
+
+        try:
+            with open(relation_path, 'r') as file:
+                data = yaml.safe_load(file)
+        except IOError as ex:
+            logger.logger.error("Unable to open relation config file: {}.".format(ex))
+            return False
+
+        if not _check_relation_yaml_type(data):
+            logger.logger.error("Observe config file check failed: {}.".format(relation_path))
+            return False
+
+        topo_relations = data.get("topo_relations", [])
+        sub_relations = {}
+        relation_meta_set = set()
+        for item in topo_relations:
+            sub_type = item.get("type")
+            depending_items = item.get("dependingitems", [])
+
+            all_depending_metas = []
+            for depending_item in depending_items:
+                depending_metas = ObserveMetaMgt._get_relations_from_dict(depending_item, sub_type)
+                all_depending_metas.extend(depending_metas)
+
+            for depending_meta in all_depending_metas:
+                if depending_meta in relation_meta_set:
+                    continue
+                relation_meta_set.add(depending_meta)
+                one_type_relations = sub_relations.setdefault(depending_meta.from_type, [])
+                one_type_relations.append(depending_meta)
+
+        self.relation_meta_set = relation_meta_set
+        self.sub_relations = sub_relations
+
+        return True
+
+    def add_observe_meta_from_dict(self, data: dict):
+        observe_meta = ObserveMetaMgt._get_observe_meta_from_dict(data)
+        if observe_meta.type not in self.observe_meta_map:
+            observe_meta.depending_items = self.get_depending_relations(observe_meta.type)
+            self.observe_meta_map.setdefault(observe_meta.type, observe_meta)
+            return
+
+        old_observe_meta = self.observe_meta_map.get(observe_meta.type)
+        if old_observe_meta.ver_cmp(observe_meta) < 0:
+            observe_meta.depending_items = old_observe_meta.depending_items
+            self.observe_meta_map.update({observe_meta.type: observe_meta})
+        elif observe_meta.ver_cmp(observe_meta) == 0:
+            # tcp_link 类观测对象元数据需要做特殊处理。建议将该逻辑上移到 gopher 层处理
+            if observe_meta.type == EntityType.TCP_LINK.value:
+                _merge_tcp_link_meta(old_observe_meta, observe_meta)
+
     def get_observe_meta(self, entity_type: str) -> ObserveMeta:
         return self.observe_meta_map.get(entity_type)
+
+    def get_depending_relations(self, entity_type: str) -> List[RelationMeta]:
+        return self.sub_relations.get(entity_type, [])
 
     def check_relation(self, relation_id: str, layer: str, from_type: str, to_type: str) -> bool:
         relation_meta = None
@@ -382,35 +478,31 @@ class ObserveMetaMgt(metaclass=Singleton):
 
     @staticmethod
     def _get_observe_meta_from_dict(data: dict) -> ObserveMeta:
-        type_ = data.get("type")
-        keys = data.get("keys")
+        type_ = data.get("type", "")
+        keys = data.get("keys", [])
         labels = data.get("labels", [])
-        name = data.get("name")
         metrics = data.get("metrics", [])
-        level = data.get("level")
-        depending_items = data.get("dependingitems", [])
+        level = data.get("level", "")
+        version = data.get("version", "")
 
-        keys.sort()
-        labels.sort()
-        metrics.sort()
-
-        depending_objs = []
-        for depending_item in depending_items:
-            tmp_depending_objs = ObserveMetaMgt._get_depending_items_from_dict(depending_item, type_)
-            depending_objs.extend(tmp_depending_objs)
+        # tcp_link 类观测对象元数据需要做特殊处理。建议将该逻辑上移到 gopher 层处理
+        if type_.startswith(EntityType.TCP_LINK.value + '_'):
+            metric_type = type_[len(EntityType.TCP_LINK.value)+1:]
+            for i, metric in enumerate(metrics):
+                metrics[i] = '{}_{}'.format(metric_type, metric)
+            type_ = EntityType.TCP_LINK.value
 
         return ObserveMeta(
             type=type_,
             keys=keys,
             labels=labels,
-            name=name,
             metrics=metrics,
             level=level,
-            depending_items=depending_objs
+            version=version
         )
 
     @staticmethod
-    def _get_depending_items_from_dict(data: dict, subject_type: str) -> List[RelationMeta]:
+    def _get_relations_from_dict(data: dict, subject_type: str) -> List[RelationMeta]:
         res = []
 
         id_ = data.get("id")
@@ -449,8 +541,11 @@ class ObserveMetaMgt(metaclass=Singleton):
         return res
 
 
-def init_observe_meta_config(observe_conf_path) -> bool:
+def init_observe_meta_config(topo_relation_path, data_agent, ext_observe_meta_path) -> bool:
     observe_meta_mgt = ObserveMetaMgt()
-    if not observe_meta_mgt.load_from_yaml(observe_conf_path):
+    observe_meta_mgt.set_data_agent(data_agent)
+    if not observe_meta_mgt.load_topo_relation_from_yaml(topo_relation_path):
+        return False
+    if not observe_meta_mgt.load_ext_observe_meta_from_yaml(ext_observe_meta_path):
         return False
     return True

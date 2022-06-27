@@ -1,9 +1,9 @@
 global:
     data_source: "prometheus"
-    observe_conf_path: /etc/spider/observe.yaml
+    data_agent: "gala_gopher"
 
 prometheus:
-    base_url: "http://10.137.16.165:9090/"
+    base_url: "http://localhost:9090/"
     instant_api: "/api/v1/query"
     range_api: "/api/v1/query_range"
     step: 1
@@ -19,9 +19,14 @@ spider:
         backup_count: 10
 
 storage:
-    # unit: minute
-    period: 1
+    # unit: second
+    period: 60
     database: arangodb
     db_conf:
         url: "http://localhost:8529"
         db_name: "spider"
+
+kafka:
+    server: "localhost:9092"
+    metadata_topic: "gala_gopher_metadata"
+    metadata_group_id: "metadata-spider"

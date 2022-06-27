@@ -1,13 +1,6 @@
-data_agent: gala_gopher
-observe_entities:
+topo_relations:
   -
     type: host
-    keys:
-      - machine_id
-    labels:
-      - &host_name hostname
-    name: *host_name
-    metrics: []
     level: HOST
     dependingitems:
       -
@@ -18,22 +11,6 @@ observe_entities:
             type: host
   -
     type: container
-    keys:
-      - container_id
-      - machine_id
-    labels:
-      - &container_name container_name
-      - ns
-      - pid
-    name: *container_name
-    metrics:
-      - memory.usage_in_bytes
-      - memory.limit_in_byte
-      - memory.stat.cache
-      - cpuacct.usage
-      - pids.current
-      - pids.limit
-      - status
     level: CONTAINER
     dependingitems:
       -
@@ -54,13 +31,6 @@ observe_entities:
             type: container
   -
     type: appinstance
-    keys:
-      - pgid
-      - machine_id
-    labels:
-      - exe_file
-      - exec_file
-      - processes
     level: APPLICATION
     dependingitems:
       -
@@ -90,39 +60,6 @@ observe_entities:
             type: appinstance
   -
     type: system_proc
-    keys:
-      - pid
-      - machine_id
-    labels:
-      - pgid
-      - &process_name comm
-      - cmdline
-      - exe_file
-      - exec_file
-    name: *process_name
-    metrics:
-      - fd_count
-      - proc_rchar_bytes
-      - proc_wchar_bytes
-      - proc_syscr_count
-      - proc_syscw_count
-      - proc_read_bytes
-      - proc_write_bytes
-      - proc_cancelled_write_bytes
-      - proc_shared_clean_size
-      - proc_shared_dirty_size
-      - proc_private_clean_size
-      - proc_private_dirty_size
-      - proc_referenced_size
-      - proc_lazyfree_size
-      - proc_swap_data_size
-      - proc_swap_data_pss_size
-      - proc_utime_jiffies
-      - proc_stime_jiffies
-      - proc_minor_pagefault_count
-      - proc_major_pagefault_count
-      - proc_vm_size
-      - proc_pm_size
     level: PROCESS
     dependingitems:
       -
@@ -146,21 +83,6 @@ observe_entities:
             type: system_proc
   -
     type: thread
-    keys:
-      - pid
-      - machine_id
-    labels:
-      - tgid
-      - &task_name comm
-      - major
-      - minor
-    name: *task_name
-    metrics:
-      - fork_count
-      - task_io_wait_time_us
-      - task_io_count
-      - task_io_time_us
-      - task_hang_count
     level: PROCESS
     dependingitems:
       -
@@ -172,21 +94,12 @@ observe_entities:
             matches:
               -
                 from: tgid
-                to: pid
+                to: tgid
               -
                 from: machine_id
                 to: machine_id
   -
     type: bind
-    keys:
-      - tgid
-      - s_addr
-      - machine_id
-    metrics:
-      - que_rcv_drops
-      - sends
-      - rcvs
-      - err
     level: PROCESS
     dependingitems:
       -
@@ -198,21 +111,12 @@ observe_entities:
             matches:
               -
                 from: tgid
-                to: pid
+                to: tgid
               -
                 from: machine_id
                 to: machine_id
   -
     type: udp
-    keys:
-      - tgid
-      - s_addr
-      - machine_id
-    metrics:
-      - que_rcv_drops
-      - sends
-      - rcvs
-      - err
     level: PROCESS
     dependingitems:
       -
@@ -224,19 +128,12 @@ observe_entities:
             matches:
               -
                 from: tgid
-                to: pid
+                to: tgid
               -
                 from: machine_id
                 to: machine_id
   -
     type: connect
-    keys:
-      - tgid
-      - s_addr
-      - machine_id
-    metrics:
-      - active_open
-      - active_open_failed
     level: PROCESS
     dependingitems:
       -
@@ -248,21 +145,12 @@ observe_entities:
             matches:
               -
                 from: tgid
-                to: pid
+                to: tgid
               -
                 from: machine_id
                 to: machine_id
   -
     type: listen
-    keys:
-      - tgid
-      - s_port
-      - machine_id
-    metrics:
-      - listendrop
-      - listen_overflow
-      - passive_open
-      - passive_open_failed
     level: PROCESS
     dependingitems:
       -
@@ -274,68 +162,12 @@ observe_entities:
             matches:
               -
                 from: tgid
-                to: pid
+                to: tgid
               -
                 from: machine_id
                 to: machine_id
   -
     type: tcp_link
-    keys:
-      - server_ip
-      - server_port
-      - client_ip
-      - client_port
-      - tgid
-      - role
-      - protocol
-      - machine_id
-    metrics:
-      - health_segs_in
-      - health_segs_out
-      - health_retran_packets
-      - health_sk_drops
-      - health_lost_out
-      - health_sacked_out
-      - health_filter_drops
-      - health_tmout_count
-      - health_snd_buf_limit_count
-      - health_attempt_fails
-      - health_rmem_scheduls
-      - health_tcp_oom
-      - health_send_rsts
-      - health_receive_rsts
-      - health_sk_err
-      - health_sk_err_soft
-      - info_rx_bytes
-      - info_tx_bytes
-      - info_rto
-      - info_ato
-      - info_srtt
-      - info_snd_ssthresh
-      - info_rcv_ssthresh
-      - info_snd_cwnd
-      - info_advmss
-      - info_reordering
-      - info_rcv_rtt
-      - info_rcv_space
-      - info_notsent_bytes
-      - info_notack_bytes
-      - info_snd_wnd
-      - info_rcv_wnd
-      - info_delivery_rate
-      - info_busy_time
-      - info_rwnd_limited
-      - info_sndbuf_limited
-      - info_pacing_rate
-      - info_max_pacing_rate
-      - info_sk_err_que_size
-      - info_sk_rcv_que_size
-      - info_sk_wri_que_size
-      - info_syn_srtt_last
-      - info_sk_backlog_size
-      - info_sk_omem_size
-      - info_sk_forward_size
-      - info_sk_wmem_size
     level: RPC
     dependingitems:
       -
@@ -347,7 +179,7 @@ observe_entities:
             matches:
               -
                 from: tgid
-                to: pid
+                to: tgid
               -
                 from: machine_id
                 to: machine_id
@@ -428,19 +260,6 @@ observe_entities:
                 to: role
   -
     type: ipvs_link
-    keys: &lb_link_keys
-      - server_ip
-      - server_port
-      - virtual_ip
-      - virtual_port
-      - local_ip
-      - client_ip
-      - pid
-      - machine_id
-    labels:
-      - protocol
-    metrics:
-      - link_count
     level: LB
     dependingitems:
       -
@@ -458,9 +277,6 @@ observe_entities:
                 to: machine_id
   -
     type: nginx_link
-    keys: *lb_link_keys
-    metrics:
-      - link_count
     level: LB
     dependingitems:
       -
@@ -472,9 +288,6 @@ observe_entities:
             matches: *lb_link_belong_task
   -
     type: haproxy_link
-    keys: *lb_link_keys
-    metrics:
-      - link_count
     level: LB
     dependingitems:
       -
@@ -485,30 +298,7 @@ observe_entities:
             type: thread
             matches: *lb_link_belong_task
   -
-    type: redis_client
-    keys:
-      - client_ip
-      - client_port
-      - server_ip
-      - server_port
-    labels:
-      - tgid
-    metrics:
-      - recent_rtt
-      - send_queue_nums
-  -
     type: ksliprobe
-    keys:
-      - tgid
-      - conn_fd
-    labels:
-      - protocol
-      - server_ip
-      - server_port
-      - client_ip
-      - client_port
-    metrics:
-      - recent_rtt_nsec
     level: PROCESS
     dependingitems:
       -
@@ -520,4 +310,4 @@ observe_entities:
             matches:
               -
                 from: tgid
-                to: pid
+                to: tgid
