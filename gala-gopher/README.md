@@ -56,6 +56,8 @@ gala-gopher是基于eBPF的低负载探针框架，致力于提供裸机/虚机/
 
 ​	建议在最低openEuler-20.03-LTS-SP1的环境执行编译动作，这是因为gala-gopher中ebpf探针编译依赖clang和llvm，大多数的bpf功能需要clang 10或者更高版本才可以正常工作，而20.03-SP1以下的发布版本中clang版本较低(低于10)。
 
+如下编译安装脚本在[build目录](./build)。
+
 - 安装依赖
 
   该步骤会检查安装架构感知框架所有的依赖包，涉及三方探针编译、运行的依赖包会在编译构建中检查安装。
@@ -159,6 +161,10 @@ gala-gopher是基于eBPF的低负载探针框架，并集成了常用的native�
 ### 如何实现探针编译裁剪
 
 [如何实现探针编译裁剪](doc/how_to_tail_probe.md)
+
+### 如何生成容器镜像
+
+[如何生成容器镜像](doc/how_to_build_docker_image.md)
 
 ### API接口文档
 

@@ -1,7 +1,7 @@
 #!/bin/bash
 
 PROGRAM=$0
-PROJECT_FOLDER=$(dirname $(readlink -f "$0"))
+PROJECT_FOLDER=$(dirname "$PWD")
 EXT_PROBE_FOLDER=${PROJECT_FOLDER}/src/probes/extends
 EXT_PROBE_INSTALL_LIST=`find ${EXT_PROBE_FOLDER} -maxdepth 2 | grep "\<install.sh\>"`
 
