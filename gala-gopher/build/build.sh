@@ -1,7 +1,7 @@
 #!/bin/bash
 
 PROGRAM=$0
-PROJECT_FOLDER=$(dirname $(readlink -f "$0"))
+PROJECT_FOLDER=$(dirname "$PWD")
 
 PROBES_FOLDER=${PROJECT_FOLDER}/src/probes
 PROBES_PATH_LIST=`find ${PROJECT_FOLDER}/src/probes -maxdepth 1 | grep ".probe\>"`
