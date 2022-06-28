@@ -92,8 +92,10 @@ class PrometheusProcessor(DataProcessor):
         """
         res = {}
         timestamp = time.time() if timestamp is None else timestamp
-        for type_, observe_meta in ObserveMetaMgt().observe_meta_map.items():
-            data = self.collect_observe_entity(observe_meta, timestamp)
+        obsv_meta_mgt = ObserveMetaMgt()
+        types = list(obsv_meta_mgt.observe_meta_map.keys())
+        for type_ in types:
+            data = self.collect_observe_entity(obsv_meta_mgt.get_observe_meta(type_), timestamp)
             if len(data) > 0:
                 res[type_] = data
         return res

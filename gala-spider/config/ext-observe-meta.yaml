@@ -1,0 +1,17 @@
+observe_entities:
+  -
+    type: host
+    keys:
+      - machine_id
+    labels:
+      - hostname
+    metrics: []
+  -
+    type: appinstance
+    keys:
+      - pgid
+      - machine_id
+    labels:
+      - exe_file
+      - exec_file
+      - processes

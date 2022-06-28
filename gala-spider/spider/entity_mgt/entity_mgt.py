@@ -60,6 +60,8 @@ class ObserveEntityCreator:
     @staticmethod
     def _create_host_observe_entities(observe_entities: List[ObserveEntity]) -> List[ObserveEntity]:
         host_meta = ObserveMetaMgt().get_observe_meta(EntityType.HOST.value)
+        if not host_meta:
+            return []
         entity_map: Dict[str, ObserveEntity] = {}
 
         for entity in observe_entities:
@@ -73,6 +75,8 @@ class ObserveEntityCreator:
     @staticmethod
     def _create_app_instance_observe_entities(processes: List[ObserveEntity]) -> List[ObserveEntity]:
         app_inst_meta = ObserveMetaMgt().get_observe_meta(EntityType.APPINSTANCE.value)
+        if not app_inst_meta:
+            return []
         entity_map: Dict[str, ObserveEntity] = {}
 
         for process in processes:
@@ -200,7 +204,7 @@ class IndirectRelationCreator:
         if sub_entity.id == obj_entity.id:
             return None
         if not ObserveMetaMgt().check_relation(RelationType.CONNECT.value, RelationLayerType.INDIRECT.value,
-                                                 sub_entity.type, obj_entity.type):
+                                               sub_entity.type, obj_entity.type):
             return None
 
         relation = Relation(RelationType.CONNECT.value, RelationLayerType.INDIRECT.value, sub_entity, obj_entity)

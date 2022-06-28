@@ -7,6 +7,7 @@ from spider.conf.observe_meta import ObserveMeta
 
 ENTITYID_CONCATE_SIGN = '_'
 RELATIONID_CONCATE_SIGN = '_'
+MACHINE_ID_KEY_NAME = 'machine_id'
 
 
 @dataclass
@@ -31,18 +32,22 @@ class ObserveEntity:
         for label in observe_meta.labels:
             if label in observe_data:
                 self.attrs[label] = observe_data.get(label)
+        metrics = {}
         for metric in observe_meta.metrics:
             if metric in observe_data:
-                self.attrs[metric] = observe_data.get(metric)
+                metrics[metric] = observe_data.get(metric)
+        self.attrs.setdefault('metrics', metrics)
 
         self.id = ''
-        if not self.type or not self.attrs:
+        if not self.type or not self.attrs or MACHINE_ID_KEY_NAME not in self.attrs:
             return
-        ids = [self.type.upper()]
+        ids = [self.attrs.get(MACHINE_ID_KEY_NAME), self.type]
         for key in observe_meta.keys:
             if key not in self.attrs:
                 logger.logger.debug("Required key {} of observe type {} not exist.".format(key, self.type))
                 return
+            if key == MACHINE_ID_KEY_NAME:
+                continue
             ids.append(str(self.attrs.get(key)))
 
         self.id = ENTITYID_CONCATE_SIGN.join(ids)
