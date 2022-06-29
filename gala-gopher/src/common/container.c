@@ -482,6 +482,7 @@ static int __get_fullpath_inode(const char *full_path, unsigned int *inode)
 #define CGROUP_SUBSYS_CPUACCT   "cpu,cpuacct"
 #define CGROUP_SUBSYS_MEMORY    "memory"
 #define CGROUP_SUBSYS_PIDS      "pids"
+#define CGROUP_SUBSYS_NETCLS    "net_cls,net_prio"
 int get_container_cpucg_dir(const char *abbr_container_id, char dir[], unsigned int dir_len)
 {
     return __get_container_cgpdir(abbr_container_id, CGROUP_SUBSYS_CPUACCT, dir, dir_len);
@@ -495,6 +496,11 @@ int get_container_memcg_dir(const char *abbr_container_id, char dir[], unsigned 
 int get_container_pidcg_dir(const char *abbr_container_id, char dir[], unsigned int dir_len)
 {
     return __get_container_cgpdir(abbr_container_id, CGROUP_SUBSYS_PIDS, dir, dir_len);
+}
+
+int get_container_netcg_dir(const char *abbr_container_id, char dir[], unsigned int dir_len)
+{
+    return __get_container_cgpdir(abbr_container_id, CGROUP_SUBSYS_NETCLS, dir, dir_len);
 }
 
 int get_container_cpucg_inode(const char *abbr_container_id, unsigned int *inode)

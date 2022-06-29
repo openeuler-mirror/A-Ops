@@ -39,6 +39,7 @@ int exec_container_command(const char *abbr_container_id, const char *exec, char
 int get_container_cpucg_dir(const char *abbr_container_id, char dir[], unsigned int dir_len);
 int get_container_memcg_dir(const char *abbr_container_id, char dir[], unsigned int dir_len);
 int get_container_pidcg_dir(const char *abbr_container_id, char dir[], unsigned int dir_len);
+int get_container_netcg_dir(const char *abbr_container_id, char dir[], unsigned int dir_len);
 int get_container_cpucg_inode(const char *abbr_container_id, unsigned int *inode);
 int get_container_memcg_inode(const char *abbr_container_id, unsigned int *inode);
 int get_container_pidcg_inode(const char *abbr_container_id, unsigned int *inode);

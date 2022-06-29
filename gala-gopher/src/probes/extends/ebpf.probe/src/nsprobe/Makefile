@@ -2,10 +2,11 @@ include ../mk/var.mk
 INCLUDES = $(BASE_INC)
 
 APP := nsprobe
+TC_BPF := bps.tcbpf.o
 
-BPF_C := $(wildcard *.bpf.c)
-DEPS := $(patsubst %.bpf.c, %.bpf.o, $(BPF_C))
-DEPS += $(patsubst %.bpf.c, %.skel.h, $(BPF_C))
+BPF_C := $(wildcard *bpf.c)
+DEPS := $(patsubst %.tcbpf.c, %.tcbpf.o, $(patsubst %.bpf.c, %.bpf.o, $(BPF_C)))
+DEPS += $(patsubst %.bpf.c, %.skel.h, $(wildcard *.bpf.c))
 
 SRC_C := $(filter-out $(BPF_C), $(wildcard *.c))
 SRC_C += $(UTIL_SRC)
@@ -16,7 +17,7 @@ all: pre deps app
 pre: $(OUTPUT)
 deps: $(DEPS)
 # build bpf code
-%.bpf.o: %.bpf.c
+%bpf.o: %bpf.c
 	$(CLANG) $(CFLAGS) -target bpf $(INCLUDES) -c $(filter %.c,$^) -o $@
 	$(LLVM_STRIP) -g $@
 
@@ -35,4 +36,5 @@ clean:
 install:
 	mkdir -p $(INSTALL_DIR)
 	cp $(APP) $(INSTALL_DIR)
+	cp $(TC_BPF) $(INSTALL_DIR)
 
