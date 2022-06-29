@@ -44,11 +44,87 @@
             })
 
 #if defined(__TARGET_ARCH_x86)
+
 #define PT_REGS_PARM6(x) ((x)->r9)
+
+struct ia64_psr {
+	__u64 reserved0 : 1;
+	__u64 be : 1;
+	__u64 up : 1;
+	__u64 ac : 1;
+	__u64 mfl : 1;
+	__u64 mfh : 1;
+	__u64 reserved1 : 7;
+	__u64 ic : 1;
+	__u64 i : 1;
+	__u64 pk : 1;
+	__u64 reserved2 : 1;
+	__u64 dt : 1;
+	__u64 dfl : 1;
+	__u64 dfh : 1;
+	__u64 sp : 1;
+	__u64 pp : 1;
+	__u64 di : 1;
+	__u64 si : 1;
+	__u64 db : 1;
+	__u64 lp : 1;
+	__u64 tb : 1;
+	__u64 rt : 1;
+	__u64 reserved3 : 4;
+	__u64 cpl : 2;
+	__u64 is : 1;
+	__u64 mc : 1;
+	__u64 it : 1;
+	__u64 id : 1;
+	__u64 da : 1;
+	__u64 dd : 1;
+	__u64 ss : 1;
+	__u64 ri : 2;
+	__u64 ed : 1;
+	__u64 bn : 1;
+	__u64 reserved4 : 19;
+};
+
+#define user_mode(regs) (((struct ia64_psr *) &(regs)->r9)->cpl != 0)
+#define compat_user_mode(regs)  (0)
+static __always_inline __maybe_unused char is_compat_task(struct task_struct *task) {return 0;}
+
 #elif defined(__TARGET_ARCH_arm64)
 #define PT_REGS_ARM64 const volatile struct user_pt_regs
 #define PT_REGS_PARM6(x) (((PT_REGS_ARM64 *)(x))->regs[5])
+#define PSR_MODE_EL0t   0x00000000
+#define PSR_MODE_EL1t   0x00000004
+#define PSR_MODE_EL1h   0x00000005
+#define PSR_MODE_EL2t   0x00000008
+#define PSR_MODE_EL2h   0x00000009
+#define PSR_MODE_EL3t   0x0000000c
+#define PSR_MODE_EL3h   0x0000000d
+#define PSR_MODE_MASK   0x0000000f
+/* AArch32 CPSR bits */
+#define PSR_MODE32_BIT		0x00000010
+
+#define user_mode(regs) \
+    (((regs)->pstate & PSR_MODE_MASK) == PSR_MODE_EL0t)
+
+#define compat_user_mode(regs)	\
+	(((regs)->pstate & (PSR_MODE32_BIT | PSR_MODE_MASK)) == \
+	 (PSR_MODE32_BIT | PSR_MODE_EL0t))
+
+#define TIF_32BIT       22  /* 32bit process */
+#define TIF_32BIT_AARCH64	27	/* 32 bit process on AArch64(ILP32) */
+
+static __always_inline __maybe_unused char is_compat_task(struct task_struct *task)
+{
+    unsigned long flags;
+
+    flags = _(task->thread_info.flags);
+    return (flags & TIF_32BIT) || (flags & TIF_32BIT_AARCH64);
+}
+
+
 #endif
+
+
 
 
 static __always_inline __maybe_unused struct sock *sock_get_by_fd(int fd, struct task_struct *task)
