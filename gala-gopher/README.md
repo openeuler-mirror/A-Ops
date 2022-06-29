@@ -52,6 +52,24 @@ gala-gopher是基于eBPF的低负载探针框架，致力于提供裸机/虚机/
   systemctl start gala-gopher.service
   ```
 
+### 基于容器镜像安装运行
+
+- 准备工作
+
+  由于openEuler官网repo源暂没有gala-gopher包，请先获取gala-gopher.rpm包；为确保libbpf版本较高(>=v0.3)，请确认并获取libbpf-0.3.rpm、libbpf-devel-0.3.rpm包。
+
+  获取方式详见第一小节[基于rpm包安装运行](#基于rpm包安装运行)。
+
+- 生成容器镜像
+
+  用于生成容器镜像的Dockerfile文件归档在[build目录](./build)，生成方法详见[如何生成gala-gopher容器镜像](doc/how_to_build_docker_image.md)。
+
+- 运行容器
+
+  ```shell
+  docker run -d --name xxx -p 8888:8888 --privileged -v /lib/modules:/lib/modules:ro -v /usr/src:/usr/src:ro -v /boot:/boot:ro -v /sys/kernel/debug:/sys/kernel/debug -v /sys/fs/bpf:/sys/fs/bpf -v /root/gopher_user_conf:/gala-gopher/user_conf/ -v /etc/machine-id:/etc/machine-id -v /etc/localtime:/etc/localtime:ro --pid=host gala-gopher:0.0.1
+  ```
+
 ### 基于源码编译、安装、运行
 
 ​	建议在最低openEuler-20.03-LTS-SP1的环境执行编译动作，这是因为gala-gopher中ebpf探针编译依赖clang和llvm，大多数的bpf功能需要clang 10或者更高版本才可以正常工作，而20.03-SP1以下的发布版本中clang版本较低(低于10)。
@@ -161,10 +179,6 @@ gala-gopher是基于eBPF的低负载探针框架，并集成了常用的native�
 ### 如何实现探针编译裁剪
 
 [如何实现探针编译裁剪](doc/how_to_tail_probe.md)
-
-### 如何生成容器镜像
-
-[如何生成容器镜像](doc/how_to_build_docker_image.md)
 
 ### API接口文档
 
