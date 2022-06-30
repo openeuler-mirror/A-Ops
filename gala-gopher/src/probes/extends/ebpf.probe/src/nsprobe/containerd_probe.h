@@ -15,7 +15,10 @@
 #ifndef __CONTAINERPROBE__H
 #define __CONTAINERPROBE__H
 
+#pragma once
+
 #include "args.h"
+#include "hash.h"
 
 #define CONTAINER_KEY_LEN (CONTAINER_ABBR_ID_LEN + 4)
 struct container_key {
@@ -31,6 +34,10 @@ struct container_value {
     u32 pidcg_inode;                        // pids group inode of container
     u32 mnt_ns_id;                          // Mount namespace id of container
     u32 net_ns_id;                          // Net namespace id of container
+
+    unsigned long long bps;
+
+#if 0
     u64 memory_usage_in_bytes;
     u64 memory_limit_in_bytes;
     u64 cpuacct_usage;
@@ -38,6 +45,7 @@ struct container_value {
     u64 cpuacct_usage_sys;
     u64 pids_current;
     u64 pids_limit;
+#endif
     char name[CONTAINER_NAME_LEN];           // Name of container
 
     char cpucg_dir[PATH_LEN];
@@ -46,8 +54,15 @@ struct container_value {
     char netcg_dir[PATH_LEN];
 };
 
-void print_container_metrics(void *ctx, int cpu, void *data, u32 size);
-void output_containers_info(struct probe_params *p, int filter_fd, int filter_fd2);
-void free_containers_info(void);
+struct container_hash_t {
+    H_HANDLE;
+    struct container_key k;
+    struct container_value v;
+};
+
+struct container_value* get_container_by_proc_id(struct container_hash_t **pphead,
+                                                            u32 proc_id);
+void get_containers(struct container_hash_t **pphead, struct probe_params *params);
+void put_containers(struct container_hash_t **pphead);
 
 #endif /* __TRACE_CONTAINERD__H */

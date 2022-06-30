@@ -47,9 +47,9 @@ enum ps_type {
 static void do_load_daemon_task(int fd, struct task_id *id)
 {
     FILE *f = NULL;
+    int pid;
     char cmd[COMMAND_LEN];
     char line[LINE_BUF_LEN];
-    struct task_key key = {0};
     struct task_data data = {0};
 
     cmd[0] = 0;
@@ -64,16 +64,16 @@ static void do_load_daemon_task(int fd, struct task_id *id)
             break;
         }
         SPLIT_NEWLINE_SYMBOL(line);
-        key.pid = atoi(line);
-        data.id.pid  = key.pid;
+        pid = atoi(line);
+        data.id.pid  = pid;
         data.id.tgid = id->tgid;
         data.id.pgid = id->pgid;
         data.id.ppid = id->ppid;
         (void)strncpy(data.id.comm, id->comm, TASK_COMM_LEN - 1);
         /* update task map and daemon task map */
-        (void)bpf_map_update_elem(fd, &key, &data, BPF_ANY);
+        (void)bpf_map_update_elem(fd, &pid, &data, BPF_ANY);
         DEBUG("[TASKPROBE]: load daemon task '[pid=%d,tgid=%d,pgid=%d,ppid=%d,comm=%s]'.\n",
-              key.pid, id->tgid, id->pgid, id->ppid, id->comm);
+              pid, id->tgid, id->pgid, id->ppid, id->comm);
     }
 
     pclose(f);

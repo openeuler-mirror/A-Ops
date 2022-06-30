@@ -31,17 +31,21 @@
 #include "args.h"
 #include "taskprobe.skel.h"
 #include "thread_io.skel.h"
+#include "cpu.skel.h"
 #include "taskprobe.h"
 #include "task.h"
 
 #define OO_THREAD_NAME  "thread"
 #define OUTPUT_PATH "/sys/fs/bpf/probe/__taskprobe_output"
 #define PERIOD_PATH "/sys/fs/bpf/probe/__taskprobe_period"
+#define TASK_PATH "/sys/fs/bpf/probe/__taskprobe_task"
+#define RM_TASK_MAP_PATH "/usr/bin/rm -rf /sys/fs/bpf/probe/__taskprobe*"
 
 #define LOAD_TASK_PROBE(probe_name, end, load) \
     OPEN(probe_name, end, load); \
-    MAP_SET_PIN_PATH(probe_name, output, OUTPUT_PATH, load); \
+    MAP_SET_PIN_PATH(probe_name, g_task_output, OUTPUT_PATH, load); \
     MAP_SET_PIN_PATH(probe_name, period_map, PERIOD_PATH, load); \
+    MAP_SET_PIN_PATH(probe_name, g_task_map, TASK_PATH, load); \
     LOAD_ATTACH(probe_name, end, load)
 
 static volatile sig_atomic_t stop = 0;
@@ -52,15 +56,7 @@ static struct task_name_t task_range[] = {
     {"go",              TASK_TYPE_APP},
     {"java",            TASK_TYPE_APP},
     {"python",          TASK_TYPE_APP},
-    {"python3",         TASK_TYPE_APP},
-    {"dhclient",        TASK_TYPE_OS},
-    {"NetworkManager",  TASK_TYPE_OS},
-    {"dbus",            TASK_TYPE_OS},
-    {"rpcbind",         TASK_TYPE_OS},
-    {"systemd",         TASK_TYPE_OS},
-    {"scsi",            TASK_TYPE_KERN},
-    {"softirq",         TASK_TYPE_KERN},
-    {"kworker",         TASK_TYPE_KERN}
+    {"python3",         TASK_TYPE_APP}
 };
 
 static void sig_int(int signal)
@@ -160,18 +156,18 @@ static void print_task_metrics(void *ctx, int cpu, void *data, __u32 size)
     struct task_data *value = (struct task_data *)data;
 
     fprintf(stdout,
-        "|%s|%d|%d|%s|%d|%d|%u|%llu|%llu|%u|%llu|\n",
+        "|%s|%d|%d|%s|%llu|%llu|%llu|%u|%u|%llu|%u|\n",
         OO_THREAD_NAME,
         value->id.pid,
         value->id.tgid,
         value->id.comm,
-        value->io.major,
-        value->io.minor,
-        value->fork_count,
-        value->io.task_io_count,
-        value->io.task_io_time_us,
-        value->io.task_hang_count,
-        value->io.task_io_wait_time_us);
+        value->io.bio_bytes_read,
+        value->io.bio_bytes_write,
+        value->io.iowait_us,
+        value->io.hang_count,
+        value->io.bio_err_count,
+        value->cpu.off_cpu_ns,
+        value->cpu.migration_count);
 
     (void)fflush(stdout);
     return;
@@ -181,6 +177,7 @@ int main(int argc, char **argv)
 {
     int ret = -1;
     struct perf_buffer* pb = NULL;
+    FILE *fp = NULL;
 
     if (signal(SIGINT, sig_int) == SIG_ERR) {
         fprintf(stderr, "can't set signal handler: %s\n", strerror(errno));
@@ -197,12 +194,19 @@ int main(int argc, char **argv)
     }
     DEBUG("Task probe starts with period: %us.\n", tp_params.period);
 
+    fp = popen(RM_TASK_MAP_PATH, "r");
+    if (fp != NULL) {
+        (void)pclose(fp);
+        fp = NULL;
+    }
+
     INIT_BPF_APP(taskprobe, EBPF_RLIM_LIMITED);
 
-    LOAD_TASK_PROBE(taskprobe, err2, 1);
-    LOAD_TASK_PROBE(thread_io, err1, 1);
+    LOAD_TASK_PROBE(taskprobe, err3, 1);
+    LOAD_TASK_PROBE(thread_io, err2, 1);
+    LOAD_TASK_PROBE(cpu, err1, 1);
 
-    int out_put_fd = GET_MAP_FD(taskprobe, output);
+    int out_put_fd = GET_MAP_FD(taskprobe, g_task_output);
     pb = create_pref_buffer(out_put_fd, print_task_metrics);
     if (pb == NULL) {
         fprintf(stderr, "ERROR: crate perf buffer failed\n");
@@ -210,7 +214,7 @@ int main(int argc, char **argv)
     }
 
     int pmap_fd = GET_MAP_FD(taskprobe, probe_proc_map);
-    int task_map_fd = GET_MAP_FD(taskprobe, __task_map);
+    int task_map_fd = GET_MAP_FD(taskprobe, g_task_map);
     int period_fd = GET_MAP_FD(taskprobe, period_map);
 
     load_period(period_fd, tp_params.period);
@@ -230,8 +234,10 @@ err:
         perf_buffer__free(pb);
     }
 err1:
-    UNLOAD(thread_io);
+    UNLOAD(cpu);
 err2:
+    UNLOAD(thread_io);
+err3:
     UNLOAD(taskprobe);
     return ret;
 }

@@ -17,6 +17,7 @@
 #endif
 #define BPF_PROG_KERN
 #include "bpf.h"
+#include "task_map.h"
 #include "output.h"
 
 #define MAX_CPU 8
@@ -27,69 +28,94 @@
 
 char g_linsence[] SEC("license") = "GPL";
 
-struct bpf_map_def SEC("maps") task_request_start = {
+#define __BIO_MAX      1000
+struct bpf_map_def SEC("maps") bio_map = {
     .type = BPF_MAP_TYPE_HASH,
-    .key_size = sizeof(struct request *),
-    .value_size = sizeof(u64),
-    .max_entries = TASK_REQUEST_MAX,
+    .key_size = sizeof(struct bio*),
+    .value_size = sizeof(int),  // pid
+    .max_entries = __BIO_MAX,
 };
 
-static __always_inline void update_task_count_entry(struct task_data *data, struct request *request, 
-                                                                u64 delta_us, int rwflag)
+static __always_inline char is_read_bio(struct bio *bio)
 {
-    struct gendisk *gd;
-
-    __sync_fetch_and_add(&(data->io.task_io_count), 1);
-    __sync_fetch_and_add(&(data->io.task_io_time_us), delta_us);
-    
-    gd = _(request->rq_disk);
-    data->io.major = _(gd->major);
-    data->io.minor = _(gd->first_minor);
-    
-    if (rwflag) {
-        // __sync_fetch_and_add(&(io_statsp->write_bytes), _(request->__data_len));
-    } else {
-        // __sync_fetch_and_add(&(io_statsp->read_bytes), _(request->__data_len));
-    }
+    u32 op = _(bio->bi_opf);
+    return ((op & REQ_OP_MASK) == REQ_OP_READ);
 }
 
-KPROBE(blk_mq_start_request, pt_regs)
+static __always_inline char is_write_bio(struct bio *bio)
 {
+    u32 op = _(bio->bi_opf);
+    return ((op & REQ_OP_MASK) == REQ_OP_WRITE) ||
+        ((op & REQ_OP_MASK) == REQ_OP_FLUSH);
+}
+
+static __always_inline int store_bio(struct bio *bio, int pid)
+{
+    return bpf_map_update_elem(&bio_map, &bio, &pid, BPF_ANY);
+}
+
+static __always_inline int is_err_bio(struct bio *bio)
+{
+    return (_(bio->bi_status) != 0);
+}
+
+static __always_inline void end_bio(void *ctx, struct bio *bio)
+{
+    int *pid = bpf_map_lookup_elem(&bio_map, &bio);
+    if (pid == NULL) {
+        return;
+    }
+
+    if (is_err_bio(bio)) {
+        struct task_data* data = get_task(*pid);
+        if (data) {
+            __sync_fetch_and_add(&(data->io.bio_err_count), 1);
+            report(ctx, data);
+        }
+        return;
+    }
+
+    (void)bpf_map_delete_elem(&bio_map, &bio);
+    return;
+}
+
+
+KPROBE(submit_bio, pt_regs)
+{
+    struct bio *bio = (struct bio *)PT_REGS_PARM1(ctx);
+
     int pid = (int)bpf_get_current_pid_tgid();
-    if (!is_task_exist(pid)) {
+
+    if (!user_mode(ctx)) {
         return;
     }
-    
-    u64 ts = bpf_ktime_get_ns();
-    struct request *request = (struct request *)PT_REGS_PARM1(ctx);
 
-    (void)bpf_map_update_elem(&task_request_start, &request, &ts, BPF_ANY);
+    struct task_data *data = get_task(pid);
+    if (data == NULL) {
+        return;
+    }
+
+    if (is_read_bio(bio)) {
+        data->io.bio_bytes_read += _(bio->bi_iter.bi_size);
+        report(ctx, data);
+
+        store_bio(bio, pid);
+        return;
+    }
+
+    if (is_write_bio(bio)) {
+        data->io.bio_bytes_write += _(bio->bi_iter.bi_size);
+        report(ctx, data);
+
+        store_bio(bio, pid);
+        return;
+    }
 }
 
-KPROBE(blk_account_io_completion, pt_regs)
+KPROBE(bio_endio, pt_regs)
 {
-    int rwflag = 0;
-    struct task_key key = {0};
-    struct task_data *data;
-    u64 *tsp;
-    struct request *request = (struct request *)PT_REGS_PARM1(ctx);
-
-    tsp = (u64 *)bpf_map_lookup_elem(&task_request_start, &request);
-    if (tsp == (u64*)0) {
-        return;
-    }
-
-    u64 delta_us = (bpf_ktime_get_ns() - *tsp) / 1000;
-
-    key.pid = (int)bpf_get_current_pid_tgid();
-    data = (struct task_data *)get_task_entry(&key);
-
-    rwflag = !!((request->cmd_flags & REQ_OP_MASK) == REQ_OP_WRITE);
-    
-    if (data != (struct task_data *)0) {
-        update_task_count_entry(data, request, delta_us, rwflag);
-        report(ctx, data);
-    }
+    struct bio *bio = (struct bio *)PT_REGS_PARM1(ctx);
+    end_bio(ctx, bio);
 }
 
 KRAWTRACE(sched_stat_iowait, bpf_raw_tracepoint_args)
@@ -97,10 +123,9 @@ KRAWTRACE(sched_stat_iowait, bpf_raw_tracepoint_args)
     struct task_struct* task = (struct task_struct*)ctx->args[0];
     u64 delta = (u64)ctx->args[1];
 
-    struct task_key key = {.pid = _(task->pid)};
-    struct task_data *data = (struct task_data *)get_task_entry(&key);
+    struct task_data *data = get_task((int)_(task->pid));
     if (data) {
-        __sync_fetch_and_add(&(data->io.task_io_wait_time_us), delta);
+        __sync_fetch_and_add(&(data->io.iowait_us), delta);
         report(ctx, data);
     }
 }
@@ -108,10 +133,9 @@ KRAWTRACE(sched_stat_iowait, bpf_raw_tracepoint_args)
 KRAWTRACE(sched_process_hang, bpf_raw_tracepoint_args)
 {
     struct task_struct* task = (struct task_struct*)ctx->args[0];
-    struct task_key key = {.pid = _(task->pid)};
-    struct task_data *data = (struct task_data *)get_task_entry(&key);
+    struct task_data *data = get_task((int)_(task->pid));
     if (data) {
-        __sync_fetch_and_add(&(data->io.task_hang_count), 1);
+        __sync_fetch_and_add(&(data->io.hang_count), 1);
         report(ctx, data);
     }
 }
