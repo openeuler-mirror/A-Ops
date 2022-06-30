@@ -33,6 +33,11 @@ static int system_probe_init(struct probe_params * params)
     /* system proc init */
     system_proc_init(params->task_whitelist);
 
+    /* system_iostat init */
+    if (system_iostat_init() < 0) {
+        return -1;
+    }
+
     return 0;
 }
 
@@ -40,6 +45,9 @@ static void system_probe_destroy(void)
 {
     /* system net destroy */
     system_net_destroy();
+
+    /* system iostat destroy */
+    system_iostat_destroy();
 }
 
 int main(struct probe_params * params)
