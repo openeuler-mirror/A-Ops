@@ -13,10 +13,12 @@
  * Description: container traceing
  ******************************************************************************/
 #include <errno.h>
+#include <fcntl.h>
 #include <signal.h>
 #include <stdio.h>
 #include <unistd.h>
 #include <sys/resource.h>
+#include <sys/stat.h>
 #ifdef BPF_PROG_KERN
 #undef BPF_PROG_KERN
 #endif
@@ -31,12 +33,16 @@
 #include "hash.h"
 #include "object.h"
 #include "container.h"
+#include "bps.h"
 #include "containerd_probe.h"
 
+
 #define METRIC_NAME_RUNC_TRACE    "container_data"
+#define CONTAINER "container"
 
 static struct probe_params *params;
 static int task_map_fd;
+static int egress_map_fd;
 
 static void add_cgrp_obj(struct container_value *container)
 {
@@ -153,6 +159,10 @@ static void init_container(const char *container_id, struct container_value *con
         (void)get_container_pidcg_dir(container_id, container->pidcg_dir, PATH_LEN);
     }
 
+    if (container->netcg_dir[0] == 0) {
+        (void)get_container_netcg_dir(container_id, container->netcg_dir, PATH_LEN);
+    }
+
     if (container->cpucg_inode == 0) {
         (void)get_container_cpucg_inode(container_id, &container->cpucg_inode);
     }
@@ -184,6 +194,66 @@ struct container_hash_t {
 
 static struct container_hash_t *head = NULL;
 
+static bool check_cg_path(const char *cgrpPath, char *trustedPath)
+{
+    struct stat st = {0};
+    int ret = snprintf(trustedPath, MAX_PATH_LEN + 1, "%s/%s", cgrpPath, "net_cls.classid");
+    if (ret < 0 || stat(trustedPath, &st) < 0 || (st.st_mode & S_IFMT) != S_IFREG) {
+        DEBUG("CgrpV1Prio get realPath failed. ret: %d\n", ret);
+        return false;
+    }
+
+    return true;
+}
+
+static int set_net_classid(u32 classid, const char *netcg_dir)
+{
+    int fd = -1;
+    int ret;
+    ssize_t size;
+    char trustedPath[MAX_PATH_LEN + 1] = {0};
+
+#define BUF_SIZE 64
+    char buf[BUF_SIZE];
+
+    if (!check_cg_path(netcg_dir, trustedPath)) {
+        return -1;
+    }
+
+    fd = open(trustedPath, O_WRONLY);
+    if (fd < 0) {
+        DEBUG("set net classid open trustedPath[%s] failed. errno:%d\n", trustedPath, errno);
+        return -1;
+    }
+
+    ret = snprintf(buf, BUF_SIZE, "%u\n", classid);
+    if (ret < 0) {
+        DEBUG("set net classid snprintf failed. ret: %d.\n", ret);
+        (void)close(fd);
+        return -1;
+    }
+    size = write(fd, buf, strlen(buf));
+    ret = ((size_t)size != strlen(buf));
+
+    (void)close(fd);
+
+    if (ret != 0) {
+        DEBUG("set pid[%u] net_cls.classid err %d\n", classid, ret);
+    }
+
+    return ret;
+}
+
+static void clean_bps_map(struct container_hash_t *item)
+{
+    if (egress_map_fd == 0) {
+        return;
+    }
+    u64 classid = item->v.proc_id;
+    (void)set_net_classid(0, (const char *)item->v.netcg_dir);
+    (void)bpf_map_delete_elem(egress_map_fd, &classid);
+}
+
 static void clear_container_tbl(struct container_hash_t **pphead)
 {
     struct container_hash_t *item, *tmp;
@@ -192,12 +262,14 @@ static void clear_container_tbl(struct container_hash_t **pphead)
     }
 
     H_ITER(*pphead, item, tmp) {
+        clean_bps_map(item);
         put_cgrp_obj(&(item->v));
         put_nm_obj(&(item->v));
         H_DEL(*pphead, item);
         (void)free(item);
     }
 }
+
 
 static void clear_invalid_items(struct container_hash_t **pphead)
 {
@@ -208,6 +280,7 @@ static void clear_invalid_items(struct container_hash_t **pphead)
 
     H_ITER(*pphead, item, tmp) {
         if (!(item->v.flags & CONTAINER_FLAGS_VALID)) {
+            clean_bps_map(item);
             put_cgrp_obj(&(item->v));
             put_nm_obj(&(item->v));
             H_DEL(*pphead, item);
@@ -228,6 +301,20 @@ static void set_container_invalid(struct container_hash_t **pphead)
     }
 }
 
+// set container proc_id as cgroup net_cls.classid
+static void init_bps_map(struct container_hash_t *item)
+{
+    if (egress_map_fd == 0) {
+        return;
+    }
+    u64 classid = item->v.proc_id;
+    if (set_net_classid(item->v.proc_id, (const char *)item->v.netcg_dir) == 0) {
+        struct egress_bandwidth_s bps = {.container_id = item->k.container_id};
+        bpf_map_update_elem(egress_map_fd, &classid, &bps, BPF_ANY);
+        printf("set net_cls classid of proc %llu success\n", classid);
+    }
+}
+
 static struct container_hash_t* add_container(const char *container_id, struct container_hash_t **pphead)
 {
     struct container_hash_t *item;
@@ -243,6 +330,8 @@ static struct container_hash_t* add_container(const char *container_id, struct c
     H_ADD_KEYPTR(*pphead, item->k.container_id, CONTAINER_ABBR_ID_LEN, item);
 
     init_container((const char *)item->k.container_id, &(item->v));
+
+    init_bps_map(item);
 
     add_cgrp_obj(&(item->v));
     add_nm_obj(&(item->v));
@@ -399,6 +488,33 @@ static void print_container_metric(struct container_hash_t **pphead)
     return;
 }
 
+void print_container_metrics(void *ctx, int cpu, void *data, u32 size)
+{
+    struct bps_msg_s *bps_msg = (struct bps_msg_s *)data;
+    struct egress_bandwidth_s egress_bandwidth;
+    int ret = bpf_map_lookup_elem(egress_map_fd, &(bps_msg->cg_classid), &egress_bandwidth);
+    if (ret != 0) {
+        return;
+    }
+   
+    struct container_hash_t *item = find_container((const char *)egress_bandwidth.container_id, &head);
+    if (item == NULL) {
+        return;
+    }
+    (void)fprintf(stdout,
+        "|%s|%s|%s|%u|%u|%u|%u|%u|%u|%llu|\n",
+        CONTAINER,
+        item->k.container_id,
+        item->v.name,
+        item->v.cpucg_inode,
+        item->v.memcg_inode,
+        item->v.pidcg_inode,
+        item->v.mnt_ns_id,
+        item->v.net_ns_id,
+        item->v.proc_id,
+        bps_msg->bps);
+}
+
 static void update_current_containers_info(struct container_hash_t **pphead)
 {
     int i;
@@ -435,18 +551,22 @@ static void update_current_containers_info(struct container_hash_t **pphead)
     clear_invalid_items(pphead);
 }
 
-void output_containers_info(struct probe_params *p, int filter_fd)
+void output_containers_info(struct probe_params *p, int filter_fd, int filter_fd2)
 {
     params = p;
     task_map_fd = filter_fd;
+    egress_map_fd = filter_fd2;
     update_current_containers_info(&head);
-    print_container_metric(&head);
+    if (egress_map_fd == 0) {
+        print_container_metric(&head);
+    }
 }
 
 void free_containers_info(void)
 {
     params = NULL;
     task_map_fd = 0;
+    egress_map_fd = 0;
     clear_container_tbl(&head);
 }
 

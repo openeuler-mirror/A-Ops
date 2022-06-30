@@ -26,10 +26,12 @@
 #undef BPF_PROG_USER
 #endif
 
+
 #include "bpf.h"
 #include "args.h"
-#include "ksliprobe.h"
 #include "ksliprobe.skel.h"
+#include "tc_loader.h"
+#include "ksliprobe.h"
 
 #define OO_NAME "ksliprobe"
 
@@ -48,8 +50,10 @@ static void msg_event_handler(void *ctx, int cpu, void *data, unsigned int size)
     unsigned char ser_ip_str[INET6_ADDRSTRLEN];
     unsigned char cli_ip_str[INET6_ADDRSTRLEN];
     const char *protocol;
-    ip_str(msg_evt_data->server_ip_info.family, (unsigned char *)&(msg_evt_data->server_ip_info.ipaddr), ser_ip_str, INET6_ADDRSTRLEN);
-    ip_str(msg_evt_data->client_ip_info.family, (unsigned char *)&(msg_evt_data->client_ip_info.ipaddr), cli_ip_str, INET6_ADDRSTRLEN);
+    ip_str(msg_evt_data->server_ip_info.family, (unsigned char *)&(msg_evt_data->server_ip_info.ipaddr),
+        ser_ip_str, INET6_ADDRSTRLEN);
+    ip_str(msg_evt_data->client_ip_info.family, (unsigned char *)&(msg_evt_data->client_ip_info.ipaddr),
+        cli_ip_str, INET6_ADDRSTRLEN);
     switch (msg_evt_data->conn_id.protocol) {
         case PROTOCOL_REDIS:
             protocol = "REDIS";
@@ -135,7 +139,7 @@ int main(int argc, char **argv)
     printf("arg parse interval time:%us\n", params.period);
 
 #ifdef KERNEL_SUPPORT_TSTAMP
-    load_tc_ingress_bpf(params.netcard_list);
+    load_tc_bpf(params.netcard_list, TC_PROG, TC_TYPE_INGRESS);
 #else
     printf("The kernel version does not support loading the tc tstamp program\n");
 #endif
@@ -165,7 +169,7 @@ int main(int argc, char **argv)
 err:
     UNLOAD(ksliprobe);
 #ifdef KERNEL_SUPPORT_TSTAMP
-    offload_tc_ingress_bpf();
+    offload_tc_bpf(TC_TYPE_INGRESS);
 #endif
     return -err;
 }

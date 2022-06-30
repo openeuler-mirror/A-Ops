@@ -38,15 +38,16 @@ struct container_value {
     u64 cpuacct_usage_sys;
     u64 pids_current;
     u64 pids_limit;
-
     char name[CONTAINER_NAME_LEN];           // Name of container
 
     char cpucg_dir[PATH_LEN];
     char memcg_dir[PATH_LEN];
     char pidcg_dir[PATH_LEN];
+    char netcg_dir[PATH_LEN];
 };
 
-void output_containers_info(struct probe_params *p, int filter_fd);
+void print_container_metrics(void *ctx, int cpu, void *data, u32 size);
+void output_containers_info(struct probe_params *p, int filter_fd, int filter_fd2);
 void free_containers_info(void);
 
 #endif /* __TRACE_CONTAINERD__H */
