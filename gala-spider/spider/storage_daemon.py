@@ -54,6 +54,7 @@ def main():
         return
 
     obsv_meta_coll_thread = ObsvMetaCollThread(ObserveMetaMgt(), spider_config.kafka_conf)
+    obsv_meta_coll_thread.setDaemon(True)
     obsv_meta_coll_thread.start()
 
     # 初始化相关的服务
