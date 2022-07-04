@@ -1,20 +1,11 @@
 # gala-spider
 
 ## 介绍
-gala-spider是用于架构感知拓扑绘制服务，该程序提供一个配置文件，支持拓扑算法可替换、DB源可替换、UI程序可替换以及metric信息可配置等，方便用户使用；
+gala-spider 提供 OS 级别的拓扑图绘制功能，它将定期获取 gala-gopher （一个 OS 层面的数据采集软件）在某个时间点采集的所有观测对象的数据，并计算它们之间的拓扑关系，最终将生成的拓扑图保存到图数据 arangodb 中。
 
 ## 快速开始
 
 ### 基于源码编译、安装、运行
-
-- 安装依赖
-
-  依赖模块安装
-
-  ```bash
-  yum install -y configparser
-  yum install -y python3-connexion
-  ```
 
 - 构建
 
@@ -31,9 +22,7 @@ gala-spider是用于架构感知拓扑绘制服务，该程序提供一个配置
 - 运行
 
   ```bash
-  python3 -m spider
-  # 或直接执行：
-  spider
+  spider-storage
   ```
 
 ### 基于rpm包安装运行
@@ -47,7 +36,7 @@ gala-spider是用于架构感知拓扑绘制服务，该程序提供一个配置
 - 运行
 
   ```
-  systemctl start gala-spider
+  systemctl start spider-storage
   ```
 
 ## 总体介绍
