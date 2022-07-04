@@ -94,7 +94,8 @@ static __always_inline char is_valid_tgid(u32 tgid)
 
     args = (struct tcp_args_s *)bpf_map_lookup_elem(&args_map, &key);
     if (args && args->filter_by_task) {
-        return is_task_exist((int)tgid);
+        struct proc_s obj = {.proc_id = tgid};
+        return is_proc_exist(&obj);
     }
 
     if (args && args->filter_by_tgid) {
@@ -350,14 +351,14 @@ static void tcp_compute_busy_time(struct tcp_sock *tcp_sk, struct tcp_state* inf
 {
     u32 i;
     u8 chrono_type;
-    u32 chrono_stat[3] = {0};
+    u32 chrono_stat[__TCP_CHRONO_MAX - 1] = {0};
     u32 chrono_start;
     u64 total = 0;
     u64 stats[__TCP_CHRONO_MAX];
     u64 ms = bpf_ktime_get_ns() >> 6; // ns -> ms
 
     chrono_start = _(tcp_sk->chrono_start);
-    bpf_probe_read(chrono_stat, 3 * sizeof(u32), &(tcp_sk->chrono_stat));
+    bpf_probe_read(chrono_stat, (__TCP_CHRONO_MAX - 1) * sizeof(u32), &(tcp_sk->chrono_stat));
     bpf_probe_read(&chrono_type, sizeof(u8), (char *)&(tcp_sk->chrono_stat) + 3 * sizeof(u32));
 
     chrono_type &= 0xC0;

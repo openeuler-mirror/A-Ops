@@ -15,6 +15,8 @@
 #ifndef __OUTPUT_H__
 #define __OUTPUT_H__
 
+#pragma once
+
 #ifdef BPF_PROG_KERN
 
 #include <bpf/bpf_helpers.h>
@@ -28,7 +30,7 @@
 #define BPF_F_CURRENT_CPU   BPF_F_INDEX_MASK
 
 #define PERF_OUT_MAX (64)
-struct bpf_map_def SEC("maps") output = {
+struct bpf_map_def SEC("maps") g_task_output = {
     .type = BPF_MAP_TYPE_PERF_EVENT_ARRAY,
     .key_size = sizeof(u32),
     .value_size = sizeof(u32),
@@ -64,9 +66,10 @@ static __always_inline __maybe_unused void report(void *ctx, struct task_data *v
         return;
     }
     val->ts = ts;
-    (void)bpf_perf_event_output(ctx, &output, BPF_F_CURRENT_CPU, val, sizeof(struct task_data));
+    (void)bpf_perf_event_output(ctx, &g_task_output, BPF_F_CURRENT_CPU, val, sizeof(struct task_data));
 
     __builtin_memset(&(val->io), 0x0, sizeof(val->io));
+    __builtin_memset(&(val->cpu), 0x0, sizeof(val->cpu));
 }
 
 #endif

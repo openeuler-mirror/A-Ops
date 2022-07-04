@@ -46,39 +46,9 @@ measurements:
                 name: "proc_id",
             },
             {
-                description: "memory.usage_in_bytes",
+                description: "Egress bindwidth of container",
                 type: "gauge",
-                name: "memory.usage_in_bytes",
-            },
-            {
-                description: "memory.limit_in_bytes",
-                type: "gauge",
-                name: "memory.limit_in_byte",
-            },
-            {
-                description: "cpuacct.usage",
-                type: "gauge",
-                name: "cpuacct.usage",
-            },
-            {
-                description: "cpuacct.usage_sys",
-                type: "gauge",
-                name: "cpuacct_usage_sys",
-            },
-            {
-                description: "cpuacct.usage_user",
-                type: "gauge",
-                name: "cpuacct_usage_user",
-            },
-            {
-                description: "pids.current",
-                type: "gauge",
-                name: "pids.current",
-            },
-            {
-                description: "pids.limit",
-                type: "gauge",
-                name: "pids.limit",
+                name: "bps",
             }
         )
     }

@@ -1,5 +1,5 @@
 /******************************************************************************
- * Copyright (c) Huawei Technologies Co., Ltd. 2021. All rights reserved.
+ * Copyright (c) Huawei Technologies Co., Ltd. 2022. All rights reserved.
  * gala-gopher licensed under the Mulan PSL v2.
  * You can use this software according to the terms and conditions of the Mulan PSL v2.
  * You may obtain a copy of Mulan PSL v2 at:
@@ -9,13 +9,15 @@
  * PURPOSE.
  * See the Mulan PSL v2 for more details.
  * Author: dowzyx
- * Create: 2022-02-10
+ * Create: 2022-06-10
  * Description: basic task struct
  ******************************************************************************/
 #ifndef __GOPHER_TASK_H__
 #define __GOPHER_TASK_H__
 
-#define SHARE_MAP_TASK_MAX_ENTRIES 10 * 1024
+#pragma once
+
+#define SHARE_MAP_TASK_MAX_ENTRIES (10 * 1024)
 
 enum task_status_type {
     TASK_STATUS_ACTIVE = 0,
@@ -24,19 +26,23 @@ enum task_status_type {
     TASK_STATUS_MAX,
 };
 
-struct task_key {
-    int pid;                // task_struct.pid
+struct task_io_data {
+    __u64 bio_bytes_read;
+    __u64 bio_bytes_write;
+
+    __u64 iowait_us;
+    __u32 hang_count;
+
+    __u32 bio_err_count;
 };
 
-struct task_io_data {
-    int major;
-    int minor;
-    __u64 task_io_wait_time_us; // FROM tracepoint 'sched_stat_iowait'
-    __u64 task_wblock_bytes;    // FROM 'blk_account_io_start/blk_mq_start_request/blk_account_io_completion'
-    __u64 task_rblock_bytes;    // FROM same as 'task_wblock_bytes'
-    __u64 task_io_count;        // FROM same as 'task_wblock_bytes'
-    __u64 task_io_time_us;      // FROM same as 'task_wblock_bytes'
-    __u32 task_hang_count;      // FROM tracepoint 'sched_process_hang'
+struct task_cpu_data {
+    int off_cpu_no;
+    __u64 off_cpu_ns;
+    __u64 off_cpu_start;
+
+    u32 migration_count;
+    int current_cpu_no;
 };
 
 struct task_id {
@@ -49,9 +55,9 @@ struct task_id {
 
 struct task_data {
     __u64 ts;
-    __u32 fork_count;
     struct task_id id;
     struct task_io_data io;
+    struct task_cpu_data cpu;
 };
 
 #endif

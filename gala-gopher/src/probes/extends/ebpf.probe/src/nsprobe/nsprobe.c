@@ -33,11 +33,13 @@
 #include "qdisc.h"
 #include "containerd_probe.h"
 #include "object.h"
+#include "bps.h"
 #include "tc_loader.h"
 #include "nsprobe.h"
 
 #define QDISC "qdisc"
 #define QDISC_CPU "qdisc_cpu"
+#define CONTAINER "container"
 
 #define TC_BPS_PROG "bps.tcbpf.o"
 
@@ -47,7 +49,6 @@
 #define RM_TC_MAP_PATH "/usr/bin/rm -rf /sys/fs/bpf/tc/globals/tc_bps_*"
 #define TC_OUTPUT_MAP_PATH "/sys/fs/bpf/tc/globals/tc_bps_output"
 #define TC_ARGS_MAP_PATH "/sys/fs/bpf/tc/globals/tc_bps_args"
-#define EGRESS_MAP_PATH "/sys/fs/bpf/tc/globals/tc_bps_egress"
 #define CHECK_HELPER_CMD "/usr/bin/cat /proc/kallsyms | /usr/bin/grep bpf_skb_cgroup_classid"
 
 #define __LOAD_NS_PROBE(probe_name, end, load) \
@@ -58,13 +59,14 @@
 
 static struct probe_params params = {.period = DEFAULT_PERIOD};
 static volatile sig_atomic_t g_stop;
+static struct container_hash_t *head = NULL;
 
 static void sig_int(int signo)
 {
     g_stop = 1;
 }
 
-static void print_ns_metrics(void *ctx, int cpu, void *data, __u32 size)
+static void output_qdisc_metrics(void *ctx, int cpu, void *data, __u32 size)
 {
     struct qdisc *qdisc  = (struct qdisc *)data;
 
@@ -124,14 +126,48 @@ static bool is_kernel_support_tc_bps_load()
     return true;
 }
 
+void store_bps(void *ctx, int cpu, void *data, u32 size)
+{
+    struct bps_msg_s *bps_msg = (struct bps_msg_s *)data;
+    struct container_value* v;
+
+    v = get_container_by_proc_id(&head, bps_msg->cg_classid);
+    if (v == NULL) {
+        return;
+    }
+
+    v->bps = bps_msg->bps;
+}
+
+void output_containers_metrics(struct container_hash_t **pphead)
+{
+    struct container_hash_t *item, *tmp;
+    if (*pphead == NULL) {
+        return;
+    }
+
+    H_ITER(*pphead, item, tmp) {
+        (void)fprintf(stdout,
+            "|%s|%s|%s|%u|%u|%u|%u|%u|%u|%llu|\n",
+            CONTAINER,
+            item->k.container_id,
+            item->v.name,
+            item->v.cpucg_inode,
+            item->v.memcg_inode,
+            item->v.pidcg_inode,
+            item->v.mnt_ns_id,
+            item->v.net_ns_id,
+            item->v.proc_id,
+            item->v.bps);
+    }
+}
+
 int main(int argc, char **argv)
 {
     int err = -1;
     bool tc_load = false;
-    struct perf_buffer* pb = NULL;
-    struct perf_buffer* pb2 = NULL;
-    int task_map_fd;
-    int egress_map_fd = 0;
+    struct perf_buffer* qdisc_pb = NULL;
+    struct perf_buffer* tc_pb = NULL;
 
     rm_maps();
 
@@ -150,10 +186,9 @@ int main(int argc, char **argv)
     INIT_BPF_APP(nsprobe, EBPF_RLIM_LIMITED);
     __LOAD_NS_PROBE(qdisc, err, 1);
 
-    task_map_fd = GET_MAP_FD(qdisc, __task_map);
     load_args(GET_MAP_FD(qdisc, args_map), &params);
-    pb = create_pref_buffer(GET_MAP_FD(qdisc, output), print_ns_metrics);
-    if (pb == NULL) {
+    qdisc_pb = create_pref_buffer(GET_MAP_FD(qdisc, output), output_qdisc_metrics);
+    if (qdisc_pb == NULL) {
         fprintf(stderr, "ERROR: create perf buffer of ns metrics failed\n");
         goto err;
     }
@@ -162,10 +197,9 @@ int main(int argc, char **argv)
     tc_load = is_kernel_support_tc_bps_load();
     if (tc_load) {
         load_tc_bpf(params.netcard_list, TC_BPS_PROG, TC_TYPE_EGRESS);
-        egress_map_fd = bpf_obj_get(EGRESS_MAP_PATH);
         load_args(bpf_obj_get(TC_ARGS_MAP_PATH), &params);
-        pb2 = create_pref_buffer(bpf_obj_get(TC_OUTPUT_MAP_PATH), print_container_metrics);
-        if (pb2 == NULL) {
+        tc_pb = create_pref_buffer(bpf_obj_get(TC_OUTPUT_MAP_PATH), store_bps);
+        if (tc_pb == NULL) {
             fprintf(stderr, "ERROR: create perf buffer of container metrics failed\n");
             goto err2;
         }
@@ -175,30 +209,30 @@ int main(int argc, char **argv)
     obj_module_init();
 
     while (!g_stop) {
-        if ((err = perf_buffer__poll(pb, THOUSAND)) < 0) {
+        get_containers(&head, &params);
+        if ((err = perf_buffer__poll(qdisc_pb, THOUSAND)) < 0) {
             break;
         }
-        if (tc_load && ((err = perf_buffer__poll(pb2, THOUSAND)) < 0)) {
+        if (tc_load && ((err = perf_buffer__poll(tc_pb, THOUSAND)) < 0)) {
             break;
         }
-        output_containers_info(&params, task_map_fd, egress_map_fd);
+        output_containers_metrics(&head);
         sleep(params.period);
     }
 
 err2:
-    if (pb2) {
-        perf_buffer__free(pb2);
+    if (tc_pb) {
+        perf_buffer__free(tc_pb);
     }
 err:
-    if (pb) {
-        perf_buffer__free(pb);
+    if (qdisc_pb) {
+        perf_buffer__free(qdisc_pb);
     }
     UNLOAD(qdisc);
-    free_containers_info();
-    obj_module_exit();
+    put_containers(&head);
     if (tc_load) {
         offload_tc_bpf(TC_TYPE_EGRESS);
     }
-
+    obj_module_exit();
     return -err;
 }

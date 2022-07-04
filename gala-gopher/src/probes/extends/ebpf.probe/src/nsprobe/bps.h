@@ -15,6 +15,10 @@
 #ifndef __BPS__H
 #define __BPS__H
 
+#pragma once
+
+#define EGRESS_MAP_PATH "/sys/fs/bpf/tc/globals/tc_bps_egress"
+
 struct bps_msg_s {
     __u64 cg_classid;
     unsigned long long bps;
@@ -23,7 +27,6 @@ struct bps_msg_s {
 struct egress_bandwidth_s {
     unsigned long long total_tx_bytes;
     __u64 ts;
-    char *container_id; // key of hash map
 };
 
 #define BPS_RET_ERR (-1)

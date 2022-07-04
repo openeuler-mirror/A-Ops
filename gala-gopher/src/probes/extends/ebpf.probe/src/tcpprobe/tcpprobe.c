@@ -36,9 +36,9 @@
 #include "bpf.h"
 #include "tcp.h"
 #include "args.h"
+#include "object.h"
 #include "tcpprobe.skel.h"
 #include "event.h"
-#include "task.h"
 #include "container.h"
 #include "tcpprobe.h"
 
@@ -53,7 +53,6 @@ static struct probe_params params = {.period = DEFAULT_PERIOD,
                                      .cport_flag = 0};
 static int netns_fd = 0;
 static int tcp_map_fd = 0;
-static int task_map_fd = 0;
 
 static int pidfd_open(pid_t pid, unsigned int flags)
 {
@@ -102,12 +101,9 @@ static int exit_container_netns(void)
 
 static int is_valid_tgid(struct probe_params *args, u32 pid)
 {
-    int ret;
-    struct task_key k = {.pid = (int)pid};
-    struct task_data d = {0};
     if (args->filter_task_probe) {
-        ret = bpf_map_lookup_elem(task_map_fd, &k, &d);
-        return (!ret);
+        struct proc_s obj = {.proc_id = pid};
+        return is_proc_exist(&obj);
     }
 
     if (args->filter_pid != 0) {
@@ -427,6 +423,8 @@ int main(int argc, char **argv)
     INIT_BPF_APP(tcpprobe, EBPF_RLIM_LIMITED);
     LOAD(tcpprobe, err);
 
+    obj_module_init();
+
     out_put_fd = GET_MAP_FD(tcpprobe, output);
     pb = create_pref_buffer(out_put_fd, print_link_metrics);
     if (pb == NULL) {
@@ -434,7 +432,6 @@ int main(int argc, char **argv)
         goto err;
     }
 
-    task_map_fd = GET_MAP_FD(tcpprobe, __task_map);
     tcp_map_fd = GET_MAP_FD(tcpprobe, tcp_fd_map);
     netns_fd = get_netns_fd();
     if (netns_fd <= 0) {
@@ -458,5 +455,7 @@ err:
     }
     netns_fd = 0;
     UNLOAD(tcpprobe);
+
+    obj_module_exit();
     return -err;
 }

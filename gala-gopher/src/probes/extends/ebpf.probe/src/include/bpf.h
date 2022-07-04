@@ -15,14 +15,14 @@
 #ifndef __GOPHER_BPF_H__
 #define __GOPHER_BPF_H__
 
+#pragma once
+
 #include "common.h"
-#define SHARE_MAP_TASK_PATH         "/sys/fs/bpf/probe/task_map"
 
 
 #define KERNEL_VERSION(a, b, c) (((a) << 16) + ((b) << 8) + (c))
 #define CURRENT_KERNEL_VERSION KERNEL_VERSION(KER_VER_MAJOR, KER_VER_MINOR, KER_VER_PATCH)
 
-#include "__share_map_task.h"
 #include "__share_map_match.h"
 #include "__obj_map.h"
 #include "__bpf_kern.h"

@@ -1,8 +1,21 @@
-/*
- * Copyright (c) Huawei Technologies Co., Ltd. 2020-2020. All rights reserved.
- */
+/******************************************************************************
+ * Copyright (c) Huawei Technologies Co., Ltd. 2022. All rights reserved.
+ * gala-gopher licensed under the Mulan PSL v2.
+ * You can use this software according to the terms and conditions of the Mulan PSL v2.
+ * You may obtain a copy of Mulan PSL v2 at:
+ *     http://license.coscl.org.cn/MulanPSL2
+ * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR
+ * IMPLIED, INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY OR FIT FOR A PARTICULAR
+ * PURPOSE.
+ * See the Mulan PSL v2 for more details.
+ * Author: luzhihao
+ * Create: 2022-07-02
+ * Description: output of endpoint
+ ******************************************************************************/
 #ifndef __OUTPUT_H__
 #define __OUTPUT_H__
+
+#pragma once
 
 #ifdef BPF_PROG_KERN
 
@@ -19,7 +32,7 @@
 
 #define __ENDPOINT_MAX (10 * 1024)
 // Used to identifies the TCP listen/connect and UDP sock object.
-struct bpf_map_def SEC("maps") endpoint_map = {
+struct bpf_map_def SEC("maps") g_endpoint_map = {
     .type = BPF_MAP_TYPE_HASH,
     .key_size = sizeof(struct sock *),
     .value_size = sizeof(struct endpoint_v),
@@ -27,7 +40,7 @@ struct bpf_map_def SEC("maps") endpoint_map = {
 };
 
 #define __PERF_OUT_MAX (64)
-struct bpf_map_def SEC("maps") output = {
+struct bpf_map_def SEC("maps") g_ep_output = {
     .type = BPF_MAP_TYPE_PERF_EVENT_ARRAY,
     .key_size = sizeof(u32),
     .value_size = sizeof(u32),
@@ -63,7 +76,8 @@ static __always_inline char is_valid_tgid(u32 tgid)
 
     args = (struct endpoint_args_s *)bpf_map_lookup_elem(&args_map, &key);
     if (args && args->filter_by_task) {
-        return is_task_exist((int)tgid);
+        struct proc_s obj = {.proc_id = tgid};
+        return is_proc_exist(&obj);
     }
 
     if (args && args->filter_by_tgid) {
@@ -81,17 +95,17 @@ static __always_inline int create_sock_map(struct sock *sk, enum endpoint_t type
 
     val.type = type;
     val.tgid = tgid;
-    return bpf_map_update_elem(&endpoint_map, &sk, &val, BPF_ANY);
+    return bpf_map_update_elem(&g_endpoint_map, &sk, &val, BPF_ANY);
 }
 
 static __always_inline __maybe_unused int delete_sock_map(struct sock *sk)
 {
-    return bpf_map_delete_elem(&endpoint_map, &sk);
+    return bpf_map_delete_elem(&g_endpoint_map, &sk);
 }
 
 static __always_inline struct endpoint_v* get_endpoint_val(struct sock *sk)
 {
-    return bpf_map_lookup_elem(&endpoint_map, &sk);
+    return bpf_map_lookup_elem(&g_endpoint_map, &sk);
 }
 
 static __always_inline void init_ip(struct ip *ip_addr, struct sock *sk)
@@ -109,7 +123,7 @@ static __always_inline void init_ip(struct ip *ip_addr, struct sock *sk)
 
 static __always_inline void __do_report(void *ctx, struct endpoint_val_t *val)
 {
-    (void)bpf_perf_event_output(ctx, &output, BPF_F_ALL_CPU, val, sizeof(struct endpoint_val_t));
+    (void)bpf_perf_event_output(ctx, &g_ep_output, BPF_F_ALL_CPU, val, sizeof(struct endpoint_val_t));
 }
 
 static __always_inline void report(void *ctx, struct endpoint_val_t *val, u32 new_entry)

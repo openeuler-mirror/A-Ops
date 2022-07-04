@@ -29,20 +29,11 @@
 
 #include "bpf.h"
 #include "args.h"
-#include "task.h"
 #include "hash.h"
 #include "object.h"
 #include "container.h"
 #include "bps.h"
 #include "containerd_probe.h"
-
-
-#define METRIC_NAME_RUNC_TRACE    "container_data"
-#define CONTAINER "container"
-
-static struct probe_params *params;
-static int task_map_fd;
-static int egress_map_fd;
 
 static void add_cgrp_obj(struct container_value *container)
 {
@@ -106,12 +97,9 @@ static void put_nm_obj(struct container_value *container)
 
 static int is_valid_tgid(struct probe_params *p, u32 pid)
 {
-    int ret;
-    struct task_key k = {.pid = (int)pid};
-    struct task_data d = {0};
     if (p->filter_task_probe) {
-        ret = bpf_map_lookup_elem(task_map_fd, &k, &d);
-        return (!ret);
+        struct proc_s obj = {.proc_id = pid};
+        return is_proc_exist(&obj);
     }
 
     if (p->filter_pid != 0) {
@@ -120,7 +108,7 @@ static int is_valid_tgid(struct probe_params *p, u32 pid)
     return 1;
 }
 
-static int filter_conatiner(const char *container_id)
+static int filter_conatiner(const char *container_id, struct probe_params *params)
 {
     u32 pid;
     int ret = get_container_pid(container_id, &pid);
@@ -186,14 +174,6 @@ static void init_container(const char *container_id, struct container_value *con
     return;
 }
 
-struct container_hash_t {
-    H_HANDLE;
-    struct container_key k;
-    struct container_value v;
-};
-
-static struct container_hash_t *head = NULL;
-
 static bool check_cg_path(const char *cgrpPath, char *trustedPath)
 {
     struct stat st = {0};
@@ -246,6 +226,7 @@ static int set_net_classid(u32 classid, const char *netcg_dir)
 
 static void clean_bps_map(struct container_hash_t *item)
 {
+    int egress_map_fd = bpf_obj_get(EGRESS_MAP_PATH);
     if (egress_map_fd == 0) {
         return;
     }
@@ -253,23 +234,6 @@ static void clean_bps_map(struct container_hash_t *item)
     (void)set_net_classid(0, (const char *)item->v.netcg_dir);
     (void)bpf_map_delete_elem(egress_map_fd, &classid);
 }
-
-static void clear_container_tbl(struct container_hash_t **pphead)
-{
-    struct container_hash_t *item, *tmp;
-    if (*pphead == NULL) {
-        return;
-    }
-
-    H_ITER(*pphead, item, tmp) {
-        clean_bps_map(item);
-        put_cgrp_obj(&(item->v));
-        put_nm_obj(&(item->v));
-        H_DEL(*pphead, item);
-        (void)free(item);
-    }
-}
-
 
 static void clear_invalid_items(struct container_hash_t **pphead)
 {
@@ -304,13 +268,14 @@ static void set_container_invalid(struct container_hash_t **pphead)
 // set container proc_id as cgroup net_cls.classid
 static void init_bps_map(struct container_hash_t *item)
 {
+    int egress_map_fd = bpf_obj_get(EGRESS_MAP_PATH);
     if (egress_map_fd == 0) {
         return;
     }
     u64 classid = item->v.proc_id;
     if (set_net_classid(item->v.proc_id, (const char *)item->v.netcg_dir) == 0) {
-        struct egress_bandwidth_s bps = {.container_id = item->k.container_id};
-        bpf_map_update_elem(egress_map_fd, &classid, &bps, BPF_ANY);
+        struct egress_bandwidth_s bps = {0};
+        (void)bpf_map_update_elem(egress_map_fd, &classid, &bps, BPF_ANY);
         printf("set net_cls classid of proc %llu success\n", classid);
     }
 }
@@ -346,6 +311,7 @@ static struct container_hash_t* find_container(const char *container_id, struct 
     return item;
 }
 
+#if 0
 #ifdef COMMAND_LEN
 #undef COMMAND_LEN
 #define COMMAND_LEN 512
@@ -487,35 +453,25 @@ static void print_container_metric(struct container_hash_t **pphead)
     (void)fflush(stdout);
     return;
 }
+#endif
 
-void print_container_metrics(void *ctx, int cpu, void *data, u32 size)
+struct container_value* get_container_by_proc_id(struct container_hash_t **pphead,
+                                                            u32 proc_id)
 {
-    struct bps_msg_s *bps_msg = (struct bps_msg_s *)data;
-    struct egress_bandwidth_s egress_bandwidth;
-    int ret = bpf_map_lookup_elem(egress_map_fd, &(bps_msg->cg_classid), &egress_bandwidth);
-    if (ret != 0) {
-        return;
+    struct container_hash_t *item, *tmp;
+    if (*pphead == NULL) {
+        return NULL;
     }
-   
-    struct container_hash_t *item = find_container((const char *)egress_bandwidth.container_id, &head);
-    if (item == NULL) {
-        return;
+
+    H_ITER(*pphead, item, tmp) {
+        if (item->v.proc_id == proc_id) {
+            return &(item->v);
+        }
     }
-    (void)fprintf(stdout,
-        "|%s|%s|%s|%u|%u|%u|%u|%u|%u|%llu|\n",
-        CONTAINER,
-        item->k.container_id,
-        item->v.name,
-        item->v.cpucg_inode,
-        item->v.memcg_inode,
-        item->v.pidcg_inode,
-        item->v.mnt_ns_id,
-        item->v.net_ns_id,
-        item->v.proc_id,
-        bps_msg->bps);
+    return NULL;
 }
 
-static void update_current_containers_info(struct container_hash_t **pphead)
+void get_containers(struct container_hash_t **pphead, struct probe_params *params)
 {
     int i;
     struct container_hash_t* item;
@@ -531,7 +487,7 @@ static void update_current_containers_info(struct container_hash_t **pphead)
                 continue;
             }
 
-            if (filter_conatiner((const char *)p->abbrContainerId)) {
+            if (filter_conatiner((const char *)p->abbrContainerId, params)) {
                 p++;
                 continue;
             }
@@ -551,22 +507,18 @@ static void update_current_containers_info(struct container_hash_t **pphead)
     clear_invalid_items(pphead);
 }
 
-void output_containers_info(struct probe_params *p, int filter_fd, int filter_fd2)
+void put_containers(struct container_hash_t **pphead)
 {
-    params = p;
-    task_map_fd = filter_fd;
-    egress_map_fd = filter_fd2;
-    update_current_containers_info(&head);
-    if (egress_map_fd == 0) {
-        print_container_metric(&head);
+    struct container_hash_t *item, *tmp;
+    if (*pphead == NULL) {
+        return;
+    }
+
+    H_ITER(*pphead, item, tmp) {
+        clean_bps_map(item);
+        put_cgrp_obj(&(item->v));
+        put_nm_obj(&(item->v));
+        H_DEL(*pphead, item);
+        (void)free(item);
     }
 }
-
-void free_containers_info(void)
-{
-    params = NULL;
-    task_map_fd = 0;
-    egress_map_fd = 0;
-    clear_container_tbl(&head);
-}
-

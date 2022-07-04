@@ -49,8 +49,8 @@
 
 #define __LOAD_ENDPOINT_PROBE(probe_name, end, load) \
     OPEN(probe_name, end, load); \
-    MAP_SET_PIN_PATH(probe_name, endpoint_map, ENDPOINT_PATH, load); \
-    MAP_SET_PIN_PATH(probe_name, output, OUTPUT_PATH, load); \
+    MAP_SET_PIN_PATH(probe_name, g_endpoint_map, ENDPOINT_PATH, load); \
+    MAP_SET_PIN_PATH(probe_name, g_ep_output, OUTPUT_PATH, load); \
     MAP_SET_PIN_PATH(probe_name, args_map, ARGS_PATH, load); \
     LOAD_ATTACH(probe_name, end, load)
 
@@ -319,7 +319,7 @@ int main(int argc, char **argv)
     __LOAD_ENDPOINT_PROBE(tcp, err2, 1);
     __LOAD_ENDPOINT_PROBE(udp, err, load_udp);
 
-    out_put_fd = GET_MAP_FD(tcp, output);
+    out_put_fd = GET_MAP_FD(tcp, g_ep_output);
     pb = create_pref_buffer(out_put_fd, print_endpoint_metrics);
     if (pb == NULL) {
         fprintf(stderr, "ERROR: crate perf buffer failed\n");
