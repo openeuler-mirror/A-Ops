@@ -9,7 +9,7 @@ measurements:
             {
                 description: "disk name",
                 type: "key",
-                name: "device",
+                name: "disk_name",
             },
             {
                 description: "r/s",

@@ -14,9 +14,51 @@
  ******************************************************************************/
 #ifndef SYSTEM_DISK_RPOBE__H
 #define SYSTEM_DISK_RPOBE__H
-#include "args.h"
 
-int system_iostat_probe(struct probe_params *params);
+#pragma once
+
+#include "args.h"
+#include "common.h"
+
+/* the interval of time (@p) is given in second */
+#define S_VALUE(m,n,p)      (((double) ((n) - (m))) / (p))
+
+typedef struct {
+    // u32 major;
+    // u32 minor;
+    char disk_name[DISK_NAME_LEN];
+    u32 rd_ios;
+    // u32 rd_merges;
+    u32 rd_sectors;
+    u32 rd_ticks;
+    u32 wr_ios;
+    // u32 wr_merges;
+    u32 wr_sectors;
+    u32 wr_ticks;
+    // u32 in_flight;
+    u32 io_ticks;
+    // u32 time_in_queue;
+    // u32 discard_ios;
+    // u32 discard_merges;
+    // u32 discard_sectors;
+    // u32 discard_ticks;
+} disk_stats;
+
+typedef struct {
+    float rd_speed;
+    float rdkb_speed;
+    float rd_await;
+    float rareq_sz;
+    float wr_speed;
+    float wrkb_speed;
+    float wr_await;
+    float wareq_sz;
+    float util;
+} disk_io_stats;
+
 int system_disk_probe(struct probe_params *params);
+int system_iostat_probe(struct probe_params *params);
+int system_iostat_init(void);
+void system_iostat_destroy(void);
 
 #endif

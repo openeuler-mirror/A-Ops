@@ -16,7 +16,6 @@
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
-#include "common.h"
 #include "event.h"
 #include "system_disk.h"
 
@@ -26,9 +25,8 @@
     "/usr/bin/df -i | /usr/bin/awk 'NR>1 {print $1\"%\"$2\"%\"$3\"%\"$4\"%\"$5\"%\"$6}'"
 #define SYSTEM_BLOCK_CMD \
     "/usr/bin/df | /usr/bin/awk '{if($6==\"%s\"){print $1\"%\"$2\"%\"$3\"%\"$4\"%\"$5\"%\"$6}}'"
-#define IOSTAT_IS_EXIST         "which iostat"
-#define SYSTEM_DISKSTATS_COMMAND \
-    "iostat -xd | /usr/bin/awk 'NR>1 {print $1\":\"$2\":\"$3\":\"$6\":\"$7\":\"$8\":\"$9\":\"$11\":\"$12\":\"$21}'"
+#define SYSTEM_DISKSTATS_CMD    "/usr/bin/cat /proc/diskstats"
+#define SYSTEM_DISK_DEV_NUM     "/usr/bin/cat /proc/diskstats | wc -l"
 
 #define METRICS_DF_FSYS_TYPE        0
 #define METRICS_DF_INODES_OR_BLOCKS 1
@@ -86,7 +84,7 @@ static void report_disk_status(char *inode_info[], char *block_info[], struct pr
                     entityid,
                     "inode_userd_per",
                     EVT_SEC_WARN,
-                    "Too many Inodes consumed(%d).",
+                    "Too many Inodes consumed(%d%%).",
                     inode_used_per);
     }
     if (block_used_per > params->res_percent_upper) {
@@ -97,7 +95,7 @@ static void report_disk_status(char *inode_info[], char *block_info[], struct pr
                     entityid,
                     "block_userd_per",
                     EVT_SEC_WARN,
-                    "Too many Blocks used(%d).",
+                    "Too many Blocks used(%d%%).",
                     block_used_per);
     }
 }
@@ -177,7 +175,50 @@ int system_disk_probe(struct probe_params *params)
     return 0;
 }
 
-static void report_disk_iostat(char *iostat[], struct probe_params *params)
+static int get_diskstats_fields(const char *line, disk_stats *stats)
+{
+    int ret;
+
+    ret = sscanf(line,
+        "%*Lu %*Lu %s %lu %*Lu %lu %u %lu %*Lu %lu %u %*Lu %u %*Lu %*Lu %*Lu %*Lu %*Lu",
+        &stats->disk_name, &stats->rd_ios, &stats->rd_sectors, &stats->rd_ticks,
+        &stats->wr_ios, &stats->wr_sectors, &stats->wr_ticks, &stats->io_ticks);
+    if (ret < 8) {
+        printf("[SYSTEM_PROBE] get disk stats fields fail.\n");
+        return -1;
+    }
+    return 0;
+}
+
+static void cal_disk_io_stats(disk_stats *last, disk_stats *cur, disk_io_stats *io_info, const int period)
+{
+    if (cur->rd_ios - last->rd_ios == 0) {
+        io_info->rd_await = 0.0;
+        io_info->rareq_sz = 0.0;
+    } else {
+        io_info->rd_await = (cur->rd_ticks - last->rd_ticks) / ((double)(cur->rd_ios - last->rd_ios));
+        io_info->rareq_sz = (cur->rd_sectors - last->rd_sectors) / ((double)(cur->rd_ios - last->rd_ios)) / 2;
+    }
+    if (cur->wr_ios - last->wr_ios == 0) {
+        io_info->wr_await = 0.0;
+        io_info->wareq_sz = 0.0;
+    } else {
+        io_info->wr_await = (cur->wr_ticks - last->wr_ticks) / ((double)(cur->wr_ios - last->wr_ios));
+        io_info->wareq_sz = (cur->wr_sectors - last->wr_sectors) / ((double)(cur->wr_ios - last->wr_ios)) / 2;
+    }
+
+    io_info->rd_speed = S_VALUE(last->rd_ios, cur->rd_ios, period);
+    io_info->wr_speed = S_VALUE(last->wr_ios, cur->wr_ios, period);
+
+    io_info->rdkb_speed = S_VALUE(last->rd_sectors, cur->rd_sectors, period) / 2;
+    io_info->wrkb_speed = S_VALUE(last->wr_sectors, cur->wr_sectors, period) / 2;
+
+    io_info->util = S_VALUE(last->io_ticks, cur->io_ticks, period) / 10.0;
+
+    return;
+}
+
+static void report_disk_iostat(const char *disk_name, disk_io_stats *io_info, struct probe_params *params)
 {
     char entityid[LINE_BUF_LEN];
 
@@ -187,79 +228,124 @@ static void report_disk_iostat(char *iostat[], struct probe_params *params)
 
     entityid[0] = 0;
 
-    if (atof(iostat[METRICS_IOSTAT_UTIL]) > params->res_percent_upper) {
-        (void)strncpy(entityid, iostat[METRICS_IOSTAT_DEVNAME], LINE_BUF_LEN - 1);
+    if (io_info->util > params->res_percent_upper) {
+        (void)strncpy(entityid, disk_name, LINE_BUF_LEN - 1);
         report_logs(METRICS_IOSTAT_NAME,
                     entityid,
                     "iostat_util",
                     EVT_SEC_WARN,
-                    "Disk device saturated(%s).",
-                    iostat[METRICS_IOSTAT_UTIL]);
+                    "Disk device saturated(%.2f%%).",
+                    io_info->util);
     }
 }
 
 /*
- [root@localhost ~]# iostat -xd -t 5
- Device r/s rkB/s r_await rareq-sz w/s wkB/s w_await wareq-sz d/s  dkB/s drqm/s %drqm d_await dareq-sz aqu-sz %util
-  sda  0.28 19.59  0.58    68.93  1.69 65.02  0.81    38.57  0.00  0.00  0.00   0.00   0.00     0.00    0.00  0.09
+ [root@localhost ~]# iostat -xd -t 60
+ Device r/s rkB/s r_await rareq-sz w/s wkB/s w_await wareq-sz d/s dkB/s drqm/s %drqm d_await dareq-sz aqu-sz %util
+  sda  0.28 19.59  0.58    68.93  1.69 65.02  0.81    38.57  0.00  0.00  0.00  0.00   0.00     0.00    0.00  0.09
+
+ [root@localhost ~]# cat /proc/diskstats
+   8       0 sda 28113 601 3643572 9344 119389 109397 12096368 103830 0 98049 69319 0 0 0 0
+                  3          5      6     7              9       10       12
  */
+static disk_stats *g_disk_stats = NULL;
+static int g_disk_dev_num;
+static int g_first_flag;
+
 int system_iostat_probe(struct probe_params *params)
 {
-    FILE* f = NULL;
+    FILE *f = NULL;
     char line[LINE_BUF_LEN];
+    disk_stats temp;
+    disk_io_stats io_datas;
     int index;
-    char *ptoken;
-    char *psave;
-    char *pp[METRICS_IOSTAT_MAX];
 
-    /* check whether iostat is installed in this OS */
-    f = popen(IOSTAT_IS_EXIST, "r");
+    f = popen(SYSTEM_DISKSTATS_CMD, "r");
     if (f == NULL) {
-        printf("[SYSTEM_PROBE] check iostat exist fail, popen error.\n");
+        return -1;
+    }
+
+    index = 0;
+    while (!feof(f) && index < g_disk_dev_num) {
+        line[0] = 0;
+        if (fgets(line, LINE_BUF_LEN, f) == NULL) {
+            (void)pclose(f);
+            return -1;
+        }
+        (void)memcpy(&temp, &g_disk_stats[index], sizeof(disk_stats));
+        (void)get_diskstats_fields(line, &g_disk_stats[index]);
+
+        if (g_first_flag == 1) {
+            (void)memset(&io_datas, 0, sizeof(disk_io_stats));
+        } else {
+            cal_disk_io_stats(&temp, &g_disk_stats[index], &io_datas, params->period);
+        }
+
+        (void)fprintf(stdout,
+            "|%s|%s|%.2f|%.2f|%.2f|%.2f|%.2f|%.2f|%.2f|%.2f|%.2f|\n",
+            METRICS_IOSTAT_NAME,
+            g_disk_stats[index].disk_name,
+            io_datas.rd_speed,
+            io_datas.rdkb_speed,
+            io_datas.rd_await,
+            io_datas.rareq_sz,
+            io_datas.wr_speed,
+            io_datas.wrkb_speed,
+            io_datas.wr_await,
+            io_datas.wareq_sz,
+            io_datas.util);
+        /* event_output */
+        report_disk_iostat(g_disk_stats[index].disk_name, &io_datas, params);
+
+        index++;
+    }
+    g_first_flag = 0;
+    (void)pclose(f);
+    return 0;
+}
+
+static int get_diskdev_num(int *num)
+{
+    FILE *f = NULL;
+    char line[LINE_BUF_LEN];
+
+    f = popen(SYSTEM_DISK_DEV_NUM, "r");
+    if (f == NULL) {
         return -1;
     }
     line[0] = 0;
     if (fgets(line, LINE_BUF_LEN, f) == NULL) {
-        printf("[SYSTEM_PROBE] iostat not exist, please install sysstat.\n");
         (void)pclose(f);
         return -1;
     }
-    (void)pclose(f);
-
-    /* obtain IO statistics */
-    f = popen(SYSTEM_DISKSTATS_COMMAND, "r");
-    if (f == NULL) {
-        printf("[SYSTEM_PROBE] iostat fail, popen error.\n");
-        return -1;
-    }
-    while (!feof(f)) {
-        line[0] = 0;
-        if (fgets(line, LINE_BUF_LEN, f) == NULL) {
-            break;
-        }
-        if (strstr(line, "Device") != NULL ||
-            strstr(line, "::") != NULL) {
-            continue;
-        }
-        SPLIT_NEWLINE_SYMBOL(line);
-        split_line_to_substrings(line, pp, METRICS_IOSTAT_MAX);
-
-        /* output */
-        (void)fprintf(stdout, "|%s|%s|%s|%s|%s|%s|%s|%s|%s|%s|%s|\n",
-            METRICS_IOSTAT_NAME,
-            pp[METRICS_IOSTAT_DEVNAME],
-            pp[METRICS_IOSTAT_RD_SPEED],
-            pp[METRICS_IOSTAT_RDKB_SPEED],
-            pp[METRICS_IOSTAT_RD_AWAIT],
-            pp[METRICS_IOSTAT_RAREQ_SZ],
-            pp[METRICS_IOSTAT_WR_SPEED],
-            pp[METRICS_IOSTAT_WRKB_SPEED],
-            pp[METRICS_IOSTAT_WR_AWAIT],
-            pp[METRICS_IOSTAT_WAREQ_SZ],
-            pp[METRICS_IOSTAT_UTIL]);
-        /* output event */
-        report_disk_iostat(pp, params);
-    }
+    SPLIT_NEWLINE_SYMBOL(line);
+    *num = atoi(line);
     (void)pclose(f);
     return 0;
+}
+
+int system_iostat_init(void)
+{
+    int ret = get_diskdev_num(&g_disk_dev_num);
+    if (ret < 0 || g_disk_dev_num <= 0) {
+        return -1;
+    }
+    g_disk_stats = malloc(g_disk_dev_num * sizeof(disk_stats));
+    if (g_disk_stats == NULL) {
+        return -1;
+    }
+    (void)memset(g_disk_stats, 0, g_disk_dev_num * sizeof(disk_stats));
+
+    g_first_flag = 1;
+
+    return 0;
+}
+
+void system_iostat_destroy(void)
+{
+    while (g_disk_stats != NULL) {
+        (void)free(g_disk_stats);
+        g_disk_stats = NULL;
+    }
+    return;
 }
