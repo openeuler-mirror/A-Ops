@@ -1,63 +1,107 @@
 # gala-spider
 
-## 介绍
-gala-spider 提供 OS 级别的拓扑图绘制功能，它将定期获取 gala-gopher （一个 OS 层面的数据采集软件）在某个时间点采集的所有观测对象的数据，并计算它们之间的拓扑关系，最终将生成的拓扑图保存到图数据 arangodb 中。
+gala-spider 提供 OS 级别的拓扑图绘制功能，它将定期获取 gala-gopher （一个 OS 层面的数据采集软件）在某个时间点采集的所有观测对象的数据，并计算它们之间的拓扑关系，最终将生成的拓扑图保存到图数据库 arangodb 中。
+
+## 功能特性
+
+gala-spider 项目提供了两个功能模块，它们分别是：
+
+- **spider-storage**：提供 OS  级别观测对象的拓扑图绘制功能，拓扑图结果会存入图数据库 arangodb 中，可通过 arangodb 提供的 UI 界面查询。
+- **cause-inference**：提供异常 KPI 的根因定位能力，它基于异常检测的结果和拓扑图作为输入，并将根因定位的结果输出到 kafka 中。
+
+## 软件架构
+
+![image-20220704203722478](docs/images/spider-soft-arch.png)
+
+其中，虚线框内为 gala-spider 项目的 2 个功能组件，绿色部分为 gala-spider 项目直接依赖的外部组件，灰色部分为 gala-spider 项目间接依赖的外部组件。
+
+- **spider-storage**：gala-spider 核心组件，提供拓扑图存储功能。它从 kafka 获取观测对象的元数据信息，进一步从 Prometheus 获取所有的观测实例信息，最终将生成的拓扑图存储到图数据库 arangodb 中。
+- **cause-inference**：gala-spider 核心组件，提供根因定位功能。它通过订阅 kafka 的异常 KPI 事件触发异常 KPI 的根因定位流程，并基于 arangodb 获取的拓扑图来构建故障传播图，最终将根因定位的结果输出到 kafka 中。
+- **Prometheus**：时序数据库，gala-gopher 组件采集的观测指标数据会上报到 Prometheus，再由 gala-spider 做进一步处理。
+- **kafka**：消息中间件，用于存储 gala-gopher 上报的观测对象元数据信息，异常检测组件上报的异常事件，以及 cause-inference 组件上报的根因定位结果。
+- **arangodb**：图数据库，用于存储 spider-storage 生成的拓扑图。
+- **gala-gopher**：数据采集组件，详细内容参见 [gala-gopher 项目](https://gitee.com/openeuler/A-Ops/tree/master/gala-gopher)。
+- **arangodb-ui**：arangodb 提供的 UI 界面，可用于查询拓扑图。
 
 ## 快速开始
 
-### 基于源码编译、安装、运行
+### gala-spider 软件部署
 
-- 构建
+#### spider-storage 软件部署
 
-  ```
-  /usr/bin/python3 setup.py build
-  ```
+1. 基于源码编译、安装、运行
 
-- 安装
+   - 构建
 
-  ```
-  /usr/bin/python3 setup.py install
-  ```
+     ```
+     /usr/bin/python3 setup.py build
+     ```
 
-- 运行
+   - 安装
 
-  ```bash
-  spider-storage
-  ```
+     ```
+     /usr/bin/python3 setup.py install
+     ```
 
-### 基于rpm包安装运行
+   - 运行
 
-- 安装
+     ```
+     spider-storage
+     ```
 
-  ```
-  yum install gala-spider python3-gala-spider
-  ```
+2. 基于rpm包安装运行
 
-- 运行
+   - 安装
 
-  ```
-  systemctl start spider-storage
-  ```
+     ```
+     yum install gala-spider python3-gala-spider
+     ```
 
-## 总体介绍
+   - 运行
 
-gala-spider用于架构感知探测结果呈现，可以根据各个节点上报的观测数据，整合分析得到整个集群的拓扑关系以及拓扑指标信息。库上代码支持数据库是kafka、UI是neo4j的链路拓扑绘制服务；gala-spider有良好的扩展性，DB可支持prometheus、telemetry 等，UI层可替换，以及拓扑算法可替换，可以发挥社区的力量丰富展示能力；gala-spider中的几个部件：
+     ```
+     systemctl start spider-storage
+     ```
 
-- 实现源码
+#### cause-inference 软件部署
 
-  主要包括db_agent、data_process和ui_agent目录，分别实现数据库数据初步处理、拓扑绘制算法处理和对接UI展示等功能；gala-spide支持DB、UI以及拓扑算法可替换，需要在config/gala-spider.conf中配置正确的db_agent和ui_agent，主程序会读取配置信息并拉起相关处理进程。
+开发中……
 
-- 部署配置文件
+### gala-spider 外部依赖软件部署
 
-  gala-spider运行配置文件，可自定义具体使用的DB（kafka/promecheus等）、UI（neo4j等）；当前拓扑绘制算法不支持自定义；
+- prometheus 部署
+- kafka 部署
+- **arangodb 部署**
 
-### 运行架构
+#### arangodb 部署
 
-![topo_logic](doc/pic/topo_logic.png)
+我们使用的 arangodb 版本是 3.9 ，arangodb 官方部署文档参见：[arangodb部署](https://www.arangodb.com/docs/3.9/deployment.html) 。
+
+1. 通过 docker 部署
+
+   ```shell
+   docker run -e ARANGO_NO_AUTH=1 -p 192.168.0.1:10000:8529 arangodb/arangodb arangod \
+     --server.endpoint tcp://0.0.0.0:8529\
+   ```
+
+   选项说明：
+
+   - `arangod --server.endpoint tcp://0.0.0.0:8529`：在容器中启动 arangod 服务，`--server.endpoint` 指定了服务器地址。
+
+   - `-e ARANGO_NO_AUTH=1`：配置 arangodb 的身份认证的环境变量，`ARANGO_NO_AUTH=1` 表示不启动身份认证，即无需用户名/密码即可访问 arangodb 数据库，该配置值用于测试环境。
+   - `-p 192.168.0.1:10000:8529`：建立本地 IP 地址（如 `192.168.0.1` 的 1000 端口）到 arangodb 容器的 8529 端口的端口转发。
+
+   详细的部署文档参见：[通过docker部署arangodb](https://www.arangodb.com/docs/3.9/deployment-docker.html)。
+
+## 使用指南
+
+### 配置文件介绍
+
+[配置文件介绍](docs/conf_introduction.md)
 
 ### 3D 拓扑图分层架构
 
-![hier_arch](doc/pic/hier_arch.png)
+![hier_arch](docs/images/hier_arch.png)
 
 观测对象说明：
 1. Host：主机/虚拟机节点
@@ -97,21 +141,14 @@ gala-spider用于架构感知探测结果呈现，可以根据各个节点上报
     - exe_file: 应用可执行文件，用于标识一个应用。
     - exec_file：应用被执行文件，用于标识一个应用。
 
-
 ### 接口文档
 
-[Restful API](doc/swagger.yaml)
-
-## 详细介绍
-
-### 配置文件介绍
-
-[配置文件介绍](doc/conf_introduction.md)
+[拓扑图查询Restful API](docs/guide/zh-CN/api/3d-topo-graph.md)
 
 ### 如何新增观测对象
-[如何新增观测对象](doc/how_to_add_new_observe_object.md)
+[如何新增观测对象](docs/how_to_add_new_observe_object.md)
 
 ### 如何开发其他呈现服务
 
-[开发指南](doc/development_guidelines.md)
+[开发指南](docs/development_guidelines.md)
 
