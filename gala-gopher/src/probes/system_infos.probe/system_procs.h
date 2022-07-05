@@ -15,13 +15,14 @@
 #ifndef SYSTEM_PROC_RPOBE__H
 #define SYSTEM_PROC_RPOBE__H
 
+#pragma once
+
 #include <uthash.h>
 #include "common.h"
 
 #define PROC_NAME_MAX       64
 #define PROC_MAX_RANGE      64
 #define PROC_IN_PROBE_RANGE 1
-#define PROBE_TIMES_MAX     200
 
 enum proc_io_e {
     PROC_IO_RCHAR = 0,
@@ -111,5 +112,6 @@ typedef struct {
 
 int system_proc_probe(void);
 void system_proc_init(char *task_whitelist);
+void system_proc_destroy(void);
 
 #endif
