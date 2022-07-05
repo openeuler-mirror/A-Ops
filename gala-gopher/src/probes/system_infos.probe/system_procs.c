@@ -18,6 +18,7 @@
 #include <unistd.h>
 #include <dirent.h>
 #include <errno.h>
+#include "object.h"
 #include "system_procs.h"
 
 #define METRICS_PROC_NAME   "system_proc"
@@ -36,26 +37,36 @@
 #define PROC_STAT_CMD       "/usr/bin/cat /proc/%s/stat | awk '{print $10\":\"$12\":\"$14\":\"$15\":\"$23\":\"$24}'"
 #define PROC_ID_CMD         "ps -eo pid,ppid,pgid,comm | grep -w \"%s\" | awk '{print $2 \"|\" $3}'"
 
-static int g_probed_times = 0;
-
 static proc_hash_t *g_procmap = NULL;
 
 static char proc_range[PROC_MAX_RANGE][PROC_NAME_MAX] = {
     "go",
     "java",
     "python",
-    "python3",
-    "dhclient",
-    "NetworkManager",
-    "dbus",
-    "rpcbind",
-    "systemd"
+    "python3"
 };
 static int g_proc_range_len = 0;
+
+static void add_proc_obj(const int pid)
+{
+    struct proc_s obj;
+    obj.proc_id = pid;
+
+    (void)proc_add(&obj);
+}
+
+static void put_proc_obj(const int pid)
+{
+    struct proc_s obj;
+    obj.proc_id = pid;
+
+    (void)proc_put(&obj);
+}
 
 static void hash_add_proc(proc_hash_t *one_proc)
 {
     HASH_ADD(hh, g_procmap, key, sizeof(proc_key_t), one_proc);
+    add_proc_obj(one_proc->key.pid);
     return;
 }
 
@@ -71,13 +82,30 @@ static proc_hash_t *hash_find_proc(const char *pid, const char *stime)
     return p;
 }
 
-static void hash_delete_and_free_proc()
+static char is_proc_exited(const int pid)
+{
+    FILE *f = NULL;
+    char fname[LINE_BUF_LEN];
+
+    fname[0] = 0;
+    (void)snprintf(fname, LINE_BUF_LEN, "/proc/%d", pid);
+    if (access((const char *)fname, 0) != 0) {
+        return 1;
+    }
+    return 0;
+}
+
+static void hash_clear_invalid_proc(void)
 {
     if (g_procmap == NULL) {
         return;
     }
     proc_hash_t *r, *tmp;
     HASH_ITER(hh, g_procmap, r, tmp) {
+        if (!is_proc_exited(r->key.pid)) {
+            continue;
+        }
+        put_proc_obj(r->key.pid);
         HASH_DEL(g_procmap, r);
         if (r != NULL) {
             if (r->info.cmdline != NULL) {
@@ -555,11 +583,6 @@ int system_proc_probe(void)
     char stime[PROC_NAME_MAX];
     proc_hash_t *l, *p = NULL;
 
-    // check timeout
-    if (g_probed_times >= PROBE_TIMES_MAX) {
-        hash_delete_and_free_proc();
-    }
-
     dir = opendir(PROC_PATH);
     if (dir == NULL) {
         return -1;
@@ -608,15 +631,22 @@ int system_proc_probe(void)
         output_proc_infos(l);
     }
     closedir(dir);
-    g_probed_times++;
+    hash_clear_invalid_proc();
     return 0;
+}
+
+void system_proc_destroy(void)
+{
+    obj_module_exit();
 }
 
 void system_proc_init(char *task_whitelist)
 {
     FILE *f = NULL;
     char line[PROC_NAME_MAX];
-    
+
+    obj_module_init();
+
     for (int i = 0; i < PROC_MAX_RANGE; i++) {
         if (strlen(proc_range[i]) == 0) {
             g_proc_range_len = i;       // init proc_range's length

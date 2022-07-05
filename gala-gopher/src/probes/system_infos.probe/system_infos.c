@@ -48,6 +48,9 @@ static void system_probe_destroy(void)
 
     /* system iostat destroy */
     system_iostat_destroy();
+
+    /* system proc destroy */
+    system_proc_destroy();
 }
 
 int main(struct probe_params * params)
@@ -56,7 +59,7 @@ int main(struct probe_params * params)
 
     /* system probes init */
     if (system_probe_init(params) < 0) {
-        return -1;
+        goto err;
     }
 
     for (;;) {
