@@ -1,0 +1,8 @@
+APScheduler==3.9.1
+confluent_kafka==1.8.2
+joblib==0.14.1
+numpy==1.21.6
+pandas==1.0.1
+requests==2.22.0
+scikit_learn==0.24.2
+torch==1.11.0
