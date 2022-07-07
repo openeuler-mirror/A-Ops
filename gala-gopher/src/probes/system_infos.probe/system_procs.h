@@ -24,6 +24,8 @@
 #define PROC_MAX_RANGE      64
 #define PROC_IN_PROBE_RANGE 1
 
+#define CONTAINER_ID_BUF_LEN (CONTAINER_ABBR_ID_LEN + 4)
+
 enum proc_io_e {
     PROC_IO_RCHAR = 0,
     PROC_IO_WCHAR,
@@ -78,7 +80,9 @@ typedef struct {
     int pgid;
     int ppid;
     char *cmdline;
+    char container_id[CONTAINER_ID_BUF_LEN];
     u32 fd_count;              // FROM '/usr/bin/ls -l /proc/[PID]/fd | wc -l'
+    u32 max_fd_limit;          // FROM 'cat /proc/[PID]/limits | grep -w "MAX open files"'
     u32 proc_syscr_count;      // FROM same as 'task_rchar_bytes'
     u32 proc_syscw_count;      // FROM same as 'task_rchar_bytes'
     u64 proc_rchar_bytes;    // FROM '/proc/[PID]/io'

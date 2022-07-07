@@ -32,9 +32,19 @@ measurements:
                 name: "cmdline",
             },
             {
+                description: "ID of container",
+                type: "label",
+                name: "container_id",
+            },
+            {
                 description: "fd counts of the process",
                 type: "gauge",
                 name: "fd_count",
+            },
+            {
+                description: "percent of remaining fd resource(%)",
+                type: "gauge",
+                name: "fd_free_per",
             },
             {
                 description: "bytes of proc system call I/O read operation",

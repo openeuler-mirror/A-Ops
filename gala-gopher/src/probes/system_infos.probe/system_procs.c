@@ -35,7 +35,11 @@
 #define PROC_SMAPS          "/proc/%s/smaps_rollup"
 #define PROC_SMAPS_CMD      "/usr/bin/cat /proc/%s/smaps_rollup"
 #define PROC_STAT_CMD       "/usr/bin/cat /proc/%s/stat | awk '{print $10\":\"$12\":\"$14\":\"$15\":\"$23\":\"$24}'"
-#define PROC_ID_CMD         "ps -eo pid,ppid,pgid,comm | grep -w \"%s\" | awk '{print $2 \"|\" $3}'"
+#define PROC_ID_CMD         "ps -eo pid,ppid,pgid,comm | /usr/bin/awk '{if($1==\"%s\"){print $2 \"|\" $3}}'"
+#define PROC_CPUSET         "/proc/%s/cpuset"
+#define PROC_CPUSET_CMD     "/usr/bin/cat /proc/%s/cpuset | awk -F '/' '{print $NF}'"
+#define PROC_LIMIT          "/proc/%s/limits"
+#define PROC_LIMIT_CMD      "/usr/bin/cat /proc/%s/limits | grep \"open files\" | awk '{print $4}'"
 
 static proc_hash_t *g_procmap = NULL;
 
@@ -116,7 +120,7 @@ static void hash_clear_invalid_proc(void)
     }
 }
 
-static int is_proc_subdir(const char *pid)
+static inline int is_proc_subdir(const char *pid)
 {
     if (*pid >= '1' && *pid <= '9') {
         return 0;
@@ -166,7 +170,7 @@ static int get_proc_start_time(const char* pid, char *buf)
     return do_read_line(pid, PROC_START_TIME_CMD, PROC_STAT, buf, PROC_NAME_MAX);
 }
 
-static void get_proc_id(proc_info_t *proc_info)
+static void get_proc_id(const char* pid, proc_info_t *proc_info)
 {
     FILE *f = NULL;
     char cmd[LINE_BUF_LEN];
@@ -178,7 +182,7 @@ static void get_proc_id(proc_info_t *proc_info)
     }
 
     cmd[0] = 0;
-    (void)snprintf(cmd, LINE_BUF_LEN, PROC_ID_CMD, proc_info->comm);
+    (void)snprintf(cmd, LINE_BUF_LEN, PROC_ID_CMD, pid);
     f = popen(cmd, "r");
     if (f == NULL) {
         goto out;
@@ -299,6 +303,31 @@ out:
     return 0;
 }
 
+static int get_proc_container_id(const char* pid, proc_info_t *proc_info)
+{
+    char buffer[LINE_BUF_LEN];
+    buffer[0] = 0;
+    int ret = do_read_line(pid, PROC_CPUSET_CMD, PROC_CPUSET, buffer, LINE_BUF_LEN);
+    if (ret < 0) {
+        return -1;
+    }
+    (void)memcpy(proc_info->container_id, buffer, CONTAINER_ABBR_ID_LEN);
+    proc_info->container_id[CONTAINER_ABBR_ID_LEN] = 0;
+    return 0;
+}
+
+static int get_proc_max_fdnum(const char* pid, proc_info_t *proc_info)
+{
+    char buffer[LINE_BUF_LEN];
+    buffer[0] = 0;
+    int ret = do_read_line(pid, PROC_LIMIT_CMD, PROC_LIMIT, buffer, LINE_BUF_LEN);
+    if (ret < 0) {
+        return -1;
+    }
+    proc_info->max_fd_limit = (u32)atoi(buffer);
+    return 0;
+}
+
 static int get_proc_fdcnt(const char *pid, proc_info_t *proc_info)
 {
     char buffer[LINE_BUF_LEN];
@@ -390,7 +419,7 @@ static void do_set_proc_io(proc_info_t *proc_info, u64 value, int index)
     }
 }
 
-int get_proc_io(const char *pid, proc_info_t *proc_info)
+static int get_proc_io(const char *pid, proc_info_t *proc_info)
 {
     FILE *f = NULL;
     int index = 0;
@@ -461,7 +490,7 @@ static void do_set_proc_mss(proc_info_t *proc_info, u32 value, int index)
     }
 }
 
-int get_proc_mss(const char *pid, proc_info_t *proc_info)
+static int get_proc_mss(const char *pid, proc_info_t *proc_info)
 {
     FILE *f = NULL;
     int index = 0;
@@ -503,8 +532,6 @@ static int update_proc_infos(const char *pid, proc_info_t *proc_info)
 {
     int ret = 0;
 
-    (void)get_proc_id(proc_info);
-
     ret = get_proc_fdcnt(pid, proc_info);
     if (ret < 0) {
         return -1;
@@ -541,15 +568,20 @@ static int check_proc_probe_flag(const char *comm)
 
 static void output_proc_infos(proc_hash_t *one_proc)
 {
+    u32 fd_free = one_proc->info.max_fd_limit - one_proc->info.fd_count;
+    float fd_free_per = fd_free / (float)one_proc->info.max_fd_limit * 100;
+
     fprintf(stdout,
-        "|%s|%lu|%d|%d|%s|%s|%u|%llu|%llu|%u|%u|%llu|%llu|%llu|%lu|%lu|%lu|%lu|%lu|%lu|%lu|%lu|%llu|%llu|%llu|%llu|%llu|%llu|\n",
+        "|%s|%lu|%d|%d|%s|%s|%s|%u|%.2f|%llu|%llu|%u|%u|%llu|%llu|%llu|%lu|%lu|%lu|%lu|%lu|%lu|%lu|%lu|%llu|%llu|%llu|%llu|%llu|%llu|\n",
         METRICS_PROC_NAME,
         one_proc->key.pid,
         one_proc->info.pgid,
         one_proc->info.ppid,
         one_proc->info.comm,
         one_proc->info.cmdline == NULL ? "" : one_proc->info.cmdline,
+        one_proc->info.container_id,
         one_proc->info.fd_count,
+        fd_free_per,
         one_proc->info.proc_rchar_bytes,
         one_proc->info.proc_wchar_bytes,
         one_proc->info.proc_syscr_count,
@@ -574,9 +606,36 @@ static void output_proc_infos(proc_hash_t *one_proc)
     return;
 }
 
+static proc_hash_t* init_one_proc(char *pid, char *stime, char *comm)
+{
+    proc_hash_t *item;
+
+    item = (proc_hash_t *)malloc(sizeof(proc_hash_t));
+    (void)memset(item, 0, sizeof(proc_hash_t));
+
+    item->key.pid = (u32)atoi(pid);
+    item->key.start_time = (u64)atoll(stime);
+
+    (void)strncpy(item->info.comm, comm, PROC_NAME_MAX - 1);
+    item->flag = PROC_IN_PROBE_RANGE;
+    if (strcmp(comm, "java") == 0) {
+        get_java_proc_cmd(pid, &item->info);
+    } else {
+        (void)get_proc_cmdline(pid, &item->info);
+    }
+    (void)get_proc_container_id(pid, &item->info);
+
+    (void)get_proc_max_fdnum(pid, &item->info);
+
+    get_proc_id(pid, &item->info);
+
+    (void)update_proc_infos(pid, &item->info);
+
+    return item;
+}
+
 int system_proc_probe(void)
 {
-    int ret = 0;
     DIR *dir = NULL;
     struct dirent *entry;
     char comm[PROC_NAME_MAX];
@@ -607,24 +666,11 @@ int system_proc_probe(void)
         comm[0] = 0;
         (void)get_proc_comm(entry->d_name, comm);
 
-        /* check proc whether in proc_range, if in this proc should be probed */
+        /* check proc whether in proc_range */
         if (check_proc_probe_flag(comm) != PROC_IN_PROBE_RANGE) {
             continue;
-        } else {
-            l = (proc_hash_t *)malloc(sizeof(proc_hash_t));
-            (void)memset(l, 0, sizeof(proc_hash_t));
-            l->key.pid = (u32)atoi(entry->d_name);
-            l->key.start_time = (u64)atoll(stime);
-            (void)strncpy(l->info.comm, comm, PROC_NAME_MAX - 1);
-            l->flag = PROC_IN_PROBE_RANGE;
-            if (strcmp(comm, "java") == 0) {
-                (void)get_java_proc_cmd(entry->d_name, &l->info);
-            } else {
-                (void)get_proc_cmdline(entry->d_name, &l->info);
-            }
         }
-
-        (void)update_proc_infos(entry->d_name, &l->info);
+        l = init_one_proc(entry->d_name, stime, comm);
 
         /* add new_proc to hashmap and output */
         hash_add_proc(l);
