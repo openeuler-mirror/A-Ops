@@ -13,37 +13,30 @@
 """
 Time:
 Author:
-Description: The base class for prediction model.
+Description: The implementation of Singleton class.
 """
 
-from abc import ABC, abstractmethod
+import threading
 
 
-class Predict(ABC):
+class Singleton(type):
     """
-    The base model will be used to predict.
+    The singleton class to initialize a singleton object.
     """
-    def __init__(self, model_path, threshold, *args, **kwargs):
-        """The base class initializer"""
-        self.model_path = model_path
-        self.threshold = threshold
-        self.model = None
+    _instance_lock = threading.Lock()
 
-    @abstractmethod
-    def load_model(self):
-        """load model"""
-        pass
+    def __init__(cls, *args, **kwargs):
+        """The singleton base class initializer"""
+        cls._instance = None
+        super(Singleton, cls).__init__(*args, **kwargs)
 
-    @abstractmethod
-    def predict(self, x):
-        """predict based on model"""
-        pass
-
-    def is_abnormal(self, y_pred):
+    def __call__(cls, *args, **kwargs):
         """
-        Checks if existing abnormal or not
-        :param y_pred: The predicted label
-        :return: Existing abnormal points or not
+        Writes classes where the instances behave like functions
+        and can be called like a function
         """
-        return sum(y_pred) >= len(y_pred) * self.threshold
-
+        if cls._instance is None:
+            with Singleton._instance_lock:
+                if cls._instance is None:
+                    cls._instance = super(Singleton, cls).__call__(*args, **kwargs)
+        return cls._instance

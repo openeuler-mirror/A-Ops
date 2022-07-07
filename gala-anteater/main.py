@@ -40,13 +40,13 @@ def arg_parser():
         description="gala-anteater project for operation system KPI metrics anomaly detection")
 
     parser.add_argument("-ks", "--kafka_server",
-                        help="The kafka server ip", type=str, default="10.137.16.165", required=False)
+                        help="The kafka server ip", type=str, required=True)
     parser.add_argument("-kp", "--kafka_port",
-                        help="The kafka server port", type=str, default="9092", required=False)
+                        help="The kafka server port", type=str,  required=True)
     parser.add_argument("-ps", "--prometheus_server",
-                        help="The prometheus server ip", type=str, default="10.137.16.165", required=False)
+                        help="The prometheus server ip", type=str, required=True)
     parser.add_argument("-pp", "--prometheus_port",
-                        help="The prometheus server port", type=str, default="9090", required=False)
+                        help="The prometheus server port", type=str, required=True)
     parser.add_argument("-m", "--model",
                         help="The machine learning model - random_forest, vae",
                         type=str, default="random_forest", required=False)
@@ -80,11 +80,12 @@ def anomaly_detection(model: Predict, parser: Dict[str, any]):
 
     for unique_id, data_frame in features:
         x_norm = data_norm(data_frame)
-        is_abnormal, y_pred, ratio = model.is_abnormal(x_norm)
+        y_pred = model.predict(x_norm)
+        is_abnormal = model.is_abnormal(y_pred)
         if is_abnormal:
             recommend_metrics = most_contributions(data_frame, y_pred)
-            msg = get_kafka_message(round(utc_now.timestamp()), 1, int(sum(y_pred)), len(y_pred),
-                                    60, ratio, unique_id, list(recommend_metrics))
+
+            msg = get_kafka_message(round(utc_now.timestamp()), y_pred, unique_id, recommend_metrics)
 
             sent_message_to_kafka(msg)
             log.info(f"{utc_now}: Abnormal events were detected, sent the message to Kafka!")

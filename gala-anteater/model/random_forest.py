@@ -45,15 +45,5 @@ class RandomForestPredict(Predict):
         """Predicts the anomaly score by random forest model"""
         self.model = self.load_model()
         y_pred = self.model.predict(x)
-        sample_count = x.shape[0]
-        if sample_count != 0:
-            anomaly_ratio = sum(y_pred) / sample_count
-        else:
-            anomaly_ratio = 0
 
-        return y_pred, anomaly_ratio
-
-    def is_abnormal(self, x):
-        """Checks if abnormal points or not"""
-        y_pred, ratio = self.predict(x)
-        return ratio >= self.threshold, y_pred, ratio
+        return y_pred

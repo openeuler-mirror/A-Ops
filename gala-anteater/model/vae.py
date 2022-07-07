@@ -69,21 +69,8 @@ class VAEPredict(Predict):
         error_thresh = np.quantile(y_score, 0.95)
 
         y_pred = (y_score > error_thresh) * 1
-        if sample_count != 0:
-            anomaly_ratio = sum(y_pred) / sample_count
-        else:
-            anomaly_ratio = 0
 
-        return y_pred, anomaly_ratio
-
-    def is_abnormal(self, x):
-        """
-        Checks if abnormal points or not
-        :param x: The input data
-        :return: Existing abnormal points or not
-        """
-        y_pred, ratio = self.predict(x)
-        return ratio >= self.threshold, y_pred, ratio
+        return y_pred
 
     def training(self, x):
         """
