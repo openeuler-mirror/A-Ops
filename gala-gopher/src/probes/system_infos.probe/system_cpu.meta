@@ -1,0 +1,36 @@
+version = "1.0.0"
+
+measurements:
+(
+    {
+        name: "system_cpu",
+        fields:
+        (
+            {
+                description: "Cpu number",
+                type: "key",
+                name: "cpu_num",
+            },
+            {
+                description: "Count of rcu lock in softirqs",
+                type: "gauge",
+                name: "rcu",
+            },
+            {
+                description: "Count of timer in softirqs",
+                type: "gauge",
+                name: "timer",
+            },
+            {
+                description: "Count of schedules in softirqs",
+                type: "gauge",
+                name: "sched",
+            },
+            {
+                description: "Count of network receive in softirqs",
+                type: "gauge",
+                name: "net_rx",
+            }
+        )
+    }
+)
