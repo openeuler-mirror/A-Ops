@@ -15,6 +15,8 @@
 #ifndef __IMDB_H__
 #define __IMDB_H__
 
+#pragma once
+
 #include <stdint.h>
 #include <pthread.h>
 #include <uthash.h>
@@ -74,6 +76,7 @@ typedef struct {
 
 typedef struct {
     char name[MAX_IMDB_TABLE_NAME_LEN];
+    char entity_name[MAX_IMDB_TABLE_NAME_LEN];
     IMDB_Record *meta;
 
     uint32_t recordsCapability;     // Capability for records count in one table
@@ -109,6 +112,7 @@ void HASH_addRecord(IMDB_Record **records, IMDB_Record *record);
 uint32_t HASH_recordCount(const IMDB_Record **records);
 
 IMDB_Table *IMDB_TableCreate(char *name, uint32_t capacity);
+void IMDB_TableSetEntityName(IMDB_Table *table, char *entity_name);
 int IMDB_TableSetMeta(IMDB_Table *table, IMDB_Record *metaRecord);
 int IMDB_TableSetRecordKeySize(IMDB_Table *table, uint32_t keyNum);
 int IMDB_TableAddRecord(IMDB_Table *table, IMDB_Record *record);

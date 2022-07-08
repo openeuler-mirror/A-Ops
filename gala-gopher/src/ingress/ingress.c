@@ -104,7 +104,7 @@ static int IngressData2Egress(IngressMgr *mgr, IMDB_Table *table, IMDB_Record* r
     }
 
     uint64_t msg = 1;
-    if (strcmp(table->name, "event") == 0) {
+    if (strcmp(table->entity_name, "event") == 0) {
         ret = FifoPut(mgr->egressMgr->event_fifo, (void *)jsonStr);
         if (ret != 0) {
             ERROR("[INGRESS] egress event fifo full.\n");

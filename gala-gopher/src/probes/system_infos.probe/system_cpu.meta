@@ -3,7 +3,8 @@ version = "1.0.0"
 measurements:
 (
     {
-        name: "system_cpu",
+        table_name: "system_cpu",
+        entity_name: "system_cpu",
         fields:
         (
             {

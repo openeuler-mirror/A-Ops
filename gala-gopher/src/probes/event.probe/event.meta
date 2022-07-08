@@ -3,13 +3,14 @@ version = "1.0.0"
 measurements:
 (
     {
-        name: "event",
+        table_name: "event",
+        entity_name: "event",
         fields:
         (
             {
-                description: "Name of the table to which the indicator belongs.",
+                description: "Name of the entity to which the indicator belongs.",
                 type: "string",
-                name: "tblName",
+                name: "EntityName",
             },
             {
                 description: "ID of entity where the exception occurs.",

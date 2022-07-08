@@ -28,7 +28,7 @@ http://localhost:port
 metric_name {"key1"="xx","key2"="xx","label1"="xx","label2"="xx",...} metric_value timestamp
 ```
 
-metirc_name即指标名，遵循如下指标命名规范：gala_gopher_<table_name>_<metric_name>。metric_value即指标的值是一个float格式的数据。timestamp默认为当前时间(从1970-01-01 00:00:00以来的毫秒数)。每条数据由指标名metric_name和标签{key..label..}组合唯一确定。
+metirc_name即指标名，遵循如下指标命名规范：gala_gopher_<entity_name>_<metric_name>。metric_value即指标的值是一个float格式的数据。timestamp默认为当前时间(从1970-01-01 00:00:00以来的毫秒数)。每条数据由指标名metric_name和标签{key..label..}组合唯一确定。
 
 #### 请求示例
 
@@ -47,7 +47,7 @@ gala_gopher_thread_task_io_time_us{pid="2494",tgid="2494",comm="hello",major="8"
 
 ### 1.2 kafka方式
 
-本方式输出的数据是基于观测对象粒度的，即每条数据是观测对象的一个实例信息，包含了：观测对象名(table_name)和全量的keys、lables和metrics信息。
+本方式输出的数据是基于观测对象粒度的，即每条数据是观测对象的一个实例信息，包含了：观测对象名(entity_name)和全量的keys、lables和metrics信息。
 
 #### 默认提供的topic
 
@@ -61,9 +61,9 @@ gala_gopher
 
 ```json
 {
-    "table_name": "xxxx",
     "timestamp": 1234567890,
     "machine_id": "xxxxx",
+    "entity_name": "xxxx",
     "key1": "xx",
     "key2": "xx",
     ...,
@@ -87,14 +87,14 @@ gala_gopher
 ##### 输出示例
 
 ```json
- {"timestamp": 165606384400, "machine_id": "xxxxx", "hostname": "localhost.master","table_name": "thread","pid": "2494", "tgid": "2494", "comm": "hello", "major": "8", "minor": "0", "fd_count": "2", "task_io_wait_time_us": "1", "task_io_count": "2", "task_io_time_us": "3", "task_hang_count": "4"}
+ {"timestamp": 165606384400, "machine_id": "xxxxx", "hostname": "localhost.master", "entity_name": "thread", "pid": "2494", "tgid": "2494", "comm": "hello", "major": "8", "minor": "0", "fd_count": "2", "task_io_wait_time_us": "1", "task_io_count": "2", "task_io_time_us": "3", "task_hang_count": "4"}
 ```
 
 
 
 ## 2. 元数据获取接口
 
-元数据主要描述了每个观测对象的基本信息，如：观测对象名(table_name)、版本号，以及键值keys有哪些、标签labels有哪些、指标metrics有哪些。元数据会上报到kafka。
+元数据主要描述了每个观测对象的基本信息，如：数据表名(table_name)、观测对象名(entity_name)、版本号，以及键值keys有哪些、标签labels有哪些、指标metrics有哪些。元数据会上报到kafka。
 
 #### 默认提供的topic
 
@@ -110,12 +110,15 @@ gala_gopher_metadata
 {
 	"timestamp": 1234567890,
 	"meta_name": "xxx",
+	"entity_name": "yyy",
 	"version": "1.0.0",
 	"keys": ["key1", "key2", ...],
 	"labels": ["label1", "label2", ...],
 	"metrics": ["metric1", "metric2", ...]
 }
 ```
+
+其中，meta_name即数据表名，entity_name即观测对象名。同一个观测对象可能包含多个观测数据表，这种情况下属于同一个观测对象的观测对象名entity_name一致、数据表名table_name不重复、键值keys一致，而且metrics指标名在整个观测对象范围内唯一。
 
 #### 请求示例
 
@@ -128,7 +131,9 @@ gala_gopher_metadata
 ##### 输出示例
 
 ```json
-{"timestamp": 1655888408000, "meta_name": "thread", "version": "1.0.0", "keys": ["machine_id", "pid"], "labels": ["hostname", "tgid", "comm", "major", "minor"], "metrics": ["fork_count", "task_io_wait_time_us", "task_io_count", "task_io_time_us", "task_hang_count"]}
+{"timestamp": 1655888408000, "meta_name": "thread", "entity_name": "thread", "version": "1.0.0", "keys": ["machine_id", "pid"], "labels": ["hostname", "tgid", "comm", "major", "minor"], "metrics": ["fork_count", "task_io_wait_time_us", "task_io_count", "task_io_time_us", "task_hang_count"]}
+{"timestamp": 1655888408000, "meta_name": "tcp_link_info", "entity_name": "tcp_link", "version": "1.0.0", "keys": ["machine_id", "tgid", "role", "client_ip", "server_ip", "client_port", "server_port", "protocol"], "labels": ["hostname"], "metrics": ["rx_bytes", "tx_bytes", ...]}
+{"timestamp": 1655888408000, "meta_name": "tcp_link_health", "entity_name": "tcp_link", "version": "1.0.0", "keys": ["machine_id", "tgid", "role", "client_ip", "server_ip", "client_port", "server_port", "protocol"], "labels": ["hostname"], "metrics": ["segs_in", "segs_out", "retran_packets", ...]}
 ```
 
 
@@ -151,7 +156,7 @@ gala_gopher_event
 {
 	"Timestamp": "1234567890",
 	"Attributes": {
-		"Entity ID": "<table_name>_<machine_id>_<key1>_<key2>_..."
+		"Entity ID": "<machine_id>_<entity_name>_<key1>_<key2>_..."
 	},
 	"Resource": {
 		"metrics": "<metric_name>"
@@ -164,12 +169,12 @@ gala_gopher_event
 
 输出数据解释：
 
-| 输出参数                    | 参数含义 | 描述                                                  |
-| --------------------------- | -------- | ----------------------------------------------------- |
-| Entity ID                   | 实体ID   | 命名规则：<table_name>_<machine_id>_<key1>_<key2>_... |
-| metrics                     | 指标名   | 命名规则：gala_gopher_<table_name>_<metric_name>      |
-| SeverityText/SeverityNumber | 异常事件 | INFO/9   WARN/13   ERROR/17   FATAL/21                |
-| Body                        | 事件信息 | 字符串，描述了当前时间、异常事件等级以及具体时间信息  |
+| 输出参数                    | 参数含义 | 描述                                                   |
+| --------------------------- | -------- | ------------------------------------------------------ |
+| Entity ID                   | 实体ID   | 命名规则：<machine_id>_<entity_name>_<key1>_<key2>_... |
+| metrics                     | 指标名   | 命名规则：gala_gopher_<entity_name>_<metric_name>      |
+| SeverityText/SeverityNumber | 异常事件 | INFO/9   WARN/13   ERROR/17   FATAL/21                 |
+| Body                        | 事件信息 | 字符串，描述了当前时间、异常事件等级以及具体时间信息   |
 
 ##### 输入示例
 
@@ -180,6 +185,6 @@ gala_gopher_event
 ##### 输出示例
 
 ```json
-{"Timestamp": "1656123876000", "Attributes": { "Entity ID": "system_disk_xxx_/honme"}, "Resource": { "metrics": "gala_gopher_system_disk_block_userd_per"}, "SeverityText": "WARN","SeverityNumber": 13,"Body": "Sat Jun 25 10:24:36 2022 WARN Entity(/home) Too many Blocks used(82%)."}
+{"Timestamp": "1656123876000", "Attributes": { "Entity ID": "xxxxx_system_disk_/honme"}, "Resource": { "metrics": "gala_gopher_system_disk_block_userd_per"}, "SeverityText": "WARN","SeverityNumber": 13,"Body": "Sat Jun 25 10:24:36 2022 WARN Entity(/home) Too many Blocks used(82%)."}
 ```
 

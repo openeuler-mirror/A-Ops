@@ -2,7 +2,8 @@ version = "1.0.0"
 measurements:
 (
     {
-        name: "file_snoop",
+        table_name: "file_snoop",
+        entity_name: "file_snoop",
         fields:
         (
             {

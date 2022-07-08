@@ -15,6 +15,8 @@
 #ifndef __META_H__
 #define __META_H__
 
+#pragma once
+
 #include <stdint.h>
 #include "base.h"
 
@@ -25,6 +27,7 @@ typedef struct {
 } Field;
 
 typedef struct {
+    char entity[MAX_MEASUREMENT_NAME_LEN];
     char name[MAX_MEASUREMENT_NAME_LEN];
     char version[MAX_META_VERSION_LEN];
     uint32_t fieldsNum;

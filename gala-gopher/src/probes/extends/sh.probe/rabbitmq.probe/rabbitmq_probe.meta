@@ -3,7 +3,8 @@ version = "1.0.0"
 measurements:
 (
     {
-        name: "rabbitmq_probe",
+        table_name: "rabbitmq_probe",
+        entity_name: "rabbitmq_probe",
         fields:
         (
             {

@@ -3,7 +3,8 @@ version = "1.0.0"
 measurements:
 (
     {
-        name: "connect",
+        table_name: "connect",
+        entity_name: "connect",
         fields:
         (
             {

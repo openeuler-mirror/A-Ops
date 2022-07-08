@@ -370,32 +370,40 @@ static int IMDBMgrTableLoad(IMDB_Table *table, Measurement *mm)
 {
     int ret = 0;
     IMDB_Record *meta = IMDB_RecordCreate(mm->fieldsNum);
-    if (meta == NULL)
+    if (meta == NULL) {
         return -1;
+    }
 
     IMDB_Metric *metric = NULL;
     uint32_t keyNum = 0;
     for (int i = 0; i < mm->fieldsNum; i++) {
         metric = IMDB_MetricCreate(mm->fields[i].name, mm->fields[i].description, mm->fields[i].type);
-        if (metric == NULL)
+        if (metric == NULL) {
             goto ERR;
+        }
 
         ret = IMDB_RecordAddMetric(meta, metric);
-        if (ret != 0)
+        if (ret != 0) {
             goto ERR;
+        }
 
         metric = NULL;
-        if (strcmp(mm->fields[i].type, METRIC_TYPE_KEY) == 0)
+        if (strcmp(mm->fields[i].type, METRIC_TYPE_KEY) == 0) {
             keyNum++;
+        }
     }
 
     ret = IMDB_TableSetMeta(table, meta);
-    if (ret != 0)
+    if (ret != 0) {
         goto ERR;
+    }
 
     ret = IMDB_TableSetRecordKeySize(table, keyNum);
-    if (ret != 0)
+    if (ret != 0) {
         goto ERR;
+    }
+
+    IMDB_TableSetEntityName(table, mm->entity);
 
     return 0;
 ERR:
@@ -568,6 +576,18 @@ static int metadata_build_metaname(const Measurement *mm, char *json_str, int ma
     return max_len > str_len ? (max_len - str_len) : -1;
 }
 
+static int metadata_build_entityname(const Measurement *mm, char *json_str, int max_len)
+{
+    char *str = json_str;
+    int str_len = max_len;
+    const char *fmt = ", \"entity_name\": \"%s\""; // "entity_name": "block",
+
+    if (__snprintf(&str, str_len, &str_len, fmt, mm->entity) < 0) {
+        return -1;
+    }
+    return max_len > str_len ? (max_len - str_len) : -1;
+}
+
 static int metadata_build_vrsion(const Measurement *mm, char *json_str, int max_len)
 {
     char *str = json_str;
@@ -731,6 +751,13 @@ static int metadata_to_json(const Measurement *mm, char *json_str, int max_json_
     str_len -= ret;
 
     ret = metadata_build_metaname(mm, str, str_len);
+    if (ret < 0) {
+        return -1;
+    }
+    str += ret;
+    str_len -= ret;
+
+    ret = metadata_build_entityname(mm, str, str_len);
     if (ret < 0) {
         return -1;
     }

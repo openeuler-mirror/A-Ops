@@ -2,7 +2,8 @@ version = "1.0.0"
 measurements:
 (
     {
-        name: "redis_client",
+        table_name: "redis_client",
+        entity_name: "redis_client",
         fields:
         (
             {

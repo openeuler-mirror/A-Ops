@@ -3,7 +3,8 @@ version = "1.0.0"
 measurements:
 (
     {
-        name: "bind",
+        table_name: "bind",
+        entity_name: "bind",
         fields:
         (
             {

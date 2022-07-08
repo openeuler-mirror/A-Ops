@@ -2,7 +2,8 @@ version = "1.0.0"
 measurements:
 (
     {
-        name: "kill_info",
+        table_name: "kill_info",
+        entity_name: "kill_info",
         fields:
         (
             {

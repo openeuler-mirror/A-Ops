@@ -2,7 +2,8 @@ version = "1.0.0"
 measurements:
 (
     {
-        name: "ipvs_link",
+        table_name: "ipvs_link",
+        entity_name: "ipvs_link",
         fields:
         (
             {

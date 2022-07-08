@@ -3,7 +3,8 @@ version = "1.0.0"
 measurements:
 (
     {
-        name: "system_net",
+        table_name: "system_net",
+        entity_name: "system_net",
         fields:
         (
             {
@@ -54,7 +55,8 @@ measurements:
         )
     },
     {
-        name: "system_tcp",
+        table_name: "system_tcp",
+        entity_name: "system_tcp",
         fields:
         (
             {

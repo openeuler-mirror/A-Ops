@@ -142,14 +142,22 @@ static int MeasurementLoad(MeasurementMgr *mgr, Measurement *mm, config_setting_
 {
     int ret = 0;
     const char *name;
+    const char *entity;
     const char *field;
-    ret = config_setting_lookup_string(mmConfig, "name", &name);
+    ret = config_setting_lookup_string(mmConfig, "table_name", &name);
     if (ret == 0) {
         ERROR("load measurement name failed.\n");
         return -1;
     }
-
     (void)strncpy(mm->name, name, MAX_MEASUREMENT_NAME_LEN - 1);
+
+    ret = config_setting_lookup_string(mmConfig, "entity_name", &entity);
+    if (ret == 0) {
+        ERROR("load measurement entity failed.\n");
+        return -1;
+    }
+    (void)strncpy(mm->entity, entity, MAX_MEASUREMENT_NAME_LEN - 1);
+
     config_setting_t *fields = config_setting_lookup(mmConfig, "fields");
     int fieldsCount = config_setting_length(fields);
     if (fieldsCount > mgr->fields_num_max) {

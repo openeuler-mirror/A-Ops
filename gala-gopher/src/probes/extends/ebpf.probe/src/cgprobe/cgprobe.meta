@@ -2,7 +2,8 @@ version = "1.0.0"
 measurements:
 (
     {
-        name: "cgprobe",
+        table_name: "cgprobe",
+        entity_name: "cgprobe",
         fields:
         (
             {

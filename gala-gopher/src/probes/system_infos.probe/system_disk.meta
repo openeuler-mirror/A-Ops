@@ -3,7 +3,8 @@ version = "1.0.0"
 measurements:
 (
     {
-        name: "system_iostat",
+        table_name: "system_iostat",
+        entity_name: "system_iostat",
         fields:
         (
             {
@@ -59,7 +60,8 @@ measurements:
         )
     },
     {
-        name: "system_disk",
+        table_name: "system_disk",
+        entity_name: "system_disk",
         fields:
         (
             {

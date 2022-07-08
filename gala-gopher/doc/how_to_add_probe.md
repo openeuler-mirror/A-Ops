@@ -27,10 +27,12 @@ version = "1.0.0"                # meta文件版本
 measurements:                    # 探针数据表list，可以在一个探针中配置多张数据表
 (
     {                            #--> 探针数据表
-        name: "example",         #--> 数据表名称（唯一）
+        table_name: "example",   #--> 数据表名称（唯一）
+        entity_name: "example",  #--> 观测对象名称
+                                 #--> 一个观测对象可以配置多张数据表，每张表的观测对象名称一致
         fields:                  #--> 数据字段
         (
-            "cpu_usage",         #--> 数据字段名称
+            "cpu_usage",         #--> 数据字段名称，属于同一个观测对象的指标名必须唯一
             "memory_usage",
             "tcp_connection_num",
         )
@@ -40,7 +42,7 @@ measurements:                    # 探针数据表list，可以在一个探针�
 
 #### 1.2.3 输出探针指标
 探针采集的数据要以通过`fprintf`打印的方式<br>
-打印的第一个字符串是数据表名称<br>
+打印的第一个字符串是数据表名称<table_name><br>
 而后的每个字符串和数据字段一一对应<br>
 每个字段数据按照 `|` 分隔 <br>
 如这里和example表中的数据对应：<br>

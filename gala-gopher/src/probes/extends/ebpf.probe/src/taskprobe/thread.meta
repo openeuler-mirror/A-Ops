@@ -2,7 +2,8 @@ version = "1.0.0"
 measurements:
 (
     {
-        name: "thread",
+        table_name: "thread",
+        entity_name: "thread",
         fields:
         (
             {

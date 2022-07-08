@@ -3,7 +3,8 @@ version: "1.0.0"
 measurements:
 (
     {
-        name: "system_meminfo",
+        table_name: "system_meminfo",
+        entity_name: "system_meminfo",
         fields:
         (
             {

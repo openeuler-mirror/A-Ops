@@ -2,7 +2,8 @@ version = "1.0.0"
 measurements:
 (
     {
-        name: "container",
+        table_name: "container",
+        entity_name: "container",
         fields:
         (
             {
