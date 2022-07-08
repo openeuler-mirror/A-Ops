@@ -23,6 +23,12 @@ struct cpu_stat {
     unsigned long long timer;
     unsigned long long sched;
     unsigned long long net_rx;
+    unsigned long long cpu_user_total_second;
+    unsigned long long cpu_nice_total_second;
+    unsigned long long cpu_system_total_second;
+    unsigned long long cpu_iowait_total_second;
+    unsigned long long cpu_irq_total_second;
+    unsigned long long cpu_softirq_total_second;
 };
 
 int system_cpu_init(void);
