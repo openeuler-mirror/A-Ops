@@ -15,6 +15,8 @@
 #ifndef __BLOCK__H
 #define __BLOCK__H
 
+#pragma once
+
 #ifdef BPF_PROG_USER
 #undef BPF_PROG_USER
 #endif
@@ -95,13 +97,14 @@ static __always_inline __maybe_unused void get_block_key_by_req(struct request *
     key->first_minor = _(disk->first_minor);
 }
 
-static __always_inline __maybe_unused void calc_latency(struct block_data *bdata, struct latency_stats *latency_stats, 
-                                                                __u64 delta, __u64 ts)
+static __always_inline __maybe_unused void report_latency(void *ctx, struct block_data *bdata,
+        struct latency_stats *latency_stats, __u64 delta, __u64 ts)
 {
     if (delta == 0) {
         return;
     }
     __u64 us = delta >> 3;
+    __u64 period = get_period();
 
     // first calc
     if (bdata->ts == 0) {
@@ -112,19 +115,10 @@ static __always_inline __maybe_unused void calc_latency(struct block_data *bdata
 
     // calculation of intra-period
     if (ts > bdata->ts) {
-        if ((ts - bdata->ts) < BLOCKPROBE_INTERVAL_NS) {
+        if ((ts - bdata->ts) < period) {
             CALC_LATENCY_STATS(latency_stats, latency, us);
         } else {
-            bdata->ts = ts;  // Start a new statistical period
-            __builtin_memset(&(bdata->blk_stats), 0x0, sizeof(bdata->blk_stats));
-            __builtin_memset(&(bdata->blk_drv_stats), 0x0, sizeof(bdata->blk_drv_stats));
-            __builtin_memset(&(bdata->blk_dev_stats), 0x0, sizeof(bdata->blk_dev_stats));
-            INIT_LATENCY_STATS(latency_stats, latency, us);
-
-            // reset counter
-            __builtin_memset(&(bdata->iscsi_err_stats), 0x0, sizeof(bdata->iscsi_err_stats));
-            __builtin_memset(&(bdata->conn_stats), 0x0, sizeof(bdata->conn_stats));
-            __builtin_memset(&(bdata->sas_stats), 0x0, sizeof(bdata->sas_stats));
+            report(ctx, bdata);
         }
     } else {
         bdata->ts = 0; // error

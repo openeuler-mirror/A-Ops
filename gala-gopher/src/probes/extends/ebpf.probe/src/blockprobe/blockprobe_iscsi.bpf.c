@@ -16,6 +16,8 @@
 #undef BPF_PROG_USER
 #endif
 #define BPF_PROG_KERN
+#include "bpf.h"
+#include "output.h"
 #include "block.h"
 
 char g_linsence[] SEC("license") = "GPL";
@@ -33,7 +35,7 @@ KRAWTRACE(scsi_dispatch_cmd_done, bpf_raw_tracepoint_args)
         return;
     }
     __u64 ts = bpf_ktime_get_ns();
-    calc_latency(bdata, &(bdata->blk_dev_stats), get_delta_time_ns(req, ts), ts);
+    report_latency(ctx, bdata, &(bdata->blk_dev_stats), get_delta_time_ns(req, ts), ts);
 }
 
 KRAWTRACE(scsi_dispatch_cmd_timeout, bpf_raw_tracepoint_args)
@@ -49,6 +51,7 @@ KRAWTRACE(scsi_dispatch_cmd_timeout, bpf_raw_tracepoint_args)
         return;
     }
     __sync_fetch_and_add(&(bdata->iscsi_err_stats.count_iscsi_tmout), 1);
+    report_blk(ctx, bdata);
 }
 
 KRAWTRACE(scsi_dispatch_cmd_error, bpf_raw_tracepoint_args)
@@ -64,5 +67,6 @@ KRAWTRACE(scsi_dispatch_cmd_error, bpf_raw_tracepoint_args)
         return;
     }
     __sync_fetch_and_add(&(bdata->iscsi_err_stats.count_iscsi_err), 1);
+    report_blk(ctx, bdata);
 }
 

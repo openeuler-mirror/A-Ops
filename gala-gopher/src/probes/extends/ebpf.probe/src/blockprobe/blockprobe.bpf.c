@@ -16,10 +16,11 @@
 #undef BPF_PROG_USER
 #endif
 #define BPF_PROG_KERN
+#include "bpf.h"
+#include "output.h"
 #include "block.h"
 
 char g_linsence[] SEC("license") = "GPL";
-
 
 KPROBE(mq_flush_data_end_io, pt_regs)
 {
@@ -33,7 +34,7 @@ KPROBE(mq_flush_data_end_io, pt_regs)
         return;
     }
     __u64 ts = bpf_ktime_get_ns();
-    calc_latency(bdata, &(bdata->blk_stats.flush), get_delta_time_ns(req, ts), ts);
+    report_latency(ctx, bdata, &(bdata->blk_stats.flush), get_delta_time_ns(req, ts), ts);
 }
 
 KPROBE(blk_account_io_done, pt_regs)
@@ -49,7 +50,7 @@ KPROBE(blk_account_io_done, pt_regs)
     }
 
     __u64 ts = bpf_ktime_get_ns();
-    calc_latency(bdata, &(bdata->blk_stats.req), get_delta_time_ns(req, ts), ts);
+    report_latency(ctx, bdata, &(bdata->blk_stats.req), get_delta_time_ns(req, ts), ts);
 }
 
 KRAWTRACE(block_rq_issue, bpf_raw_tracepoint_args)
@@ -65,7 +66,7 @@ KRAWTRACE(block_rq_issue, bpf_raw_tracepoint_args)
     }
 
     __u64 ts = bpf_ktime_get_ns();
-    calc_latency(bdata, &(bdata->blk_drv_stats), get_delta_time_ns(req, ts), ts);
+    report_latency(ctx, bdata, &(bdata->blk_drv_stats), get_delta_time_ns(req, ts), ts);
 }
 
 KPROBE(blk_mq_complete_request, pt_regs)
@@ -81,6 +82,6 @@ KPROBE(blk_mq_complete_request, pt_regs)
     }
 
     __u64 ts = bpf_ktime_get_ns();
-    calc_latency(bdata, &(bdata->blk_dev_stats), get_delta_time_ns(req, ts), ts);
+    report_latency(ctx, bdata, &(bdata->blk_dev_stats), get_delta_time_ns(req, ts), ts);
 }
 
