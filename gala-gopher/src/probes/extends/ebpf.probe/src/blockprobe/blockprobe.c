@@ -33,6 +33,7 @@
 #include "blockprobe_iscsi.skel.h"
 #include "blockprobe_iscsi_tp.skel.h"
 #include "blockprobe_iscsi_sas.skel.h"
+#include "pagecache.skel.h"
 #include "blockprobe.h"
 #include "event.h"
 
@@ -40,11 +41,14 @@
 #define ISCSI_MOD "libiscsi"
 #define ISCSI_SAS_MOD "libsas"
 #define ISCSI_TP_MOD "scsi_transport_iscsi"
-#define BLOCK_MAP_PATH "/sys/fs/bpf/probe/block_map"
-#define SCSI_BLOCK_MAP_PATH "/sys/fs/bpf/probe/scsi_block_map"
 
-#define RM_BLOCK_MAP_PATH "/usr/bin/rm -rf /sys/fs/bpf/probe/block_map"
-#define RM_SCSI_MAP_PATH "/usr/bin/rm -rf /sys/fs/bpf/probe/scsi_block_map"
+/* Path to pin map */
+#define BLOCK_BLOCK_PATH        "/sys/fs/bpf/probe/__block_block"
+#define BLOCK_ISCSI_PATH        "/sys/fs/bpf/probe/__block_scsi"
+#define BLOCK_OUTPUT_PATH       "/sys/fs/bpf/probe/__block_output"
+#define BLOCK_ARGS_PATH         "/sys/fs/bpf/probe/__block_args"
+
+#define RM_BLOCK_PATH "/usr/bin/rm -rf /sys/fs/bpf/probe/__block*"
 
 #define IS_LOWERCASE_LEETER(a) (((a) >= 'a') && ((a) <= 'z'))
 
@@ -64,8 +68,10 @@ static const char *const blk_type_str[] = {
 
 #define __LOAD_PROBE(probe_name, end, load) \
     OPEN(probe_name, end, load); \
-    MAP_SET_PIN_PATH(probe_name, block_map, BLOCK_MAP_PATH, load); \
-    MAP_SET_PIN_PATH(probe_name, scsi_block_map, SCSI_BLOCK_MAP_PATH, load); \
+    MAP_SET_PIN_PATH(probe_name, block_map, BLOCK_BLOCK_PATH, load); \
+    MAP_SET_PIN_PATH(probe_name, scsi_block_map, BLOCK_ISCSI_PATH, load); \
+    MAP_SET_PIN_PATH(probe_name, output, BLOCK_OUTPUT_PATH, load); \
+    MAP_SET_PIN_PATH(probe_name, args_map, BLOCK_ARGS_PATH, load); \
     LOAD_ATTACH(probe_name, end, load)
 
 static volatile sig_atomic_t g_stop;
@@ -135,8 +141,9 @@ static char* __get_blk_name(char *buf)
     char *p;
     size_t pos;
     size_t len = strlen(buf);
-    if (len == 0)
+    if (len == 0) {
         return NULL;
+    }
 
     pos = 0;
     p = buf + pos;
@@ -145,9 +152,9 @@ static char* __get_blk_name(char *buf)
         p = buf + pos;
     }
     
-    if (pos >= len)
+    if (pos >= len) {
         return NULL;
-
+    }
     return p;
 }
 
@@ -198,9 +205,10 @@ static inline void __get_maj_and_min(char *buf, int *major, int *minor)
     while (*p != COLON_SYMBOL && p < (buf + s)) {
         p++;
     }
-        
-    if (p >= p2 || p <= buf || (int)(p2 - p - 1) <= 0)
+
+    if (p >= p2 || p <= buf || (int)(p2 - p - 1) <= 0) {
         return;
+    }
 
     (void)memset(maj_s, 0, INT_LEN);
     (void)memcpy(maj_s, buf, p - buf);
@@ -262,6 +270,9 @@ static void __do_load_one_blk(char *buf)
         if (bdata.blk_type != BLK_TYPE_DISK) {
             __do_get_disk_name((const char*)bdata.blk_name, bdata.disk_name, DISK_NAME_LEN);
         }
+
+        bdata.major = bkey.major;
+        bdata.first_minor = bkey.first_minor;
         (void)__upd_blk_entry(&bkey, &bdata);
         if ((bdata.blk_type == BLK_TYPE_DISK) && __IS_SCSI_BLOCK(bdata.blk_name)) {
             (void)create_scsi_block(&bkey);
@@ -276,7 +287,7 @@ sda1|8:1|part
 sda2|8:2|part
 sr0|11:0|rom
 */
-static void do_load_blk()
+static void do_load_blk(void)
 {
     FILE *f = NULL;
     char cmd[COMMAND_LEN];
@@ -301,6 +312,13 @@ static void do_load_blk()
     return;
 }
 
+static void do_load_args(int fd, struct probe_params* args)
+{
+    u32 key = 0;
+    struct block_args_s blk_arg = {.period = NS(args->period)};
+    (void)bpf_map_update_elem(fd, &key, &blk_arg, BPF_ANY);
+}
+
 #define __ENTITY_ID_LEN 32
 static void build_entity_id(struct block_key *key, char *buf, int buf_len)
 {
@@ -309,7 +327,7 @@ static void build_entity_id(struct block_key *key, char *buf, int buf_len)
                         key->first_minor);
 }
 
-static void report_block(struct block_key *key, struct block_data *bdata)
+static void report_event(struct block_key *key, struct block_data *bdata)
 {
     char entityId[__ENTITY_ID_LEN];
     unsigned int latency_thr_us;
@@ -318,8 +336,9 @@ static void report_block(struct block_key *key, struct block_data *bdata)
     struct latency_stats* request_stats = &(bdata->blk_stats.req);
     struct iscsi_err_stats* iscsi_err = &(bdata->iscsi_err_stats);
 
-    if (params.logs == 0)
+    if (params.logs == 0) {
         return;
+    }
 
     entityId[0] = 0;
     build_entity_id(key, entityId, __ENTITY_ID_LEN);
@@ -394,121 +413,72 @@ static void report_block(struct block_key *key, struct block_data *bdata)
     }
 }
 
-static void pull_block_stats(int map_fd)
+static void output_blk_metrics(void *ctx, int cpu, void *data, __u32 size)
 {
-    int ret;
-    struct block_key ckey = {0};
-    struct block_key nkey = {0};
-    struct block_data data;
+    struct block_data *bdata = (struct block_data *)data;
+    struct block_key key = {.major = bdata->major, .first_minor = bdata->first_minor};
 
-    while (bpf_map_get_next_key(map_fd, &ckey, &nkey) != -1) {
-        ret = bpf_map_lookup_elem(map_fd, &nkey, &data);
-        if (ret != 0) {
-            ckey = nkey;
-            continue;
-        }
+    report_event(&key, bdata);
 
-        report_block(&nkey, &data);
-
-        fprintf(stdout, "|%s|%d|%d|%s|%s|%s|%llu|%llu|%llu|%llu|%u|%llu|%llu|%llu"
-                "|%llu|%u|%llu|%llu|%llu|%llu|%u|%llu|%llu|%llu|%llu|%u|%llu|%llu|%llu|%llu|%llu|%llu|%llu|\n",
-                OO_NAME,
-                nkey.major,
-                nkey.first_minor,
-                blk_type_str[data.blk_type],
-                data.blk_name,
-                data.disk_name,
-                data.blk_stats.req.latency_max,
-                data.blk_stats.req.latency_last,
-                data.blk_stats.req.latency_sum,
-                data.blk_stats.req.latency_jitter,
-                data.blk_stats.req.count_latency,
-                data.blk_stats.flush.latency_max,
-                data.blk_stats.flush.latency_last,
-                data.blk_stats.flush.latency_sum,
-                data.blk_stats.flush.latency_jitter,
-                data.blk_stats.flush.count_latency,
-                data.blk_drv_stats.latency_max,
-                data.blk_drv_stats.latency_last,
-                data.blk_drv_stats.latency_sum,
-                data.blk_drv_stats.latency_jitter,
-                data.blk_drv_stats.count_latency,
-                data.blk_dev_stats.latency_max,
-                data.blk_dev_stats.latency_last,
-                data.blk_dev_stats.latency_sum,
-                data.blk_dev_stats.latency_jitter,
-                data.blk_dev_stats.count_latency,
-                data.iscsi_err_stats.count_iscsi_tmout,
-                data.iscsi_err_stats.count_iscsi_err,
-                data.conn_stats.conn_err[ISCSI_ERR_BAD_OPCODE],
-                data.conn_stats.conn_err[ISCSI_ERR_XMIT_FAILED],
-                data.conn_stats.conn_err[ISCSI_ERR_NOP_TIMEDOUT],
-                data.conn_stats.conn_err[ISCSI_ERR_CONN_FAILED],
-                data.sas_stats.count_sas_abort);
-
-        DEBUG("[%s] MAJ[%d] MIN[%d] blk_t[%s] blk[%s] disk[%s] req_m[%llu] req_l[%llu] req_s[%llu] req_j[%llu] req_c[%u] "
-                "flush_m[%llu] flush_l[%llu] flush_s[%llu] flush_j[%llu] flush_c[%u] "
-                "drv_m[%llu] drv_l[%llu] drv_s[%llu] drv_j[%llu] drv_c[%u] "
-                "dev_m[%llu] dev_l[%llu] dev_s[%llu] dev_j[%llu] dev_c[%u] "
-                "scsi_tm[%llu] scsi_err[%llu] bad_op[%llu] xmit_f[%llu] conn_tm[%llu] conn_f[%llu] sas_abort[%llu]\n",
-                OO_NAME,
-                nkey.major,
-                nkey.first_minor,
-                blk_type_str[data.blk_type],
-                data.blk_name,
-                data.disk_name,
-                data.blk_stats.req.latency_max,
-                data.blk_stats.req.latency_last,
-                data.blk_stats.req.latency_sum,
-                data.blk_stats.req.latency_jitter,
-                data.blk_stats.req.count_latency,
-                data.blk_stats.flush.latency_max,
-                data.blk_stats.flush.latency_last,
-                data.blk_stats.flush.latency_sum,
-                data.blk_stats.flush.latency_jitter,
-                data.blk_stats.flush.count_latency,
-                data.blk_drv_stats.latency_max,
-                data.blk_drv_stats.latency_last,
-                data.blk_drv_stats.latency_sum,
-                data.blk_drv_stats.latency_jitter,
-                data.blk_drv_stats.count_latency,
-                data.blk_dev_stats.latency_max,
-                data.blk_dev_stats.latency_last,
-                data.blk_dev_stats.latency_sum,
-                data.blk_dev_stats.latency_jitter,
-                data.blk_dev_stats.count_latency,
-                data.iscsi_err_stats.count_iscsi_tmout,
-                data.iscsi_err_stats.count_iscsi_err,
-                data.conn_stats.conn_err[ISCSI_ERR_BAD_OPCODE],
-                data.conn_stats.conn_err[ISCSI_ERR_XMIT_FAILED],
-                data.conn_stats.conn_err[ISCSI_ERR_NOP_TIMEDOUT],
-                data.conn_stats.conn_err[ISCSI_ERR_CONN_FAILED],
-                data.sas_stats.count_sas_abort);
-
-        ckey = nkey;
-    }
-
-    return;
+    (void)fprintf(stdout, "|%s|%d|%d|%s|%s|%s|%llu|%llu|%llu|%llu|%u|%llu|%llu|%llu"
+        "|%llu|%u|%llu|%llu|%llu|%llu|%u|%llu|%llu|%llu|%llu|%u|%llu|%llu|%llu"
+        "|%llu|%llu|%llu|%llu|%llu|%llu|%llu|%llu|\n",
+        OO_NAME,
+        bdata->major,
+        bdata->first_minor,
+        blk_type_str[bdata->blk_type],
+        bdata->blk_name,
+        bdata->disk_name,
+        bdata->blk_stats.req.latency_max,
+        bdata->blk_stats.req.latency_last,
+        bdata->blk_stats.req.latency_sum,
+        bdata->blk_stats.req.latency_jitter,
+        bdata->blk_stats.req.count_latency,
+        bdata->blk_stats.flush.latency_max,
+        bdata->blk_stats.flush.latency_last,
+        bdata->blk_stats.flush.latency_sum,
+        bdata->blk_stats.flush.latency_jitter,
+        bdata->blk_stats.flush.count_latency,
+        bdata->blk_drv_stats.latency_max,
+        bdata->blk_drv_stats.latency_last,
+        bdata->blk_drv_stats.latency_sum,
+        bdata->blk_drv_stats.latency_jitter,
+        bdata->blk_drv_stats.count_latency,
+        bdata->blk_dev_stats.latency_max,
+        bdata->blk_dev_stats.latency_last,
+        bdata->blk_dev_stats.latency_sum,
+        bdata->blk_dev_stats.latency_jitter,
+        bdata->blk_dev_stats.count_latency,
+        bdata->iscsi_err_stats.count_iscsi_tmout,
+        bdata->iscsi_err_stats.count_iscsi_err,
+        bdata->conn_stats.conn_err[ISCSI_ERR_BAD_OPCODE],
+        bdata->conn_stats.conn_err[ISCSI_ERR_XMIT_FAILED],
+        bdata->conn_stats.conn_err[ISCSI_ERR_NOP_TIMEDOUT],
+        bdata->conn_stats.conn_err[ISCSI_ERR_CONN_FAILED],
+        bdata->sas_stats.count_sas_abort,
+        bdata->pc_stats.access_pagecache,
+        bdata->pc_stats.mark_buffer_dirty,
+        bdata->pc_stats.load_page_cache,
+        bdata->pc_stats.mark_page_dirty);
 }
+
 int main(int argc, char **argv)
 {
     int err = -1;
     char iscsi, iscsi_tp, iscsi_sas;
     FILE *fp = NULL;
-    
-    err = args_parse(argc, argv, &params);
-    if (err != 0)
-        return -1;
+    struct perf_buffer* pb = NULL;
 
+    err = args_parse(argc, argv, &params);
+    if (err != 0) {
+        return -1;
+    }
     printf("arg parse interval time:%us\n", params.period);
-    fp = popen(RM_BLOCK_MAP_PATH, "r");
+
+    fp = popen(RM_BLOCK_PATH, "r");
     if (fp != NULL) {
         (void)pclose(fp);
         fp = NULL;
-    }
-    fp = popen(RM_SCSI_MAP_PATH, "r");
-    if (fp != NULL) {
-        (void)pclose(fp);
     }
 
     iscsi = is_exist_iscsi_mod();
@@ -516,16 +486,25 @@ int main(int argc, char **argv)
     iscsi_sas = is_exist_iscsi_sas_mod();
 
     INIT_BPF_APP(blockprobe, EBPF_RLIM_LIMITED);
-    
-    __LOAD_PROBE(blockprobe, err4, 1);
-    __LOAD_PROBE(blockprobe_iscsi, err3, iscsi);
-    __LOAD_PROBE(blockprobe_iscsi_tp, err2, iscsi_tp);
-    __LOAD_PROBE(blockprobe_iscsi_sas, err, iscsi_sas);
+
+    __LOAD_PROBE(blockprobe, err5, 1);
+    __LOAD_PROBE(blockprobe_iscsi, err4, iscsi);
+    __LOAD_PROBE(blockprobe_iscsi_tp, err3, iscsi_tp);
+    __LOAD_PROBE(blockprobe_iscsi_sas, err2, iscsi_sas);
+    __LOAD_PROBE(pagecache, err, 1);
+
+    pb = create_pref_buffer(GET_MAP_FD(blockprobe, output), output_blk_metrics);
+    if (pb == NULL) {
+        fprintf(stderr, "ERROR: crate perf buffer failed\n");
+        goto err;
+    }
 
     block_map_fd = GET_MAP_FD(blockprobe, block_map);
     scsi_block_map_fd = GET_MAP_FD(blockprobe, scsi_block_map);
 
     do_load_blk();
+
+    do_load_args(GET_MAP_FD(blockprobe, args_map), &params);
 
     if (signal(SIGINT, sig_int) == SIG_ERR) {
         fprintf(stderr, "can't set signal handler: %s\n", strerror(errno));
@@ -534,24 +513,27 @@ int main(int argc, char **argv)
 
     printf("Successfully started!\n");
 
-    while (g_stop == 0) {
-        pull_block_stats(block_map_fd);
-        sleep(params.period);
-    }
+    poll_pb(pb, THOUSAND);
 
 err:
+    if (pb) {
+        perf_buffer__free(pb);
+    }
+    UNLOAD(pagecache);
+
+err2:
     if (iscsi_sas) {
         UNLOAD(blockprobe_iscsi_sas);
     }
-err2:
+err3:
     if (iscsi_tp) {
         UNLOAD(blockprobe_iscsi_tp);
     }
-err3:
+err4:
     if (iscsi) {
         UNLOAD(blockprobe_iscsi);
     }
-err4:
+err5:
     UNLOAD(blockprobe);
     return -err;
 }

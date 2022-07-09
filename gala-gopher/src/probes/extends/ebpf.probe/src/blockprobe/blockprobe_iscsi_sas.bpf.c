@@ -16,6 +16,8 @@
 #undef BPF_PROG_USER
 #endif
 #define BPF_PROG_KERN
+#include "bpf.h"
+#include "output.h"
 #include "block.h"
 
 char g_linsence[] SEC("license") = "GPL";
@@ -32,4 +34,5 @@ KPROBE(sas_task_abort, pt_regs)
     }
     
     bdata->sas_stats.count_sas_abort++;
+    report_blk(ctx, bdata);
 }

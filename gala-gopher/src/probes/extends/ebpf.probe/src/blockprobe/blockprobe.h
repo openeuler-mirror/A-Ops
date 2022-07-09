@@ -15,6 +15,8 @@
 #ifndef __BLOCKPROBE__H
 #define __BLOCKPROBE__H
 
+#pragma once
+
 enum blk_type_e {
     BLK_TYPE_INVALID = 0,
     BLK_TYPE_DISK = 1,
@@ -93,10 +95,18 @@ struct iscsi_err_stats {
     __u64 count_iscsi_err;          // FROM tracepoint 'scsi_dispatch_cmd_error'
 };
 
-#define BLOCKPROBE_INTERVAL_NS      (5000000000)
+struct pc_stats {
+    __u64 access_pagecache;
+    __u64 mark_buffer_dirty;
+    __u64 load_page_cache;
+    __u64 mark_page_dirty;
+};
+
 struct block_data {
     __u64 ts;                       // Period of latency stats
     enum blk_type_e blk_type;       // disk; part; lvm
+    int major;
+    int first_minor;
     char blk_name[DISK_NAME_LEN];
     char disk_name[DISK_NAME_LEN];
     struct blk_stats        blk_stats;          // Overall I/O operation delay statistics at the block layer
@@ -107,6 +117,12 @@ struct block_data {
     struct iscsi_err_stats  iscsi_err_stats;    // Iscsi layer error statistics
     struct iscsi_conn_stats conn_stats;         // Iscsi connection layer error statistics
     struct blk_sas_stats    sas_stats;
+
+    struct pc_stats         pc_stats;
+};
+
+struct block_args_s {
+    __u64 period;               // Sampling period, unit ns
 };
 
 #endif

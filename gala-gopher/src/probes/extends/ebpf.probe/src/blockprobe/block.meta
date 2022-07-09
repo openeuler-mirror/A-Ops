@@ -164,6 +164,26 @@ measurements:
                 description: "Count of iscsi sas abort",
                 type: "gauge",
                 name: "count_sas_abort",
+            },
+            {
+                description: "Count of page cache accesses",
+                type: "gauge",
+                name: "access_pagecache",
+            },
+            {
+                description: "Count of mark buffer dirty",
+                type: "gauge",
+                name: "mark_buffer_dirty",
+            },
+            {
+                description: "Count of load page to lru",
+                type: "gauge",
+                name: "load_page_cache",
+            },
+            {
+                description: "Count of mark page dirty",
+                type: "gauge",
+                name: "mark_page_dirty",
             }
         )
     }

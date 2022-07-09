@@ -16,6 +16,8 @@
 #undef BPF_PROG_USER
 #endif
 #define BPF_PROG_KERN
+#include "bpf.h"
+#include "output.h"
 #include "block.h"
 
 char g_linsence[] SEC("license") = "GPL";
@@ -32,7 +34,9 @@ KPROBE(iscsi_conn_error_event, pt_regs)
         return;
     }
 
-    if ((err > ISCSI_ERR_BASE) && ((err - ISCSI_ERR_BASE) < ISCSI_ERR_MAX))
+    if ((err > ISCSI_ERR_BASE) && ((err - ISCSI_ERR_BASE) < ISCSI_ERR_MAX)) {
         bdata->conn_stats.conn_err[err - ISCSI_ERR_BASE]++;
+        report_blk(ctx, bdata);
+    }
 }
 
