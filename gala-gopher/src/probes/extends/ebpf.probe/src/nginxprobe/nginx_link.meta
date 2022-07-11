@@ -2,7 +2,8 @@ version = "1.0.0"
 measurements:
 (
     {
-        name: "nginx_link",
+        table_name: "nginx_link",
+        entity_name: "nginx_link",
         fields:
         (
             {

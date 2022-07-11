@@ -2,7 +2,8 @@ version = "1.0.0"
 measurements:
 (
     {
-        name: "qdisc",
+        table_name: "qdisc",
+        entity_name: "qdisc",
         fields:
         (
             {

@@ -3,7 +3,8 @@ version = "1.0.0"
 measurements:
 (
     {
-        name: "system_vmstat",
+        table_name: "system_vmstat",
+        entity_name: "system_vmstat",
         fields:
         (
             {

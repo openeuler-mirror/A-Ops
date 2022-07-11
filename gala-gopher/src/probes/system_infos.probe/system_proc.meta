@@ -3,7 +3,8 @@ version = "1.0.0"
 measurements:
 (
     {
-        name: "system_proc",
+        table_name: "system_proc",
+        entity_name: "system_proc",
         fields:
         (
             {

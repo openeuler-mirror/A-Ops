@@ -2,7 +2,8 @@ version = "1.0.0"
 measurements:
 (
     {
-        name: "dnsmasq_link",
+        table_name: "dnsmasq_link",
+        entity_name: "dnsmasq_link",
         fields:
         (
             {

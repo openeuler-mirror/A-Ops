@@ -48,7 +48,7 @@ static struct evt_sec_s secs[EVT_SEC_MAX] = {
 };
 
 #define __EVT_BODY_LEN  128
-void report_logs(const char* tblName,
+void report_logs(const char* entityName,
                  const char* entityId,
                  const char* metrics,
                  enum evt_sec_e sec,
@@ -74,7 +74,7 @@ void report_logs(const char* tblName,
 
     (void)fprintf(stdout, "|%s|%s|%s|%s|%s|%d|%s|\n",
                           "event",
-                          tblName,
+                          entityName,
                           entityId,
                           metrics,
                           secs[sec].sec_text,

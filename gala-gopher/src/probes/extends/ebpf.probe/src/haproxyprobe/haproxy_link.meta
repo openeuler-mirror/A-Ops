@@ -2,7 +2,8 @@ version = "1.0.0"
 measurements:
 (
     {
-        name: "haproxy_link",
+        table_name: "haproxy_link",
+        entity_name: "haproxy_link",
         fields:
         (
             {

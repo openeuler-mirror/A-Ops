@@ -2,7 +2,8 @@ version = "1.0.0"
 measurements:
 (
     {
-        name: "tcp_link_health",
+        table_name: "tcp_link_health",
+        entity_name: "tcp_link",
         fields:
         (
             {

@@ -15,6 +15,7 @@
 #ifndef __GOPHER_EVT_H__
 #define __GOPHER_EVT_H__
 
+#pragma once
 
 enum evt_sec_e {
     EVT_SEC_INFO = 0,
@@ -25,10 +26,10 @@ enum evt_sec_e {
     EVT_SEC_MAX
 };
 
-void report_logs(const char* tblName, 
-                     const char* entityId, 
-                     const char* metrics, 
-                     enum evt_sec_e sec, 
-                     const char * fmt, ...);
+void report_logs(const char* entityName,
+                 const char* entityId,
+                 const char* metrics,
+                 enum evt_sec_e sec,
+                 const char * fmt, ...);
 
 #endif

@@ -42,6 +42,7 @@
 #include "container.h"
 #include "tcpprobe.h"
 
+#define OO_NAME "tcp_link"
 #define OO_TYPE_HEALTH "tcp_link_health"
 #define OO_TYPE_INFO "tcp_link_info"
 
@@ -245,7 +246,7 @@ static void report_tcp_health(struct tcp_metrics_s *metrics)
     th = &(metrics->data.health);
     if (th->tcp_oom != 0) {
         build_entity_id(&metrics->link, entityId, __ENTITY_ID_LEN);
-        report_logs(OO_TYPE_HEALTH,
+        report_logs(OO_NAME,
                     entityId,
                     "tcp_oom",
                     EVT_SEC_WARN,
@@ -257,7 +258,7 @@ static void report_tcp_health(struct tcp_metrics_s *metrics)
         if (entityId[0] != 0) {
             build_entity_id(&metrics->link, entityId, __ENTITY_ID_LEN);
         }
-        report_logs(OO_TYPE_HEALTH,
+        report_logs(OO_NAME,
                     entityId,
                     "backlog_drops",
                     EVT_SEC_WARN,
@@ -269,7 +270,7 @@ static void report_tcp_health(struct tcp_metrics_s *metrics)
         if (entityId[0] != 0) {
             build_entity_id(&metrics->link, entityId, __ENTITY_ID_LEN);
         }
-        report_logs(OO_TYPE_HEALTH,
+        report_logs(OO_NAME,
                     entityId,
                     "backlog_drops",
                     EVT_SEC_WARN,
@@ -294,7 +295,7 @@ static void report_tcp_status(struct tcp_metrics_s *metrics)
     latency_thr_us = params.latency_thr << 3; // milliseconds to microseconds
     if ((latency_thr_us != 0) && (syn->syn_srtt_last > latency_thr_us)) {
         build_entity_id(&metrics->link, entityId, __ENTITY_ID_LEN);
-        report_logs(OO_TYPE_INFO,
+        report_logs(OO_NAME,
                     entityId,
                     "syn_srtt_last",
                     EVT_SEC_WARN,

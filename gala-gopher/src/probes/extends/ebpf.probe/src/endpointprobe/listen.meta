@@ -3,7 +3,8 @@ version = "1.0.0"
 measurements:
 (
     {
-        name: "listen",
+        table_name: "listen",
+        entity_name: "listen",
         fields:
         (
             {
