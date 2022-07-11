@@ -21,6 +21,8 @@
 
 #define METRICS_CPU_NAME        "system_cpu"
 #define SYSTEM_PROCESSOR_INFO   "cat /proc/softirqs | grep -E '\\sRCU:\\s|\\sTIMER:\\s|\\sSCHED:\\s|\\sNET_RX:\\s'"
+#define SYSTEM_PROC_STAT_PATH   "/proc/stat"
+#define PROC_STAT_FILEDS_NUM    6
 #define BUF_SIZE                512
 #define MAX_CPU_NUM             1024
 #define LINE_SIZE               2048
@@ -29,6 +31,50 @@ static struct cpu_stat **cur_cpus = NULL;
 static struct cpu_stat **old_cpus = NULL;
 static int cpus_num = 0;
 static bool is_first_get = true;
+
+static int get_proc_stat_fileds(void)
+{
+    FILE *f = NULL;
+    char line[LINE_SIZE];
+    int ret;
+    int index = 0;
+    bool is_first_line = true;
+
+    f = fopen(SYSTEM_PROC_STAT_PATH, "r");
+    if (f == NULL) {
+        return -1;
+    }
+    while (!feof(f)) {
+        line[0] = 0;
+        if (fgets(line, LINE_SIZE, f) == NULL) {
+            fclose(f);
+            return 0;
+        }
+        if (strstr(line, "cpu") == NULL || is_first_line) {
+            is_first_line = false;
+            continue;
+        }
+        if (index >= cpus_num) {
+            printf("[SYSTEM_PROBE] cpu_probe records beyond max cpu nums(%d).\n", cpus_num);
+            (void)fclose(f);
+            return -1;
+        }
+        ret = sscanf(line,
+            "%*s %llu %llu %llu %*llu %llu %llu %llu %*llu %*llu %*llu",
+            &cur_cpus[index]->cpu_user_total_second,
+            &cur_cpus[index]->cpu_nice_total_second,
+            &cur_cpus[index]->cpu_system_total_second,
+            &cur_cpus[index]->cpu_iowait_total_second,
+            &cur_cpus[index]->cpu_irq_total_second,
+            &cur_cpus[index]->cpu_softirq_total_second);
+        if (ret < PROC_STAT_FILEDS_NUM) {
+            printf("system_cpu.probe faild get proc_stat metrics.\n");
+        }
+        index++;
+    }
+    (void)fclose(f);
+    return 0;
+}
 
 static int get_cpu_info(void)
 {
@@ -62,6 +108,10 @@ static int get_cpu_info(void)
         line[0] = 0;
     }
     pclose(f);
+    if (get_proc_stat_fileds()) {
+        printf("[SYSTEM_PROBE] fail to collect cpus info\n");
+        return -1;
+    }
     return 0;
 }
 
@@ -145,13 +195,19 @@ int system_cpu_probe(void)
         return 0;
     }
     for (size_t i = 0; i < cpus_num; i++) {
-        ret = fprintf(stdout, "|%s|%d|%llu|%llu|%llu|%llu|\n",
+        ret = fprintf(stdout, "|%s|%d|%llu|%llu|%llu|%llu|%llu|%llu|%llu|%llu|%llu|%llu|\n",
             METRICS_CPU_NAME,
             cur_cpus[i]->cpu_num,
             cur_cpus[i]->rcu - old_cpus[i]->rcu,
             cur_cpus[i]->timer - old_cpus[i]->timer,
             cur_cpus[i]->sched - old_cpus[i]->sched,
-            cur_cpus[i]->net_rx - old_cpus[i]->net_rx);
+            cur_cpus[i]->net_rx - old_cpus[i]->net_rx,
+            cur_cpus[i]->cpu_user_total_second - old_cpus[i]->cpu_user_total_second,
+            cur_cpus[i]->cpu_nice_total_second - old_cpus[i]->cpu_nice_total_second,
+            cur_cpus[i]->cpu_system_total_second - old_cpus[i]->cpu_system_total_second,
+            cur_cpus[i]->cpu_iowait_total_second - old_cpus[i]->cpu_iowait_total_second,
+            cur_cpus[i]->cpu_irq_total_second - old_cpus[i]->cpu_irq_total_second,
+            cur_cpus[i]->cpu_softirq_total_second - old_cpus[i]->cpu_softirq_total_second);
         tmp_ptr = old_cpus[i];
         old_cpus[i] = cur_cpus[i];
         cur_cpus[i] = tmp_ptr;
