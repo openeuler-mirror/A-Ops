@@ -161,6 +161,20 @@ static int GetTableNameAndContent(const char* buf, char *tblName, size_t size, c
     return 0;
 }
 
+static int isRecordCanSend2Egress(IngressMgr *mgr, IMDB_Table *table)
+{
+    if (mgr->egressMgr == NULL) {
+        return 0;
+    }
+    if (strcmp(table->name, "event") == 0 && mgr->egressMgr->event_kafkaMgr == NULL) {
+        return 0;
+    }
+    if (strcmp(table->name, "event") != 0 && mgr->egressMgr->metric_kafkaMgr == NULL) {
+        return 0;
+    }
+    return 1;
+}
+
 static int IngressDataProcesssInput(Fifo *fifo, IngressMgr *mgr)
 {
     // read data from fifo
@@ -203,7 +217,7 @@ static int IngressDataProcesssInput(Fifo *fifo, IngressMgr *mgr)
             }
         }
 
-        if (mgr->egressMgr) {
+        if (isRecordCanSend2Egress(mgr, table) == 1) {
             // send data to egress
             ret = IngressData2Egress(mgr, table, rec, content);
             if (ret != 0) {

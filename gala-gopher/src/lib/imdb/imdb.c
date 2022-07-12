@@ -823,7 +823,7 @@ static int IMDB_Tbl2Prometheus(IMDB_DataBaseMgr *mgr, IMDB_Table *table, char *b
             continue;
         }
 
-        ret = IMDB_Rec2Prometheus(mgr, record, curBuffer, curMaxLen, table->entity_name);
+        ret = IMDB_Rec2Prometheus(mgr, record, table->entity_name, curBuffer, curMaxLen);
         if (ret < 0) {
             ERROR("[IMDB] table(%s) record to string fail.\n", table->name);
             return -1;
