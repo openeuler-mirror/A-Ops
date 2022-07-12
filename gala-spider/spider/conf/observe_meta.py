@@ -10,6 +10,7 @@ import yaml
 
 from spider.util.singleton import Singleton
 from spider.util import logger
+from spider.exceptions import MetadataException
 
 
 class ValueCheckEnum(Enum):
@@ -362,12 +363,43 @@ def _merge_tcp_link_meta(old_obsv_meta, new_obsv_meta):
             old_obsv_meta.metrics.append(metric)
 
 
+def check_meta(old_obsv_meta: ObserveMeta, new_obsv_meta: ObserveMeta):
+    # check keys
+    if len(old_obsv_meta.keys) != len(new_obsv_meta.keys):
+        raise MetadataException('Keys of metadata not consistent')
+    for k1, k2 in zip(old_obsv_meta.keys, new_obsv_meta.keys):
+        if k1 != k2:
+            raise MetadataException('Keys of metadata not consistent')
+    # check metrics
+    metric_set = set(old_obsv_meta.metrics)
+    for metric in new_obsv_meta.metrics:
+        if metric in metric_set:
+            raise MetadataException('Metric name {} of metadata duplicate'.format(metric))
+
+
+def merge_meta(old_obsv_meta: ObserveMeta, new_obsv_meta: ObserveMeta) -> ObserveMeta:
+    merged_labels = list(set(old_obsv_meta.labels + new_obsv_meta.labels))
+    merged_metrics = old_obsv_meta.metrics + new_obsv_meta.metrics
+    obsv_meta = ObserveMeta(
+        type=old_obsv_meta.type,
+        keys=old_obsv_meta.keys,
+        labels=merged_labels,
+        metrics=merged_metrics,
+        name=old_obsv_meta.name,
+        level=old_obsv_meta.level,
+        version=old_obsv_meta.version,
+        depending_items=old_obsv_meta.depending_items,
+    )
+    return obsv_meta
+
+
 class ObserveMetaMgt(metaclass=Singleton):
     def __init__(self):
         self.data_agent = ""
         self.observe_meta_map: Dict[str, ObserveMeta] = {}
         self.relation_meta_set: Set[RelationMeta] = set()
         self.sub_relations: Dict[str, RelationMeta] = {}
+        self._merged_tables: Dict[str, set] = {}
 
     def set_data_agent(self, data_agent):
         self.data_agent = data_agent
@@ -444,20 +476,40 @@ class ObserveMetaMgt(metaclass=Singleton):
         return True
 
     def add_observe_meta_from_dict(self, data: dict):
+        data['type'] = data.get('entity_name')
+        if not data['type']:
+            return
+        table_name = data.get('meta_name')
+
         observe_meta = ObserveMetaMgt._get_observe_meta_from_dict(data)
         if observe_meta.type not in self.observe_meta_map:
             observe_meta.depending_items = self.get_depending_relations(observe_meta.type)
             self.observe_meta_map.setdefault(observe_meta.type, observe_meta)
+            tables = self._merged_tables.setdefault(observe_meta.type, set())
+            tables.add(table_name)
             return
 
         old_observe_meta = self.observe_meta_map.get(observe_meta.type)
         if old_observe_meta.ver_cmp(observe_meta) < 0:
             observe_meta.depending_items = old_observe_meta.depending_items
             self.observe_meta_map.update({observe_meta.type: observe_meta})
-        elif observe_meta.ver_cmp(observe_meta) == 0:
-            # tcp_link 类观测对象元数据需要做特殊处理。建议将该逻辑上移到 gopher 层处理
-            if observe_meta.type == EntityType.TCP_LINK.value:
-                _merge_tcp_link_meta(old_observe_meta, observe_meta)
+            self._merged_tables.update({observe_meta.type: {table_name}})
+        elif old_observe_meta.ver_cmp(observe_meta) == 0:
+            if table_name in self._merged_tables.get(observe_meta.type):
+                return
+            try:
+                check_meta(old_observe_meta, observe_meta)
+            except MetadataException as ex:
+                logger.logger.warning(
+                    'Metadata of entity type {} merged failed, because {}'.format(observe_meta.type, ex)
+                )
+                del self.observe_meta_map[observe_meta.type]
+                del self._merged_tables[observe_meta.type]
+                return
+            new_obsv_meta = merge_meta(old_observe_meta, observe_meta)
+            self.observe_meta_map.update({observe_meta.type: new_obsv_meta})
+            self._merged_tables.get(observe_meta.type).add(table_name)
+            return
 
     def get_observe_meta(self, entity_type: str) -> ObserveMeta:
         return self.observe_meta_map.get(entity_type)
@@ -484,13 +536,6 @@ class ObserveMetaMgt(metaclass=Singleton):
         metrics = data.get("metrics", [])
         level = data.get("level", "")
         version = data.get("version", "")
-
-        # tcp_link 类观测对象元数据需要做特殊处理。建议将该逻辑上移到 gopher 层处理
-        if type_.startswith(EntityType.TCP_LINK.value + '_'):
-            metric_type = type_[len(EntityType.TCP_LINK.value)+1:]
-            for i, metric in enumerate(metrics):
-                metrics[i] = '{}_{}'.format(metric_type, metric)
-            type_ = EntityType.TCP_LINK.value
 
         return ObserveMeta(
             type=type_,
