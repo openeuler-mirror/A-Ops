@@ -8,3 +8,7 @@ class StorageException(SpiderException):
 
 class StorageConnectionException(StorageException):
     pass
+
+
+class MetadataException(StorageException):
+    pass

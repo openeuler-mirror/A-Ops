@@ -38,7 +38,6 @@ class ObsvMetaCollThread(threading.Thread):
             data = json.loads(msg.value)
             metadata = {}
             metadata.update(data)
-            metadata.setdefault('type', data.get('meta_name'))
             self.observe_meta_mgt.add_observe_meta_from_dict(metadata)
 
 
