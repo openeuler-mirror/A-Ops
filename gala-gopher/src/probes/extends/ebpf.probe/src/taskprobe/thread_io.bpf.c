@@ -1,5 +1,5 @@
 /******************************************************************************
- * Copyright (c) Huawei Technologies Co., Ltd. 2021. All rights reserved.
+ * Copyright (c) Huawei Technologies Co., Ltd. 2022. All rights reserved.
  * gala-gopher licensed under the Mulan PSL v2.
  * You can use this software according to the terms and conditions of the Mulan PSL v2.
  * You may obtain a copy of Mulan PSL v2 at:
@@ -9,7 +9,7 @@
  * PURPOSE.
  * See the Mulan PSL v2 for more details.
  * Author: luzhihao
- * Create: 2022-02-10
+ * Create: 2022-07-13
  * Description: Collecting Task I/O Data
  ******************************************************************************/
 #ifdef BPF_PROG_USER
@@ -18,7 +18,7 @@
 #define BPF_PROG_KERN
 #include "bpf.h"
 #include "task_map.h"
-#include "output.h"
+#include "output_task.h"
 
 #define MAX_CPU 8
 #define TASK_REQUEST_MAX 100
@@ -70,7 +70,7 @@ static __always_inline void end_bio(void *ctx, struct bio *bio)
         struct task_data* data = get_task(*pid);
         if (data) {
             __sync_fetch_and_add(&(data->io.bio_err_count), 1);
-            report(ctx, data);
+            report_task(ctx, data);
         }
         return;
     }
@@ -97,7 +97,7 @@ KPROBE(submit_bio, pt_regs)
 
     if (is_read_bio(bio)) {
         data->io.bio_bytes_read += _(bio->bi_iter.bi_size);
-        report(ctx, data);
+        report_task(ctx, data);
 
         store_bio(bio, pid);
         return;
@@ -105,7 +105,7 @@ KPROBE(submit_bio, pt_regs)
 
     if (is_write_bio(bio)) {
         data->io.bio_bytes_write += _(bio->bi_iter.bi_size);
-        report(ctx, data);
+        report_task(ctx, data);
 
         store_bio(bio, pid);
         return;
@@ -126,7 +126,7 @@ KRAWTRACE(sched_stat_iowait, bpf_raw_tracepoint_args)
     struct task_data *data = get_task((int)_(task->pid));
     if (data) {
         __sync_fetch_and_add(&(data->io.iowait_us), delta);
-        report(ctx, data);
+        report_task(ctx, data);
     }
 }
 
@@ -136,6 +136,6 @@ KRAWTRACE(sched_process_hang, bpf_raw_tracepoint_args)
     struct task_data *data = get_task((int)_(task->pid));
     if (data) {
         __sync_fetch_and_add(&(data->io.hang_count), 1);
-        report(ctx, data);
+        report_task(ctx, data);
     }
 }
