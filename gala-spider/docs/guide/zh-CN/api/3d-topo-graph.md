@@ -550,3 +550,166 @@ Content-Length: 1053
 }
 ```
 
+
+
+## 拓扑图查询场景
+
+基于上节的拓扑图查询 API，我们可以组合使用来实现特定功能场景的查询。
+
+### 图层的查询
+
+#### 1. 查询指定图层的连接关系图
+
+例如，查询观测范围内的所有主机以及主机之间的连接关系图，可以分两步进行查询：
+
+- 首先，根据 API [4. 查询满足过滤条件的节点信息](#4. 查询满足过滤条件的节点信息) 过滤出所有的主机节点；
+
+  ```shell
+  [root@master ~]# curl -X POST --header 'accept: application/json' --data-binary @- --dump - http://10.137.17.122:8529/_db/spider/_api/cursor <<EOF
+  {
+    "query": "FOR v IN  @@collection FILTER  v.type == @entity_type return v",
+    "batchSize": 10,
+    "count": true,
+    "bindVars": { "@collection": "ObserveEntities_1657616617", "entity_type": "host"}
+  }
+  EOF
+  
+  ...
+  
+  {
+      "result": [
+          {
+              "_key": "4c739ef759c142c18e8c3c29f115e873_host", 
+              "_id": "ObserveEntities_1657616617/4c739ef759c142c18e8c3c29f115e873_host", 
+              "_rev": "_edEklBy--W", 
+              "type": "host", 
+              "level": "HOST", 
+              "timestamp": 1657616617, 
+              "machine_id": "4c739ef759c142c18e8c3c29f115e873", 
+              "hostname": "localhost.localdomain", 
+              "metrics": { }
+          }, 
+          {
+              "_key": "4f2eb1a8378b428f85af0a6c0cde9288_host", 
+              "_id": "ObserveEntities_1657616617/4f2eb1a8378b428f85af0a6c0cde9288_host", 
+              "_rev": "_edEklBy--X", 
+              "type": "host", 
+              "level": "HOST", 
+              "timestamp": 1657616617, 
+              "machine_id": "4f2eb1a8378b428f85af0a6c0cde9288", 
+              "hostname": "localhost.localdomain", 
+              "metrics": { }
+          }, 
+          {
+              "_key": "01b42f035bb14174b0bd39df3d9c16c7_host", 
+              "_id": "ObserveEntities_1657616617/01b42f035bb14174b0bd39df3d9c16c7_host", 
+              "_rev": "_edEklBy--Y", 
+              "type": "host", 
+              "level": "HOST", 
+              "timestamp": 1657616617, 
+              "machine_id": "01b42f035bb14174b0bd39df3d9c16c7", 
+              "hostname": "master", 
+              "metrics": { }
+          }
+      ], 
+      "hasMore": false, 
+      "count": 3, 
+      "cached": false, 
+      "extra": {...}, 
+      "error": false, 
+      "code": 201
+  }
+  ```
+
+- 其次，对每个主机节点调用 API [3. 查询指定节点的邻边信息](#3. 查询指定节点的邻边信息) 查询连接关系。
+
+  ```shell
+  [root@master ~]# curl --header 'accept: application/json' --dump - http://10.137.17.122:8529/_db/spider/_api/edges/connect?vertex=ObserveEntities_1657616617/4c739ef759c142c18e8c3c29f115e873_host
+  HTTP/1.1 200 OK
+  ...
+  
+  {
+      "edges": [
+          {
+              "_key": "2855357", 
+              "_id": "connect/2855357", 
+              "_from": "ObserveEntities_1657616617/4c739ef759c142c18e8c3c29f115e873_host", 
+              "_to": "ObserveEntities_1657616617/4f2eb1a8378b428f85af0a6c0cde9288_host", 
+              "_rev": "_edXhYT----"
+          }, 
+          {
+              "_key": "2855385", 
+              "_id": "connect/2855385", 
+              "_from": "ObserveEntities_1657616617/4c739ef759c142c18e8c3c29f115e873_host", 
+              "_to": "ObserveEntities_1657616617/01b42f035bb14174b0bd39df3d9c16c7_host", 
+              "_rev": "_edXhx62---"
+          }
+      ], 
+      "error": false, 
+      "code": 200, 
+      "stats": {
+          "writesExecuted": 0, 
+          "writesIgnored": 0, 
+          "scannedFull": 0, 
+          "scannedIndex": 2, 
+          "filtered": 0, 
+          "httpRequests": 0, 
+          "executionTime": 0.0007191281765699387, 
+          "peakMemoryUsage": 32768
+      }
+  }
+  ```
+
+#### 2. 查询指定图层中节点的详细信息
+
+例如，在获取到主机层的连接关系图后，当点击某个主机节点时可以查看该主机节点的基本信息。此外，当我们想查看在主机层中与该主机节点相关的其它信息时，比如磁盘、cpu、内存等，可以进一步通过 API [3. 查询指定节点的邻边信息](#3. 查询指定节点的邻边信息) 获取所有从属于该主机节点的邻居节点的ID信息。示例如下，
+
+```shell
+[root@master ~]# curl --header 'accept: application/json' --dump - http://10.137.17.122:8529/_db/spider/_api/edges/belongs_to?vertex=ObserveEntities_1657616617/4c739ef759c142c18e8c3c29f115e873_host
+HTTP/1.1 200 OK
+...
+
+{
+    "edges": [
+        {
+            "_key": "2859678", 
+            "_id": "belongs_to/2859678", 
+            "_from": "ObserveEntities_1657616617/4c739ef759c142c18e8c3c29f115e873_disk_sda", 
+            "_to": "ObserveEntities_1657616617/4c739ef759c142c18e8c3c29f115e873_host", 
+            "_rev": "_edZoSy----", 
+            "type": "belongs_to", 
+            "timestamp": 1657616617
+        }, 
+        {
+            "_key": "2859718", 
+            "_id": "belongs_to/2859718", 
+            "_from": "ObserveEntities_1657616617/4c739ef759c142c18e8c3c29f115e873_cpu_0", 
+            "_to": "ObserveEntities_1657616617/4c739ef759c142c18e8c3c29f115e873_host", 
+            "_rev": "_edZpruS---", 
+            "type": "belongs_to", 
+            "timestamp": 1657616617
+        }
+    ], 
+    "error": false, 
+    "code": 200, 
+    "stats": {...}
+}
+```
+
+获取到邻居节点的ID后，调用 API [2. 查询指定节点/边信息](#2. 查询指定节点/边信息) 获取邻居节点的详细信息，并根据返回的 `level` 属性过滤出主机层中的邻居节点信息。
+
+```shell
+[root@master ~]# curl --header 'accept: application/json' --dump - http://10.137.17.122:8529/_db/spider/_api/document/ObserveEntities_1657616617/4c739ef759c142c18e8c3c29f115e873_disk_sda
+HTTP/1.1 200 OK
+...
+
+{
+    "_key": "4c739ef759c142c18e8c3c29f115e873_disk_sda", 
+    "_id": "ObserveEntities_1657616617/4c739ef759c142c18e8c3c29f115e873_disk_sda", 
+    "_rev": "_edZs5oO---", 
+    "type": "disk", 
+    "level": "HOST", 
+    "disk_name": "sda", 
+    "machine_id": "4c739ef759c142c18e8c3c29f115e873"
+}
+```
