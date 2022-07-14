@@ -21,86 +21,59 @@
 
 #define METRICS_DISK_NAME       "system_disk"
 #define METRICS_IOSTAT_NAME     "system_iostat"
-#define SYSTEM_INODE_COMMAND \
-    "/usr/bin/df -i | /usr/bin/awk 'NR>1 {print $1\"%\"$2\"%\"$3\"%\"$4\"%\"$5\"%\"$6}'"
-#define SYSTEM_BLOCK_CMD \
-    "/usr/bin/df | /usr/bin/awk '{if($6==\"%s\"){print $1\"%\"$2\"%\"$3\"%\"$4\"%\"$5\"%\"$6}}'"
+#define SYSTEM_INODE_COMMAND    "/usr/bin/df -i | /usr/bin/awk 'NR>1 {print $0}'"
+#define SYSTEM_BLOCK_CMD        "/usr/bin/df | /usr/bin/awk '{if($6==\"%s\"){print $0}}'"
 #define SYSTEM_DISKSTATS_CMD    "/usr/bin/cat /proc/diskstats"
 #define SYSTEM_DISK_DEV_NUM     "/usr/bin/cat /proc/diskstats | wc -l"
 
-#define METRICS_DF_FSYS_TYPE        0
-#define METRICS_DF_INODES_OR_BLOCKS 1
-#define METRICS_DF_USED             2
-#define METRICS_DF_FREE             3
-#define METRICS_DF_USE_PER          4
-#define METRICS_DF_MOUNTED          5
-#define METRICS_DF_FIELD_MAX        6
-
-#define METRICS_IOSTAT_DEVNAME      0
-#define METRICS_IOSTAT_RD_SPEED     1
-#define METRICS_IOSTAT_RDKB_SPEED   2
-#define METRICS_IOSTAT_RD_AWAIT     3
-#define METRICS_IOSTAT_RAREQ_SZ     4
-#define METRICS_IOSTAT_WR_SPEED     5
-#define METRICS_IOSTAT_WRKB_SPEED   6
-#define METRICS_IOSTAT_WR_AWAIT     7
-#define METRICS_IOSTAT_WAREQ_SZ     8
-#define METRICS_IOSTAT_UTIL         9
-#define METRICS_IOSTAT_MAX          10
-
-static void split_line_to_substrings(char *line, char *pp[], int max_pp_len)
+#define DF_FIELD_NUM            6
+static int get_df_fields(char *line, df_stats *stats)
 {
-    char *str = line;
-    char *ptoken = NULL;
-    char *psave = NULL;
-    int index = 0;
+    int ret;
 
-    ptoken = strtok_r(str, "%", &psave);
-    while (ptoken != NULL && index < max_pp_len) {
-        pp[index++] = ptoken;
-        ptoken = strtok_r(NULL, "%", &psave);
+    ret = sscanf(line, "%s %ld %ld %ld %ld%*s %s",
+        &stats->fsys_type, &stats->inode_or_blk_sum, &stats->inode_or_blk_used,
+        &stats->inode_or_blk_free, &stats->inode_or_blk_used_per, &stats->mount_on);
+    if (ret < DF_FIELD_NUM) {
+        printf("[SYSTEM_PROBE] get df stats fields fail.\n");
+        return -1;
     }
-
-    return;
+    return 0;
 }
 
-static void report_disk_status(char *inode_info[], char *block_info[], struct probe_params *params)
+static void report_disk_status(df_stats inode_stats, df_stats blk_stats, struct probe_params *params)
 {
     char entityid[LINE_BUF_LEN];
-    int inode_used_per;
-    int block_used_per;
 
     if (params->logs == 0) {
         return;
     }
 
     entityid[0] = 0;
-    inode_used_per = atoi(inode_info[METRICS_DF_USE_PER]);
-    block_used_per = atoi(block_info[METRICS_DF_USE_PER]);
 
-    if (inode_used_per > params->res_percent_upper) {
-        (void)strncpy(entityid, inode_info[METRICS_DF_MOUNTED], LINE_BUF_LEN - 1);
+    if (inode_stats.inode_or_blk_used_per > params->res_percent_upper) {
+        (void)strncpy(entityid, inode_stats.mount_on, LINE_BUF_LEN - 1);
         report_logs(METRICS_DISK_NAME,
                     entityid,
                     "inode_userd_per",
                     EVT_SEC_WARN,
                     "Too many Inodes consumed(%d%%).",
-                    inode_used_per);
+                    inode_stats.inode_or_blk_used_per);
     }
-    if (block_used_per > params->res_percent_upper) {
+    if (blk_stats.inode_or_blk_used_per > params->res_percent_upper) {
         if (entityid[0] == 0) {
-            (void)strncpy(entityid, inode_info[METRICS_DF_MOUNTED], LINE_BUF_LEN - 1);
+            (void)strncpy(entityid, blk_stats.mount_on, LINE_BUF_LEN - 1);
         }
         report_logs(METRICS_DISK_NAME,
                     entityid,
                     "block_userd_per",
                     EVT_SEC_WARN,
                     "Too many Blocks used(%d%%).",
-                    block_used_per);
+                    blk_stats.inode_or_blk_used_per);
     }
 }
 
-static int get_mnt_block_info(const char *mounted_on, char *block_info[])
+static int get_mnt_block_info(const char *mounted_on, df_stats *blk_stats)
 {
     FILE *f = NULL;
     char cmd[LINE_BUF_LEN];
@@ -118,7 +91,10 @@ static int get_mnt_block_info(const char *mounted_on, char *block_info[])
         return -1;
     }
     SPLIT_NEWLINE_SYMBOL(line);
-    split_line_to_substrings(line, block_info, METRICS_DF_FIELD_MAX);
+    if (get_df_fields(line, blk_stats) < 0) {
+        pclose(f);
+        return -1;
+    }
 
     pclose(f);
     return 0;
@@ -136,8 +112,8 @@ int system_disk_probe(struct probe_params *params)
 {
     FILE *f = NULL;
     char line[LINE_BUF_LEN];
-    char *inode_info[METRICS_DF_FIELD_MAX];
-    char *block_info[METRICS_DF_FIELD_MAX];
+    df_stats inode_stats;
+    df_stats block_stats;
 
     /* get every disk filesystem's inode infos */
     f = popen(SYSTEM_INODE_COMMAND, "r");
@@ -150,31 +126,33 @@ int system_disk_probe(struct probe_params *params)
             break;
         }
         SPLIT_NEWLINE_SYMBOL(line);
-        split_line_to_substrings(line, inode_info, METRICS_DF_FIELD_MAX);
-
-        if (get_mnt_block_info(inode_info[METRICS_DF_MOUNTED], block_info) < 0) {
-            break;
+        if (get_df_fields(line, &inode_stats) < 0) {
+            continue;
+        }
+        if (get_mnt_block_info(inode_stats.mount_on, &block_stats) < 0) {
+            continue;
         }
         /* output */
-        (void)fprintf(stdout, "|%s|%s|%s|%s|%s|%s|%s|%s|%s|%s|%s|\n",
+        (void)fprintf(stdout, "|%s|%s|%s|%ld|%ld|%ld|%ld|%ld|%ld|%ld|%ld|\n",
             METRICS_DISK_NAME,
-            inode_info[METRICS_DF_MOUNTED],
-            inode_info[METRICS_DF_FSYS_TYPE],
-            inode_info[METRICS_DF_INODES_OR_BLOCKS],
-            inode_info[METRICS_DF_USE_PER],
-            inode_info[METRICS_DF_USED],
-            inode_info[METRICS_DF_FREE],
-            block_info[METRICS_DF_INODES_OR_BLOCKS],
-            block_info[METRICS_DF_USE_PER],
-            block_info[METRICS_DF_USED],
-            block_info[METRICS_DF_FREE]);
+            inode_stats.mount_on,
+            inode_stats.fsys_type,
+            inode_stats.inode_or_blk_sum,
+            inode_stats.inode_or_blk_used,
+            inode_stats.inode_or_blk_free,
+            inode_stats.inode_or_blk_used_per,
+            block_stats.inode_or_blk_sum,
+            block_stats.inode_or_blk_used,
+            block_stats.inode_or_blk_free,
+            block_stats.inode_or_blk_used_per);
         /* output event */
-        report_disk_status(inode_info, block_info, params);
+        report_disk_status(inode_stats, block_stats, params);
     }
     (void)pclose(f);
     return 0;
 }
 
+#define DISKSTAT_FIELD_NUM      8
 static int get_diskstats_fields(const char *line, disk_stats *stats)
 {
     int ret;
@@ -183,7 +161,7 @@ static int get_diskstats_fields(const char *line, disk_stats *stats)
         "%*Lu %*Lu %s %lu %*Lu %lu %u %lu %*Lu %lu %u %*Lu %u %*Lu %*Lu %*Lu %*Lu %*Lu",
         &stats->disk_name, &stats->rd_ios, &stats->rd_sectors, &stats->rd_ticks,
         &stats->wr_ios, &stats->wr_sectors, &stats->wr_ticks, &stats->io_ticks);
-    if (ret < 8) {
+    if (ret < DISKSTAT_FIELD_NUM) {
         printf("[SYSTEM_PROBE] get disk stats fields fail.\n");
         return -1;
     }
@@ -273,7 +251,9 @@ int system_iostat_probe(struct probe_params *params)
             return -1;
         }
         (void)memcpy(&temp, &g_disk_stats[index], sizeof(disk_stats));
-        (void)get_diskstats_fields(line, &g_disk_stats[index]);
+        if (get_diskstats_fields(line, &g_disk_stats[index]) < 0) {
+            continue;
+        }
 
         if (g_first_flag == 1) {
             (void)memset(&io_datas, 0, sizeof(disk_io_stats));

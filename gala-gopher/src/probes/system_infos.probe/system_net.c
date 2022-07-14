@@ -25,13 +25,15 @@
 #define SYSTEM_NET_DEV_PATH     "/proc/net/dev"
 #define SYSTEM_NETDEV_NUM       "/usr/bin/ls /sys/class/net | wc -l"
 
-static void get_netsnmp_fileds(const char *net_snmp_info, net_snmp_stat *stats)
+#define NETSNMP_TCP_FIELD_NUM   5
+#define NETSNMP_UDP_FIELD_NUM   2
+static int get_netsnmp_fileds(const char *net_snmp_info, net_snmp_stat *stats)
 {
     int ret;
     char *colon = strchr(net_snmp_info, ':');
     if (colon == NULL) {
         printf("net_snmp not find symbol ':' \n");
-        return;
+        return -1;
     }
     *colon = '\0';
 
@@ -40,14 +42,21 @@ static void get_netsnmp_fileds(const char *net_snmp_info, net_snmp_stat *stats)
             "%*Lu %*Lu %*Lu %*Lu %*Lu %*Lu %*Lu %*Lu %llu %llu %llu %llu %llu",
             &stats->tcp_curr_estab, &stats->tcp_in_segs, &stats->tcp_out_segs,
             &stats->tcp_retrans_segs, &stats->tcp_in_errs);
-        return;
+        if (ret < NETSNMP_TCP_FIELD_NUM) {
+            return -1;
+        }
+        return 0;
     }
     if (strcmp(net_snmp_info, "Udp") == 0) {
         ret = sscanf(colon + 1, "%llu %*Lu %*Lu %llu",
             &stats->udp_in_datagrams, &stats->udp_out_datagrams);
-        return;
+        if (ret < NETSNMP_UDP_FIELD_NUM) {
+            return -1;
+        }
+        return 0;
     }
-    return;
+
+    return -1;
 }
 
 /*
@@ -78,7 +87,9 @@ int system_tcp_probe(void)
         if (fgets(line, LINE_BUF_LEN, f) == NULL) {
             break;
         }
-        get_netsnmp_fileds(line, (net_snmp_stat *)&g_snmp_stats);
+        if (get_netsnmp_fileds(line, (net_snmp_stat *)&g_snmp_stats) < 0) {
+            continue;
+        }
     }
     /* output */
     (void)fprintf(stdout, "|%s|%s|%llu|%llu|%llu|%llu|%llu|%llu|%llu|\n",
@@ -122,7 +133,8 @@ static int get_netdev_num(int *num)
     return 0;
 }
 
-static void get_netdev_fileds(const char *net_dev_info, net_dev_stat *stats)
+#define NETDEV_FIELD_NUM        8
+static int get_netdev_fileds(const char *net_dev_info, net_dev_stat *stats)
 {
     int i, ret;
     char *devinfo = (char *)net_dev_info;
@@ -139,10 +151,11 @@ static void get_netdev_fileds(const char *net_dev_info, net_dev_stat *stats)
         "%*s %llu %llu %llu %llu %*Lu %*Lu %*Lu %*Lu %llu %llu %llu %llu %*Lu %*Lu %*Lu %*Lu",
         &stats->rx_bytes, &stats->rx_packets, &stats->rx_errs, &stats->rx_dropped,
         &stats->tx_bytes, &stats->tx_packets, &stats->tx_errs, &stats->tx_dropped);
-    if (ret < 8) {
+    if (ret < NETDEV_FIELD_NUM) {
         printf("system_net.probe faild get net_dev metrics.\n");
+        return -1;
     }
-    return;
+    return 0;
 }
 
 static void report_netdev(net_dev_stat *new_info, net_dev_stat *old_info, struct probe_params *params)
@@ -220,7 +233,9 @@ int system_net_probe(struct probe_params *params)
             return -1;
         }
         (void)memcpy(&temp, &g_dev_stats[index], sizeof(net_dev_stat));
-        get_netdev_fileds(line, &g_dev_stats[index]);
+        if (get_netdev_fileds(line, &g_dev_stats[index]) < 0) {
+            continue;
+        }
         (void)fprintf(stdout, "|%6s|%s|%llu|%llu|%llu|%llu|%llu|%llu|%llu|%llu|\n",
             METRICS_NET_NAME,
             g_dev_stats[index].dev_name,
