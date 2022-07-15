@@ -23,6 +23,17 @@
 /* the interval of time (@p) is given in second */
 #define S_VALUE(m,n,p)      (((double) ((n) - (m))) / (p))
 
+#define FSTYPE_LEN  64
+#define MOUNTON_LEN 128
+typedef struct {
+    char fsys_type[FSTYPE_LEN];
+    char mount_on[MOUNTON_LEN];
+    long inode_or_blk_sum;
+    long inode_or_blk_used;
+    long inode_or_blk_free;
+    long inode_or_blk_used_per;
+} df_stats;
+
 typedef struct {
     // u32 major;
     // u32 minor;
