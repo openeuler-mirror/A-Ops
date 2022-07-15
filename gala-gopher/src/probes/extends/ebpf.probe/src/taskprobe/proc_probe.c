@@ -30,6 +30,7 @@
 #include "bpf.h"
 #include "args.h"
 #include "proc.h"
+#include "event.h"
 #include "syscall.skel.h"
 #include "ex4.skel.h"
 #include "overlay.skel.h"
@@ -49,9 +50,43 @@
     MAP_SET_PIN_PATH(probe_name, g_proc_output, PROC_OUTPUT_PATH, load); \
     LOAD_ATTACH(probe_name, end, load)
 
+static void report_proc_metrics(struct proc_data_s *proc)
+{
+    char entityId[INT_LEN];
+
+    entityId[0] = 0;
+    (void)snprintf(entityId, INT_LEN, "%d", proc->proc_id);
+
+    if (proc->syscall.failed > 0) {
+        report_logs(OO_NAME,
+                    entityId,
+                    "syscall_failed",
+                    EVT_SEC_WARN,
+                    "Process(COMM:%s PID:%u) syscall failed(SysCall-ID:%d RET:%d COUNT:%u).",
+                    proc->comm,
+                    proc->proc_id,
+                    proc->syscall.last_syscall_id,
+                    proc->syscall.last_ret_code,
+                    proc->syscall.failed);
+    }
+
+    if (proc->dns_op.gethostname_failed > 0) {
+        report_logs(OO_NAME,
+                    entityId,
+                    "gethostname_failed",
+                    EVT_SEC_WARN,
+                    "Process(COMM:%s PID:%u) gethostname failed(COUNT:%u).",
+                    proc->comm,
+                    proc->proc_id,
+                    proc->dns_op.gethostname_failed);
+    }
+}
+
 static void output_proc_metrics(void *ctx, int cpu, void *data, __u32 size)
 {
     struct proc_data_s *proc = (struct proc_data_s *)data;
+
+    report_proc_metrics(proc);
 
     (void)fprintf(stdout,
         "|%s|%u|%s|"

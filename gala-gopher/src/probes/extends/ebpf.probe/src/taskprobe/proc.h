@@ -21,8 +21,8 @@ struct syscall_s {
     u64 syscall_start_ts;
 
     u32 failed;
-    u32 last_syscall_id;
-    unsigned long last_ret_code;
+    long last_syscall_id;
+    long last_ret_code;
 
     // I/O syscall
     u64 ns_mount;

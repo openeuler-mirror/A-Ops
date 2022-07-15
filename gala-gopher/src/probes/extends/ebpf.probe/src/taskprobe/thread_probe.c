@@ -30,6 +30,7 @@
 #include "bpf.h"
 #include "args.h"
 #include "task.h"
+#include "event.h"
 #include "thread_io.skel.h"
 #include "cpu.skel.h"
 #include "bpf_prog.h"
@@ -39,6 +40,10 @@
 #endif
 #define OO_NAME  "thread"
 
+static struct probe_params *g_args;
+
+#define US(ms)  ((u64)(ms) * 1000)
+
 #define __LOAD_PROBE(probe_name, end, load) \
     OPEN(probe_name, end, load); \
     MAP_SET_PIN_PATH(probe_name, g_task_output, TASK_OUTPUT_PATH, load); \
@@ -46,9 +51,66 @@
     MAP_SET_PIN_PATH(probe_name, g_task_map, TASK_PATH, load); \
     LOAD_ATTACH(probe_name, end, load)
 
+static void report_task_metrics(struct task_data *data)
+{
+    char entityId[INT_LEN];
+    u64 latency_thr_us = US(g_args->latency_thr);
+
+    entityId[0] = 0;
+    (void)snprintf(entityId, INT_LEN, "%d", data->id.pid);
+
+    if (data->cpu.off_cpu_ns > 0) {
+        report_logs(OO_NAME,
+                    entityId,
+                    "off_cpu_ns",
+                    EVT_SEC_WARN,
+                    "Process(COMM:%s TID:%d) is preempted(COMM:%s PID:%d) and off-CPU %llu ns.",
+                    data->id.comm,
+                    data->id.pid,
+                    data->cpu.preempt_comm,
+                    data->cpu.preempt_id,
+                    data->cpu.off_cpu_ns);
+    }
+
+    if (data->io.iowait_us > latency_thr_us) {
+        report_logs(OO_NAME,
+                    entityId,
+                    "iowait_us",
+                    EVT_SEC_WARN,
+                    "Process(COMM:%s TID:%d) iowait %llu us.",
+                    data->id.comm,
+                    data->id.pid,
+                    data->io.iowait_us);
+    }
+
+    if (data->io.hang_count > 0) {
+        report_logs(OO_NAME,
+                    entityId,
+                    "hang_count",
+                    EVT_SEC_WARN,
+                    "Process(COMM:%s TID:%d) io hang %u.",
+                    data->id.comm,
+                    data->id.pid,
+                    data->io.hang_count);
+    }
+
+    if (data->io.bio_err_count > 0) {
+        report_logs(OO_NAME,
+                    entityId,
+                    "bio_err_count",
+                    EVT_SEC_WARN,
+                    "Process(COMM:%s TID:%d) bio error %u.",
+                    data->id.comm,
+                    data->id.pid,
+                    data->io.bio_err_count);
+    }
+}
+
 static void output_task_metrics(void *ctx, int cpu, void *data, __u32 size)
 {
     struct task_data *value = (struct task_data *)data;
+
+    report_task_metrics(value);
 
     (void)fprintf(stdout,
         "|%s|%d|%d|%s|%llu|%llu|%llu|%u|%u|%llu|%u|\n",
@@ -73,6 +135,7 @@ struct bpf_prog_s* load_task_bpf_prog(struct probe_params *args)
     struct bpf_prog_s *prog;
     struct perf_buffer *pb;
 
+    g_args = args;
     prog = alloc_bpf_prog();
     if (prog == NULL) {
         return NULL;
@@ -106,6 +169,7 @@ err2:
     if (prog) {
         free_bpf_prog(prog);
     }
+    g_args = NULL;
     return NULL;
 }
 

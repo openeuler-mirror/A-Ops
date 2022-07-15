@@ -22,7 +22,14 @@
 
 char g_linsence[] SEC("license") = "GPL";
 
-static __always_inline void store_start(int pid, u32 cpu, u64 start)
+/* Used in tsk->state: */
+#define TASK_RUNNING            0x0000
+#define TASK_INTERRUPTIBLE      0x0001
+#define TASK_UNINTERRUPTIBLE    0x0002
+#define __TASK_STOPPED          0x0004
+#define __TASK_TRACED           0x0008
+
+static __always_inline void store_start(struct task_struct* prev, int pid, u32 cpu, u64 start)
 {
     struct task_data *data;
 
@@ -31,11 +38,19 @@ static __always_inline void store_start(int pid, u32 cpu, u64 start)
         return;
     }
 
+    long int state = _(prev->state);
+    if (state != TASK_RUNNING) {
+        return;
+    }
+
     data->cpu.off_cpu_start = start;
+    data->cpu.off_cpu_no = cpu;
+    data->cpu.preempt_id = bpf_get_current_pid_tgid() >> INT_LEN;
+    (void)bpf_get_current_comm(&data->cpu.preempt_comm, sizeof(data->cpu.preempt_comm));
     return;
 }
 
-static __always_inline void store_end(void *ctx, int pid, u32 cpu, u64 end)
+static __always_inline void store_end(void *ctx, int pid, u64 end)
 {
     u64 delta;
     struct task_data *data;
@@ -45,12 +60,16 @@ static __always_inline void store_end(void *ctx, int pid, u32 cpu, u64 end)
         return;
     }
 
+    if (data->cpu.off_cpu_start == 0) {
+        return;
+    }
+
     delta = (end > data->cpu.off_cpu_start) ? (end - data->cpu.off_cpu_start) : 0;
     if (delta > data->cpu.off_cpu_ns) {
         data->cpu.off_cpu_ns = delta;
-        data->cpu.off_cpu_no = cpu;
         report_task(ctx, data);
     }
+    data->cpu.off_cpu_start = 0;
     return;
 }
 
@@ -85,8 +104,8 @@ KPROBE(finish_task_switch, pt_regs)
     u64 ts = bpf_ktime_get_ns();
     u32 cpu = bpf_get_smp_processor_id();
 
-    store_start(prev_pid, cpu, ts);
-    store_end(ctx, pid, cpu, ts);
+    store_start(prev, prev_pid, cpu, ts);
+    store_end(ctx, pid, ts);
 
     update_migration(ctx, pid, cpu);
 }
