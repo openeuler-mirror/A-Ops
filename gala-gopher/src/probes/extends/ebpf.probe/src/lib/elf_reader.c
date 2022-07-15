@@ -30,6 +30,8 @@
 #define SYSTEM_PATH_LEN 1024
 #define DEFAULT_PATH_LIST   "/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/root/bin"
 
+#define COMMAND_REAL_PATH "/usr/bin/realpath %s"
+
 #define COMMAND_GLIBC_PATH \
     "/usr/bin/ldd /bin/ls | grep \"libc.so\" | awk -F '=>' '{print $2}' | awk '{print $1}'"
 #define COMMAND_ENV_PATH    "/usr/bin/env | grep PATH | awk -F '=' '{print $2}'"
@@ -37,15 +39,11 @@
 #if BPF_ELF_DESC("get glibc path")
 static int __get_link_path(const char* link, char *path, unsigned int len)
 {
-    int ret;
+    char command[COMMAND_LEN];
 
-    ret = readlink(link, path, len - 1);
-    if (ret < 0 || ret >= (len - 1)) {
-        fprintf(stderr, "get glibc readlink fail.\n");
-        return -1;
-    }
-
-    return 0;
+    command[0] = 0;
+    (void)snprintf(command, COMMAND_LEN, COMMAND_REAL_PATH, link);
+    return exec_cmd(command, path, len);
 }
 
 static int __do_get_glibc_path_host(char *path, unsigned int len)
@@ -66,6 +64,7 @@ static int __do_get_glibc_path_host(char *path, unsigned int len)
         return -1;
     }
 
+    split_newline_symbol(line);
     ret = __get_link_path((const char *)line, path, len);
     if (ret < 0) {
         (void)pclose(f);
@@ -96,6 +95,8 @@ static int __do_get_glibc_path_container(const char *container_id, char *path, u
         return ret;
 
     (void)snprintf(glibc_abs_path, PATH_LEN, "%s/%s", container_abs_path, glibc_path);
+
+    split_newline_symbol(glibc_abs_path);
     ret = __get_link_path((const char *)glibc_abs_path, path, len);
     if (ret < 0)
         return -1;

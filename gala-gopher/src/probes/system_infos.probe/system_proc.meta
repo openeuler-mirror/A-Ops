@@ -4,7 +4,7 @@ measurements:
 (
     {
         table_name: "system_proc",
-        entity_name: "system_proc",
+        entity_name: "proc",
         fields:
         (
             {

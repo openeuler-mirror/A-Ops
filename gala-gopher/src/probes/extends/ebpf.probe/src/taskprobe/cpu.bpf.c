@@ -9,7 +9,7 @@
  * PURPOSE.
  * See the Mulan PSL v2 for more details.
  * Author: luzhihao
- * Create: 2022-06-10
+ * Create: 2022-07-13
  * Description: Collecting Task sched Data
  ******************************************************************************/
 #ifdef BPF_PROG_USER
@@ -18,8 +18,7 @@
 #define BPF_PROG_KERN
 #include "bpf.h"
 #include "task_map.h"
-#include "output.h"
-
+#include "output_task.h"
 
 char g_linsence[] SEC("license") = "GPL";
 
@@ -46,11 +45,11 @@ static __always_inline void store_end(void *ctx, int pid, u32 cpu, u64 end)
         return;
     }
 
-    delta = (data->cpu.off_cpu_start < end) ? (end - data->cpu.off_cpu_start) : 0;
+    delta = (end > data->cpu.off_cpu_start) ? (end - data->cpu.off_cpu_start) : 0;
     if (delta > data->cpu.off_cpu_ns) {
         data->cpu.off_cpu_ns = delta;
         data->cpu.off_cpu_no = cpu;
-        report(ctx, data);
+        report_task(ctx, data);
     }
     return;
 }
@@ -72,7 +71,7 @@ static __always_inline void update_migration(void *ctx, int pid, u32 cpu)
     if (data->cpu.current_cpu_no != cpu) {
         data->cpu.current_cpu_no = cpu;
         __sync_fetch_and_add(&data->cpu.migration_count, 1);
-        report(ctx, data);
+        report_task(ctx, data);
         return;
     }
 }
@@ -91,5 +90,4 @@ KPROBE(finish_task_switch, pt_regs)
 
     update_migration(ctx, pid, cpu);
 }
-
 

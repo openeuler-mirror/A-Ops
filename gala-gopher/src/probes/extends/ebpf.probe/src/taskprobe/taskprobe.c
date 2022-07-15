@@ -30,22 +30,18 @@
 #include "bpf.h"
 #include "args.h"
 #include "taskprobe.skel.h"
-#include "thread_io.skel.h"
-#include "cpu.skel.h"
 #include "taskprobe.h"
+#include "bpf_prog.h"
+#include "proc.h"
 #include "task.h"
 
-#define OO_THREAD_NAME  "thread"
-#define OUTPUT_PATH "/sys/fs/bpf/probe/__taskprobe_output"
-#define PERIOD_PATH "/sys/fs/bpf/probe/__taskprobe_period"
-#define TASK_PATH "/sys/fs/bpf/probe/__taskprobe_task"
 #define RM_TASK_MAP_PATH "/usr/bin/rm -rf /sys/fs/bpf/probe/__taskprobe*"
 
 #define LOAD_TASK_PROBE(probe_name, end, load) \
     OPEN(probe_name, end, load); \
-    MAP_SET_PIN_PATH(probe_name, g_task_output, OUTPUT_PATH, load); \
     MAP_SET_PIN_PATH(probe_name, period_map, PERIOD_PATH, load); \
     MAP_SET_PIN_PATH(probe_name, g_task_map, TASK_PATH, load); \
+    MAP_SET_PIN_PATH(probe_name, g_proc_map, PROC_PATH, load); \
     LOAD_ATTACH(probe_name, end, load)
 
 static volatile sig_atomic_t stop = 0;
@@ -62,6 +58,28 @@ static struct task_name_t task_range[] = {
 static void sig_int(int signal)
 {
     stop = 1;
+}
+
+static void load_daemon_proc(int task_map_fd, int proc_map_fd)
+{
+    int ret;
+    int ckey = 0, nkey = 0;
+    u32 proc_id;
+    struct task_data task_data = {0};
+    struct proc_data_s proc_data = {0};
+
+    while (bpf_map_get_next_key(task_map_fd, &ckey, &nkey) != -1) {
+        ret = bpf_map_lookup_elem(task_map_fd, &nkey, &task_data);
+        if (ret == 0) {
+            if (task_data.id.tgid == task_data.id.pid) {
+                proc_id = task_data.id.tgid;
+                proc_data.proc_id = proc_id;
+                (void)memcpy(proc_data.comm, task_data.id.comm, TASK_COMM_LEN);
+                (void)bpf_map_update_elem(proc_map_fd, &proc_id, &proc_data, BPF_ANY);
+            }
+        }
+        ckey = nkey;
+    }
 }
 
 static void load_daemon_task(int app_fd, int task_map_fd)
@@ -151,33 +169,14 @@ static void load_period(int period_fd, __u32 value)
     __u64 period = NS(value);
     (void)bpf_map_update_elem(period_fd, &key, &period, BPF_ANY);
 }
-static void print_task_metrics(void *ctx, int cpu, void *data, __u32 size)
-{
-    struct task_data *value = (struct task_data *)data;
-
-    fprintf(stdout,
-        "|%s|%d|%d|%s|%llu|%llu|%llu|%u|%u|%llu|%u|\n",
-        OO_THREAD_NAME,
-        value->id.pid,
-        value->id.tgid,
-        value->id.comm,
-        value->io.bio_bytes_read,
-        value->io.bio_bytes_write,
-        value->io.iowait_us,
-        value->io.hang_count,
-        value->io.bio_err_count,
-        value->cpu.off_cpu_ns,
-        value->cpu.migration_count);
-
-    (void)fflush(stdout);
-    return;
-}
 
 int main(int argc, char **argv)
 {
     int ret = -1;
-    struct perf_buffer* pb = NULL;
     FILE *fp = NULL;
+    struct bpf_prog_s* thread_bpf_progs = NULL;
+    struct bpf_prog_s* proc_bpf_progs = NULL;
+    struct bpf_prog_s* glibc_bpf_progs = NULL;
 
     if (signal(SIGINT, sig_int) == SIG_ERR) {
         fprintf(stderr, "can't set signal handler: %s\n", strerror(errno));
@@ -192,7 +191,6 @@ int main(int argc, char **argv)
     if (strlen(tp_params.task_whitelist) == 0) {
         fprintf(stderr, "***task_whitelist_path is null, please check param : -c xx/xxx *** \n");
     }
-    DEBUG("Task probe starts with period: %us.\n", tp_params.period);
 
     fp = popen(RM_TASK_MAP_PATH, "r");
     if (fp != NULL) {
@@ -202,42 +200,64 @@ int main(int argc, char **argv)
 
     INIT_BPF_APP(taskprobe, EBPF_RLIM_LIMITED);
 
-    LOAD_TASK_PROBE(taskprobe, err3, 1);
-    LOAD_TASK_PROBE(thread_io, err2, 1);
-    LOAD_TASK_PROBE(cpu, err1, 1);
-
-    int out_put_fd = GET_MAP_FD(taskprobe, g_task_output);
-    pb = create_pref_buffer(out_put_fd, print_task_metrics);
-    if (pb == NULL) {
-        fprintf(stderr, "ERROR: crate perf buffer failed\n");
-        goto err;
-    }
+    // load task probe bpf prog
+    LOAD_TASK_PROBE(taskprobe, err, 1);
 
     int pmap_fd = GET_MAP_FD(taskprobe, probe_proc_map);
     int task_map_fd = GET_MAP_FD(taskprobe, g_task_map);
     int period_fd = GET_MAP_FD(taskprobe, period_map);
+    int proc_map_fd = GET_MAP_FD(taskprobe, g_proc_map);
 
+    // Set task probe collection period
     load_period(period_fd, tp_params.period);
 
+    // Set task probe observation range based on 'task->comm'
     load_task_range(pmap_fd);
 
+    // Set task probe whitelist.
     load_task_wl(pmap_fd);
 
+    // Load task instances based on the whitelist.
     load_daemon_task(pmap_fd, task_map_fd);
+
+    // Load proc instances from thread table.
+    load_daemon_proc(task_map_fd, proc_map_fd);
+
+    // Load thread bpf prog
+    thread_bpf_progs = load_task_bpf_prog(&tp_params);
+    if (thread_bpf_progs == NULL) {
+        goto err;
+    }
+
+    // Load proc bpf prog
+    proc_bpf_progs = load_proc_bpf_prog(&tp_params);
+    if (proc_bpf_progs == NULL) {
+        goto err;
+    }
+
+    // Load glibc bpf prog
+    glibc_bpf_progs = load_glibc_bpf_prog(&tp_params);
+    if (glibc_bpf_progs == NULL) {
+        goto err;
+    }
 
     printf("Successfully started!\n");
 
-    poll_pb(pb, THOUSAND);
+    while (!stop) {
+        if ((ret = perf_buffer__poll(thread_bpf_progs->pb, THOUSAND)) < 0) {
+            break;
+        }
+        if ((ret = perf_buffer__poll(proc_bpf_progs->pb, THOUSAND)) < 0) {
+            break;
+        }
+        sleep(tp_params.period);
+    }
 
 err:
-    if (pb) {
-        perf_buffer__free(pb);
-    }
-err1:
-    UNLOAD(cpu);
-err2:
-    UNLOAD(thread_io);
-err3:
+    unload_bpf_prog(&glibc_bpf_progs);
+    unload_bpf_prog(&proc_bpf_progs);
+    unload_bpf_prog(&thread_bpf_progs);
     UNLOAD(taskprobe);
+
     return ret;
 }

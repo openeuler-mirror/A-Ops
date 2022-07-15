@@ -18,8 +18,9 @@
 #define BPF_PROG_KERN
 #include "bpf.h"
 #include "taskprobe.h"
+#include "args_map.h"
 #include "task_map.h"
-#include "output.h"
+#include "proc_map.h"
 
 char g_linsence[] SEC("license") = "GPL";
 
@@ -91,23 +92,40 @@ KRAWTRACE(sched_process_fork, bpf_raw_tracepoint_args)
         (void)bpf_probe_read_str(&data.id.comm,
             TASK_COMM_LEN * sizeof(char), (char *)child->comm);
         (void)task_add(pid, &data);
+        if (data.id.tgid == data.id.pid) {
+            proc_add_entry((u32)data.id.tgid, data.id.comm);
+        }
     }
 }
 
 KRAWTRACE(sched_process_exit, bpf_raw_tracepoint_args)
 {
     struct task_struct* task = (struct task_struct*)ctx->args[0];
+    int pid = _(task->pid);
+    int tgid = _(task->tgid);
 
-    (void)task_put(_(task->pid));
+    if (pid == tgid) {
+        proc_put_entry((u32)tgid);
+    }
+
+    (void)task_put(pid);
 }
 
 KRAWTRACE(task_rename, bpf_raw_tracepoint_args)
 {
     struct task_struct* task = (struct task_struct *)ctx->args[0];
     const char *comm = (const char *)ctx->args[1];
+    int pid = _(task->pid);
+    int tgid = _(task->tgid);
 
-    struct task_data *val = (struct task_data *)get_task(_(task->pid));
+    struct task_data *val = (struct task_data *)get_task(pid);
     if (val) {
         bpf_probe_read_str(&(val->id.comm), TASK_COMM_LEN * sizeof(char), (char *)comm);
+    }
+    if ((pid == tgid) && val) {
+        struct proc_data_s* proc = get_proc_entry((u32)tgid);
+        if (proc) {
+            __builtin_memcpy(proc->comm, val->id.comm, TASK_COMM_LEN);
+        }
     }
 }
