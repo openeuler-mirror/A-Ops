@@ -22,10 +22,13 @@
 
 char g_linsence[] SEC("license") = "GPL";
 
+#define SYSCALL_ID_MIN 1
+#define SYSCALL_ID_MAX 512
+
 #if (CURRENT_KERNEL_VERSION >= KERNEL_VERSION(4, 18, 0))
 struct sys_exit_args {
     unsigned long regs;
-    unsigned long ret;
+    long ret;
 };
 
 #define TS_COMPAT   0x0002  /* 32bit syscall active (64BIT) */
@@ -53,7 +56,7 @@ static __always_inline long get_syscall_id(void *ctx)
     return id;
 }
 
-static __always_inline unsigned long get_syscall_ret(void *ctx)
+static __always_inline long get_syscall_ret(void *ctx)
 {
     struct sys_exit_args *args = (struct sys_exit_args *)ctx;
 
@@ -74,14 +77,19 @@ KRAWTRACE(sys_exit, sys_exit_args)
         return;
     }
 
-    unsigned long ret = get_syscall_ret(ctx);
+    long id = get_syscall_id(ctx);
+    if (id < SYSCALL_ID_MIN || id > SYSCALL_ID_MAX) {
+        return;
+    }
+
+    long ret = get_syscall_ret(ctx);
     if (ret >= 0) {
         return;
     }
 
     __sync_fetch_and_add(&(proc->syscall.failed), 1);
     proc->syscall.last_ret_code = ret;
-    proc->syscall.last_syscall_id = get_syscall_id(ctx);
+    proc->syscall.last_syscall_id = id;
     report_proc(ctx, proc);
 }
 #endif

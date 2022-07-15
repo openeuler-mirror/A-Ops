@@ -40,6 +40,8 @@ struct task_cpu_data {
     int off_cpu_no;
     __u64 off_cpu_ns;
     __u64 off_cpu_start;
+    int preempt_id;                     // Preemptor process ID
+    char preempt_comm[TASK_COMM_LEN];   // Preemptor process name
 
     u32 migration_count;
     int current_cpu_no;

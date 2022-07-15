@@ -47,7 +47,7 @@ static struct evt_sec_s secs[EVT_SEC_MAX] = {
     {21,              "FATAL"}
 };
 
-#define __EVT_BODY_LEN  128
+#define __EVT_BODY_LEN  256
 void report_logs(const char* entityName,
                  const char* entityId,
                  const char* metrics,
