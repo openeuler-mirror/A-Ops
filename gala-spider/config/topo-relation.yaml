@@ -1,7 +1,6 @@
 topo_relations:
   -
     type: host
-    level: HOST
     dependingitems:
       -
         id: connect
@@ -9,59 +8,19 @@ topo_relations:
         toTypes:
           -
             type: host
-  -
-    type: container
-    level: CONTAINER
-    dependingitems:
-      -
-        id: runs_on
-        layer: direct
-        toTypes:
-          -
-            type: host
-            matches:
-              -
-                from: machine_id
-                to: machine_id
-      -
-        id: connect
-        layer: indirect
-        toTypes:
-          -
-            type: container
-  -
-    type: appinstance
-    level: APPLICATION
-    dependingitems:
-      -
-        id: runs_on
-        layer: direct
-        toTypes:
-          -
-            type: container
-            matches:
-              -
-                from: pgid
-                to: pid
-              -
-                from: machine_id
-                to: machine_id
-          -
-            type: host
-            matches:
-              -
-                from: machine_id
-                to: machine_id
-      -
-        id: connect
-        layer: indirect
-        toTypes:
-          -
-            type: appinstance
   -
     type: system_proc
-    level: PROCESS
     dependingitems:
+      -
+        id: runs_on
+        layer: direct
+        toTypes:
+          -
+            type: host
+            matches:
+              -
+                from: machine_id
+                to: machine_id
       -
         id: belongs_to
         layer: direct
@@ -76,6 +35,19 @@ topo_relations:
                 from: machine_id
                 to: machine_id
       -
+        id: belongs_to
+        layer: direct
+        toTypes:
+          -
+            type: container
+            matches:
+              -
+                from: tgid
+                to: proc_id
+              -
+                from: machine_id
+                to: machine_id
+      -
         id: connect
         layer: indirect
         toTypes:
@@ -83,7 +55,6 @@ topo_relations:
             type: system_proc
   -
     type: thread
-    level: PROCESS
     dependingitems:
       -
         id: belongs_to
@@ -100,7 +71,6 @@ topo_relations:
                 to: machine_id
   -
     type: bind
-    level: PROCESS
     dependingitems:
       -
         id: belongs_to
@@ -117,7 +87,6 @@ topo_relations:
                 to: machine_id
   -
     type: udp
-    level: PROCESS
     dependingitems:
       -
         id: belongs_to
@@ -134,7 +103,6 @@ topo_relations:
                 to: machine_id
   -
     type: connect
-    level: PROCESS
     dependingitems:
       -
         id: belongs_to
@@ -151,7 +119,6 @@ topo_relations:
                 to: machine_id
   -
     type: listen
-    level: PROCESS
     dependingitems:
       -
         id: belongs_to
@@ -168,7 +135,6 @@ topo_relations:
                 to: machine_id
   -
     type: tcp_link
-    level: RPC
     dependingitems:
       -
         id: belongs_to
@@ -183,61 +149,6 @@ topo_relations:
               -
                 from: machine_id
                 to: machine_id
-      -
-        id: is_server
-        layer: direct
-        toTypes:
-          -
-            type: ipvs_link
-            matches: &lb_link_server_match
-              -
-                from: server_ip
-                to: server_ip
-              -
-                from: server_port
-                to: server_port
-            requires: &lb_link_server_require
-              -
-                side: from
-                label: role
-                value: 0
-          -
-            type: nginx_link
-            matches: *lb_link_server_match
-            requires: *lb_link_server_require
-          -
-            type: haproxy_link
-            matches: *lb_link_server_match
-            requires: *lb_link_server_require
-      -
-        id: is_client
-        layer: direct
-        toTypes:
-          -
-            type: ipvs_link
-            matches: &lb_link_client_match
-              -
-                from: client_ip
-                to: client_ip
-              -
-                from: server_ip
-                to: virtual_ip
-              -
-                from: server_port
-                to: virtual_port
-            requires: &lb_link_client_require
-              -
-                side: from
-                label: role
-                value: 1
-          -
-            type: nginx_link
-            matches: *lb_link_client_match
-            requires: *lb_link_client_require
-          -
-            type: haproxy_link
-            matches: *lb_link_client_match
-            requires: *lb_link_client_require
       -
         id: is_peer
         layer: direct
@@ -254,52 +165,15 @@ topo_relations:
               -
                 from: client_ip
                 to: client_ip
+              -
+                from: client_port
+                to: client_port
             conflicts:
               -
                 from: role
                 to: role
   -
-    type: ipvs_link
-    level: LB
-    dependingitems:
-      -
-        id: belongs_to
-        layer: direct
-        toTypes:
-          -
-            type: thread
-            matches: &lb_link_belong_task
-              -
-                from: pid
-                to: pid
-              -
-                from: machine_id
-                to: machine_id
-  -
-    type: nginx_link
-    level: LB
-    dependingitems:
-      -
-        id: belongs_to
-        layer: direct
-        toTypes:
-          -
-            type: thread
-            matches: *lb_link_belong_task
-  -
-    type: haproxy_link
-    level: LB
-    dependingitems:
-      -
-        id: belongs_to
-        layer: direct
-        toTypes:
-          -
-            type: thread
-            matches: *lb_link_belong_task
-  -
     type: ksliprobe
-    level: PROCESS
     dependingitems:
       -
         id: belongs_to
@@ -311,3 +185,61 @@ topo_relations:
               -
                 from: tgid
                 to: tgid
+              -
+                from: machine_id
+                to: machine_id
+  -
+    type: system_cpu
+    dependingitems:
+      -
+        id: belongs_to
+        layer: direct
+        toTypes:
+          -
+            type: host
+            matches:
+              -
+                from: machine_id
+                to: machine_id
+  -
+    type: system_net
+    dependingitems:
+      -
+        id: belongs_to
+        layer: direct
+        toTypes:
+          -
+            type: host
+            matches:
+              -
+                from: machine_id
+                to: machine_id
+  -
+    type: system_iostat
+    dependingitems:
+      -
+        id: belongs_to
+        layer: direct
+        toTypes:
+          -
+            type: host
+            matches:
+              -
+                from: machine_id
+                to: machine_id
+  -
+    type: block
+    dependingitems:
+      -
+        id: belongs_to
+        layer: direct
+        toTypes:
+          -
+            type: system_iostat
+            matches:
+              -
+                from: disk_name
+                to: disk_name
+              -
+                from: machine_id
+                to: machine_id

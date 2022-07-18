@@ -12,6 +12,4 @@ observe_entities:
       - pgid
       - machine_id
     labels:
-      - exe_file
-      - exec_file
       - processes
