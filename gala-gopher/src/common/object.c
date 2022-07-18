@@ -209,7 +209,7 @@ char is_nm_exist(struct nm_s *obj)
     if (__obj_module.nm_map_fd <= 0) {
         return 0;
     }
-    int ret = bpf_map_update_elem(__obj_module.nm_map_fd, obj, &ref, BPF_ANY);
+    int ret = bpf_map_lookup_elem(__obj_module.nm_map_fd, obj, &ref);
     return (ret == 0) ? 1 : 0;
 }
 
@@ -220,7 +220,7 @@ char is_proc_exist(struct proc_s *obj)
     if (__obj_module.proc_map_fd <= 0) {
         return 0;
     }
-    int ret = bpf_map_update_elem(__obj_module.proc_map_fd, obj, &ref, BPF_ANY);
+    int ret = bpf_map_lookup_elem(__obj_module.proc_map_fd, obj, &ref);
     return (ret == 0) ? 1 : 0;
 }
 
@@ -231,7 +231,7 @@ char is_cgrp_exist(struct cgroup_s *obj)
     if (__obj_module.cgrp_map_fd <= 0) {
         return 0;
     }
-    int ret = bpf_map_update_elem(__obj_module.cgrp_map_fd, obj, &ref, BPF_ANY);
+    int ret = bpf_map_lookup_elem(__obj_module.cgrp_map_fd, obj, &ref);
     return (ret == 0) ? 1 : 0;
 }
 
