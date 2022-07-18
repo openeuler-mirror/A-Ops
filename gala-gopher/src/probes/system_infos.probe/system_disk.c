@@ -19,7 +19,7 @@
 #include "event.h"
 #include "system_disk.h"
 
-#define METRICS_DISK_NAME       "system_disk"
+#define METRICS_DF_NAME         "system_df"
 #define METRICS_IOSTAT_NAME     "system_iostat"
 #define SYSTEM_INODE_COMMAND    "/usr/bin/df -i | /usr/bin/awk 'NR>1 {print $0}'"
 #define SYSTEM_BLOCK_CMD        "/usr/bin/df | /usr/bin/awk '{if($6==\"%s\"){print $0}}'"
@@ -53,7 +53,7 @@ static void report_disk_status(df_stats inode_stats, df_stats blk_stats, struct 
 
     if (inode_stats.inode_or_blk_used_per > params->res_percent_upper) {
         (void)strncpy(entityid, inode_stats.mount_on, LINE_BUF_LEN - 1);
-        report_logs(METRICS_DISK_NAME,
+        report_logs(METRICS_DF_NAME,
                     entityid,
                     "inode_userd_per",
                     EVT_SEC_WARN,
@@ -64,7 +64,7 @@ static void report_disk_status(df_stats inode_stats, df_stats blk_stats, struct 
         if (entityid[0] == 0) {
             (void)strncpy(entityid, blk_stats.mount_on, LINE_BUF_LEN - 1);
         }
-        report_logs(METRICS_DISK_NAME,
+        report_logs(METRICS_DF_NAME,
                     entityid,
                     "block_userd_per",
                     EVT_SEC_WARN,
@@ -134,7 +134,7 @@ int system_disk_probe(struct probe_params *params)
         }
         /* output */
         (void)fprintf(stdout, "|%s|%s|%s|%ld|%ld|%ld|%ld|%ld|%ld|%ld|%ld|\n",
-            METRICS_DISK_NAME,
+            METRICS_DF_NAME,
             inode_stats.mount_on,
             inode_stats.fsys_type,
             inode_stats.inode_or_blk_sum,

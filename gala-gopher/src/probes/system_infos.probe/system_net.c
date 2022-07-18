@@ -20,6 +20,7 @@
 #include "system_net.h"
 
 #define METRICS_TCP_NAME        "system_tcp"
+#define METRICS_UDP_NAME        "system_udp"
 #define METRICS_NET_NAME        "system_net"
 #define SYSTEM_NET_SNMP_PATH    "/proc/net/snmp"
 #define SYSTEM_NET_DEV_PATH     "/proc/net/dev"
@@ -92,14 +93,18 @@ int system_tcp_probe(void)
         }
     }
     /* output */
-    (void)fprintf(stdout, "|%s|%s|%llu|%llu|%llu|%llu|%llu|%llu|%llu|\n",
+    (void)fprintf(stdout, "|%s|%s|%llu|%llu|%llu|%llu|%llu|\n",
         METRICS_TCP_NAME,
         "/proc/dev/snmp",
         g_snmp_stats.tcp_curr_estab,
         g_snmp_stats.tcp_in_segs - temp.tcp_in_segs,
         g_snmp_stats.tcp_out_segs - temp.tcp_out_segs,
         g_snmp_stats.tcp_retrans_segs - temp.tcp_retrans_segs,
-        g_snmp_stats.tcp_in_errs - temp.tcp_in_errs,
+        g_snmp_stats.tcp_in_errs - temp.tcp_in_errs);
+
+    (void)fprintf(stdout, "|%s|%s|%llu|%llu|\n",
+        METRICS_UDP_NAME,
+        "/proc/dev/snmp",
         g_snmp_stats.udp_in_datagrams - temp.udp_in_datagrams,
         g_snmp_stats.udp_out_datagrams - temp.udp_out_datagrams);
 

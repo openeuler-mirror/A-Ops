@@ -4,7 +4,7 @@ measurements:
 (
     {
         table_name: "system_iostat",
-        entity_name: "system_iostat",
+        entity_name: "disk",
         fields:
         (
             {
@@ -60,8 +60,8 @@ measurements:
         )
     },
     {
-        table_name: "system_disk",
-        entity_name: "system_disk",
+        table_name: "system_df",
+        entity_name: "file_system",
         fields:
         (
             {

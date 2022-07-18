@@ -4,7 +4,7 @@ measurements:
 (
     {
         table_name: "system_net",
-        entity_name: "system_net",
+        entity_name: "nic",
         fields:
         (
             {
@@ -88,6 +88,18 @@ measurements:
                 description: "tcp_in_errs",
                 type: "gauge",
                 name: "tcp_in_errs",
+            }
+        )
+    },
+    {
+        table_name: "system_udp",
+        entity_name: "system_udp",
+        fields:
+        (
+            {
+                description: "origin",
+                type: "key",
+                name: "origin",
             },
             {
                 description: "udp_indata_grams",
@@ -101,5 +113,6 @@ measurements:
             }
         )
     }
+
 )
 
