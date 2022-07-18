@@ -19,7 +19,7 @@
 #include <sys/eventfd.h>
 #include "web_server.h"
 
-#define MAX_WEBPAGE_BUFFER_SIZE (8 * 1024 * 64)     // 64 KB
+#define MAX_WEBPAGE_BUFFER_SIZE (10 * 1024 * 1024)     // 10 MB
 char g_buffer[MAX_WEBPAGE_BUFFER_SIZE];
 
 #if GALA_GOPHER_INFO("inner func")
