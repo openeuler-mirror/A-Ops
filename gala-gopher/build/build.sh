@@ -11,6 +11,7 @@ PROBES_LIST=""
 PROBES_C_LIST=""
 PROBES_META_LIST=""
 
+COMMON_FOLDER=${PROJECT_FOLDER}/src/common
 DAEMON_FOLDER=${PROJECT_FOLDER}/src/daemon
 
 TAILOR_PATH=${PROJECT_FOLDER}/tailor.conf
@@ -87,6 +88,19 @@ function prepare_probes()
     echo "PROBES_META_LIST:"
     echo ${PROBES_META_LIST}
     cd -
+}
+
+function compile_lib()
+{
+    cd ${COMMON_FOLDER}
+    rm -rf *.so
+    make
+}
+
+function compile_lib_clean()
+{
+    cd ${COMMON_FOLDER}
+    rm -rf *.so
 }
 
 function compile_daemon_release()
@@ -234,6 +248,7 @@ fi
 if [ "$1" = "--release" ];then
     load_tailor
     prepare_probes
+    compile_lib
     compile_daemon_release
     compile_extend_probes_release
     clean_env
@@ -243,6 +258,7 @@ fi
 if [ "$1" = "--debug" ];then
     load_tailor
     prepare_probes
+    compile_lib
     compile_daemon_debug
     compile_extend_probes_debug
     clean_env
@@ -250,6 +266,7 @@ if [ "$1" = "--debug" ];then
 fi
 
 if [ "$1" = "--clean" ];then
+    compile_lib_clean
     compile_daemon_clean
     compile_extend_probes_clean
     exit

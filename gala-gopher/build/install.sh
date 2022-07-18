@@ -3,7 +3,9 @@
 PROGRAM=$0
 PROJECT_FOLDER=$(dirname "$PWD")
 EXT_PROBE_FOLDER=${PROJECT_FOLDER}/src/probes/extends
+SHARED_LIB_FOLDER=${PROJECT_FOLDER}/src/common
 EXT_PROBE_INSTALL_LIST=`find ${EXT_PROBE_FOLDER} -maxdepth 2 | grep "\<install.sh\>"`
+SHARED_LIB_LIST=`find ${SHARED_LIB_FOLDER} -name "*.so"`
 
 TAILOR_PATH=${PROJECT_FOLDER}/tailor.conf
 TAILOR_PATH_TMP=${TAILOR_PATH}.tmp
@@ -97,6 +99,25 @@ function install_meta()
 
 }
 
+function install_shared_lib()
+{
+    GOPHER_SHARED_LIB_DIR=/opt/gala-gopher/lib
+
+    if [ $# -eq 1 ]; then
+        GOPHER_SHARED_LIB_DIR=$1/lib
+    fi
+
+    if [ ! -d ${GOPHER_SHARED_LIB_DIR} ]; then
+        mkdir -p ${GOPHER_SHARED_LIB_DIR}
+    fi
+
+    for SHARED_LIB in ${SHARED_LIB_LIST}
+    do
+        echo "install lib:" ${SHARED_LIB}
+        cp ${SHARED_LIB} ${GOPHER_SHARED_LIB_DIR}
+    done
+}
+
 function install_extend_probes()
 {
     GOPHER_EXTEND_PROBE_DIR=/opt/gala-gopher/extend_probes
@@ -147,5 +168,6 @@ load_tailor
 install_daemon_bin $1
 install_conf $2
 install_meta $2
+install_shared_lib $2
 install_extend_probes $2
 install_client_bin $1
