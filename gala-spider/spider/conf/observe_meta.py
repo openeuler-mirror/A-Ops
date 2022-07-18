@@ -38,6 +38,10 @@ class EntityType(ValueCheckEnum):
     HAPROXY_LINK = 'haproxy_link'
     REDIS_CLIENT = 'redis_client'
     REDIS_SLI = 'ksliprobe'
+    DISK = 'system_iostat'
+    BLOCK = 'block'
+    NETCARD = 'system_net'
+    CPU = 'system_cpu'
 
 
 class RelationType(ValueCheckEnum):
@@ -61,13 +65,8 @@ class RelationSideType(ValueCheckEnum):
 
 class TopologyLevelType(ValueCheckEnum):
     HOST = 'HOST'
-    CONTAINER = 'CONTAINER'
-    APPLICATION = 'APPLICATION'
-    RUNTIME = 'RUNTIME'
     PROCESS = 'PROCESS'
     RPC = 'RPC'
-    LB = 'LB'
-    MB = 'MB'
 
 
 @dataclass
