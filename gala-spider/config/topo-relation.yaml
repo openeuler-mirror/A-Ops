@@ -9,7 +9,7 @@ topo_relations:
           -
             type: host
   -
-    type: system_proc
+    type: proc
     dependingitems:
       -
         id: runs_on
@@ -52,7 +52,7 @@ topo_relations:
         layer: indirect
         toTypes:
           -
-            type: system_proc
+            type: proc
   -
     type: thread
     dependingitems:
@@ -61,7 +61,7 @@ topo_relations:
         layer: direct
         toTypes:
           -
-            type: system_proc
+            type: proc
             matches:
               -
                 from: tgid
@@ -77,7 +77,7 @@ topo_relations:
         layer: direct
         toTypes:
           -
-            type: system_proc
+            type: proc
             matches:
               -
                 from: tgid
@@ -93,7 +93,7 @@ topo_relations:
         layer: direct
         toTypes:
           -
-            type: system_proc
+            type: proc
             matches:
               -
                 from: tgid
@@ -109,7 +109,7 @@ topo_relations:
         layer: direct
         toTypes:
           -
-            type: system_proc
+            type: proc
             matches:
               -
                 from: tgid
@@ -125,7 +125,7 @@ topo_relations:
         layer: direct
         toTypes:
           -
-            type: system_proc
+            type: proc
             matches:
               -
                 from: tgid
@@ -141,7 +141,7 @@ topo_relations:
         layer: direct
         toTypes:
           -
-            type: system_proc
+            type: proc
             matches:
               -
                 from: tgid
@@ -180,7 +180,7 @@ topo_relations:
         layer: direct
         toTypes:
           -
-            type: system_proc
+            type: proc
             matches:
               -
                 from: tgid
@@ -189,7 +189,7 @@ topo_relations:
                 from: machine_id
                 to: machine_id
   -
-    type: system_cpu
+    type: cpu
     dependingitems:
       -
         id: belongs_to
@@ -202,7 +202,7 @@ topo_relations:
                 from: machine_id
                 to: machine_id
   -
-    type: system_net
+    type: nic
     dependingitems:
       -
         id: belongs_to
@@ -215,7 +215,7 @@ topo_relations:
                 from: machine_id
                 to: machine_id
   -
-    type: system_iostat
+    type: disk
     dependingitems:
       -
         id: belongs_to
@@ -235,7 +235,7 @@ topo_relations:
         layer: direct
         toTypes:
           -
-            type: system_iostat
+            type: disk
             matches:
               -
                 from: disk_name

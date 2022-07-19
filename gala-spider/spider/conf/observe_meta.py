@@ -26,7 +26,7 @@ class EntityType(ValueCheckEnum):
     HOST = 'host'
     CONTAINER = 'container'
     APPINSTANCE = 'appinstance'
-    PROCESS = 'system_proc'
+    PROCESS = 'proc'
     THREAD = 'thread'
     BIND = 'bind'
     UDP = 'udp'
@@ -38,10 +38,10 @@ class EntityType(ValueCheckEnum):
     HAPROXY_LINK = 'haproxy_link'
     REDIS_CLIENT = 'redis_client'
     REDIS_SLI = 'ksliprobe'
-    DISK = 'system_iostat'
+    DISK = 'disk'
     BLOCK = 'block'
-    NETCARD = 'system_net'
-    CPU = 'system_cpu'
+    NETCARD = 'nic'
+    CPU = 'cpu'
 
 
 class RelationType(ValueCheckEnum):
