@@ -135,7 +135,7 @@ static __always_inline int get_tcp_link_key(struct tcp_link_s *link, struct sock
         }
         link->s_port = bpf_ntohs(_(sk->sk_dport));
         if (link->c_flag == 1) {
-            link->c_port = bpf_ntohs(_(sk->sk_num));
+            link->c_port = _(sk->sk_num);
         } else {
             link->c_port = 0;
         }

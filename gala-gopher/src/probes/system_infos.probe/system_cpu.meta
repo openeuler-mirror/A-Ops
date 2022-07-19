@@ -4,7 +4,7 @@ measurements:
 (
     {
         table_name: "system_cpu",
-        entity_name: "system_cpu",
+        entity_name: "cpu",
         fields:
         (
             {

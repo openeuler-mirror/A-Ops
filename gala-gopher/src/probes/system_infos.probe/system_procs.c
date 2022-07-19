@@ -42,6 +42,7 @@
 #define PROC_LIMIT_CMD      "/usr/bin/cat /proc/%s/limits | grep \"open files\" | awk '{print $4}'"
 
 static proc_hash_t *g_procmap = NULL;
+static proc_info_t g_pre_proc_info;
 
 static char proc_range[PROC_MAX_RANGE][PROC_NAME_MAX] = {
     "go",
@@ -514,8 +515,13 @@ static int get_proc_mss(const char *pid, proc_info_t *proc_info)
         if (fgets(line, LINE_BUF_LEN, f) == NULL) {
             goto out;
         }
+        if (index == 0) {   // filter out the first line
+            index++;
+            continue;
+        }
         value = 0;
-        if (sscanf(line, "%*s %lu %*s", &value) < 0) {
+        int ret = sscanf(line, "%*s %lu %*s", &value);
+        if (ret < 1) {
             goto out;
         }
         do_set_proc_mss(proc_info, value, index);
@@ -532,11 +538,13 @@ static int update_proc_infos(const char *pid, proc_info_t *proc_info)
 {
     int ret = 0;
 
+    (void)memcpy(&g_pre_proc_info, proc_info, sizeof(proc_info_t));
+
     ret = get_proc_fdcnt(pid, proc_info);
     if (ret < 0) {
         return -1;
     }
-    // TODO: other infos
+
     ret = get_proc_io(pid, proc_info);
     if (ret < 0) {
         return -1;
@@ -582,13 +590,13 @@ static void output_proc_infos(proc_hash_t *one_proc)
         one_proc->info.container_id,
         one_proc->info.fd_count,
         fd_free_per,
-        one_proc->info.proc_rchar_bytes,
-        one_proc->info.proc_wchar_bytes,
-        one_proc->info.proc_syscr_count,
-        one_proc->info.proc_syscw_count,
-        one_proc->info.proc_read_bytes,
-        one_proc->info.proc_write_bytes,
-        one_proc->info.proc_cancelled_write_bytes,
+        one_proc->info.proc_rchar_bytes - g_pre_proc_info.proc_rchar_bytes,
+        one_proc->info.proc_wchar_bytes - g_pre_proc_info.proc_wchar_bytes,
+        one_proc->info.proc_syscr_count - g_pre_proc_info.proc_syscr_count,
+        one_proc->info.proc_syscw_count - g_pre_proc_info.proc_syscw_count,
+        one_proc->info.proc_read_bytes - g_pre_proc_info.proc_read_bytes,
+        one_proc->info.proc_write_bytes - g_pre_proc_info.proc_write_bytes,
+        one_proc->info.proc_cancelled_write_bytes - g_pre_proc_info.proc_cancelled_write_bytes,
         one_proc->info.proc_shared_clean,
         one_proc->info.proc_shared_dirty,
         one_proc->info.proc_private_clean,
@@ -597,10 +605,10 @@ static void output_proc_infos(proc_hash_t *one_proc)
         one_proc->info.proc_lazyfree,
         one_proc->info.proc_swap,
         one_proc->info.proc_swappss,
-        one_proc->info.proc_stat_min_flt,
-        one_proc->info.proc_stat_maj_flt,
-        one_proc->info.proc_stat_utime,
-        one_proc->info.proc_stat_stime,
+        one_proc->info.proc_stat_min_flt - g_pre_proc_info.proc_stat_min_flt,
+        one_proc->info.proc_stat_maj_flt - g_pre_proc_info.proc_stat_maj_flt,
+        one_proc->info.proc_stat_utime - g_pre_proc_info.proc_stat_utime,
+        one_proc->info.proc_stat_stime - g_pre_proc_info.proc_stat_stime,
         one_proc->info.proc_stat_vsize,
         one_proc->info.proc_stat_rss);
     return;
@@ -674,7 +682,6 @@ int system_proc_probe(void)
 
         /* add new_proc to hashmap and output */
         hash_add_proc(l);
-        output_proc_infos(l);
     }
     closedir(dir);
     hash_clear_invalid_proc();

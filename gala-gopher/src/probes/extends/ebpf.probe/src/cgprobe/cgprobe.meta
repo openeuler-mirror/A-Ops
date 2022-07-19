@@ -3,7 +3,7 @@ measurements:
 (
     {
         table_name: "cgprobe",
-        entity_name: "cgprobe",
+        entity_name: "cgroup",
         fields:
         (
             {
