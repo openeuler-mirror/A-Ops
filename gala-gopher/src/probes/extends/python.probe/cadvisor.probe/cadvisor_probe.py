@@ -5,6 +5,7 @@ import signal
 import subprocess
 import os
 import io
+import re
 import getopt
 import requests
 import libconf
@@ -13,8 +14,10 @@ DOCKER = "/docker/"
 DOCKER_LEN = 8
 FILTER_BY_TASKPROBE = "task"
 PROJECT_PATH = os.path.dirname(os.path.dirname(os.path.abspath(__file__))) # /opt/gala-gopher/
+PATTERN = re.compile(r'/[a-z0-9]+')
+COUNTER = "counter"
 g_meta = None
-g_metric = None
+g_metric = dict()
 g_object_lib = None
 g_cadvisor_pid = None
 g_params = None
@@ -43,20 +46,22 @@ def offload_so():
 
 
 def get_container_pid(id):
-    p = subprocess.Popen(["docker", "inspect", str(id), "--format", "{{.State.Pid}}"], stdout=subprocess.PIPE, shell=False)
+    p = subprocess.Popen(["/usr/bin/docker", "inspect", str(id), "--format", "{{.State.Pid}}"], \
+        stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=False)
     (rawout, serr) = p.communicate(timeout=5)
     return rawout.rstrip().decode("utf-8")
 
 
 def filter_container(id):
     global g_object_lib
-    pid = int(get_container_pid(id))
 
     if g_params.filter_task_probe:
+        pid = int(get_container_pid(id))
         ret = g_object_lib.is_proc_exist(pointer(Proc_S(pid)))
         return ret == 1
 
     if g_params.filter_pid != 0:
+        pid = int(get_container_pid(id))
         return pid == g_params.filter_pid
 
     return True
@@ -67,23 +72,27 @@ def convert_meta():
     Convert the meta file like the following format:
     g_meta[container_blkio] = 
     {
-        'id': 0,
-        'device': 0,
-        'major': 0,
-        'minor': 0,
-        'operation': 0,
-        'device_usage_total': 0
+        'id': "key",
+        'device': "label",
+        'major': "label",
+        'minor': "label",
+        'operation': "label",
+        'device_usage_total': "counter"
     }
     '''
     global g_meta
-    meta_path = os.path.join(PROJECT_PATH, "meta/cadvisor_probe.meta")
+    meta_path = os.path.join(PROJECT_PATH, "extend_probes/cadvisor_probe.conf")
     with io.open(meta_path, encoding='utf-8') as f:
         meta = libconf.load(f)
         g_meta = dict()
         for measure in meta.measurements:
             g_meta[measure.table_name] = dict()
             for field in measure.fields:
-                g_meta[measure.table_name][field.name] = 0
+                try:
+                    g_meta[measure.table_name][field.name] = field.type
+                except KeyError:
+                    # main will catch the exception
+                    raise
 
 
 def find_2nd_index(stri, key):
@@ -96,9 +105,31 @@ def find_2nd_index(stri, key):
     return first + index
 
 
+def parse_container_id(metric_str):
+    # find the last substring that satisfies PATTERN
+    container_id = ""
+    for sub_str in re.finditer(PATTERN, metric_str):
+        container_id = sub_str.group(0)
+    if len(container_id) - 1 != 64: # len of container_id is 64
+        return ""
+    return container_id[1:]
+
+
 def parse_metrics(raw_metrics):
+    '''
+    Convert origin metric to the following format:
+    before: 
+        container_cpu_load_average_10s{id="/docker",image="redis",name="musing_archimedes"} 0 1658113125812
+    after: g_metric['container_cpu'][hashed_metric_str] = {
+        'id': '/docker',
+        'image': 'redis',
+        'name': 'musing_archimedes',
+        'cpu_load_average_10s': 0,
+        'container_id': 0
+    }
+    '''
     global g_metric
-    g_metric = dict()
+
     for line in raw_metrics.splitlines():
         if line.startswith("container_"):
             delimiter = find_2nd_index(line, "_")
@@ -109,12 +140,12 @@ def parse_metrics(raw_metrics):
                 g_metric[table_name] = dict()
 
             metric_str = libconf.loads(line[(line.index("{") + 1):line.index("} ")])
-            # TODO: will filter out system processes by whitelist
-            if not metric_str.id.startswith(DOCKER):
+            if metric_str.id.startswith("/system.slice"):
                 continue
-
-            container_id = metric_str.id[DOCKER_LEN:]
-            if (not filter_container(container_id)):
+            if metric_str.id.startswith("/user.slice"):
+                continue
+            container_id = parse_container_id(metric_str.id)
+            if container_id == "" or (not filter_container(container_id)):
                 continue
 
             hashed_metric_str = frozenset(metric_str.items())
@@ -123,11 +154,25 @@ def parse_metrics(raw_metrics):
                 g_metric[table_name][hashed_metric_str]['container_id'] = container_id
 
             metric_name = line[line.index("_") + 1:line.index("{")]
-            g_metric[table_name][hashed_metric_str][metric_name] = \
-                line[(line.index(" ") + 1):find_2nd_index(line, " ")]
+            value = line[(line.index(" ") + 1):find_2nd_index(line, " ")]
+            try:
+                if g_meta[table_name][metric_name] == COUNTER:
+                    if metric_name in g_metric[table_name][hashed_metric_str]:
+                        g_metric[table_name][hashed_metric_str][metric_name][1] = float(value)
+                    else:
+                        g_metric[table_name][hashed_metric_str][metric_name] = [0, float(value)]
+                else:
+                    g_metric[table_name][hashed_metric_str][metric_name] = value
+            except KeyError:
+                # main will catch the exception
+                raise
 
 
 def print_metrics():
+    '''
+    Convert metric to the following format:
+    |container_blkio|c903e934945006f82cd81ce4131a0b719984d10e7ca7bec3f6c024193d86aa85|/dev/dm-0|253|0|Async|0|
+    '''
     global g_metric
     global g_meta
     for table, records in g_metric.items():
@@ -136,18 +181,22 @@ def print_metrics():
         for record in records.values():
             s = "|" + table + "|"
             if table in g_meta:
-                for field in g_meta[table]:
-                    if field not in record:
+                for field_name, field_type in g_meta[table].items():
+                    if field_name not in record:
                         value = ""
                     else:
-                        value = record[field]
+                        if field_type == COUNTER:
+                            value = str(record[field_name][1] - record[field_name][0])
+                            record[field_name][0] = record[field_name][1]
+                        else:
+                            value = record[field_name]
                     s = s + value + "|"
                 print(s)
 
 
 def clean_metrics():
-    global g_metric
-    g_metric = None
+    pass
+    # Clean up containers that don't exist 
 
 
 class CadvisorProbe(object):

@@ -5,6 +5,7 @@ PRJ_DIR=$(dirname $(readlink -f "$0"))
 INSTALL_FILES="redis.probe/redis_probe.py"
 INSTALL_FILES+=" redis_client.probe/client-async.py"
 INSTALL_FILES+=" cadvisor.probe/cadvisor_probe.py"
+INSTALL_FILES+=" cadvisor.probe/cadvisor_probe.conf"
 
 if [ $# -eq 1 ]; then
     # copy to specify dir
