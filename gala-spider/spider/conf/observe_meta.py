@@ -69,6 +69,35 @@ class TopologyLevelType(ValueCheckEnum):
     RPC = 'RPC'
 
 
+entity_level_map = {
+    # HOST level
+    EntityType.HOST.value: TopologyLevelType.HOST.value,
+    EntityType.NETCARD.value: TopologyLevelType.HOST.value,
+    EntityType.CPU.value: TopologyLevelType.HOST.value,
+    EntityType.DISK.value: TopologyLevelType.HOST.value,
+    EntityType.BLOCK.value: TopologyLevelType.HOST.value,
+    # PROCESS level
+    EntityType.PROCESS.value: TopologyLevelType.PROCESS.value,
+    EntityType.THREAD.value: TopologyLevelType.PROCESS.value,
+    EntityType.CONTAINER.value: TopologyLevelType.PROCESS.value,
+    EntityType.APPINSTANCE.value: TopologyLevelType.PROCESS.value,
+    EntityType.LISTEN.value: TopologyLevelType.PROCESS.value,
+    EntityType.CONNECT.value: TopologyLevelType.PROCESS.value,
+    EntityType.UDP.value: TopologyLevelType.PROCESS.value,
+    EntityType.BIND.value: TopologyLevelType.PROCESS.value,
+    EntityType.REDIS_SLI.value: TopologyLevelType.PROCESS.value,
+    # RPC level
+    EntityType.TCP_LINK.value: TopologyLevelType.RPC.value,
+    EntityType.HAPROXY_LINK.value: TopologyLevelType.RPC.value,
+    EntityType.IPVS_LINK.value: TopologyLevelType.RPC.value,
+    EntityType.NGINX_LINK.value: TopologyLevelType.RPC.value,
+}
+
+
+def get_entity_topo_level(entity_type):
+    return entity_level_map.get(entity_type)
+
+
 @dataclass
 class MatchMeta:
     from_: str
@@ -478,6 +507,9 @@ class ObserveMetaMgt(metaclass=Singleton):
         data['type'] = data.get('entity_name')
         if not data['type']:
             return
+        if not EntityType.check_value(data.get('type')):
+            logger.logger.warning('Unsupported entity type {}, ignore it'.format(data.get('type')))
+            return
         table_name = data.get('meta_name')
 
         observe_meta = ObserveMetaMgt._get_observe_meta_from_dict(data)
@@ -533,7 +565,6 @@ class ObserveMetaMgt(metaclass=Singleton):
         keys = data.get("keys", [])
         labels = data.get("labels", [])
         metrics = data.get("metrics", [])
-        level = data.get("level", "")
         version = data.get("version", "")
 
         return ObserveMeta(
@@ -541,7 +572,7 @@ class ObserveMetaMgt(metaclass=Singleton):
             keys=keys,
             labels=labels,
             metrics=metrics,
-            level=level,
+            level=get_entity_topo_level(type_),
             version=version
         )
 

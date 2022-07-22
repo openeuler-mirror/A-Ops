@@ -166,8 +166,6 @@ Content-Length: 279
 
 查询指定节点（或边）的详细信息。这里只提供与本功能相关的说明，详细的 API 定义参见 arangodb 官方文档： [节点查询接口](https://www.arangodb.com/docs/stable/http/document-working-with-documents.html#read-document)。
 
-#### 1.2 请求方法
-
 #### 2.2 请求方法
 
 `GET /_api/document/{collection}/{key}`
