@@ -3,13 +3,16 @@ INCLUDES = $(BASE_INC)
 
 APP := nsprobe
 TC_BPF := bps.tcbpf.o
+SRC_CPLUS := $(wildcard *.cpp)
+SRC_CPLUS += $(CPLUSFILES)
 
 BPF_C := $(wildcard *bpf.c)
 DEPS := $(patsubst %.tcbpf.c, %.tcbpf.o, $(patsubst %.bpf.c, %.bpf.o, $(BPF_C)))
 DEPS += $(patsubst %.bpf.c, %.skel.h, $(wildcard *.bpf.c))
+DEPS += $(patsubst %.cpp, %.o, $(SRC_CPLUS))
 
 SRC_C := $(filter-out $(BPF_C), $(wildcard *.c))
-SRC_C += $(UTIL_SRC)
+SRC_C += $(CFILES)
 
 .PHONY: all clean install
 
@@ -25,10 +28,14 @@ deps: $(DEPS)
 %.skel.h: %.bpf.o
 	$(BPFTOOL) gen skeleton $< > $@
 
+# build c++ files
+%.o: %.cpp
+	$(C++) -c $^ $(CXXFLAGS) $(INCLUDES) -o $@
+
 app: $(APP)
 %: %.c $(SRC_C)
-	$(CC) $(CFLAGS) $(INCLUDES) $^ $(LINK_TARGET) -o $@
-
+	$(CC) $(CFLAGS) $(patsubst %.cpp, %.o, $(SRC_CPLUS))  $(INCLUDES) $^ $(LDFLAGS) $(LINK_TARGET) -o $@
+	@echo $@ "compiling completed."
 clean:
 	rm -rf $(DEPS)
 	rm -rf $(APP)
