@@ -95,7 +95,7 @@ class TestAccountDatabase(unittest.TestCase):
             "password": "123456"
         }
         res = self.proxy.change_password(data)
-        self.assertEqual(res, REPEAT_PASSWORD)
+        self.assertEqual(res[0], REPEAT_PASSWORD)
 
         # right
         data = {
@@ -103,7 +103,7 @@ class TestAccountDatabase(unittest.TestCase):
             "password": "444"
         }
         res = self.proxy.change_password(data)
-        self.assertEqual(res, SUCCEED)
+        self.assertEqual(res[0], SUCCEED)
 
         res = self.proxy.login(data)
         self.assertEqual(res, SUCCEED)

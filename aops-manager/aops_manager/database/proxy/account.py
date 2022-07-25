@@ -15,6 +15,7 @@ Time: 2021-12-22 10:37:56
 Author: peixiaochao
 Description:
 """
+import secrets
 import sqlalchemy
 from werkzeug.security import generate_password_hash, check_password_hash
 
@@ -46,8 +47,9 @@ class UserProxy(MysqlProxy):
         """
         username = data.get('username')
         password = data.get('password')
+        token = secrets.token_hex(16)
         password_hash = User.hash_password(password)
-        user = User(username=username, password=password_hash)
+        user = User(username=username, password=password_hash, token=token)
 
         try:
             self.session.add(user)
@@ -111,28 +113,28 @@ class UserProxy(MysqlProxy):
 
         Returns:
             int: status code
+            User
         """
         username = data.get('username')
         password = data.get('password')
 
         try:
-            password_hash = generate_password_hash(password)
             query_res = self.session.query(
                 User).filter_by(username=username).all()
             if len(query_res) == 0:
                 LOGGER.error("login with unknown username")
-                return LOGIN_ERROR
+                return LOGIN_ERROR, ""
 
             user = query_res[0]
             if check_password_hash(user.password, password):
-                return REPEAT_PASSWORD
+                return REPEAT_PASSWORD, ""
 
-            user.password = password_hash
+            user.password = generate_password_hash(password)
             self.session.commit()
             LOGGER.error("change password succeed")
-            return SUCCEED
+            return SUCCEED, user
 
         except sqlalchemy.exc.SQLAlchemyError as error:
             LOGGER.error(error)
             LOGGER.error("change password fail")
-            return DATABASE_QUERY_ERROR
+            return DATABASE_QUERY_ERROR, ""

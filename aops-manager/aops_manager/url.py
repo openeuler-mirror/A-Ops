@@ -19,11 +19,28 @@ from aops_manager.host_manager import view as host_view
 from aops_manager.deploy_manager import view as deploy_view
 from aops_manager.config_manager import view as config_view
 from aops_manager.account_manager import view as account_view
-from aops_utils.conf.constant import ADD_HOST, DELETE_HOST, GET_HOST_COUNT,\
-    QUERY_HOST, QUERY_HOST_DETAIL, ADD_GROUP, DELETE_GROUP, GET_GROUP,\
-    GENERATE_TASK, DELETE_TASK, EXECUTE_TASK, GET_TASK,\
-    IMPORT_TEMPLATE, DELETE_TEMPLATE, GET_TEMPLATE,\
-    COLLECT_CONFIG, USER_LOGIN, USER_CERTIFICATE, CHANGE_PASSWORD, ADD_USER
+from aops_utils.conf.constant import (
+    ADD_HOST,
+    DELETE_HOST,
+    GET_HOST_COUNT,
+    QUERY_HOST,
+    QUERY_HOST_DETAIL,
+    ADD_GROUP,
+    DELETE_GROUP,
+    GET_GROUP,
+    GENERATE_TASK,
+    DELETE_TASK,
+    EXECUTE_TASK,
+    GET_TASK,
+    IMPORT_TEMPLATE,
+    DELETE_TEMPLATE,
+    GET_TEMPLATE,
+    COLLECT_CONFIG,
+    USER_LOGIN,
+    USER_CERTIFICATE,
+    CHANGE_PASSWORD,
+    ADD_USER
+)
 
 URLS = []
 

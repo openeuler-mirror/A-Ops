@@ -1,6 +1,6 @@
 #!/usr/bin/python3
 # ******************************************************************************
-# Copyright (c) Huawei Technologies Co., Ltd. 2021-2021. All rights reserved.
+# Copyright (c) Huawei Technologies Co., Ltd. 2021-2022. All rights reserved.
 # licensed under the Mulan PSL v2.
 # You can use this software according to the terms and conditions of the Mulan PSL v2.
 # You may obtain a copy of Mulan PSL v2 at:
@@ -16,16 +16,23 @@ Author:
 Description: Restful APIs for user
 """
 import secrets
+from typing import Dict
 from flask import jsonify
 
 from aops_utils.restful.response import BaseResponse
-from aops_utils.restful.status import SUCCEED, CHANGE_PASSWORD
+from aops_utils.restful.status import SUCCEED, CHANGE_PASSWORD, DATABASE_CONNECT_ERROR
 from aops_utils.database.helper import operate
+from aops_utils.database.table import User
+from aops_manager.account_manager.cache import UserCache
+from aops_manager.account_manager.key import HostKey
 from aops_manager.database import SESSION
 from aops_manager.database.proxy.account import UserProxy
-from aops_manager.account_manager.key import HostKey
-from aops_manager.function.verify.acount import LoginSchema,\
-    ChangePasswordSchema, CertificateSchema, AddUserSchema
+from aops_manager.function.verify.acount import (
+    LoginSchema,
+    CertificateSchema,
+    ChangePasswordSchema,
+    AddUserSchema
+)
 
 
 class AddUser(BaseResponse):
@@ -89,6 +96,17 @@ class ChangePassword(BaseResponse):
     Interface for user change password.
     Restful API: post
     """
+    @staticmethod
+    def _handle(args):
+        proxy = UserProxy()
+        if not proxy.connect(SESSION):
+            return DATABASE_CONNECT_ERROR
+        
+        status_code, user = proxy.change_password(args)
+        if status_code == SUCCEED:
+            UserCache.update(user.username, user)
+
+        return status_code
 
     def post(self):
         """
@@ -100,11 +118,9 @@ class ChangePassword(BaseResponse):
         Returns:
             dict: response body
         """
-        return jsonify(self.handle_request_db(ChangePasswordSchema,
-                                              UserProxy(),
-                                              'change_password',
-                                              SESSION,
-                                              False))
+        return jsonify(self.handle_request(ChangePasswordSchema,
+                                           self,
+                                           debug=False))
 
 
 class Certificate(BaseResponse):

@@ -95,6 +95,7 @@ class User(Base, MyBase):  # pylint: disable=R0903
 
     username = Column(String(40), primary_key=True)
     password = Column(String(255), nullable=False)
+    token = Column(String(40))
 
     host_groups = relationship(
         'HostGroup', order_by=HostGroup.host_group_name, back_populates='user')
