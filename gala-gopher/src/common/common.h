@@ -14,6 +14,9 @@
  ******************************************************************************/
 #ifndef __GOPHER_COMMON_H__
 #define __GOPHER_COMMON_H__
+
+#pragma once
+
 #ifndef AF_INET
 #define AF_INET     2   /* Internet IP Protocol */
 #endif
@@ -28,6 +31,15 @@
 #define IP_STR_LEN              128
 #define IP6_LEN                 16
 #define IP6_STR_LEN             128
+
+#define IP4_BYTE_1              0
+#define IP4_BYTE_2              1
+#define IP4_BYTE_3              2
+#define IP4_BYTE_4              3
+#define IP4_BYTE_1_IN_IP6       12
+#define IP4_BYTE_2_IN_IP6       13
+#define IP4_BYTE_3_IN_IP6       14
+#define IP4_BYTE_4_IN_IP6       15
 
 #define TM_STR_LEN              48
 
@@ -145,6 +157,13 @@ unsigned short ntohs(unsigned short netshort);
     (ntohs((addr)[6]) >> 8), (ntohs(addr[6]) & 0xff), (ntohs(addr[7]) >> 8), (ntohs(addr[7]) & 0xff)
 #define NIP6_FMT "%04x:%04x:%04x:%04x:%04x:%04x:%u.%u.%u.%u"
 
+#define NIP6_IS_ADDR_V4MAPPED(addr) \
+    (((addr)[0] == 0) && \
+    ((addr)[1] == 0) && \
+    ((addr)[2] == 0) && \
+    ((addr)[3] == 0) && \
+    ((addr)[4] == 0) && \
+    ((addr)[5] == 0xffff))
 
 /* get uprobe func offset */
 int get_func_offset(char *proc_name, char *func_name, char *bin_file_path);

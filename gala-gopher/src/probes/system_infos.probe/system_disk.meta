@@ -80,11 +80,6 @@ measurements:
                 name: "Inodes",
             },
             {
-                description: "IUse(%)",
-                type: "gauge",
-                name: "IUsePer",
-            },
-            {
                 description: "IUsed",
                 type: "gauge",
                 name: "IUsed",
@@ -95,14 +90,14 @@ measurements:
                 name: "IFree",
             },
             {
+                description: "IUse(%)",
+                type: "gauge",
+                name: "IUsePer",
+            },
+            {
                 description: "amount of disk space(1K)",
                 type: "label",
                 name: "Blocks",
-            },
-            {
-                description: "disk usage(%)",
-                type: "gauge",
-                name: "UsePer",
             },
             {
                 description: "disk used(KB)",
@@ -113,6 +108,11 @@ measurements:
                 description: "disk remaining(KB)",
                 type: "gauge",
                 name: "Free",
+            },
+            {
+                description: "disk usage(%)",
+                type: "gauge",
+                name: "UsePer",
             }
         )
     }
