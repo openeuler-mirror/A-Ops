@@ -10,8 +10,19 @@
 # PURPOSE.
 # See the Mulan PSL v2 for more details.
 # ******************************************************************************/
-import os
+from json import encoder
 
-BASE_CONFIG_PATH = '/etc/aops'
+import connexion
+from aops_agent.manages.token_manage import TokenManage as TOKEN
 
-DEFAULT_CONFIG_PATH = os.path.join(BASE_CONFIG_PATH, 'agent.conf')
+
+def main():
+    TOKEN.init()
+    app = connexion.App(__name__, specification_dir='./swagger/')
+    app.app.json_encoder = encoder.JSONEncoder
+    app.add_api('swagger.yaml', arguments={'title': 'aops_agent'}, pythonic_params=True)
+    app.run(debug=True, port=8080)
+
+
+if __name__ == '__main__':
+    main()

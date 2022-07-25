@@ -10,14 +10,14 @@
 # PURPOSE.
 # See the Mulan PSL v2 for more details.
 # ******************************************************************************/
+class InputError(Exception):
+    """
+        Custom Exception
+    """
 
-import connexion
+    def __init__(self, value):
+        super().__init__()
+        self.value = value
 
-
-def main():
-    app = connexion.App(__name__, specification_dir='./swagger/')
-    app.run(debug=True, port=8080)
-
-
-if __name__ == '__main__':
-    main()
+    def __str__(self):
+        return repr(self.value)

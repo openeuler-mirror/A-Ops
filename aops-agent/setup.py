@@ -3,7 +3,7 @@
 import sys
 from setuptools import setup, find_packages
 
-NAME = "agent"
+NAME = "aops_agent"
 VERSION = "1.0.0"
 
 REQUIRES = [
@@ -23,7 +23,7 @@ setup(
     package_data={'': ['swagger/swagger.yaml']},
     include_package_data=True,
     entry_points={
-        'console_scripts': ['agent=agent.__main__:main']},
+        'console_scripts': ['aops_agent=aops_agent.__main__:main']},
     long_description="""\
     GroupDesc
     """

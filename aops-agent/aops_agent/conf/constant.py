@@ -10,21 +10,12 @@
 # PURPOSE.
 # See the Mulan PSL v2 for more details.
 # ******************************************************************************/
-import configparser
 import os
 
+BASE_CONFIG_PATH = '/etc/aops'
 
-def load_conf(file_path: str) -> configparser.RawConfigParser:
-    """
-    get ConfigParser object when loads config file
-    for example: XX.service
-
-    Returns:
-        ConfigParser object
-    """
-    cf = configparser.RawConfigParser()
-    if os.path.exists(file_path):
-        cf.read(file_path, encoding='utf8')
-    if cf.sections:
-        return cf
-    raise Exception('file not found or the contents of the file are incorrect.')
+DEFAULT_CONFIG_PATH = os.path.join(BASE_CONFIG_PATH, 'aops_agent.conf')
+DEFAULT_TOKEN_PATH = os.path.join(BASE_CONFIG_PATH, 'agent_token.json')
+DATA_MODEL = {
+    "list_str": {"type": "array", "items": {"type": "string", "minLength": 1}}
+}
