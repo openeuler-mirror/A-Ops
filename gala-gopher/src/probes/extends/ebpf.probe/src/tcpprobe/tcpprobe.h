@@ -15,6 +15,7 @@
 #ifndef __TCPPROBE__H
 #define __TCPPROBE__H
 
+#pragma once
 
 #define LINK_ROLE_SERVER 0
 #define LINK_ROLE_CLIENT 1
@@ -117,6 +118,13 @@ struct tcp_statistics {
     struct tcp_state info;
 };
 
+/* metrics need to save last result for calculating delta */
+struct tcp_last_statistics {
+    __u32 sk_drops;         // FROM sock.sk_drops.counter
+    __u32 segs_out;         // total number of segments sent
+    __u32 segs_in;          // total number of segments in
+};
+
 #define TCP_BACKLOG_DROPS_INC(data) __sync_fetch_and_add(&((data).health.backlog_drops), 1)
 #define TCP_FILTER_DROPS_INC(data) __sync_fetch_and_add(&((data).health.filter_drops), 1)
 #define TCP_TMOUT_INC(data) __sync_fetch_and_add(&((data).health.tmout), 1)
@@ -153,6 +161,7 @@ struct tcp_metrics_s {
     __u64 ts;
     struct tcp_link_s link;
     struct tcp_statistics data;
+    struct tcp_last_statistics last_data;
 };
 
 struct tcp_args_s {

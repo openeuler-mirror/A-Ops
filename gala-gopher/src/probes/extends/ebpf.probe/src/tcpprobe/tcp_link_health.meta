@@ -43,12 +43,12 @@ measurements:
             },
             {
                 description: "total number of segments rcvd",
-                type: "counter",
+                type: "gauge",
                 name: "segs_in",
             },
             {
                 description: "total number of segments sent",
-                type: "counter",
+                type: "gauge",
                 name: "segs_out",
             },
             {
@@ -63,7 +63,7 @@ measurements:
             },
             {
                 description: "sock drop counter",
-                type: "counter",
+                type: "gauge",
                 name: "sk_drops",
             },
             {

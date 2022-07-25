@@ -241,6 +241,24 @@ static __always_inline void update_sock_obj(struct sock *sk, u32 tgid)
     (void)bpf_map_update_elem(&sock_map, &sk, sk_info, BPF_ANY);
 }
 
+static void init_metrics_last_datas(struct tcp_metrics_s *metrics)
+{
+    metrics->last_data.segs_in = 0;
+
+    metrics->last_data.segs_out = 0;
+
+    metrics->last_data.sk_drops = 0;
+}
+
+static void update_metrics_last_datas(struct tcp_metrics_s *metrics)
+{
+    metrics->last_data.segs_in = metrics->data.health.segs_in;
+
+    metrics->last_data.segs_out = metrics->data.health.segs_out;
+
+    metrics->last_data.sk_drops = metrics->data.health.sk_drops;
+}
+
 #define __PERIOD ((u64)30 * 1000000000)
 static __always_inline u64 get_period()
 {
@@ -258,6 +276,7 @@ static __always_inline u64 get_period()
 static __always_inline void report(void *ctx, struct tcp_metrics_s *metrics, u32 new_entry)
 {
     if (new_entry) {
+        init_metrics_last_datas(metrics);
         (void)bpf_perf_event_output(ctx, &output, BPF_F_CURRENT_CPU, metrics, sizeof(struct tcp_metrics_s));
     } else {
         u64 ts = bpf_ktime_get_ns();
@@ -268,6 +287,7 @@ static __always_inline void report(void *ctx, struct tcp_metrics_s *metrics, u32
         metrics->ts = ts;
         (void)bpf_perf_event_output(ctx, &output, BPF_F_CURRENT_CPU, metrics, sizeof(struct tcp_metrics_s));
     }
+    update_metrics_last_datas(metrics);
     __builtin_memset(&(metrics->data.health), 0x0, sizeof(metrics->data.health));
     __builtin_memset(&(metrics->data.info), 0x0, sizeof(metrics->data.info));
 }
