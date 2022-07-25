@@ -48,6 +48,16 @@ void ip6_str(unsigned char *ip6, unsigned char *ip_str, unsigned int ip_str_size
     unsigned short *addr = (unsigned short *)ip6;
     int i, j;
     char str[48];
+
+    /*
+      parse ipv4 from ipv6 if the ipv6_addr is ipv4_addr mapped
+      eg: [0000...0000:ffff:192.168.1.23] -> [192.168.1.23]
+     */
+    if (NIP6_IS_ADDR_V4MAPPED(addr)) {
+        (void)snprintf((char *)ip_str, ip_str_size, "%u.%u.%u.%u",
+                       ip6[IP4_BYTE_1_IN_IP6], ip6[IP4_BYTE_2_IN_IP6], ip6[IP4_BYTE_3_IN_IP6], ip6[IP4_BYTE_4_IN_IP6]);
+        return;
+    }
     /* 1. format ipv6 address */
     (void)snprintf((char *)str, ip_str_size, NIP6_FMT, NIP6(addr));
     /* 2. compress */
@@ -76,7 +86,8 @@ void ip_str(unsigned int family, unsigned char *ip, unsigned char *ip_str, unsig
         return;
     }
 
-    (void)snprintf((char *)ip_str, ip_str_size, "%u.%u.%u.%u", ip[0], ip[1], ip[2], ip[3]);
+    (void)snprintf((char *)ip_str, ip_str_size, "%u.%u.%u.%u",
+                   ip[IP4_BYTE_1], ip[IP4_BYTE_2], ip[IP4_BYTE_3], ip[IP4_BYTE_4]);
     return;
 }
 
