@@ -1,4 +1,6 @@
 import json
+import os
+import threading
 
 from kafka import KafkaConsumer
 from kafka import KafkaProducer
@@ -6,7 +8,9 @@ from kafka.errors import KafkaTimeoutError
 
 from spider.util import logger
 from spider.conf import init_observe_meta_config
-from cause_inference import config
+from spider.conf.observe_meta import ObserveMetaMgt
+from cause_inference.config import infer_config
+from cause_inference.config import init_infer_config
 from cause_inference.cause_infer import cause_locating
 from cause_inference.cause_infer import client_to_server_kpi
 from cause_inference.cause_infer import filter_valid_evts
@@ -15,18 +19,17 @@ from cause_inference.cause_infer import parse_abn_evt
 from cause_inference.exceptions import InferenceException
 from cause_inference.exceptions import DataParseException
 
+INFER_CONFIG_PATH = '/etc/gala-inference/gala-inference.yaml'
+EXT_OBSV_META_PATH = '/etc/gala-inference/ext-observe-meta.yaml'
+
 
 def init_config():
-    log_conf = {
-        'log_path': config.LOG_PATH,
-        'log_level': config.LOG_LEVEL,
-        'max_size': config.LOG_MAX_SIZE,
-        'backup_count': config.LOG_BACKUP_COUNT,
-    }
-    logger.init_logger('cause-inference', log_conf)
+    conf_path = os.environ.get('INFER_CONFIG_PATH') or INFER_CONFIG_PATH
+    if not init_infer_config(conf_path):
+        return False
+    logger.init_logger('gala-inference', infer_config.log_conf)
 
-    # 配置初始化
-    if not init_observe_meta_config(config.OBSERVE_META_PATH):
+    if not init_observe_meta_config(infer_config.data_agent, EXT_OBSV_META_PATH):
         logger.logger.error('Load observe metadata failed.')
         return False
     logger.logger.info('Load observe metadata success.')
@@ -34,26 +37,55 @@ def init_config():
     return True
 
 
+class ObsvMetaCollThread(threading.Thread):
+    def __init__(self, observe_meta_mgt: ObserveMetaMgt, kafka_conf: dict):
+        super().__init__()
+        self.observe_meta_mgt = observe_meta_mgt
+        self.metadata_consumer = KafkaConsumer(
+            kafka_conf.get('topic_id'),
+            bootstrap_servers=[kafka_conf.get('server')],
+            group_id=kafka_conf.get('group_id')
+        )
+
+    def run(self):
+        for msg in self.metadata_consumer:
+            data = json.loads(msg.value)
+            metadata = {}
+            metadata.update(data)
+            self.observe_meta_mgt.add_observe_meta_from_dict(metadata)
+
+
 def main():
     if not init_config():
         return
     logger.logger.info('Start cause inference service...')
 
-    consumer_to_ms = config.KAFKA_CONSUMER_TO * 1000
+    metadata_kafka_conf = {
+        'server': infer_config.kafka_conf.get('server'),
+        'topic_id': infer_config.kafka_conf.get('metadata_topic').get('topic_id'),
+        'group_id': infer_config.kafka_conf.get('metadata_topic').get('group_id'),
+    }
+    obsv_meta_coll_thread = ObsvMetaCollThread(ObserveMetaMgt(), metadata_kafka_conf)
+    obsv_meta_coll_thread.setDaemon(True)
+    obsv_meta_coll_thread.start()
+
+    kafka_server = infer_config.kafka_conf.get('server')
+    kpi_kafka_conf = infer_config.kafka_conf.get('abnormal_kpi_topic')
+    metric_kafka_conf = infer_config.kafka_conf.get('abnormal_metric_topic')
+    infer_kafka_conf = infer_config.kafka_conf.get('inference_topic')
     kpi_consumer = KafkaConsumer(
-        config.KAFKA_ABNORMAL_KPI_TOPIC,
-        bootstrap_servers=[config.KAFKA_SERVER],
-        group_id=config.KAFKA_KPI_GROUP_ID,
-        auto_offset_reset=config.KAFKA_AUTO_OFFSET_RESET
+        kpi_kafka_conf.get('topic_id'),
+        bootstrap_servers=[kafka_server],
+        group_id=kpi_kafka_conf.get('group_id'),
     )
+    consumer_to_ms = metric_kafka_conf.get('consumer_to') * 1000
     metric_consumer = KafkaConsumer(
-        config.KAFKA_ABNORMAL_METRIC_TOPIC,
-        bootstrap_servers=[config.KAFKA_SERVER],
-        group_id=config.KAFKA_METRIC_GROUP_ID,
+        metric_kafka_conf.get('topic_id'),
+        bootstrap_servers=[kafka_server],
+        group_id=metric_kafka_conf.get('group_id'),
         consumer_timeout_ms=consumer_to_ms,
-        auto_offset_reset=config.KAFKA_AUTO_OFFSET_RESET
     )
-    cause_producer = KafkaProducer(bootstrap_servers=[config.KAFKA_SERVER])
+    cause_producer = KafkaProducer(bootstrap_servers=[kafka_server])
 
     all_metric_evts = []
     last_metric_ts = 0
@@ -111,7 +143,7 @@ def main():
                 'Body': 'A cause inferring event for an abnormal event',
             }
             try:
-                cause_producer.send(config.KAFKA_CAUSE_INFER_TOPIC, json.dumps(cause_msg).encode())
+                cause_producer.send(infer_kafka_conf.get('topic_id'), json.dumps(cause_msg).encode())
             except KafkaTimeoutError as ex:
                 logger.logger.error(ex)
 

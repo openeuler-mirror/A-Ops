@@ -3,11 +3,11 @@ import os
 import yaml
 
 from spider.util.singleton import Singleton
+from spider.util import logger
 
 
 class SpiderConfig(metaclass=Singleton):
     def __init__(self):
-        print('Spider config init')
         super().__init__()
         self.db_agent = None
         self.data_agent = None
@@ -51,7 +51,7 @@ class SpiderConfig(metaclass=Singleton):
             with open(real_path, 'rb') as file:
                 result = yaml.safe_load(file.read())
         except IOError as ex:
-            print('Unable to load config file: {}'.format(ex))
+            logger.logger.error('Unable to load config file: {}'.format(ex))
             return False
 
         global_conf = result.get('global', {})
@@ -73,9 +73,10 @@ class SpiderConfig(metaclass=Singleton):
 
 
 def init_spider_config(spider_conf_path) -> bool:
+    logger.logger.info('Spider config init')
     spider_config = SpiderConfig()
     if not spider_config.load_from_yaml(spider_conf_path):
-        print('Load spider config failed.')
+        logger.logger.error('Load spider config failed.')
         return False
-    print('Load spider config success.')
+    logger.logger.info('Load spider config success.')
     return True

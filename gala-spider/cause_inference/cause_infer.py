@@ -14,21 +14,19 @@ from cause_inference.exceptions import InferenceException
 from cause_inference.exceptions import DBException
 from cause_inference.exceptions import MetadataException
 from cause_inference.exceptions import DataParseException
-from cause_inference import config
+from cause_inference.config import infer_config
 from cause_inference.rule_parser import rule_engine
 from cause_inference.arangodb import connect_to_arangodb
 from cause_inference.arangodb import query_recent_topo_ts
 from cause_inference.arangodb import query_topo_entities
 from cause_inference.arangodb import query_subgraph
 
-_DATA_SOURCE = 'gala_gopher'
-
 
 def _get_metric_obj_type(metric_id: str):
-    if not metric_id.startswith(_DATA_SOURCE + "_"):
+    if not metric_id.startswith(infer_config.data_agent + "_"):
         raise MetadataException('Data source of the metric {} can not be identified.'.format(metric_id))
 
-    left = metric_id[len(_DATA_SOURCE) + 1:]
+    left = metric_id[len(infer_config.data_agent) + 1:]
     for obj_type in EntityType:
         if left.startswith(obj_type.value + "_"):
             return obj_type.value
@@ -331,11 +329,11 @@ def query_abnormal_topo_subgraph(abnormal_event: AbnormalEvent):
     abn_metric_labels = abnormal_event.metric_labels
 
     # 1. 连接 arangodb 图数据库
-    db = connect_to_arangodb(config.ARANGO_URL, config.ARANGO_DB)
+    db = connect_to_arangodb(infer_config.arango_conf.get('url'), infer_config.arango_conf.get('db_name'))
 
     # 2. 查询异常事件时间戳附近已保存拓扑关系图的时间戳
     recent_ts = query_recent_topo_ts(db, abn_ts)
-    if abn_ts - recent_ts > config.TOLERATED_TS_BIAS:
+    if abn_ts - recent_ts > infer_config.infer_conf.get('tolerated_bias'):
         raise DBException('The queried topological graph is too old.')
 
     # 3. 获取异常KPI对应的观测对象实例
@@ -352,7 +350,7 @@ def query_abnormal_topo_subgraph(abnormal_event: AbnormalEvent):
         RelationType.RUNS_ON.value,
     ]
     subgraph = query_subgraph(db, recent_ts, abn_entity.get('_id'), edge_collection,
-                              depth=config.CAUSAL_GRAPH_DEPTH)
+                              depth=infer_config.infer_conf.get('topo_depth'))
     vertices = subgraph.get('vertices')
     vertices.setdefault(abn_entity.get('_id'), abn_entity)
     return subgraph
@@ -361,7 +359,7 @@ def query_abnormal_topo_subgraph(abnormal_event: AbnormalEvent):
 def clear_aging_evts(all_metric_evts: List[AbnormalEvent], latest_ts) -> List[AbnormalEvent]:
     res = []
     for metric_evt in all_metric_evts:
-        if metric_evt.timestamp + config.EVENT_AGING_METRIC_DURATION < latest_ts:
+        if metric_evt.timestamp + infer_config.infer_conf.get('evt_aging_duration') < latest_ts:
             continue
         res.append(metric_evt)
     return res
@@ -370,7 +368,7 @@ def clear_aging_evts(all_metric_evts: List[AbnormalEvent], latest_ts) -> List[Ab
 def filter_valid_evts(all_metric_evts: List[AbnormalEvent], latest_ts) -> List[AbnormalEvent]:
     res = []
     for metric_evt in all_metric_evts:
-        if metric_evt.timestamp + config.EVENT_VALID_METRIC_DURATION < latest_ts:
+        if metric_evt.timestamp + infer_config.infer_conf.get('evt_valid_duration') < latest_ts:
             continue
         if metric_evt.timestamp > latest_ts:
             continue
@@ -412,9 +410,9 @@ def client_to_server_kpi(abn_kpi: AbnormalEvent) -> AbnormalEvent:
 
 
 def query_hist_data_of_abn_metric(causal_graph):
-    collector: DataCollector = PrometheusCollector(base_url=config.PROMETHEUS_BASE_URL,
-                                                   range_api=config.PROMETHEUS_RANGE_API,
-                                                   step=config.PROMETHEUS_STEP)
+    collector: DataCollector = PrometheusCollector(base_url=infer_config.prometheus_conf.get('base_url'),
+                                                   range_api=infer_config.prometheus_conf.get('range_api'),
+                                                   step=infer_config.prometheus_conf.get('step'))
     abn_ts = causal_graph.abnormal_kpi.timestamp
     for node_id in causal_graph.causal_graph.nodes:
         for abn_metric in causal_graph.get_abnormal_metrics_of_node(node_id):
@@ -423,7 +421,7 @@ def query_hist_data_of_abn_metric(causal_graph):
                     causal_graph.orig_abn_kpi is not None):
                 orig_abn_metric = causal_graph.orig_abn_kpi
             end_ts = abn_ts
-            start_ts = end_ts - config.SAMPLE_DURATION_OF_HIST_METRIC
+            start_ts = end_ts - infer_config.infer_conf.get('sample_duration')
             query_options = get_entity_keys_of_metric(orig_abn_metric.abnormal_metric_id, orig_abn_metric.metric_labels)
             data_records = collector.get_range_data(orig_abn_metric.abnormal_metric_id, start_ts, end_ts,
                                                     query_options=query_options)
@@ -456,7 +454,7 @@ def cause_locating(abnormal_kpi: AbnormalEvent, abnormal_metrics: List[AbnormalE
 
     # 6. 以故障传播图 + 异常KPI为输入，执行根因推导算法，输出 top3 根因指标
     infer_engine = CauseInferring()
-    causes = infer_engine.inferring(causal_graph, top_k=config.ROOT_CAUSE_TOPK)
+    causes = infer_engine.inferring(causal_graph, top_k=infer_config.infer_conf.get('root_topk'))
     logger.logger.debug('=========inferring result: =============')
     for i, cause in enumerate(causes):
         logger.logger.debug('The top {} root metric output:'.format(i+1))
