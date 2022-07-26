@@ -241,6 +241,8 @@ class IndirectRelationCreator:
         res.extend(IndirectRelationCreator._create_connect_relations_by_belongs_to(connect_pairs, belongs_to_map))
         res.extend(IndirectRelationCreator._create_connect_relations_by_runs_on(res, runs_on_map))
 
+        res = IndirectRelationCreator._rm_dup_conn_relations(res)
+
         return res
 
     @staticmethod
@@ -323,4 +325,15 @@ class IndirectRelationCreator:
                     if relation is not None:
                         res.append(relation)
 
+        return res
+
+    @staticmethod
+    def _rm_dup_conn_relations(conn_relations: List[Relation]) -> List[Relation]:
+        res: List[Relation] = []
+        unique = set()
+        for relation in conn_relations:
+            if not relation.id or relation.id in unique:
+                continue
+            unique.add(relation.id)
+            res.append(relation)
         return res

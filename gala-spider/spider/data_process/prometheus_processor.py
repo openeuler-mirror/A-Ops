@@ -139,11 +139,12 @@ class PrometheusProcessor(DataProcessor):
                 if _id not in label_map:
                     item = {}
                     item.setdefault("timestamp", record.timestamp)
-                    for label in record.labels:
-                        item.setdefault(label.name, label.value)
                     label_map.setdefault(_id, item)
+                entity = label_map.get(_id)
                 metric_name = self._get_metric_name(record.metric_id, entity_type)
-                label_map.get(_id).setdefault(metric_name, record.metric_value)
+                entity.setdefault(metric_name, record.metric_value)
+                for label in record.labels:
+                    entity.setdefault(label.name, label.value)
             if len(label_map) > 0:
                 res[entity_type] = list(label_map.values())
 

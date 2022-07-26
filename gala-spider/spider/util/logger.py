@@ -32,5 +32,4 @@ def init_logger(name, log_conf):
     file_hdl.setFormatter(formatter)
 
     logger.addHandler(file_hdl)
-    logger.addHandler(console_hdl)
     logger.setLevel(log_level)
