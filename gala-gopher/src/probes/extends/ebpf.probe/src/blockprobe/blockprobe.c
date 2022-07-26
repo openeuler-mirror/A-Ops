@@ -83,43 +83,19 @@ static void sig_int(int signo)
     g_stop = 1;
 }
 
-static char __is_exist_mod(const char *mod)
-{
-    int cnt = 0;
-    FILE *fp;
-    char cmd[COMMAND_LEN];
-    char line[LINE_BUF_LEN];
-
-    cmd[0] = 0;
-    (void)snprintf(cmd, COMMAND_LEN, "lsmod | grep -w %s | wc -l", mod);
-    fp = popen(cmd, "r");
-    if (fp == NULL) {
-        return 0;
-    }
-
-    line[0] = 0;
-    if (fgets(line, LINE_BUF_LEN, fp) != NULL) {
-        SPLIT_NEWLINE_SYMBOL(line);
-        cnt = atoi(line);
-    }
-    pclose(fp);
-
-    return (char)(cnt > 0);
-}
-
 static char is_exist_iscsi_mod()
 {
-    return __is_exist_mod(ISCSI_MOD);
+    return is_exist_mod(ISCSI_MOD);
 }
 
 static char is_exist_iscsi_sas_mod()
 {
-    return __is_exist_mod(ISCSI_SAS_MOD);
+    return is_exist_mod(ISCSI_SAS_MOD);
 }
 
 static char is_exist_iscsi_tp_mod()
 {
-    return __is_exist_mod(ISCSI_TP_MOD);
+    return is_exist_mod(ISCSI_TP_MOD);
 }
 
 static inline int create_scsi_block(struct block_key *bkey)

@@ -88,6 +88,30 @@ void split_newline_symbol(char *s)
     }
 }
 
+char is_exist_mod(const char *mod)
+{
+    int cnt = 0;
+    FILE *fp;
+    char cmd[COMMAND_LEN];
+    char line[LINE_BUF_LEN];
+
+    cmd[0] = 0;
+    (void)snprintf(cmd, COMMAND_LEN, "lsmod | grep -w %s | wc -l", mod);
+    fp = popen(cmd, "r");
+    if (fp == NULL) {
+        return 0;
+    }
+
+    line[0] = 0;
+    if (fgets(line, LINE_BUF_LEN, fp) != NULL) {
+        SPLIT_NEWLINE_SYMBOL(line);
+        cnt = atoi(line);
+    }
+    pclose(fp);
+
+    return (char)(cnt > 0);
+}
+
 int exec_cmd(const char *cmd, char *buf, unsigned int buf_len)
 {
     FILE *f = NULL;

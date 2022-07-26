@@ -34,6 +34,7 @@ struct sys_exit_args {
 #define TS_COMPAT   0x0002  /* 32bit syscall active (64BIT) */
 static __always_inline bool is_ia32_task(void)
 {
+#if defined(__TARGET_ARCH_x86)
     struct task_struct *task;
     u32 status;
 
@@ -42,6 +43,9 @@ static __always_inline bool is_ia32_task(void)
     status = _(task->thread_info.status);
 
     return status & TS_COMPAT;
+#else
+    return 0;
+#endif
 }
 
 static __always_inline long get_syscall_id(void *ctx)
@@ -51,8 +55,13 @@ static __always_inline long get_syscall_id(void *ctx)
 
     struct pt_regs *regs = (struct pt_regs *)args->regs;
 
+#if defined(__TARGET_ARCH_x86)
     id = _(regs->orig_ax);
-
+#elif defined(__TARGET_ARCH_arm64)
+    id = _(regs->syscallno);
+#else
+    id = 0;
+#endif
     return id;
 }
 
