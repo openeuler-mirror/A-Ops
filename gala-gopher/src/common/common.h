@@ -71,6 +71,11 @@
     #define TIME_STRING_LEN     32
 #endif
 
+void debug_logs(const char* format, ...);
+void info_logs(const char* format, ...);
+void warn_logs(const char* format, ...);
+void error_logs(const char* format, ...);
+
 #ifndef GOPHER_DEBUG
 static inline int __debug_printf(const char *format, ...)
 {
@@ -78,20 +83,11 @@ static inline int __debug_printf(const char *format, ...)
 }
 #define DEBUG (void)__debug_printf
 #else
-#define DEBUG printf
+#define DEBUG debug_logs
 #endif
-
-#ifdef ERROR
-#undef ERROR
-#endif
-    
-#define ERROR printf
-    
-#ifdef INFO
-#undef INFO
-#endif
-
-#define INFO printf
+#define INFO info_logs
+#define WARN warn_logs
+#define ERROR error_logs
 
 #define max(x, y) ((x) > (y) ? (x) : (y))
 #define min(x, y) ((x) < (y) ? (x) : (y))

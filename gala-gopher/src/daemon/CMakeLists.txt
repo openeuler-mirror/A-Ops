@@ -1,4 +1,7 @@
 CMAKE_MINIMUM_REQUIRED(VERSION 3.12.1)
+set(CMAKE_VERBOSE_MAKEFILE ON)
+SET(CMAKE_CXX_COMPILER "/usr/bin/g++")
+
 PROJECT(gala-gopher)
 
 MESSAGE("ENV PROBES_LIST:\n"  ${PROBES_LIST})
@@ -53,6 +56,7 @@ SET(SOURCES main.c daemon.c
     ${COMMON_DIR}/util.c
     ${COMMON_DIR}/object.c
     ${COMMON_DIR}/event.c
+    ${COMMON_DIR}/logs.cpp
 )
 
 SET(SOURCE_CMD ${CMD_DIR}/client.c)
@@ -89,5 +93,4 @@ TARGET_INCLUDE_DIRECTORIES(${EXECUTABLE_TARGET} PRIVATE
     ${COMMON_DIR}
 )
 
-TARGET_LINK_LIBRARIES(${EXECUTABLE_TARGET} PRIVATE config pthread rt dl bpf rdkafka microhttpd)
-
+TARGET_LINK_LIBRARIES(${EXECUTABLE_TARGET} PRIVATE config pthread rt dl bpf rdkafka microhttpd log4cplus)

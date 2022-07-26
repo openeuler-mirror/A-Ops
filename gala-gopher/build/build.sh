@@ -220,6 +220,12 @@ function prepare_dependence()
         return 1
     fi
 
+    yum install -y log4cplus-devel
+    if [ $? -ne 0 ];then
+        echo "Error: Failed to install log4cplus-devel."
+        return 1
+    fi
+
     return 0
 }
 
