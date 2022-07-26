@@ -49,7 +49,7 @@ def main():
     spider_config = SpiderConfig()
     logger.init_logger('spider-storage', spider_config.log_conf)
 
-    if not init_observe_meta_config(TOPO_RELATION_PATH, spider_config.data_agent, EXT_OBSV_META_PATH):
+    if not init_observe_meta_config(spider_config.data_agent, EXT_OBSV_META_PATH, TOPO_RELATION_PATH):
         return
 
     obsv_meta_coll_thread = ObsvMetaCollThread(ObserveMetaMgt(), spider_config.kafka_conf)

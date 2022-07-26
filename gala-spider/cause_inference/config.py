@@ -1,34 +1,92 @@
-ARANGO_URL = 'http://localhost:8529'
-ARANGO_DB = 'spider'
-# 异常时间点的拓扑图查询所容忍的时间偏移，单位：秒
-TOLERATED_TS_BIAS = 120
-CAUSAL_GRAPH_DEPTH = 10
-ROOT_CAUSE_TOPK = 3
-# 单位： 秒
-SAMPLE_DURATION_OF_HIST_METRIC = 600
+import os
 
-KAFKA_ABNORMAL_KPI_TOPIC = 'gala_anteater_hybrid_model'
-KAFKA_ABNORMAL_METRIC_TOPIC = 'gala_anteater_metric'
-KAFKA_SERVER = 'localhost:9092'
-KAFKA_KPI_GROUP_ID = 'gala_anteater_kpi'
-KAFKA_METRIC_GROUP_ID = 'gala_anteater_metric'
-KAFKA_CONSUMER_TO = 1
-KAFKA_AUTO_OFFSET_RESET = 'latest'
+import yaml
 
-# 根因定位时，有效的异常指标事件周期，单位：秒
-EVENT_VALID_METRIC_DURATION = 120
-# 异常指标事件的老化周期，单位：秒
-EVENT_AGING_METRIC_DURATION = 600
-KAFKA_CAUSE_INFER_TOPIC = 'gala_cause_inference'
+from spider.util import logger
 
-OBSERVE_META_PATH = '/etc/spider/observe.yaml'
 
-# prometheus 配置
-PROMETHEUS_BASE_URL = 'http://localhost:9090/'
-PROMETHEUS_RANGE_API = '/api/v1/query_range'
-PROMETHEUS_STEP = 5
+class InferConfig:
+    def __init__(self):
+        self.data_agent = 'gala_gopher'
 
-LOG_PATH = '/var/log/gala-spider/cause-inference.log'
-LOG_LEVEL = 'DEBUG'
-LOG_MAX_SIZE = 10 * 1000 * 1000
-LOG_BACKUP_COUNT = 10
+        self.infer_conf = {
+            'tolerated_bias': 120,
+            'topo_depth': 10,
+            'root_topk': 3,
+            'sample_duration': 600,
+            'evt_valid_duration': 120,
+            'evt_aging_duration': 600,
+        }
+
+        self.log_conf = {
+            'log_path': '/var/log/gala-spider/spider.log',
+            'log_level': 'INFO',
+            'max_size': 10,
+            'backup_count': 10,
+        }
+
+        self.kafka_conf = {
+            'server': '',
+            'metadata_topic': {
+                'topic_id': '',
+                'group_id': 'metadata-inference',
+            },
+            'abnormal_kpi_topic': {
+                'topic_id': '',
+                'group_id': 'abn-kpi-inference',
+            },
+            'abnormal_metric_topic': {
+                'topic_id': '',
+                'group_id': 'abn-metric-inference',
+                'consumer_to': 1,
+            },
+            'inference_topic': {
+                'topic_id': '',
+            }
+        }
+
+        self.arango_conf = {
+            'url': '',
+            'db_name': '',
+        }
+
+        self.prometheus_conf = {
+            'base_url': '',
+            'range_api': '',
+            'step': 5,
+        }
+
+    def load_from_yaml(self, conf_path: str) -> bool:
+        real_path = os.path.realpath(conf_path)
+        try:
+            with open(real_path, 'rb') as file:
+                result = yaml.safe_load(file.read())
+        except IOError as ex:
+            logger.logger.error('Unable to load config file: {}'.format(ex))
+            return False
+
+        infer_conf = result.get('inference', {})
+        kafka_conf = result.get('kafka', {})
+        arango_conf = result.get('arangodb', {})
+        log_conf = result.get('log', {})
+        prometheus_conf = result.get('prometheus', {})
+
+        self.infer_conf.update(infer_conf)
+        self.kafka_conf.update(kafka_conf)
+        self.arango_conf.update(arango_conf)
+        self.log_conf.update(log_conf)
+        self.prometheus_conf.update(prometheus_conf)
+
+        return True
+
+
+def init_infer_config(conf_path) -> bool:
+    logger.logger.info('Start init inference config.')
+    if not infer_config.load_from_yaml(conf_path):
+        logger.logger.error('Init inference config failed.')
+        return False
+    logger.logger.info('Init inference config success.')
+    return True
+
+
+infer_config = InferConfig()

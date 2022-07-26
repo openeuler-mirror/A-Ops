@@ -616,11 +616,14 @@ class ObserveMetaMgt(metaclass=Singleton):
         return res
 
 
-def init_observe_meta_config(topo_relation_path, data_agent, ext_observe_meta_path) -> bool:
+def init_observe_meta_config(data_agent, ext_observe_meta_path=None, topo_relation_path=None) -> bool:
     observe_meta_mgt = ObserveMetaMgt()
     observe_meta_mgt.set_data_agent(data_agent)
-    if not observe_meta_mgt.load_topo_relation_from_yaml(topo_relation_path):
-        return False
-    if not observe_meta_mgt.load_ext_observe_meta_from_yaml(ext_observe_meta_path):
-        return False
+    if topo_relation_path is not None:
+        if not observe_meta_mgt.load_topo_relation_from_yaml(topo_relation_path):
+            return False
+    # 注意：拓扑关系的初始化要先于观测对象元数据初始化，否则可能导致观察对象的拓扑关系为空
+    if ext_observe_meta_path is not None:
+        if not observe_meta_mgt.load_ext_observe_meta_from_yaml(ext_observe_meta_path):
+            return False
     return True
