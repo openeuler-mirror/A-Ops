@@ -557,48 +557,48 @@ void debug_logs(const char* format, ...)
 {
     char buf[__DEBUG_LEN];
 
-    if (!local) {
-        return;
-    }
-
     __FMT_LOGS(buf, __DEBUG_LEN);
-    LOG4CPLUS_DEBUG(g_debug_logger, buf);
+    if (!local) {
+        printf("DEBUG: %s\n", buf);
+    } else {
+        LOG4CPLUS_DEBUG(g_debug_logger, buf);
+    }
 }
 
 void info_logs(const char* format, ...)
 {
     char buf[__DEBUG_LEN];
 
-    if (!local) {
-        return;
-    }
-
     __FMT_LOGS(buf, __DEBUG_LEN);
-    LOG4CPLUS_INFO(g_debug_logger, buf);
+    if (!local) {
+        printf("INFO: %s\n", buf);
+    } else {
+        LOG4CPLUS_INFO(g_debug_logger, buf);
+    }
 }
 
 void warn_logs(const char* format, ...)
 {
     char buf[__DEBUG_LEN];
 
-    if (!local) {
-        return;
-    }
-
     __FMT_LOGS(buf, __DEBUG_LEN);
-    LOG4CPLUS_WARN(g_debug_logger, buf);
+    if (!local) {
+        printf("WARN: %s\n", buf);
+    } else {
+        LOG4CPLUS_WARN(g_debug_logger, buf);
+    }
 }
 
 void error_logs(const char* format, ...)
 {
     char buf[__DEBUG_LEN];
 
-    if (!local) {
-        return;
-    }
-
     __FMT_LOGS(buf, __DEBUG_LEN);
-    LOG4CPLUS_ERROR(g_debug_logger, buf);
+    if (!local) {
+        printf("ERROR: %s\n", buf);
+    } else {
+        LOG4CPLUS_ERROR(g_debug_logger, buf);
+    }
 }
 
 #endif
