@@ -168,6 +168,7 @@ char *get_cur_time(void);
 
 void ip_str(unsigned int family, unsigned char *ip, unsigned char *ip_str, unsigned int ip_str_size);
 int exec_cmd(const char *cmd, char *buf, unsigned int buf_len);
+char is_exist_mod(const char *mod);
 int __snprintf(char **buf, const int bufLen, int *remainLen, const char *format, ...);
 
 #endif

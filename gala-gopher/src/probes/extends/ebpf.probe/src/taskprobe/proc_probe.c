@@ -43,6 +43,9 @@
 #endif
 #define OO_NAME  "proc"
 
+#define OVERLAY_MOD  "overlay"
+#define EXT4_MOD  "ext4"
+
 #define __LOAD_PROBE(probe_name, end, load) \
     OPEN(probe_name, end, load); \
     MAP_SET_PIN_PATH(probe_name, period_map, PERIOD_PATH, load); \
@@ -152,6 +155,10 @@ struct bpf_prog_s* load_proc_bpf_prog(struct probe_params *args)
 {
     struct bpf_prog_s *prog;
     struct perf_buffer *pb;
+    char is_load_overlay, is_load_ext4;
+
+    is_load_overlay = is_exist_mod(OVERLAY_MOD);
+    is_load_ext4 = is_exist_mod(EXT4_MOD);
 
     prog = alloc_bpf_prog();
     if (prog == NULL) {
@@ -163,12 +170,12 @@ struct bpf_prog_s* load_proc_bpf_prog(struct probe_params *args)
     prog->skels[prog->num].fn = (skel_destroy_fn)syscall_bpf__destroy;
     prog->num++;
 
-    __LOAD_PROBE(ex4, err4, 1);
+    __LOAD_PROBE(ex4, err4, is_load_ext4);
     prog->skels[prog->num].skel = ex4_skel;
     prog->skels[prog->num].fn = (skel_destroy_fn)ex4_bpf__destroy;
     prog->num++;
 
-    __LOAD_PROBE(overlay, err3, 1);
+    __LOAD_PROBE(overlay, err3, is_load_overlay);
     prog->skels[prog->num].skel = overlay_skel;
     prog->skels[prog->num].fn = (skel_destroy_fn)overlay_bpf__destroy;
     prog->num++;
@@ -198,9 +205,13 @@ err:
 err2:
     UNLOAD(tmpfs);
 err3:
-    UNLOAD(overlay);
+    if (is_load_overlay) {
+        UNLOAD(overlay);
+    }
 err4:
-    UNLOAD(ex4);
+    if (is_load_ext4) {
+        UNLOAD(ex4);
+    }
 err5:
     UNLOAD(syscall);
 
