@@ -28,6 +28,42 @@ paths:
           schema:
             $ref: "#/definitions/get_host_info_rsp"
       x-swagger-router-controller: "aops_agent.controllers.agent_controller"
+  /agent/plugin/start:
+    get:
+      tags:
+        - "agent"
+      description: "启动插件。暂时不支持指定配置文件启动"
+      operationId: "start_plugin"
+      parameters:
+        - name: "plugin_name"
+          in: "query"
+          description: "插件名"
+          required: true
+          type: "string"
+      responses:
+        "200":
+          description: "主进程PID"
+          schema:
+            type: "string"
+      x-swagger-router-controller: "aops_agent.controllers.plugin_controller"
+  /agent/plugin/stop:
+    get:
+      tags:
+        - "agent"
+      description: "停止插件"
+      operationId: "stop_plugin"
+      parameters:
+        - name: "plugin_name"
+          in: "query"
+          description: "插件名"
+          required: true
+          type: "string"
+      responses:
+        "200":
+          description: ""
+          schema:
+            type: "string"
+      x-swagger-router-controller: "aops_agent.controllers.plugin_controller"
 definitions:
   ErrorRsp:
     required:

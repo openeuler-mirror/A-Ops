@@ -19,3 +19,5 @@ DEFAULT_TOKEN_PATH = os.path.join(BASE_CONFIG_PATH, 'agent_token.json')
 DATA_MODEL = {
     "list_str": {"type": "array", "items": {"type": "string", "minLength": 1}}
 }
+INSTALLABLE_PLUGIN = ['gopher']
+RPM_INFO = {"gopher": "gala-gopher"}
