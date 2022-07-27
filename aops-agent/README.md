@@ -42,8 +42,8 @@ To run the server on a Docker container, please execute the following from the r
 
 ```bash
 # building the image
-docker build -t agent .
+docker build -t aops_agent .
 
 # starting up a container
-docker run -p 8080:8080 agent
+docker run -p 8080:8080 aops_agent
 ```

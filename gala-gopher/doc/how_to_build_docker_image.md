@@ -30,7 +30,7 @@
    FROM openeuler/openeuler:20.03-lts-sp1
    
    # 内网用户需要配置代理
-   # agent configuration is needed for intranet users
+   # aops_agent configuration is needed for intranet users
    # ENV http_proxy=http://z00xxxxxx:xxx@proxy.huawei.com:8080
    # ENV https_proxy=http://z00xxxxxx:xxx@proxy.huawei.com:8080
    

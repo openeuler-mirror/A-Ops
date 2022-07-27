@@ -1,0 +1,67 @@
+swagger: "2.0"
+info:
+  description: "GroupDesc"
+  version: "v1"
+  title: "aops_agent"
+basePath: "/v1"
+tags:
+- name: "aops_agent"
+- name: "plugin"
+schemes:
+- "https"
+paths:
+  /agent/basic/info:
+    get:
+      tags:
+      - "aops_agent"
+      description: "获取主机基础信息"
+      operationId: "get_host_info"
+      parameters:
+        - name: access_token
+          in: header
+          description: 授权码
+          type: string
+          required: true
+      responses:
+        "200":
+          description: "主机的基本信息"
+          schema:
+            $ref: "#/definitions/get_host_info_rsp"
+      x-swagger-router-controller: "aops_agent.controllers.agent_controller"
+definitions:
+  ErrorRsp:
+    required:
+    - "error_code"
+    - "error_msg"
+    properties:
+      error_code:
+        type: "string"
+        description: "错误码"
+        minLength: 8
+        maxLength: 36
+      error_msg:
+        type: "string"
+        description: "错误描述"
+        minLength: 2
+        maxLength: 512
+    description: "失败时返回的错误对象"
+  get_host_info_rsp:
+    description: "获取主机基本信息"
+    properties:
+      os:
+        type: "object"
+        description: "操作系统信息"
+        properties:
+          os_version:
+            type: "string"
+            description: "操作系统版本"
+          kernel:
+            type: "string"
+            description: "kernel版本"
+          bios_version:
+            type: "string"
+            description: "bios版本"
+        required:
+        - "kernel"
+        - "os_version"
+        - "bios_version"
