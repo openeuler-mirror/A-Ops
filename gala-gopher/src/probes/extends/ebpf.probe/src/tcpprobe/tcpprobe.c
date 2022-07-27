@@ -34,7 +34,6 @@
 #endif
 
 #include "bpf.h"
-#include "tcp.h"
 #include "args.h"
 #include "object.h"
 #include "tcpprobe.skel.h"
@@ -52,164 +51,11 @@
 
 static struct probe_params params = {.period = DEFAULT_PERIOD,
                                      .cport_flag = 0};
-static int netns_fd = 0;
-static int tcp_map_fd = 0;
+static volatile sig_atomic_t g_stop;
 
-static int pidfd_open(pid_t pid, unsigned int flags)
+static void sig_int(int signo)
 {
-    return syscall(__NR_pidfd_open, pid, flags);
-}
-
-static int get_netns_fd(void)
-{
-    const char *fmt = "/proc/%u/ns/net";
-    char path[PATH_LEN];
-
-    path[0] = 0;
-    (void)snprintf(path, PATH_LEN, fmt, getpid());
-    return open(path, O_RDONLY);
-}
-
-static int set_netns_by_pid(pid_t pid)
-{
-    int fd = pidfd_open(pid, 0);
-    return setns(fd, CLONE_NEWNET);
-}
-
-static int set_netns_by_fd(int fd)
-{
-    return setns(fd, CLONE_NEWNET);
-}
-
-static int enter_container_netns(const char *container_id)
-{
-    int ret;
-    u32 pid;
-
-    ret = get_container_pid(container_id, &pid);
-    if (ret) {
-        ERROR("ERROR: get container pid failed.(%s, ret = %d)\n", container_id, ret);
-        return ret;
-    }
-
-    return set_netns_by_pid((pid_t)pid);
-}
-
-static int exit_container_netns(void)
-{
-    return set_netns_by_fd(netns_fd);
-}
-
-static int is_valid_tgid(struct probe_params *args, u32 pid)
-{
-    if (args->filter_task_probe) {
-        struct proc_s obj = {.proc_id = pid};
-        return is_proc_exist(&obj);
-    }
-
-    if (args->filter_pid != 0) {
-        return (pid == args->filter_pid);
-    }
-    return 1;
-}
-
-static void do_load_tcp_fd(int map_fd, u32 tgid, int fd, u8 role)
-{
-    struct tcp_fd_info tcp_fd_s = {0};
-    char *role_name[LINK_ROLE_MAX] = {"client", "server"};
-
-    if (!is_valid_tgid(&params, tgid)) {
-        return;
-    }
-
-    (void)bpf_map_lookup_elem(map_fd, &tgid, &tcp_fd_s);
-    if (tcp_fd_s.cnt >= TCP_FD_PER_PROC_MAX) {
-        return;
-    }
-
-    tcp_fd_s.fds[tcp_fd_s.cnt] = fd;
-    tcp_fd_s.fd_role[tcp_fd_s.cnt] = role;
-    tcp_fd_s.cnt++;
-    (void)bpf_map_update_elem(map_fd, &tgid, &tcp_fd_s, BPF_ANY);
-    INFO("Update establish(tgid = %u, fd = %d, role = %s).\n", 
-            tgid, fd, role_name[role]);
-}
-
-static void load_tcp_fd()
-{
-    int i, j;
-    u8 role;
-    struct tcp_listen_ports* tlps;
-    struct tcp_estabs* tes = NULL;
-
-    tlps = get_listen_ports();
-    if (tlps == NULL) {
-        goto err;
-    }
-
-    tes = get_estab_tcps(tlps);
-    if (tes == NULL) {
-        goto err;
-    }
-
-    /* insert tcp establish into map */
-    for (i = 0; i < tes->te_num; i++) {
-        role = tes->te[i]->is_client == 1 ? LINK_ROLE_CLIENT : LINK_ROLE_SERVER;
-        for (j = 0; j < tes->te[i]->te_comm_num; j++) {
-            do_load_tcp_fd(tcp_map_fd,
-                (__u32)tes->te[i]->te_comm[j]->pid,
-                (int)tes->te[i]->te_comm[j]->fd, role);
-        }
-    }
-
-err:
-    if (tlps) {
-        free_listen_ports(&tlps);
-    }
-
-    if (tes) {
-        free_estab_tcps(&tes);
-    }
-
-    return;
-}
-
-static int do_load_established_tcp(const char *container_id)
-{
-    int ret;
-
-    if (container_id) {
-        ret = enter_container_netns(container_id);
-        if (ret) {
-            ERROR("ERROR: enter container netns failed.(%s, ret = %d)\n",
-                    container_id, ret);
-            return ret;
-        }
-    }
-
-    load_tcp_fd();
-
-    if (container_id) {
-        (void)exit_container_netns();
-    }
-    return 0;
-}
-
-static void load_established_tcp(void)
-{
-    int i;
-
-    container_tbl* cstbl = get_all_container();
-    if (cstbl != NULL) {
-        container_info *p = cstbl->cs;
-        for (i = 0; i < cstbl->num; i++) {
-            (void)do_load_established_tcp((const char *)p->abbrContainerId);
-            p++;
-        }
-        free_container_tbl(&cstbl);
-    }
-
-    (void)do_load_established_tcp(NULL);
+    g_stop = 1;
 }
 
 static void build_entity_id(struct tcp_link_s *link, char *buf, int buf_len)
@@ -407,11 +253,28 @@ static void load_args(int args_fd, struct probe_params* params)
     (void)bpf_map_update_elem(args_fd, &key, &args, BPF_ANY);
 }
 
+static int get_netns_fd(void)
+{
+    const char *fmt = "/proc/%u/ns/net";
+    char path[PATH_LEN];
+
+    path[0] = 0;
+    (void)snprintf(path, PATH_LEN, fmt, getpid());
+    return open(path, O_RDONLY);
+}
+
 int main(int argc, char **argv)
 {
     int err = -1;
     int out_put_fd = -1;
+    int tcp_map_fd = 0;
+    int netns_fd = 0;
     struct perf_buffer* pb = NULL;
+
+    if (signal(SIGINT, sig_int) == SIG_ERR) {
+        fprintf(stderr, "can't set signal handler: %d\n", errno);
+        return errno;
+    }
 
     err = args_parse(argc, argv, &params);
     if (err != 0) {
@@ -439,12 +302,20 @@ int main(int argc, char **argv)
         fprintf(stderr, "ERROR: get netns fd failed.\n");
         goto err;
     }
-    load_established_tcp();
+    lkup_established_tcp(netns_fd);
     load_args(GET_MAP_FD(tcpprobe, args_map), &params);
 
     printf("Successfully started!\n");
 
     poll_pb(pb, THOUSAND);
+    while (!g_stop) {
+        if ((err = perf_buffer__poll(pb, THOUSAND)) < 0) {
+            break;
+        }
+
+        load_established_tcps(&params, tcp_map_fd);
+        sleep(params.period);
+    }
 
 err:
     if (pb) {
@@ -454,9 +325,9 @@ err:
     if (netns_fd > 0) {
         (void)close(netns_fd);
     }
-    netns_fd = 0;
     UNLOAD(tcpprobe);
 
+    destroy_established_tcps();
     obj_module_exit();
     return -err;
 }
