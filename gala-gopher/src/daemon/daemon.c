@@ -96,6 +96,13 @@ static int DaemonCheckProbeNeedStart(char *check_cmd, ProbeStartCheckType chkTyp
     return (cnt > 0);
 }
 
+static void *DaemonRunMetadataReport(void *arg)
+{
+    ResourceMgr *mgr = (ResourceMgr *)arg;
+    prctl(PR_SET_NAME, "[METAREPORT]");
+    (void)ReportMetaDataMain(mgr);
+}
+
 #endif
 
 static void CleanData(const ResourceMgr *mgr)
@@ -252,7 +259,18 @@ int DaemonRun(const ResourceMgr *mgr)
         INFO("[DAEMON] create web_server daemon success.\n");
     }
 
-    // 4. start probe thread
+    // 4. start metadata_report thread
+    if (mgr->meta_kafkaMgr) {
+        pthread_t meta_tid;
+        ret = pthread_create(&meta_tid, NULL, DaemonRunMetadataReport, mgr);
+        if (ret != 0) {
+            ERROR("[DAEMON] create metadata_report thread failed. errno: %d\n", ret);
+            return -1;
+        }
+        INFO("[DAEMON] create metadata_report thread success.\n");
+    }
+
+    // 5. start probe thread
     for (int i = 0; i < mgr->probeMgr->probesNum; i++) {
         Probe *_probe = mgr->probeMgr->probes[i];
         if (_probe->probeSwitch != PROBE_SWITCH_ON) {
@@ -267,7 +285,7 @@ int DaemonRun(const ResourceMgr *mgr)
         INFO("[DAEMON] create probe %s thread success.\n", mgr->probeMgr->probes[i]->name);
     }
 
-    // 5. start extend probe thread
+    // 6. start extend probe thread
     INFO("[DAEMON] start extend probe(%u) thread.\n", mgr->extendProbeMgr->probesNum);
     for (int i = 0; i < mgr->extendProbeMgr->probesNum; i++) {
         ExtendProbe *_extendProbe = mgr->extendProbeMgr->probes[i];
@@ -293,7 +311,7 @@ int DaemonRun(const ResourceMgr *mgr)
         INFO("[DAEMON] create extend probe %s thread success.\n", mgr->extendProbeMgr->probes[i]->name);
     }
 
-    //6. start CmdServer thread
+    // 7. start CmdServer thread
     ret = pthread_create(&mgr->ctl_tid, NULL, CmdServer, NULL);
     if (ret != 0) {
         ERROR("[DAEMON] create cmd_server thread failed. errno: %d\n", errno);
@@ -301,7 +319,7 @@ int DaemonRun(const ResourceMgr *mgr)
     }
     INFO("[DAEMON] create cmd_server thread success.\n");
 
-    //7. create keeplive timer
+    // 8. create keeplive timer
     ret = DaemonCreateTimer((ResourceMgr *)mgr);
     if (ret != 0) {
         ERROR("[DAEMON] create keeplive timer failed. errno: %d\n", ret);

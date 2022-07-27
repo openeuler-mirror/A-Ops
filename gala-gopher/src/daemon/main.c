@@ -128,12 +128,6 @@ int main(int argc, char *argv[])
         return 0;
     }
 
-    ret = ReportMeteData(resourceMgr);
-    if (ret != 0) {
-        ERROR("[MAIN] report metadata failed.\n");
-        return 0;
-    }
-
     ret = DaemonRun(resourceMgr);
     if (ret != 0) {
         ERROR("[MAIN] daemon run failed.\n");

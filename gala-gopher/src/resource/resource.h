@@ -76,7 +76,7 @@ void ResourceMgrDestroy(ResourceMgr *resourceMgr);
 int ResourceMgrInit(ResourceMgr *resourceMgr);
 void ResourceMgrDeinit(ResourceMgr *resourceMgr);
 
-int ReportMeteData(const ResourceMgr *resourceMgr);
+int ReportMetaDataMain(const ResourceMgr *resourceMgr);
 
 #endif
 

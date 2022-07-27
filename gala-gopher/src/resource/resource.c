@@ -829,7 +829,7 @@ err:
     return -1;
 }
 
-int ReportMeteData(const ResourceMgr *resourceMgr)
+static int ReportMeteData(const ResourceMgr *resourceMgr)
 {
     MeasurementMgr *mm_mgr = NULL;
     Measurement *mm = NULL;
@@ -850,6 +850,20 @@ int ReportMeteData(const ResourceMgr *resourceMgr)
         }
     }
     return 0;
+}
+
+#define TEM_MINUTES (10 * 60)
+int ReportMetaDataMain(const ResourceMgr *resourceMgr)
+{
+    int ret;
+
+    for (;;) {
+        ret = ReportMeteData(resourceMgr);
+        if (ret < 0) {
+            return -1;
+        }
+        sleep(TEM_MINUTES);
+    }
 }
 #endif
 
