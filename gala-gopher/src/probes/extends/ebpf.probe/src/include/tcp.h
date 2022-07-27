@@ -56,7 +56,7 @@ struct tcp_estab {
 };
 
 
-#define TCP_ESTAB_MAX 1024
+#define TCP_ESTAB_MAX (5 * 1024)
 struct tcp_estabs {
     unsigned int te_num;
     struct tcp_estab *te[TCP_ESTAB_MAX];

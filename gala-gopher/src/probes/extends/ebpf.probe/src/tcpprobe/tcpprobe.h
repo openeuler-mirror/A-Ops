@@ -15,7 +15,7 @@
 #ifndef __TCPPROBE__H
 #define __TCPPROBE__H
 
-#pragma once
+#include "args.h"
 
 #define LINK_ROLE_SERVER 0
 #define LINK_ROLE_CLIENT 1
@@ -170,5 +170,9 @@ struct tcp_args_s {
     __u32 filter_by_task;       // Filtering PID monitoring ranges by task probe
     __u32 filter_by_tgid;       // Filtering PID monitoring ranges by specific pid
 };
+
+void load_established_tcps(struct probe_params *args, int map_fd);
+void lkup_established_tcp(int current_netns);
+void destroy_established_tcps(void);
 
 #endif
