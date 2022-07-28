@@ -19,7 +19,7 @@ class InferConfig:
         }
 
         self.log_conf = {
-            'log_path': '/var/log/gala-spider/spider.log',
+            'log_path': '/var/log/gala-inference/inference.log',
             'log_level': 'INFO',
             'max_size': 10,
             'backup_count': 10,

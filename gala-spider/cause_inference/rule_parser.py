@@ -49,7 +49,14 @@ class BelongsToRule1(Rule):
                 continue
             from_node = topo_nodes.get(edge.get('_from'))
             to_node = topo_nodes.get(edge.get('_to'))
-            if from_node.get('type') == EntityType.REDIS_SLI.value and to_node.get('type') == EntityType.PROCESS.value:
+            from_type = from_node.get('type')
+            to_type = to_node.get('type')
+
+            if from_type == EntityType.REDIS_SLI.value and to_type == EntityType.PROCESS.value:
+                # 规则：建立 process 到 redis_sli 的因果关系
+                cause_graph.add_edge(edge.get('_to'), edge.get('_from'), **edge)
+            elif from_type == EntityType.BLOCK.value and to_type == EntityType.DISK.value:
+                # 规则：建立 disk 到 block 的因果关系
                 cause_graph.add_edge(edge.get('_to'), edge.get('_from'), **edge)
             else:
                 cause_graph.add_edge(edge.get('_from'), edge.get('_to'), **edge)
@@ -64,6 +71,36 @@ class RunsOnRule1(Rule):
             if edge.get('type') != RelationType.RUNS_ON.value:
                 continue
             cause_graph.add_edge(edge.get('_to'), edge.get('_from'), **edge)
+
+
+class ProcessRule1(Rule):
+    def rule_parsing(self, causal_graph):
+        topo_nodes = causal_graph.topo_nodes
+        cause_graph = causal_graph.causal_graph
+
+        proc_nodes = []
+        disk_nodes = []
+        block_nodes = []
+        for node in topo_nodes.values():
+            type_ = node.get('type')
+            if type_ == EntityType.PROCESS.value:
+                proc_nodes.append(node)
+            elif type_ == EntityType.DISK.value:
+                disk_nodes.append(node)
+            elif type_ == EntityType.BLOCK.value:
+                block_nodes.append(node)
+        # 规则：如果 disk 和 process 属于同一个主机，则建立 process 到 disk 的因果关系
+        for disk_node in disk_nodes:
+            for proc_node in proc_nodes:
+                if disk_node.get('machine_id') != proc_node.get('machine_id'):
+                    continue
+                cause_graph.add_edge(proc_node.get('_id'), disk_node.get('_id'))
+        # 规则：如果 block 和 process 属于同一个主机，则建立 block 到 process 的因果关系
+        for blk_node in block_nodes:
+            for proc_node in proc_nodes:
+                if blk_node.get('machine_id') != proc_node.get('machine_id'):
+                    continue
+                cause_graph.add_edge(blk_node.get('_id'), proc_node.get('_id'))
 
 
 class RuleEngine:
@@ -82,3 +119,4 @@ rule_engine = RuleEngine()
 rule_engine.add_rule(BelongsToRule1())
 rule_engine.add_rule(RunsOnRule1())
 rule_engine.add_rule(SliRule1())
+rule_engine.add_rule(ProcessRule1())
