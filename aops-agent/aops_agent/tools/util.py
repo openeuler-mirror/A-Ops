@@ -14,6 +14,8 @@ import configparser
 import os
 from typing import Union, List, Any
 from subprocess import Popen, PIPE, STDOUT
+
+from flask import Response, make_response
 from jsonschema import validate, ValidationError
 from aops_agent.conf.constant import DATA_MODEL
 from aops_agent.models.custom_exception import InputError
@@ -82,3 +84,19 @@ def get_shell_data(command_list: List[str], key: bool = True, stdin: Popen = Non
     if key:
         return res.stdout.read().decode()
     return res
+
+
+def create_response(status_code: int, msg: str) -> Response:
+    """
+        Construct the response body
+
+    Args:
+        status_code (int): http status code
+        msg (str): message which you want to tell
+
+    Returns:
+        Response body
+    """
+    rsp = make_response(msg)
+    rsp.status_code = status_code
+    return rsp
