@@ -27,10 +27,12 @@ from aops_manager.deploy_manager.ansible_runner.inventory_builder import Invento
 from aops_manager.deploy_manager.run_task import TaskRunner
 from aops_manager.account_manager.key import HostKey
 from aops_manager.conf import configuration
+from aops_manager.database.proxy.host import HostProxy
+from aops_manager.database import SESSION
 from aops_utils.conf.constant import DATA_GET_HOST_INFO
 from aops_utils.log.log import LOGGER
 from aops_utils.restful.helper import make_datacenter_url
-from aops_utils.restful.status import StatusCode, PARAM_ERROR, SUCCEED, KEY_ERROR, PARTIAL_SUCCEED
+from aops_utils.restful.status import StatusCode, PARAM_ERROR, SUCCEED, KEY_ERROR, PARTIAL_SUCCEED, DATABASE_CONNECT_ERROR
 from aops_utils.restful.response import MyResponse
 from aops_utils.restful.serialize.validate import validate
 
@@ -252,13 +254,14 @@ class CollectConfig(Resource):
             "basic": True,
             "username": "admin"
         }
-        # make database center url
-        database_url = make_datacenter_url(DATA_GET_HOST_INFO)
-        response = MyResponse.get_response("POST", database_url, pyload)
-        if response.get('code') != SUCCEED:
+        proxy = HostProxy()
+        if not proxy.connect(SESSION):
+            return jsonify(StatusCode().make_response(DATABASE_CONNECT_ERROR))
+        code, result = proxy.get_host_info(pyload)
+        if code != SUCCEED:
             return LOGGER.error("Request database failed")
         inventory = InventoryBuilder()
-        ansible_input_json = generate_ansible_input_json(response['host_infos'],
+        ansible_input_json = generate_ansible_input_json(result['host_infos'],
                                                          inventory,
                                                          params)
         # json to yaml and move to

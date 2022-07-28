@@ -16,6 +16,7 @@ Author:
 Description: Host table operation
 """
 import math
+from typing import Dict
 import sqlalchemy
 from sqlalchemy.sql.expression import desc, asc
 from sqlalchemy import func
@@ -25,7 +26,7 @@ from aops_utils.database.helper import judge_return_code
 from aops_utils.database.proxy import MysqlProxy, ElasticsearchProxy
 from aops_utils.database.table import Host, HostGroup, User
 from aops_utils.restful.status import DATABASE_DELETE_ERROR, DATABASE_INSERT_ERROR,\
-    DATABASE_QUERY_ERROR, DATA_DEPENDENCY_ERROR, DATA_EXIST, SUCCEED
+    DATABASE_QUERY_ERROR, DATA_DEPENDENCY_ERROR, DATA_EXIST, SUCCEED, NO_DATA
 from aops_manager.conf.constant import HOST_INFO_INDEX
 
 
@@ -33,70 +34,59 @@ class HostProxy(MysqlProxy):
     """
     Host related table operation
     """
-
-    def add_host(self, data):
+    def add_host(self, data: Dict) -> int:
         """
         Add host to table
 
         Args:
-            data(dict): parameter, e.g.
+            data: parameter, e.g.
                 {
                     "username": "admin"
-                    "host_list": [
-                        {
-                            "host_name": "host1",
-                            "host_group_name": "group1",
-                            "host_id": "id1",
-                            "public_ip": "127.0.0.1",
-                            "management": False,
-                            "ssh_port": 22
-                        }
-                    ]
+                    "host_name": "host1",
+                    "host_group_name": "group1",
+                    "host_id": "id1",
+                    "public_ip": "127.0.0.1",
+                    "management": False
                 }
 
         Returns:
             int
         """
-        group_map = {}
-        result = {
-            "succeed_list": [],
-            "fail_list": []
-        }
+        username = data.pop('username')
         try:
             user = self.session.query(User).filter(
-                User.username == data['username']).first()
-            host_groups = user.host_groups
+                User.username == username).first()
             hosts = user.hosts
-            # create a map that map host_group_name to host_group
-            group_map = dict(
-                map(lambda item: (item.host_group_name, item), host_groups))
-            for host_info in data['host_list']:
-                host_group = group_map.get(host_info['host_group_name'])
-                if host_group is None:
-                    result['fail_list'].append(host_info)
-                    continue
-                host_group.host_count += 1
-                host_info['host_group_id'] = host_group.host_group_id
-                host_info['user'] = data['username']
-                host = Host(**host_info)
-                if host in hosts:
-                    LOGGER.error("host %s exist", host_info['host_name'])
-                    result['fail_list'].append(host_info)
-                    continue
-                host.host_group = host_group
-                host.owner = user
-                self.session.add(host)
-                self.session.commit()
-                result['succeed_list'].append(host_info)
-            status_code = judge_return_code(result, DATABASE_INSERT_ERROR)
-            return status_code, result
+
+            group_filters = {
+                HostGroup.username == username,
+                HostGroup.host_group_name == data['host_group_name']
+            }
+            host_group_res = self.session.query(
+                HostGroup).filter(*group_filters).all()
+            if len(host_group_res) == 0:
+                return NO_DATA
+
+            host_group = host_group_res[0]
+            host_group.host_count += 1
+            data['host_group_id'] = host_group.host_group_id
+            data['user'] = username
+            host = Host(**data)
+            if host in hosts:
+                LOGGER.error("host %s exist", data['host_name'])
+                return DATA_EXIST
+
+            host.host_group = host_group
+            host.owner = user
+            self.session.add(host)
+            self.session.commit()
+            return SUCCEED
+
         except sqlalchemy.exc.SQLAlchemyError as error:
             LOGGER.error(error)
             LOGGER.error("add host fail")
             self.session.rollback()
-            result['fail_list'] = result['succeed_list'] + result['fail_list']
-            result['succeed_list'] = []
-            return DATABASE_INSERT_ERROR, result
+            return DATABASE_INSERT_ERROR
 
     def delete_host(self, data):
         """
@@ -129,7 +119,8 @@ class HostProxy(MysqlProxy):
                 result['succeed_list'].append(host.host_id)
                 host_info[host.host_id] = host.host_name
             self.session.commit()
-            result['fail_list'] = list(set(host_list) - set(result['succeed_list']))
+            result['fail_list'] = list(
+                set(host_list) - set(result['succeed_list']))
             status_code = judge_return_code(result, DATABASE_DELETE_ERROR)
             result['host_info'] = host_info
             return status_code, result
@@ -282,9 +273,9 @@ class HostProxy(MysqlProxy):
                 "host_name": host.host_name,
                 "host_group_name": host.host_group_name,
                 "public_ip": host.public_ip,
-                "ssh_port": host.ssh_port,
                 "management": host.management,
-                "status": host.status
+                "status": host.status,
+                "scene": host.scene
             }
             result['host_infos'].append(host_info)
 
@@ -314,8 +305,7 @@ class HostProxy(MysqlProxy):
         result = {}
         result['host_infos'] = temp_res
         query_fields = [Host.host_id, Host.host_name, Host.public_ip,
-                        Host.ssh_port, Host.host_group_name, Host.management,
-                        Host.status]
+                        Host.host_group_name, Host.management, Host.status, Host.scene]
         filters = {
             Host.user == username
         }
@@ -329,9 +319,9 @@ class HostProxy(MysqlProxy):
                     "host_group_name": host.host_group_name,
                     "host_name": host.host_name,
                     "public_ip": host.public_ip,
-                    "ssh_port": host.ssh_port,
                     "management": host.management,
-                    "status": host.status
+                    "status": host.status,
+                    "scene": host.scene
                 }
                 temp_res.append(host_info)
             self.session.commit()
@@ -375,8 +365,7 @@ class HostProxy(MysqlProxy):
                         "host_id": host.host_id,
                         "host_group_name": host.host_group_name,
                         "host_name": host.host_name,
-                        "public_ip": host.public_ip,
-                        "ssh_port": host.ssh_port
+                        "public_ip": host.public_ip
                     }
                     temp_res[name].append(host_info)
             self.session.commit()

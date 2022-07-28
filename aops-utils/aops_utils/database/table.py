@@ -50,12 +50,12 @@ class Host(Base, MyBase):  # pylint: disable=R0903
     host_id = Column(String(40), primary_key=True)
     host_name = Column(String(20), nullable=False)
     public_ip = Column(String(16), nullable=False)
-    ssh_port = Column(Integer, nullable=False)
     status = Column(String(20))
     management = Column(Boolean, nullable=False)
     host_group_name = Column(String(20))
     repo_name = Column(String(20))
     last_scan = Column(Integer)
+    scene = Column(String(255))
 
     user = Column(String(40), ForeignKey('user.username'))
     host_group_id = Column(Integer, ForeignKey('host_group.host_group_id'))

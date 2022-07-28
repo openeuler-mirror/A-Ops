@@ -1,6 +1,6 @@
 #!/usr/bin/python3
 # ******************************************************************************
-# Copyright (c) Huawei Technologies Co., Ltd. 2021-2021. All rights reserved.
+# Copyright (c) Huawei Technologies Co., Ltd. 2021-2022. All rights reserved.
 # licensed under the Mulan PSL v2.
 # You can use this software according to the terms and conditions of the Mulan PSL v2.
 # You may obtain a copy of Mulan PSL v2 at:
@@ -22,7 +22,7 @@ from werkzeug.security import generate_password_hash
 
 from aops_utils.database.table import Host, User, Base, create_utils_tables
 from aops_utils.database.helper import drop_tables, create_database_engine
-from aops_utils.restful.status import DATA_EXIST, PARTIAL_SUCCEED, SUCCEED, DATA_DEPENDENCY_ERROR, DATABASE_INSERT_ERROR
+from aops_utils.restful.status import DATA_EXIST, PARTIAL_SUCCEED, SUCCEED, DATA_DEPENDENCY_ERROR, DATABASE_INSERT_ERROR, NO_DATA
 from aops_utils.compare import compare_two_object
 from aops_manager.database.proxy.host import HostProxy
 
@@ -48,7 +48,9 @@ class TestHostDatabase(unittest.TestCase):
             "password": "123456"
         }
         password_hash = generate_password_hash(data['password'])
-        user = User(username=data['username'], password=password_hash)
+        token = ""
+        user = User(username=data['username'],
+                    password=password_hash, token=token)
         self.proxy.session.add(user)
         self.proxy.session.commit()
 
@@ -193,54 +195,51 @@ class TestHostDatabase(unittest.TestCase):
         self.proxy.add_host_group(group_data2)
 
         # ==============add host===================
-        data = {
-            "username": "admin",
-            "host_list": [
-                {
-                    "host_name": "host1",
-                    "host_group_name": "group1",
-                    "host_id": "id1",
-                    "public_ip": "127.0.0.1",
-                    "management": False,
-                    "ssh_port": 22
-                },
-                {
-                    "host_name": "host2",
-                    "host_group_name": "group1",
-                    "host_id": "id2",
-                    "public_ip": "127.0.0.2",
-                    "management": True,
-                    "ssh_port": 22
-                },
-                {
-                    "host_name": "host3",
-                    "host_group_name": "group2",
-                    "host_id": "id3",
-                    "public_ip": "127.0.0.3",
-                    "management": False,
-                    "ssh_port": 22
-                },
-                {
-                    "host_name": "host4",
-                    "host_group_name": "group2",
-                    "host_id": "id4",
-                    "public_ip": "127.0.0.4",
-                    "management": True,
-                    "ssh_port": 22
-                },
-                {
-                    "host_name": "host5",
-                    "host_group_name": "group2",
-                    "host_id": "id5",
-                    "public_ip": "127.0.0.5",
-                    "management": False,
-                    "ssh_port": 22
-                }
-            ]
-        }
-
-        res = self.proxy.add_host(data)
-        self.assertEqual(res[0], SUCCEED)
+        data = [
+            {
+                "host_name": "host1",
+                "host_group_name": "group1",
+                "host_id": "id1",
+                "public_ip": "127.0.0.1",
+                "management": False,
+                "username": "admin"
+            },
+            {
+                "host_name": "host2",
+                "host_group_name": "group1",
+                "host_id": "id2",
+                "public_ip": "127.0.0.2",
+                "management": True,
+                "username": "admin"
+            },
+            {
+                "host_name": "host3",
+                "host_group_name": "group2",
+                "host_id": "id3",
+                "public_ip": "127.0.0.3",
+                "management": False,
+                "username": "admin"
+            },
+            {
+                "host_name": "host4",
+                "host_group_name": "group2",
+                "host_id": "id4",
+                "public_ip": "127.0.0.4",
+                "management": True,
+                "username": "admin"
+            },
+            {
+                "host_name": "host5",
+                "host_group_name": "group2",
+                "host_id": "id5",
+                "public_ip": "127.0.0.5",
+                "management": False,
+                "username": "admin"
+            }
+        ]
+        for host in data:
+            res = self.proxy.add_host(host)
+            self.assertEqual(res, SUCCEED)
 
         condition = {}
         res = self.proxy.select([Host], condition)
@@ -264,31 +263,30 @@ class TestHostDatabase(unittest.TestCase):
         res = self.proxy.get_host_group(args)
         self.assertEqual(res[0], SUCCEED)
         self.assertEqual(res[1]['host_group_infos'], expected_res)
-
+        
+        # no such host group
         data = {
+            "host_name": "host1",
+            "host_group_name": "group99",
+            "host_id": "id1",
+            "public_ip": "127.0.0.1",
+            "management": False,
             "username": "admin",
-            "host_list": [
-                {
-                    "host_name": "host1",
-                    "host_group_name": "group99",
-                    "host_id": "id1",
-                    "public_ip": "127.0.0.1",
-                    "management": False,
-                    "ssh_port": 22
-                },
-                {
-                    "host_name": "host2",
-                    "host_group_name": "group1",
-                    "host_id": "id1",
-                    "public_ip": "127.0.0.2",
-                    "management": False,
-                    "ssh_port": 22
-                }
-            ]
         }
         res = self.proxy.add_host(data)
-        self.assertEqual(res[0], DATABASE_INSERT_ERROR)
-        self.assertEqual(len(res[1]['fail_list']), 2)
+        self.assertEqual(res, NO_DATA)
+        
+        # existed host
+        data = {
+            "host_name": "host1",
+            "host_group_name": "group1",
+            "host_id": "id1",
+            "public_ip": "127.0.0.1",
+            "management": False,
+            "username": "admin",
+        }
+        res = self.proxy.add_host(data)
+        self.assertEqual(res, DATA_EXIST)
 
         # ==============get host=====================
         args = {
@@ -307,18 +305,18 @@ class TestHostDatabase(unittest.TestCase):
                 "host_name": "host5",
                 "host_group_name": "group2",
                 "public_ip": "127.0.0.5",
-                "ssh_port": 22,
                 "management": False,
-                "status": None
+                "status": None,
+                "scene": None
             },
             {
                 "host_id": "id4",
                 "host_name": "host4",
                 "host_group_name": "group2",
                 "public_ip": "127.0.0.4",
-                "ssh_port": 22,
                 "management": True,
-                "status": None
+                "status": None,
+                "scene": None
             }
         ]
         self.assertEqual(res[1]['total_count'], 5)
@@ -340,18 +338,18 @@ class TestHostDatabase(unittest.TestCase):
                 "host_name": "host3",
                 "host_group_name": "group2",
                 "public_ip": "127.0.0.3",
-                "ssh_port": 22,
                 "management": False,
-                "status": None
+                "status": None,
+                "scene": None
             },
             {
                 "host_id": "id4",
                 "host_name": "host4",
                 "host_group_name": "group2",
                 "public_ip": "127.0.0.4",
-                "ssh_port": 22,
                 "management": True,
-                "status": None
+                "status": None,
+                "scene": None
             }
         ]
         self.assertEqual(res[1]['total_count'], 5)
@@ -376,18 +374,18 @@ class TestHostDatabase(unittest.TestCase):
                 "host_group_name": "group1",
                 "host_id": "id1",
                 "public_ip": "127.0.0.1",
-                "ssh_port": 22,
                 "management": False,
-                "status": None
+                "status": None,
+                "scene": None
             },
             {
                 "host_name": "host2",
                 "host_group_name": "group1",
                 "host_id": "id2",
                 "public_ip": "127.0.0.2",
-                "ssh_port": 22,
                 "management": True,
-                "status": None
+                "status": None,
+                "scene": None
             }
         ]
         res = self.proxy.get_host_info(args)
@@ -402,36 +400,31 @@ class TestHostDatabase(unittest.TestCase):
                     "host_name": "host1",
                     "host_group_name": "group1",
                     "host_id": "id1",
-                    "public_ip": "127.0.0.1",
-                    "ssh_port": 22
+                    "public_ip": "127.0.0.1"
                 },
                 {
                     "host_name": "host2",
                     "host_group_name": "group1",
                     "host_id": "id2",
-                    "public_ip": "127.0.0.2",
-                    "ssh_port": 22
+                    "public_ip": "127.0.0.2"
                 },
                 {
                     "host_name": "host3",
                     "host_group_name": "group2",
                     "host_id": "id3",
-                    "public_ip": "127.0.0.3",
-                    "ssh_port": 22
+                    "public_ip": "127.0.0.3"
                 },
                 {
                     "host_name": "host4",
                     "host_group_name": "group2",
                     "host_id": "id4",
-                    "public_ip": "127.0.0.4",
-                    "ssh_port": 22
+                    "public_ip": "127.0.0.4"
                 },
                 {
                     "host_name": "host5",
                     "host_group_name": "group2",
                     "host_id": "id5",
-                    "public_ip": "127.0.0.5",
-                    "ssh_port": 22
+                    "public_ip": "127.0.0.5"
                 }
             ]
         }

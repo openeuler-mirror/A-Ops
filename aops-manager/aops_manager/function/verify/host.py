@@ -1,6 +1,6 @@
 #!/usr/bin/python3
 # ******************************************************************************
-# Copyright (c) Huawei Technologies Co., Ltd. 2021-2021. All rights reserved.
+# Copyright (c) Huawei Technologies Co., Ltd. 2021-2022. All rights reserved.
 # licensed under the Mulan PSL v2.
 # You can use this software according to the terms and conditions of the Mulan PSL v2.
 # You may obtain a copy of Mulan PSL v2 at:
@@ -22,33 +22,18 @@ from marshmallow import validate
 from aops_utils.conf import constant
 
 
-class AddHostSchema(Schema):
-    """
-    validators for parameter of /manage/host/add_host
-    """
-    host_list = fields.List(fields.Dict(), required=True,
-                            validate=lambda s: len(s) > 0)
-    key = fields.String(required=True, validate=lambda s: len(s) > 0)
-
-
 class HostSchema(Schema):
     """
     validator for host info
     """
+    host_id = fields.String(required=True, validate=lambda s: len(s) > 0)
     host_name = fields.String(required=True, validate=lambda s: len(s) > 0)
     host_group_name = fields.String(
         required=True, validate=lambda s: len(s) > 0)
     public_ip = fields.IP(required=True)
-    ssh_port = fields.Integer(
-        required=True,
-        validate=lambda x: constant.MAX_PORT >= x >= constant.MIN_PORT)
     management = fields.Boolean(required=True)
-    username = fields.String(
-        required=True, validate=lambda s: len(s) > 0)
-    password = fields.String(
-        required=True, validate=lambda s: len(s) > 0)
-    sudo_password = fields.String(
-        required=True, validate=lambda s: len(s) > 0)
+    username = fields.String(required=True, validate=lambda s: len(s) > 0)
+    password = fields.String(required=True, validate=lambda s: len(s) > 0)
 
 
 class DeleteHostSchema(Schema):
