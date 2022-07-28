@@ -29,7 +29,7 @@
 #include "common.h"
 #include "object.h"
 
-#define MAP_OBJS_DUMP "bpftool map list  | /usr/bin/grep -w name"
+#define MAP_OBJS_DUMP "bpftool map list  | /usr/bin/grep -w %s"
 struct __obj_s {
     int init;
     int proc_map_fd;
@@ -267,7 +267,7 @@ static int find_map_id_by_name(const char* map_name)
     FILE *f;
 
     cmd[0] = 0;
-    (void)snprintf(cmd, COMMAND_LEN, "%s", MAP_OBJS_DUMP);
+    (void)snprintf(cmd, COMMAND_LEN, MAP_OBJS_DUMP, map_name);
     f = popen(cmd, "r");
     if (f == NULL) {
         return 0;

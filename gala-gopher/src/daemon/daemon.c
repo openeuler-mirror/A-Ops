@@ -274,7 +274,7 @@ int DaemonRun(const ResourceMgr *mgr)
     for (int i = 0; i < mgr->probeMgr->probesNum; i++) {
         Probe *_probe = mgr->probeMgr->probes[i];
         if (_probe->probeSwitch != PROBE_SWITCH_ON) {
-            ERROR("[DAEMON] probe %s switch is off, skip create thread for it.\n", _probe->name);
+            INFO("[DAEMON] probe %s switch is off, skip create thread for it.\n", _probe->name);
             continue;
         }
         ret = pthread_create(&mgr->probeMgr->probes[i]->tid, NULL, DaemonRunSingleProbe, _probe);
@@ -290,14 +290,14 @@ int DaemonRun(const ResourceMgr *mgr)
     for (int i = 0; i < mgr->extendProbeMgr->probesNum; i++) {
         ExtendProbe *_extendProbe = mgr->extendProbeMgr->probes[i];
         if (_extendProbe->probeSwitch == PROBE_SWITCH_OFF) {
-            ERROR("[DAEMON] extend probe %s switch is off, skip create thread for it.\n", _extendProbe->name);
+            INFO("[DAEMON] extend probe %s switch is off, skip create thread for it.\n", _extendProbe->name);
             continue;
         }
 
         if (_extendProbe->probeSwitch == PROBE_SWITCH_AUTO) {
             ret = DaemonCheckProbeNeedStart(_extendProbe->startChkCmd, _extendProbe->chkType);
             if (ret != 1) {
-                ERROR("[DAEMON] extend probe %s start check failed, skip create thread for it.\n", _extendProbe->name);
+                INFO("[DAEMON] extend probe %s start check failed, skip create thread for it.\n", _extendProbe->name);
                 continue;
             }
         }

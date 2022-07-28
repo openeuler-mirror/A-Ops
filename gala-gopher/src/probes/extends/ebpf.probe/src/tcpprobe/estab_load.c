@@ -101,7 +101,7 @@ static int add_estab_tcp_fd(const struct estab_tcp_key *k,
     struct estab_tcp_hash_t *item;
 
     item = find_estab_tcp(k, pphead);
-    if (!item) {
+    if (!item) {
         item = create_estab_tcp(k, pphead);
     }
 
@@ -247,7 +247,7 @@ static int is_need_load_established_tcp(struct probe_params *args, struct estab_
     }
     return 1;
 }
-
+
 static char is_invalid_established_tcp(struct estab_tcp_hash_t *item)
 {
     return (item->v.try_load_cnt >= MAX_TRY_LOAD);
@@ -273,7 +273,7 @@ static int do_load_established_tcp(int map_fd, struct estab_tcp_hash_t *item, in
     }
 
     if (load_num > 0) {
-        INFO("Update establish(proc_id = %u, fd_count = u%).\n", (item->k.proc_id), tcp_fd_s.cnt);
+        INFO("Update establish(proc_id = %u, fd_count = %u).\n", (item->k.proc_id), tcp_fd_s.cnt);
 
         (void)bpf_map_update_elem(map_fd, &(item->k.proc_id), &tcp_fd_s, BPF_ANY);
     }
@@ -290,7 +290,7 @@ static int do_load_established_tcp(int map_fd, struct estab_tcp_hash_t *item, in
 static int load_established_tcp(struct probe_params *args, int map_fd, struct estab_tcp_hash_t *item)
 {
     int ret, loaded;
-    if (!is_need_load_established_tcp(args, item)) {
+    if (!is_need_load_established_tcp(args, item)) {
         item->v.try_load_cnt++;
         return LOAD_ESTAB_TCP_NO_NEED;
     }

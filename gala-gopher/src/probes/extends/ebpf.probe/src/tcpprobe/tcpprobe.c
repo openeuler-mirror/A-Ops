@@ -307,7 +307,6 @@ int main(int argc, char **argv)
 
     printf("Successfully started!\n");
 
-    poll_pb(pb, THOUSAND);
     while (!g_stop) {
         if ((err = perf_buffer__poll(pb, THOUSAND)) < 0) {
             break;
