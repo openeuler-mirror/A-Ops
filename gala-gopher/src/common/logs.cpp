@@ -164,7 +164,7 @@ static int de_queue(struct files_queue_s *files_que)
 }
 
 static struct files_queue_s* create_queue(size_t size)
-{
+{
     struct files_queue_s *files_que;
     size_t malloc_size = sizeof(struct files_queue_s) + size * sizeof(struct file_node_s);
 
@@ -183,7 +183,7 @@ static struct files_queue_s* create_queue(size_t size)
 }
 
 static void destroy_queue(struct files_queue_s *files_que)
-{
+{
     if (files_que) {
         (void)pthread_rwlock_destroy(&(files_que->rwlock));
         (void)free(files_que);
@@ -559,7 +559,7 @@ void debug_logs(const char* format, ...)
 
     __FMT_LOGS(buf, __DEBUG_LEN);
     if (!local) {
-        printf("DEBUG: %s\n", buf);
+        printf("DEBUG: %s", buf);
     } else {
         LOG4CPLUS_DEBUG(g_debug_logger, buf);
     }
@@ -571,7 +571,7 @@ void info_logs(const char* format, ...)
 
     __FMT_LOGS(buf, __DEBUG_LEN);
     if (!local) {
-        printf("INFO: %s\n", buf);
+        printf("INFO: %s", buf);
     } else {
         LOG4CPLUS_INFO(g_debug_logger, buf);
     }
@@ -583,7 +583,7 @@ void warn_logs(const char* format, ...)
 
     __FMT_LOGS(buf, __DEBUG_LEN);
     if (!local) {
-        printf("WARN: %s\n", buf);
+        printf("WARN: %s", buf);
     } else {
         LOG4CPLUS_WARN(g_debug_logger, buf);
     }
@@ -595,7 +595,7 @@ void error_logs(const char* format, ...)
 
     __FMT_LOGS(buf, __DEBUG_LEN);
     if (!local) {
-        printf("ERROR: %s\n", buf);
+        printf("ERROR: %s", buf);
     } else {
         LOG4CPLUS_ERROR(g_debug_logger, buf);
     }

@@ -33,6 +33,7 @@ SET(CMAKE_C_FLAGS "-rdynamic -g -fno-builtin-fprintf -Wl,--wrap=fprintf   \
     -DPROBES_LIST=\"${PROBES_LIST}\"                        \
     -DPROBES_META_LIST=\"${PROBES_META_LIST}\" "
 )
+SET(CMAKE_CXX_FLAGS "-rdynamic -g -fno-builtin-fprintf -Wl,--wrap=fprintf")
 
 SET(SOURCES main.c daemon.c
     ${RESOURCE_DIR}/resource.c
