@@ -12,6 +12,8 @@
 # ******************************************************************************/
 from __future__ import absolute_import
 
+import json
+
 import requests
 
 from aops_agent.tests import BaseTestCase
@@ -43,3 +45,86 @@ class TestAgentController(BaseTestCase):
         headers = {'Content-Type': 'application/json', 'access_token': ''}
         response = requests.get(url, headers=headers)
         self.assert401(response, response.text)
+
+    def test_change_collect_items_should_only_return_change_success_when_input_correct(self):
+        url = "http://localhost:8080/v1/agent/collect/items/change"
+        headers = {'Content-Type': 'application/json', 'access_token': '123456'}
+        data = {
+            "gopher": {
+                "redis": "on",
+                "system_inode": "on",
+            }
+        }
+        response = requests.post(url, headers=headers, data=json.dumps(data))
+        self.assert200(response, response.text)
+
+    def test_change_collect_items_should_return_change_success_and_failure_when_input_unsupported_items(self):
+        """
+           some probe is incorrect
+        """
+        url = "http://localhost:8080/v1/agent/collect/items/change"
+        headers = {'Content-Type': 'application/json', 'access_token': '123456'}
+        data = {
+            "gopher": {
+                "redis": "on",
+                "system_inode": "on",
+                'dd': 'off'
+            }
+        }
+        response = requests.post(url, headers=headers, data=json.dumps(data))
+        self.assert200(response, response.text)
+
+    def test_change_collect_items_should_return_not_support_when_input_unsupported_plugin(self):
+        url = "http://localhost:8080/v1/agent/collect/items/change"
+        headers = {'Content-Type': 'application/json', 'access_token': '123456'}
+        data = {
+            "gopher2": {
+                "redis": "on",
+                "system_inode": "on",
+                'dd': 'off'
+            }
+        }
+        response = requests.post(url, headers=headers, data=json.dumps(data))
+        self.assert200(response, response.text)
+
+    def test_change_collect_items_should_return_all_result_when_input_installed_plugin_and_unsupported_plugin(self):
+        """
+            Returns:
+                unsupported plugin: not support,
+                installed plugin: failure list and success list
+
+        """
+        url = "http://localhost:8080/v1/agent/collect/items/change"
+        headers = {'Content-Type': 'application/json', 'access_token': '123456'}
+        data = {
+            "gopher": {
+                "redis": "on",
+                "system_inode": "on",
+                'dd': 'off'
+            },
+            "gopher2": {
+                "redis": "on",
+                "system_inode": "on",
+                'dd': 'off'
+            }
+        }
+        response = requests.post(url, headers=headers, data=json.dumps(data))
+        self.assert200(response, response.text)
+
+    def test_change_collect_items_should_return_400_when_input_incorrect(self):
+        url = "http://localhost:8080/v1/agent/collect/items/change"
+        headers = {'Content-Type': 'application/json', 'access_token': '123456'}
+        data = {
+            "gopher": {
+                "redis": 1,
+                "system_inode": "on",
+            }
+        }
+        response = requests.post(url, headers=headers, data=json.dumps(data))
+        self.assert400(response, response.text)
+
+    def test_change_collect_items_should_return_400_when_with_no_input(self):
+        url = "http://localhost:8080/v1/agent/collect/items/change"
+        headers = {'Content-Type': 'application/json', 'access_token': '123456'}
+        response = requests.post(url, headers=headers)
+        self.assert400(response, response.text)

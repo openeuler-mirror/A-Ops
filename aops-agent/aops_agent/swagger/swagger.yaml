@@ -64,6 +64,36 @@ paths:
           schema:
             type: "string"
       x-swagger-router-controller: "aops_agent.controllers.plugin_controller"
+  /agent/collect/items/change:
+    post:
+      tags:
+        - "agent"
+      description: "改变agent中各插件的采集项 。\n插件名称放在外面一层"
+      operationId: "change_collect_items"
+      parameters:
+        - in: "body"
+          name: "collect_items_status"
+          description: "修改的采集项信息"
+          required: true
+          schema:
+            $ref: "#/definitions/agent_collect_items_change"
+      responses:
+        "200":
+          description: "返回设置文件/配置失败的列表"
+          schema:
+            type: "object"
+            example:
+              plugin1:
+                - "failure1"
+                - "failure2"
+              plugin2:
+                - "failure1"
+                - "failure2"
+            additionalProperties:
+              type: "array"
+              items:
+                type: "string"
+      x-swagger-router-controller: "aops_agent.controllers.plugin_controller"
 definitions:
   ErrorRsp:
     required:
@@ -101,3 +131,30 @@ definitions:
         - "kernel"
         - "os_version"
         - "bios_version"
+  collect_items:
+    type: "object"
+    description: "各插件采集的数据项信息。对gopher来讲是探针信息，对fluentd来讲是文件名/路径"
+    example:
+      gopher:
+        probe1:
+          - "info1"
+          - "info2"
+    additionalProperties:
+      type: "object"
+      additionalProperties:
+        type: "string"
+  agent_collect_items_change:
+    description: 更改agen及已安装插件的采集项状态。
+    type: object
+    additionalProperties:
+      additionalProperties:
+        type: string
+    example:
+      fluentd:
+        collectconfig1: start
+        collectconfig2: start
+        collectconfig3: start
+      gopher:
+        probe1: start
+        probe2: start
+        probe3: start

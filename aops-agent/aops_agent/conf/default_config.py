@@ -12,16 +12,17 @@
 # ******************************************************************************/
 import os
 
-BASE_CONFIG_PATH = '/etc/aops'
+agent = {
+    "PORT": 12000
+}
 
-AGENT_CONFIG_PATH = os.path.join(BASE_CONFIG_PATH, 'aops_agent.conf')
-DEFAULT_TOKEN_PATH = os.path.join(BASE_CONFIG_PATH, 'agent_token.json')
-DATA_MODEL = {
-    "str_array": {"type": "array", "items": {"type": "string", "minLength": 1}},
-    "change_collect_items_request": {"type": "object",
-                                     "additionalProperties":
-                                         {"type": "object",
-                                          "additionalProperties":
-                                              {"enum": ["on", "off"]}}}}
-INSTALLABLE_PLUGIN = ['gopher']
-RPM_INFO = {"gopher": "gala-gopher"}
+gopher = {
+    "CONFIG_PATH": "/opt/gala-gopher/gala-gopher.conf"
+}
+
+log = {
+    "LOG_DIR": os.path.join('/', 'var', 'log', 'aops'),
+    "LOG_LEVEL": 'INFO',
+    "MAX_BYTES": 31457280,
+    "BACKUP_COUNT": 30
+}
