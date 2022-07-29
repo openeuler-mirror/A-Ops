@@ -29,7 +29,7 @@ setup(
                 "model/observe/metrics.csv",
             ],
     },
-	data_files=[
+    data_files=[
         ('/usr/lib/systemd/system/', ['service/gala-anteater.service']),
     ],
     install_requires=[
