@@ -138,6 +138,7 @@ fi
 if [ "$1" == "-b"  -o  "$1" == "--build" ];
 then
     prepare_dep
+    gen_vmlinux_header_file
     if [ "$2" == "-d"  -o  "$2" == "--debug" ];
     then
         compile_probe_prev
