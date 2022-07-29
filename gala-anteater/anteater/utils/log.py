@@ -30,12 +30,16 @@ class Log(object):
         return cls.__flag
 
     def __init__(self):
-        working_dir = os.getcwd()
-        log_path = working_dir + os.sep + "logs"
+        root_path = os.path.dirname(os.path.dirname(os.path.realpath(__file__)))
+
+        log_path = os.getcwd() + os.sep + "logs"
         if not os.path.exists(log_path):
             os.makedirs(log_path)
 
-        log_file_path = os.path.join(working_dir, "configuration" + os.sep + "log.settings.ini")
+        log_file_path = os.path.join(root_path, "configuration" + os.sep + "log.settings.ini")
+        if not os.path.isfile(log_file_path):
+            raise FileExistsError("log.settings.ini was not found!")
+
         logging.config.fileConfig(log_file_path)
         self.logger = logging.getLogger()
 

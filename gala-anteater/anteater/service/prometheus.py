@@ -17,41 +17,28 @@ Description: The implementation of Prometheus client to fetch time series data.
 """
 
 from datetime import datetime, timedelta
-from tracemalloc import start
+from typing import List, Dict, Union
 
 import requests
 
-from utils.log import Log
+from anteater.utils.log import Log
 
 log = Log().get_logger()
 
 
 class Prometheus:
-    """
-    The Prometheus client to consume time series data.
-    """
-    def __init__(self, server, port, step=5, interval_hours=6):
-        """
-        The Prometheus client initializer
-        :param server: The prometheus server ip
-        :param port: The prometheus server port
-        :param step: The query time interval (seconds)
-        :param interval_hours: The hours of interval for batch processing
-        """
-        self.query_url = f"http://{server}:{port}/api/v1/query_range"
+    """The Prometheus client to consume time series data"""
+
+    def __init__(self, server, port, step=5):
+        """The Prometheus client initializer"""
+        self.server = server
+        self.port = port
         self.step = step
-        self.interval_hours = interval_hours
 
     @staticmethod
     def chunks(start_time, end_time, hours=6):
-        """
-        Split a duration (from start time to end time) to multi-disjoint intervals
-        :param start_time: The start time
-        :param end_time: The end time
-        :param hours: The interval hours
-        :return: The split disjoint intervals
-        """
-        if (start_time >= end_time):
+        """Split a duration (from start time to end time) to multi-disjoint intervals"""
+        if start_time >= end_time:
             raise ValueError("The start_time greater or equal than end_time!")
 
         if not isinstance(start_time, datetime):
@@ -67,103 +54,46 @@ class Prometheus:
             yield _start, _end
             _start = _end
 
-    def query_data(self, start_time, end_time, metric, is_aggregate=False, **kwargs):
-        """
-        Fetches the time series data from Prometheus.
-        :param start_time: The start time
-        :param end_time: The end time
-        :param metric: The metric name
-        :param is_aggregate: Is aggregate the results
-        :param kwargs: The kwargs
-        :return: The fetched data
-        """
-        filter_rules = "{" + ",".join([f"{k}='{v}'" for k, v in kwargs.items()]) + "}"
-        if is_aggregate:
-            query = f"avg({metric}{filter_rules}) by ({','.join([str(k) for k in kwargs.keys()])})"
-        else:
-            query = f"{metric}{filter_rules}"
+    @staticmethod
+    def fetch(query_url, params: Dict = None) -> Union[List, Dict]:
+        """Fetches data from prometheus server by http request"""
+        response = requests.get(query_url, params).json()
+        if response["status"] != 'success':
+            log.error(f"Prometheus get data failed, "
+                      f"error: {response['error']}, query_url: {query_url}, params: {params}.")
+            return {}
 
-        data = []
-        for _start, _end in self.chunks(start_time, end_time, self.interval_hours):
-            _start, _end = round(_start.timestamp()), round(_end.timestamp())
-            params = {
-                "query": query,
-                "start": _start,
-                "end": _end,
-                "step": self.step
-            }
+        return response["data"]
 
-            response = requests.get(self.query_url, params).json()
-
-            if response["status"] == 'success':
-                for item in response.get("data", []).get("result", []):
-                    data.append(item)
-            else:
-                log.info("Prometheus get data failed! Error: {}.".format(response["error"]))
+    def get_unique_labels(self, label: str) -> List:
+        """Gets the unique labels"""
+        query_url = f"http://{self.server}:{self.port}/api/v1/label/{label}/values"
+        data = self.fetch(query_url)
 
         return data
 
-    def get_unique_ids(self, start_time, end_time, metrics):
-        """
-        Gets the unique ids corresponding to the metrics
-        :param start_time: The start time
-        :param end_time: The end time
-        :param metrics: The metrics
-        :return: The unique ids
-        """
-        unique_tgids = self.get_unique_tgids(start_time, end_time)
+    def range_query(self, start_time: datetime, end_time: datetime, query: str) -> List[Dict]:
+        """Range query time series data from Prometheus"""
+        query_url = f"http://{self.server}:{self.port}/api/v1/query_range"
+        result: List[Dict] = []
+        tmp_index = {}
+        for start, end in self.chunks(start_time, end_time):
+            start, end = round(start.timestamp()), round(end.timestamp())
+            params = {
+                "query": query,
+                "start": start,
+                "end": end,
+                "step": self.step
+            }
 
-        unique_ids = []
-        for metric in metrics:
-            data = self.query_data(start_time, end_time, metric)
-            for item in data:
-                info = item["metric"]
-                tgid = info.get("tgid", None)
+            data = self.fetch(query_url, params)
 
-                if tgid not in unique_tgids:
-                    break
+            for metric_value in data.get("result", {}):
+                key = tuple(sorted(metric_value.get("metric").items()))
+                if key in tmp_index:
+                    result[tmp_index.get(key)]["values"].extend(metric_value.get("values"))
+                else:
+                    tmp_index[key] = len(result)
+                    result.append(metric_value)
 
-                machine_id = info.get("machine_id", None)
-                server_ip = info.get("server_ip", None)
-                server_port = info.get("server_port", None)
-                client_ip = info.get("client_ip", None)
-                client_port = info.get("client_port", None)
-
-                if not (machine_id and server_ip and server_port):
-                    log.info("The tgid, machine id, server ip or server port is null!")
-
-                if (tgid, machine_id, server_ip, server_port, client_ip, client_port) not in unique_ids:
-                    unique_ids.append((tgid, machine_id, server_ip, server_port, client_ip, client_port))
-
-        return [{
-            "tgid": value[0],
-            "machine_id": value[1],
-            "server_ip": value[2],
-            "server_port": value[3],
-            "client_ip": value[4],
-            "client_port": value[5]
-        } for value in unique_ids]
-
-    def get_unique_tgids(self, start_time, end_time):
-        """
-        Gets the unique tgids from Prometheus
-        :param start_time: The start time
-        :param end_time: The end time
-        :return: The unique tgids
-        """
-        target_metric = "gala_gopher_system_proc_proc_read_bytes"
-        filter_rule = {"comm": "redis-server"}
-        data = self.query_data(start_time, end_time, target_metric, **filter_rule)
-
-        unique_tgids = set()
-
-        for item in data:
-            tgid = item["metric"].get("tgid", None)
-
-            if not tgid:
-                raise ValueError("The tgid, machine id, server ip or server port is null!")
-
-            if tgid not in unique_tgids:
-                unique_tgids.add(tgid)
-
-        return unique_tgids
+        return result

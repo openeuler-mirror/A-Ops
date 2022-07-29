@@ -19,10 +19,12 @@ Description: The implementation of Kafka Consumer and Producer.
 import json
 import threading
 import uuid
+from typing import Any, Dict
 
-from confluent_kafka import Producer, Consumer
+from kafka import KafkaConsumer as Consumer
+from kafka import KafkaProducer as Producer
 
-from utils.log import Log
+from anteater.utils.log import Log
 
 log = Log().get_logger()
 
@@ -39,26 +41,18 @@ class KafkaProducer:
     """
     The Kafka Producer to sent message to kafka.
     """
-    def __init__(self, server: str, port: str):
-        self.server = server
-        self.port = port
+    def __init__(self, server: str, port: str) -> None:
+        conf = {"bootstrap_servers": f"{server}:{port}"}
+        self.producer = Producer(**conf)
 
-        self.producer = Producer({"bootstrap.servers": f"{server}:{port}"})
-
-    @staticmethod
-    def delivery_report(err, msg):
-        if err is not None:
-            log.error(f"Message delivery failed.{err}, msg: {msg}")
-
-    def send_message(self, topic, messages):
+    def send_message(self, topic: str, messages: Dict[str, Any]):
         """
         Sent the message to Kafka
         :param topic: The kafka topic
         :param messages: The messages
         :return: None
         """
-        self.producer.poll(0)
-        self.producer.produce(topic, json.dumps(messages).encode('utf-8'), callback=self.delivery_report)
+        self.producer.send(topic, json.dumps(messages).encode('utf-8'))
         self.producer.flush()
 
 
@@ -66,52 +60,33 @@ class KafkaConsumer(threading.Thread):
     """
     The Kafka Consumer to consume messages from Kafka.
     """
-    def __init__(self, server, port, topics):
+    def __init__(self, server, port, topic):
         """
         The Kafka Consumer initializer
         :param server: The kafka server ip
         :param port: The kafka server port
-        :param topics: The topics
+        :param topic: The topic
         """
         threading.Thread.__init__(self)
-        self.server = server
-        self.port = port
-        self.topics = [topics] if isinstance(topics, str) else topics
-        self.begin = False
-
-        conf = {'bootstrap.servers': f"{server}:{port}",
-                'group.id': f"anomaly_detection_testing_{uuid.uuid4()}",
-                'auto.offset.reset': 'earliest',
-                "enable.auto.commit": False}
-
-        self.consumer = Consumer(conf)
+        self.topic = topic
+        conf = {"bootstrap_servers": f"{server}:{port}",
+                "group_id": f"anomaly_detection_{uuid.uuid4()}",
+                "auto_offset_reset": "earliest",
+                "enable_auto_commit": False}
+        self.consumer = Consumer(self.topic, **conf)
 
     @staticmethod
-    def message_process(value):
+    def message_process(metadata):
         """Processes the kafka messages and update the shared variables"""
-        result = json.loads(value.decode('utf8'))
-
-        if result.get("meta_name", "") == "redis_client":
-            EntityVariable.variable = result
+        if metadata.get("meta_name", "") == "ksliprobe":
+            EntityVariable.variable = metadata
             log.info("Loaded the latest CONF information!")
 
     def run(self):
         """Run Kafka Consumer to collect messages"""
-        self.consume_loop()
+        for msg in self.consumer:
+            data = json.loads(msg.value)
+            metadata = {}
+            metadata.update(data)
 
-    def consume_loop(self):
-        """The consumer loop to fetch messages continuously"""
-        try:
-            self.consumer.subscribe(self.topics)
-
-            while True:
-                message = self.consumer.poll(timeout=5.0)
-                if message is None:
-                    continue
-
-                if message.error():
-                    log.error(f"{message.topic}, {message.partition()}, {message.offset()} reached end at offset")
-                else:
-                    self.message_process(message.value())
-        finally:
-            self.consumer.close()
+            self.message_process(metadata)

@@ -15,24 +15,27 @@ Time:
 Author:
 Description: Some common functions are able to use in this project.
 """
+import os
+from typing import Dict, Any, List, Tuple
 
-import joblib
-import numpy as np
-import pandas as pd
-
-from service.kafka import KafkaConsumer, KafkaProducer, EntityVariable
-from service.prometheus import Prometheus
-from utils.config_parser import ModelSettings, ServiceSettings
-from utils.log import Log
+from anteater.service.kafka import KafkaConsumer, KafkaProducer, EntityVariable
+from anteater.service.prometheus import Prometheus
+from anteater.utils.config_parser import ServiceSettings
+from anteater.utils.log import Log
 
 log = Log().get_logger()
 
 
+def get_file_path(file_name):
+    """Gets root path of anteater"""
+    root_path = os.path.dirname(os.path.dirname(os.path.realpath(__file__)))
+    file_path = os.path.join(root_path, "file" + os.sep + file_name)
+
+    return file_path
+
+
 def load_prometheus_client() -> Prometheus:
-    """
-    Load and initialize the prometheus client.
-    :return: The Prometheus client
-    """
+    """Load and initialize the prometheus client"""
     settings = ServiceSettings()
     server = settings.prometheus_server
     port = settings.prometheus_port
@@ -42,11 +45,8 @@ def load_prometheus_client() -> Prometheus:
     return client
 
 
-def update_entity_variable():
-    """
-    Updates entity variables by querying data from Kafka under sub thread.
-    :return: The sub thread.
-    """
+def update_entity_variable() -> KafkaConsumer:
+    """Updates entity variables by querying data from Kafka under sub thread"""
     log.info("Start to try updating global configurations by querying data from Kafka!")
     settings = ServiceSettings()
 
@@ -54,18 +54,14 @@ def update_entity_variable():
     port = settings.kafka_port
     topic = settings.kafka_consumer_topic
 
-    sub_thread = KafkaConsumer(server, port, topic)
-    sub_thread.start()
+    consumer = KafkaConsumer(server, port, topic)
+    consumer.start()
 
-    return sub_thread
+    return consumer
 
 
-def update_service_settings(parser):
-    """
-    Update service settings globally
-    :param parser: The arg parser
-    :return: None
-    """
+def update_service_settings(parser: Dict[str, Any]) -> None:
+    """Update service settings globally"""
     settings = ServiceSettings()
     settings.kafka_server = parser["kafka_server"]
     settings.kafka_port = parser["kafka_port"]
@@ -73,71 +69,21 @@ def update_service_settings(parser):
     settings.prometheus_port = parser["prometheus_port"]
 
 
-def most_contributions(x_pred: pd.DataFrame, y_pred: str):
-    """
-    Gets most contributed features based on pre-trained LR model.
-    :param x_pred: The target X was used to predict.
-    :param y_pred: The target y indicates the data label.
-    :return:
-    """
-    top_n = 3
-
-    pipe_lr_model = joblib.load("./file/pipe_lr_model.pkl")
-    lr_coef = pipe_lr_model["clf"].coef_
-    scaler = pipe_lr_model["scaler"]
-
-    x_target = x_pred.iloc[y_pred == 1]
-    contributions = np.mean(scaler.transform(x_target) * lr_coef, axis=0)
-    top_index = contributions.argsort()[-top_n:][::-1]
-    column_names = x_target.columns[top_index]
-
-    return list(column_names)
-
-
-def data_norm(x):
-    """
-    Data normalization based on normalization model.
-    :param x: The training data X
-    :return: The normalized data X_norm
-    """
-    settings = ModelSettings()
-    props = settings.norm_properties
-    path = props["path"]
-    norm_model = joblib.load(path)
-    x_norm = norm_model.transform(x).astype(np.float32)
-    return x_norm
-
-
-def save_normalizer(norm_model):
-    """
-    Saving Normalizer to the file.
-    :param norm_model: The normalizer model
-    :return: None
-    """
-    settings = ModelSettings()
-    props = settings.norm_properties
-    path = props["path"]
-    joblib.dump(norm_model, path)
-
-
-def get_kafka_message(timestamp, y_pred, metric_label, recommend_metrics):
-    """
-    Generates the Kafka message based the parameters.
-    :param timestamp: The time stamp
-    :param y_pred: The predicted label
-    :param metric_label: The metric label dict contains metadate info
-    :param recommend_metrics: The recommend metrics
-    :return: The aggregated messages
-    """
+def get_kafka_message(timestamp: float, y_pred: List, machine_id: str, key_anomalies: Tuple[str, Dict, float],
+                      rec_anomalies: List[Tuple[str, Dict, float]]) -> Dict[str, Any]:
+    """Generates the Kafka message based the parameters"""
     variable = EntityVariable.variable.copy()
 
-    machine_id = metric_label["machine_id"]
     table_name = variable["meta_name"]
-    keys = []
     filtered_metric_label = {}
+    keys = []
+
+    metric_label = key_anomalies[1]
+    metric_id = key_anomalies[0]
+
     for key in variable["keys"]:
         filtered_metric_label[key] = metric_label[key]
-        if key in metric_label and key != "machine_id":
+        if key != "machine_id":
             keys.append(metric_label[key])
 
     entity_id = f"{machine_id}_{table_name}_{'_'.join(keys)}"
@@ -147,6 +93,10 @@ def get_kafka_message(timestamp, y_pred, metric_label, recommend_metrics):
         anomaly_score = sum(y_pred) / sample_count
     else:
         anomaly_score = 0
+
+    recommend_metrics = dict()
+    for name, label, score in rec_anomalies:
+        recommend_metrics[name] = {"label": label, "score": score}
 
     message = {
         "Timestamp": timestamp,
@@ -161,26 +111,22 @@ def get_kafka_message(timestamp, y_pred, metric_label, recommend_metrics):
             "anomaly_ratio": anomaly_score,
             "metric_label": filtered_metric_label,
             "recommend_metrics": recommend_metrics,
-            "metric_id": "gala_gopher_redis_client_recent_rtt",
+            "metric_id": metric_id,
         },
         "SeverityText": "WARN",
         "SeverityNumber": 14,
-        "Body": "I'am a abnormal event.",
+        "Body": "Abnormal: this unusual event may be impacting client-side sli performance.",
         "client_ip": metric_label.get("client_ip", ""),
         "server_ip": metric_label.get("server_ip", ""),
         "server_port": metric_label.get("server_port", ""),
-        "abnormal_metric": "simulated_gala_gopher_redis_client_recent_rtt",
+        "abnormal_metric": metric_id,
     }
 
     return message
 
 
-def sent_message_to_kafka(value: str):
-    """
-    Sent message to kafka
-    :param value: the message
-    :return: None
-    """
+def sent_to_kafka(message: Dict[str, Any]) -> None:
+    """Sent message to kafka"""
     settings = ServiceSettings()
 
     server = settings.kafka_server
@@ -188,5 +134,5 @@ def sent_message_to_kafka(value: str):
     topic = settings.kafka_procedure_topic
 
     kafka_producer = KafkaProducer(server, port)
-    kafka_producer.send_message(topic, value)
+    kafka_producer.send_message(topic, message)
     log.info(f"Abnormal events were detected, and sent the message to Kafka!")
