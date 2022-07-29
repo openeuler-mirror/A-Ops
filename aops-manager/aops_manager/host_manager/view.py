@@ -1,6 +1,6 @@
 #!/usr/bin/python3
 # ******************************************************************************
-# Copyright (c) Huawei Technologies Co., Ltd. 2021-2021. All rights reserved.
+# Copyright (c) Huawei Technologies Co., Ltd. 2021-2022. All rights reserved.
 # licensed under the Mulan PSL v2.
 # You can use this software according to the terms and conditions of the Mulan PSL v2.
 # You may obtain a copy of Mulan PSL v2 at:
@@ -15,21 +15,28 @@ Time:
 Author:
 Description: Restful APIs for host
 """
-import uuid
-from collections import defaultdict
+from typing import Dict, Tuple
 from flask import jsonify
 
-from aops_manager.function.verify.host import AddHostSchema, HostSchema,\
-    DeleteHostSchema, GetHostSchema, AddHostGroupSchema, DeleteHostGroupSchema,\
-    GetHostGroupSchema, GetHostInfoSchema
+from aops_utils.restful.status import SUCCEED, DATABASE_CONNECT_ERROR, NO_DATA, TOKEN_ERROR
+from aops_utils.restful.response import BaseResponse
+from aops_utils.database.helper import operate
+from aops_utils.database.table import User
+from aops_utils.log.log import LOGGER
 from aops_manager.database.proxy.host import HostProxy, HostInfoProxy
 from aops_manager.deploy_manager.ansible_runner.inventory_builder import InventoryBuilder
 from aops_manager.conf import configuration
 from aops_manager.database import SESSION
-from aops_utils.restful.status import PARAM_ERROR, SUCCEED, DATABASE_CONNECT_ERROR
-from aops_utils.restful.serialize.validate import validate
-from aops_utils.restful.response import BaseResponse
-from aops_utils.database.helper import operate
+from aops_manager.account_manager.cache import UserCache
+from aops_manager.function.verify.host import (
+    HostSchema,
+    DeleteHostSchema,
+    GetHostSchema,
+    AddHostGroupSchema,
+    DeleteHostGroupSchema,
+    GetHostGroupSchema,
+    GetHostInfoSchema
+)
 
 
 class AddHost(BaseResponse):
@@ -37,104 +44,50 @@ class AddHost(BaseResponse):
     Interface for add host.
     Restful API: post
     """
-    @staticmethod
-    def _generate_host_var(host_info):
-        """
-        Generate host var for ansible playbook, remove some sensitive information
-        before saved to database.
+    proxy = ""
 
-        Args:
-            host_info (dict): host info
+    def _verify_user(self, username: str, password: str) -> Tuple[int, str]:
+        # query from cache first
+        user = UserCache.get(username)
+        if user is None:
+            LOGGER.error("no such user")
+            return NO_DATA, ""
 
-        Returns:
-            dict
-        """
-        result = dict()
-        result['ansible_user'] = host_info.pop('username')
-        result['ansible_ssh_pass'] = host_info.pop('password')
-        result['ansible_ssh_port'] = host_info['ssh_port']
-        result['ansible_become_user'] = 'root'
-        result['ansible_become_method'] = 'su'
-        result['ansible_become_pass'] = host_info.pop('sudo_password')
+        res = User.check_hash_password(user.password, password)
+        if not res:
+            LOGGER.error("wrong username or password.")
+            return TOKEN_ERROR, ""
 
-        return result
+        return SUCCEED, user.token
 
-    @staticmethod
-    def _verify_host(args, host_vault):
-        """
-        Verify the host info is whether valid.
-
-        Args:
-            args (dict): request parameter
-            host_vault (dict): store the host vault info
-
-        Returns:
-            int: status code
-            dict: response body
-        """
-        host_list = []
-        temp_host_list = args['host_list']
-        response = {}
-
-        for host_info in temp_host_list:
-            # verify the params
-            info, errors = validate(HostSchema, host_info)
-            if errors:
-                response['wrong_info'] = host_info
-                return PARAM_ERROR, response
-            # generate uuid of the host
-            host_id = str(uuid.uuid1()).replace('-', '')
-            info['host_id'] = host_id
-            host_vault[info['host_group_name']][info['host_name']] =\
-                AddHost._generate_host_var(info)
-            host_list.append(info)
-
-        args['host_list'] = host_list
-
-        return SUCCEED, response
-
-    def _handle(self, args):
-        """
-        Handle function
-
-        Args:
-            args (dict): request parameter
-
-        Returns:
-            int: status code
-            dict: response body
-        """
-        host_vault = defaultdict(dict)
-        status_code, result = self._verify_host(args, host_vault)
-        if status_code != SUCCEED:
-            return status_code, result
-
-        proxy = HostProxy()
-        if not proxy.connect(SESSION):
+    def _handle(self, args: Dict) -> Tuple[int, Dict]:
+        self.proxy = HostProxy()
+        if not self.proxy.connect(SESSION):
             return DATABASE_CONNECT_ERROR, {}
 
-        status_code, result = proxy.add_host(args)
-        if status_code == SUCCEED:
-            # then encrypt password
-            inventory = InventoryBuilder()
-            inventory.import_host_vars(host_vault,
-                                       args['key'],
-                                       configuration.manager['HOST_VAULT_DIR'])  # pylint: disable=E1101
+        status_code, token = self._verify_user(
+            args['username'], args.pop('password'))
+        if status_code != SUCCEED:
+            return status_code, {}
 
-        return status_code, result
+        status_code = self.proxy.add_host(args)
+        if status_code == SUCCEED:
+            return status_code, {"token": token}
+
+        return status_code, {}
 
     def post(self):
         """
         Add host
 
         Args:
-            host_list (list)
+             (list)
             key (str)
 
         Returns:
             dict: response body
         """
-        return jsonify(self.handle_request(AddHostSchema, self))
+        return jsonify(self.handle_request(HostSchema, self, need_token=False, debug=False))
 
 
 class DeleteHost(BaseResponse):
