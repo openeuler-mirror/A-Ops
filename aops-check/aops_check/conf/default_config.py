@@ -27,3 +27,14 @@ producer = {
 topic = {
     "NAME": "CHECK_EXECUTE"
 }
+
+
+prometheus = {
+    "IP": "127.0.0.1",
+    "PORT": 9090,
+    "QUERY_RANGE_STEP" : "15s"
+}
+
+agent = {
+    "DEFAULT_INSTANCE_PORT": 9100
+}
