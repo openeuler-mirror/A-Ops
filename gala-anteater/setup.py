@@ -40,6 +40,7 @@ setup(
         "pandas==1.0.1",
         "requests==2.28.1",
         "scikit_learn==0.24.2",
+        "scipy==1.7.3",
         "torch==1.11.0"
     ],
     entry_points={
