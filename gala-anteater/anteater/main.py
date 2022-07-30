@@ -87,9 +87,9 @@ def anomaly_detection(hybrid_model, key_metric_model, post_model, parser: Dict[s
                 msg = get_kafka_message(round(utc_now.timestamp()), y_pred.tolist(),
                                         machine_id, anomalies, rec_anomalies)
                 sent_to_kafka(msg)
-            log.info(f"END: abnormal events were detected, sent the message to Kafka!")
+            log.info(f"END: abnormal events were detected on machine {machine_id}, sent the message to Kafka!")
         else:
-            log.info(f"END: no abnormal events.")
+            log.info(f"END: no abnormal events on machine {machine_id}.")
 
 
 def main():

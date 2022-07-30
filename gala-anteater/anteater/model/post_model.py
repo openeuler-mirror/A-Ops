@@ -21,8 +21,8 @@ from datetime import datetime, timedelta
 from typing import List, Tuple, Any
 
 import numpy as np
-import sranodec as anom
 
+from anteater.model.algorithms.spectral_residual import SpectralResidual
 from anteater.utils.data_process import load_metric_operator
 from anteater.source.metric_loader import MetricLoader
 
@@ -34,6 +34,16 @@ class PostModel:
         """The post model initializer"""
         self.metric_operators = load_metric_operator()
         self.unique_metrics = set([m for m, _ in self.metric_operators])
+
+    @staticmethod
+    def predict(sr_model: SpectralResidual, values: List) -> float:
+        """Predicts anomalous score for the time series values"""
+        if all(x == values[0] for x in values):
+            return -math.inf
+
+        scores = sr_model.compute_score(values)
+
+        return max(scores[-12: -1])
 
     def get_all_metric(self, loader, machine_id: str):
         """Gets all metric labels and values"""
@@ -47,7 +57,7 @@ class PostModel:
 
     def top_n_anomalies(self, utc_now: datetime, machine_id: str, top_n: int) -> List[Tuple[Any, dict, Any]]:
         """Finds top n anomalies during a period for the target machine"""
-        tim_start = utc_now - timedelta(minutes=10)
+        tim_start = utc_now - timedelta(minutes=6)
         tim_end = utc_now
 
         loader = MetricLoader(tim_start, tim_end)
@@ -55,7 +65,7 @@ class PostModel:
 
         point_count = loader.expected_point_length()
 
-        sr_model = anom.Silency(12, 24, 100)
+        sr_model = SpectralResidual(12, 24, 50)
 
         scores = []
         for label, value in zip(labels, values):
@@ -74,12 +84,3 @@ class PostModel:
         sorted_scores = sorted(scores, key=lambda x: x[2], reverse=True)
 
         return sorted_scores[0: top_n]
-
-    def predict(self, sr_model, values: List) -> float:
-        """Predicts anomalous score for the time series values"""
-        if all(x == values[0] for x in values):
-            return -math.inf
-
-        scores = sr_model.generate_anomaly_score(values, type="avg")
-
-        return max(scores[-12: -1])

@@ -135,4 +135,3 @@ def sent_to_kafka(message: Dict[str, Any]) -> None:
 
     kafka_producer = KafkaProducer(server, port)
     kafka_producer.send_message(topic, message)
-    log.info(f"Abnormal events were detected, and sent the message to Kafka!")
