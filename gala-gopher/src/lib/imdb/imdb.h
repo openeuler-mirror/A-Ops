@@ -78,7 +78,8 @@ typedef struct {
     char name[MAX_IMDB_TABLE_NAME_LEN];
     char entity_name[MAX_IMDB_TABLE_NAME_LEN];
     IMDB_Record *meta;
-
+    char weighting;                 // 0: Highest Level(Entitlement to priority); >0: Low priority
+    char pad[3];                    // rsvd
     uint32_t recordsCapability;     // Capability for records count in one table
     uint32_t recordKeySize;
     IMDB_Record **records;

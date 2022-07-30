@@ -760,6 +760,53 @@ err:
 
 #endif
 
+#if 1
+
+static void RequeueTable(IMDB_Table **tables, uint32_t tablesNum)
+{
+    IMDB_Table* firstTbl = tables[0];
+
+    for (int i = 1; i < tablesNum; i++) {
+        tables[i - 1] = tables[i];
+    }
+
+    tables[tablesNum - 1] = firstTbl;
+    firstTbl->weighting = 0;    // Set to the highest priority.
+    return;
+}
+
+static void IMDB_AdjustTblPrio(IMDB_DataBaseMgr *mgr)
+{
+    int nameLen, num_adjust = 0;
+    char tblName[MAX_IMDB_TABLE_NAME_LEN];
+
+    if (!mgr->tables[0]->weighting) {
+        return; // No need adjust
+    }
+
+    nameLen = strlen(mgr->tables[0]->name);
+    (void)memcpy(tblName, mgr->tables[0]->name, nameLen);
+    tblName[nameLen] = 0;
+
+    do {
+        RequeueTable(mgr->tables, mgr->tablesNum);
+        num_adjust++;
+        
+        if (!mgr->tables[0]->weighting) {
+            break; // End of adjustment
+        }
+        
+        if (strcmp(mgr->tables[0]->name, tblName) == 0) {
+            break; // End of adjustment
+        }
+        
+        if (num_adjust >= mgr->tablesNum) {
+            break; // Error, End of adjustment
+        }
+    } while (1);
+    return;
+}
+
 static int IMDB_Rec2Prometheus(IMDB_DataBaseMgr *mgr, IMDB_Record *record, char *entity_name,
                                char *buffer, uint32_t maxLen)
 {
@@ -869,9 +916,13 @@ int IMDB_DataBase2Prometheus(IMDB_DataBaseMgr *mgr, char *buffer, uint32_t maxLe
             goto ERR;
         }
 
+        if (ret > 0) {
+            mgr->tables[i]->weighting++;
+        }
         cursor += ret;
         curMaxLen -= ret;
     }
+    IMDB_AdjustTblPrio(mgr);
     *buf_len = maxLen - curMaxLen;
     pthread_rwlock_unlock(&mgr->rwlock);
     return 0;
@@ -880,6 +931,8 @@ ERR:
     pthread_rwlock_unlock(&mgr->rwlock);
     return -1;
 }
+
+#endif
 
 static int IMDB_Record2Json(const IMDB_DataBaseMgr *mgr, const IMDB_Table *table, const IMDB_Record *record,
                             char *jsonStr, uint32_t jsonStrLen)
