@@ -80,7 +80,7 @@ class ObjectParse(object):
 
     def parse_json_to_conf(self, conf_path, json_list):
         """
-        desc: 将json格式的配置信息解析成原始配置文件格式
+        desc: 灏唈son鏍煎紡鐨勯厤缃俊鎭В鏋愭垚鍘熷閰嶇疆鏂囦欢鏍煎紡
         
         """
         conf_type = self.get_conf_type_by_conf_path(conf_path)
