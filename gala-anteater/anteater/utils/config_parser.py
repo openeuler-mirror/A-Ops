@@ -19,7 +19,7 @@ import configparser
 import os
 from functools import wraps
 
-from utils.singleton import Singleton
+from anteater.utils.singleton import Singleton
 
 
 def validate_properties(section: str, key: str = None):
@@ -73,7 +73,8 @@ class ServiceSettings(Settings):
     """
     def __init__(self):
         super().__init__()
-        file_path = os.path.join(os.getcwd(), "configuration" + os.sep + "service.settings.ini")
+        root_path = os.path.dirname(os.path.dirname(os.path.realpath(__file__)))
+        file_path = os.path.join(root_path, "configuration" + os.sep + "service.settings.ini")
         self.load(file_path)
 
     @property
@@ -129,18 +130,29 @@ class ModelSettings(Settings):
     """
     def __init__(self):
         super().__init__()
-        file_path = os.path.join(os.getcwd(), "configuration" + os.sep + "model.settings.ini")
+        root_path = os.path.dirname(os.path.dirname(os.path.realpath(__file__)))
+        file_path = os.path.join(root_path, "configuration" + os.sep + "model.settings.ini")
         self.load(file_path)
 
     @property
+    @validate_properties("HybridModel")
+    def hybrid_properties(self) -> dict:
+        return dict(self.config["HybridModel"])
+
+    @property
     @validate_properties("RandomForest")
-    def random_properties(self) -> dict:
+    def rf_properties(self) -> dict:
         return dict(self.config["RandomForest"])
 
     @property
     @validate_properties("VAE")
     def vae_properties(self) -> dict:
         return dict(self.config["VAE"])
+
+    @property
+    @validate_properties("Normalization")
+    def norm_properties(self) -> dict:
+        return dict(self.config["Normalization"])
 
     @property
     @validate_properties("Normalization")
