@@ -9,28 +9,18 @@
  * PURPOSE.
  * See the Mulan PSL v2 for more details.
  * Author: luzhihao
- * Create: 2022-07-13
- * Description: bpf load prog
+ * Create: 2022-07-28
+ * Description: tcp event
  ******************************************************************************/
-#ifndef __BPF_PROG__H
-#define __BPF_PROG__H
+#ifndef __TCP_EVENT__H
+#define __TCP_EVENT__H
 
 #pragma once
 
-#include <bpf/libbpf.h>
-#include <bpf/bpf.h>
-
-#include "common.h"
 #include "args.h"
+#include "tcpprobe.h"
 
-#define TASK_OUTPUT_PATH "/sys/fs/bpf/probe/__taskprobe_task_output"
-#define PROC_OUTPUT_PATH "/sys/fs/bpf/probe/__taskprobe_proc_output"
-#define PERIOD_PATH "/sys/fs/bpf/probe/__taskprobe_period"
-#define TASK_PATH "/sys/fs/bpf/probe/__taskprobe_task"
-#define PROC_PATH "/sys/fs/bpf/probe/__taskprobe_proc"
-
-struct bpf_prog_s* load_glibc_bpf_prog(struct probe_params *args);
-struct bpf_prog_s* load_task_bpf_prog(struct probe_params *args);
-struct bpf_prog_s* load_proc_bpf_prog(struct probe_params *args);
+void report_tcp_syn_rtt_evt(struct probe_params *args, struct tcp_metrics_s *metrics);
+void report_tcp_abn_evt(struct probe_params *args, struct tcp_metrics_s *metrics);
 
 #endif
