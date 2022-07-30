@@ -11,22 +11,30 @@
 # See the Mulan PSL v2 for more details.
 # ******************************************************************************/
 """
-Add view and url into api
+Time:
+Author:
+Description:
 """
-from flask.blueprints import Blueprint
-from flask_restful import Api
+from typing import List
 
-from .url import URLS
 
-CHECK = Blueprint('check', __name__)
+class StartupError(Exception):
+    """
+    It's an error that check server may raise when it's starting up.
+    """
+    __slots__ = ["__check_mode", "__support_mode"]
 
-API = Api()
+    def __init__(self, check_mode: str, support_mode: List[str]):
+        self.__check_mode = check_mode
+        self.__support_mode = support_mode
 
-for view, url in URLS:
-    API.add_resource(view, url)
+    @property
+    def check_mode(self) -> str:
+        return self.__check_mode
 
-BLUE_POINT = [
-    (CHECK, API)
-]
+    @property
+    def support_mode(self) -> list:
+        return self.__support_mode
 
-__all__ = ['BLUE_POINT']
+    def __str__(self):
+        return "Check module's mode should be in %s, not %s" % (self.__support_mode, self.__check_mode)

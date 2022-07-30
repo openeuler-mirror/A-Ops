@@ -1,6 +1,5 @@
 # coding: utf-8
 
-import sys
 from setuptools import setup, find_packages
 
 NAME = "aops_check"
@@ -14,25 +13,28 @@ VERSION = "1.0.0"
 # http://pypi.python.org/pypi/setuptools
 
 REQUIRES = [
-    "connexion",
-    "swagger-ui-bundle>=0.0.2"
+    'marshmallow>=3.13.0',
+    'Flask',
+    'Flask-RESTful',
+    'Werkzeug',
+    'numpy',
+    'pandas',
+    'prometheus_api_client',
+    'setuptools'
 ]
 
 setup(
     name=NAME,
     version=VERSION,
-    description="Check",
-    author_email="",
-    url="",
-    keywords=["Swagger", "Check"],
+    description="aops-check",
     install_requires=REQUIRES,
     packages=find_packages(),
-    package_data={'': ['swagger/swagger.yaml']},
-    include_package_data=True,
+    data_files=[
+        ('/etc/aops', ['conf/check.ini']),
+        ('/usr/lib/systemd/system', ['aops-check.service'])
+    ],
     entry_points={
-        'console_scripts': ['aops_check=aops_check.__main__:main']},
-    long_description="""\
-    Desc
-    """
+        'console_scripts': ['aops-check=aops_check.manage:main']
+    },
+    zip_safe=False
 )
-

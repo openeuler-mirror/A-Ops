@@ -13,44 +13,27 @@
 """
 Time:
 Author:
-Description: default config
+Description: Manager that start check
 """
-check = {
-    "IP": "127.0.0.1",
-    "PORT": 11112,
-    "MODE": "configurable"
-}
+from aops_check.conf import configuration
+from aops_check.errors.startup_error import StartupError
+from aops_check.mode import mode
+from aops_check.mode.configurable_scheduler import ConfigurableScheduler
+from aops_check.mode.default_scheduler import DefaultScheduler
+from aops_check.mode.executor import Executor
 
-mysql = {
-    "IP": "127.0.0.1",
-    "PORT": 3306,
-    "DATABASE_NAME": "aops",
-    "ENGINE_FORMAT": "mysql+pymysql://@%s:%s/%s",
-    "POOL_SIZE": 10000,
-    "POOL_RECYCLE": 7200
-}
 
-elasticsearch = {
-    "IP": "127.0.0.1",
-    "PORT": 9200
-}
+def run(mode_name: str):
+    try:
+        app = mode.build(mode_name)
+        app.run()
+    except StartupError as error:
+        print(error)
 
-prometheus = {
-    "IP": "127.0.0.1",
-    "PORT": 9090,
-    "QUERY_RANGE_STEP" : "15s"
-}
 
-agent = {
-    "DEFAULT_INSTANCE_PORT": 9100
-}
+def main():
+    run(configuration.check.get('MODE'))
 
-kafka = {
-    "KAFKA_SERVER_LIST": "127.0.0.1:9092",
-    "API_VERSION": "0.11.5",
-    "ACKS": 1,
-    "RETRIES": 3,
-    "RETRY_BACKOFF_MS": 100,
-    "TASK_NAME": "CHECK_TASK",
-    "RESULT_NAME": "CHECK_RESULT"
-}
+
+if __name__ == "__main__":
+    main()
