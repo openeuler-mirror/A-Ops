@@ -3,6 +3,7 @@ from typing import List
 
 import networkx as nx
 from scipy.stats import pearsonr
+from scipy.special import expit
 
 from spider.util import logger
 from spider.conf.observe_meta import EntityType
@@ -32,6 +33,10 @@ def _get_metric_obj_type(metric_id: str):
             return obj_type.value
 
     raise MetadataException('Entity type of the metric {} can not be supported.'.format(metric_id))
+
+
+def normalize_abn_score(score):
+    return expit(score)
 
 
 class AbnormalEvent:
@@ -225,14 +230,13 @@ class CauseInferring:
     def calc_transfer_probs(self, src_metric_idx, causal_graph: CausalGraph):
         probs = self.transfer_matrix.get(src_metric_idx)
         src_abn_metric = causal_graph.get_abnormal_metric_of_node(src_metric_idx[0], src_metric_idx[1])
-        kpi_abn_metric = causal_graph.get_abnormal_metric_of_node(self.abn_kpi_idx[0], self.abn_kpi_idx[1])
 
         # 计算前向转移概率
         max_corr = 0
         for node_id in causal_graph.causal_graph.pred.get(src_metric_idx[0]):
             for i, tgt_abn_metric in enumerate(causal_graph.get_abnormal_metrics_of_node(node_id)):
                 tgt_metric_idx = (node_id, i)
-                corr = abs(CauseInferring.calc_corr(kpi_abn_metric.hist_data, tgt_abn_metric.hist_data))
+                corr = abs(tgt_abn_metric.abnormal_score)
                 max_corr = max(max_corr, corr)
                 probs.setdefault(tgt_metric_idx, corr)
 
@@ -240,11 +244,11 @@ class CauseInferring:
         for node_id in causal_graph.causal_graph.succ.get(src_metric_idx[0]):
             for i, tgt_abn_metric in enumerate(causal_graph.get_abnormal_metrics_of_node(node_id)):
                 tgt_metric_idx = (node_id, i)
-                corr = abs(self.calc_corr(kpi_abn_metric.hist_data, tgt_abn_metric.hist_data))
+                corr = abs(tgt_abn_metric.abnormal_score)
                 probs.setdefault(tgt_metric_idx, corr * self.rou)
 
         # 计算自向转移概率
-        corr = max(0, abs(self.calc_corr(kpi_abn_metric.hist_data, src_abn_metric.hist_data)) - max_corr)
+        corr = max(0, abs(src_abn_metric.abnormal_score) - max_corr)
         probs.setdefault(src_metric_idx, corr)
 
         # 正则化
@@ -383,30 +387,10 @@ def parse_abn_evt(data) -> AbnormalEvent:
     abn_evt = AbnormalEvent(
         data.get('Timestamp'),
         resource.get('metric_id'),
-        resource.get('anomaly_score'),
+        1.0,
         resource.get('metric_label')
     )
     return abn_evt
-
-
-# just for test environment
-def client_to_server_kpi(abn_kpi: AbnormalEvent) -> AbnormalEvent:
-    if abn_kpi.abnormal_metric_id != 'gala_gopher_redis_client_recent_rtt':
-        raise DataParseException('The abnormal kpi {} is not supported'.format(abn_kpi.abnormal_metric_id))
-
-    mapped_kpi_metric_id = 'gala_gopher_ksliprobe_recent_rtt_nsec'
-    mapped_kpi_metric_labels = {
-        'client_ip': abn_kpi.metric_labels.get('client_ip'),
-        'client_port': abn_kpi.metric_labels.get('client_port'),
-        'server_ip': abn_kpi.metric_labels.get('server_ip'),
-        'server_port': abn_kpi.metric_labels.get('server_port'),
-    }
-    return AbnormalEvent(
-        timestamp=abn_kpi.timestamp,
-        abnormal_metric_id=mapped_kpi_metric_id,
-        abnormal_score=abn_kpi.abnormal_score,
-        metric_labels=mapped_kpi_metric_labels,
-    )
 
 
 def query_hist_data_of_abn_metric(causal_graph):
@@ -449,10 +433,7 @@ def cause_locating(abnormal_kpi: AbnormalEvent, abnormal_metrics: List[AbnormalE
     logger.logger.debug("Causal graph predecessors: {}".format(causal_graph.causal_graph.pred))
     logger.logger.debug("Causal graph successors: {}".format(causal_graph.causal_graph.succ))
 
-    # 5. 查询异常指标的历史时序数据
-    query_hist_data_of_abn_metric(causal_graph)
-
-    # 6. 以故障传播图 + 异常KPI为输入，执行根因推导算法，输出 top3 根因指标
+    # 5. 以故障传播图 + 异常KPI为输入，执行根因推导算法，输出 top3 根因指标
     infer_engine = CauseInferring()
     causes = infer_engine.inferring(causal_graph, top_k=infer_config.infer_conf.get('root_topk'))
     logger.logger.debug('=========inferring result: =============')

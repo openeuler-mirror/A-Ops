@@ -11,11 +11,10 @@ from spider.conf import init_observe_meta_config
 from spider.conf.observe_meta import ObserveMetaMgt
 from cause_inference.config import infer_config
 from cause_inference.config import init_infer_config
+from cause_inference.cause_infer import AbnormalEvent
 from cause_inference.cause_infer import cause_locating
-from cause_inference.cause_infer import client_to_server_kpi
-from cause_inference.cause_infer import filter_valid_evts
-from cause_inference.cause_infer import clear_aging_evts
 from cause_inference.cause_infer import parse_abn_evt
+from cause_inference.cause_infer import normalize_abn_score
 from cause_inference.exceptions import InferenceException
 from cause_inference.exceptions import DataParseException
 
@@ -71,24 +70,14 @@ def main():
 
     kafka_server = infer_config.kafka_conf.get('server')
     kpi_kafka_conf = infer_config.kafka_conf.get('abnormal_kpi_topic')
-    metric_kafka_conf = infer_config.kafka_conf.get('abnormal_metric_topic')
     infer_kafka_conf = infer_config.kafka_conf.get('inference_topic')
     kpi_consumer = KafkaConsumer(
         kpi_kafka_conf.get('topic_id'),
         bootstrap_servers=[kafka_server],
         group_id=kpi_kafka_conf.get('group_id'),
     )
-    consumer_to_ms = metric_kafka_conf.get('consumer_to') * 1000
-    metric_consumer = KafkaConsumer(
-        metric_kafka_conf.get('topic_id'),
-        bootstrap_servers=[kafka_server],
-        group_id=metric_kafka_conf.get('group_id'),
-        consumer_timeout_ms=consumer_to_ms,
-    )
     cause_producer = KafkaProducer(bootstrap_servers=[kafka_server])
 
-    all_metric_evts = []
-    last_metric_ts = 0
     while True:
         logger.logger.debug('Start consuming abnormal kpi event...')
         kpi_msg = next(kpi_consumer)
@@ -98,36 +87,24 @@ def main():
         except DataParseException as ex:
             logger.logger.error(ex)
             continue
-        try:
-            mapped_abn_kpi = client_to_server_kpi(abn_kpi)
-        except DataParseException as ex:
-            logger.logger.error(ex)
-            continue
-        if last_metric_ts < abn_kpi.timestamp:
-            logger.logger.debug('Start consuming abnormal metric event...')
-            for metric_msg in metric_consumer:
-                metric_data = json.loads(metric_msg.value)
-                try:
-                    abn_metric = parse_abn_evt(metric_data)
-                except DataParseException as ex:
-                    logger.logger.error(ex)
-                    continue
-                all_metric_evts.append(abn_metric)
-                last_metric_ts = abn_metric.timestamp
-                if abn_metric.timestamp > abn_kpi.timestamp:
-                    break
-        metric_evts = filter_valid_evts(all_metric_evts, abn_kpi.timestamp)
-        if len(metric_evts) == 0:
-            logger.logger.warning('No abnormal metric event detected.')
-            continue
+
+        metric_evts = []
+        recommend_metrics = data.get('Resource', {}).get('recommend_metrics', {})
+        for metric_id, metric_data in recommend_metrics.items():
+            metric_evt = AbnormalEvent(
+                timestamp=data.get('Timestamp'),
+                abnormal_metric_id=metric_id,
+                abnormal_score=normalize_abn_score(metric_data.get('score')),
+                metric_labels=metric_data.get('label', {})
+            )
+            metric_evts.append(metric_evt)
 
         logger.logger.debug('abnormal kpi is: {}'.format(abn_kpi))
-        logger.logger.debug('mapped abnormal kpi is: {}'.format(mapped_abn_kpi))
         logger.logger.debug('abnormal metrics are: {}'.format(metric_evts))
 
         causes = []
         try:
-            causes = cause_locating(mapped_abn_kpi, metric_evts, abn_kpi)
+            causes = cause_locating(abn_kpi, metric_evts)
         except InferenceException as ie:
             logger.logger.error(ie)
         if len(causes) > 0:
@@ -146,8 +123,6 @@ def main():
                 cause_producer.send(infer_kafka_conf.get('topic_id'), json.dumps(cause_msg).encode())
             except KafkaTimeoutError as ex:
                 logger.logger.error(ex)
-
-        all_metric_evts = clear_aging_evts(all_metric_evts, abn_kpi.timestamp)
 
 
 if __name__ == '__main__':
