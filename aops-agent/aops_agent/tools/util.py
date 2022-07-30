@@ -11,13 +11,16 @@
 # See the Mulan PSL v2 for more details.
 # ******************************************************************************/
 import configparser
+import copy
 import os
-from typing import Union, List, Any
+from typing import Union, List, Any, Tuple
 from subprocess import Popen, PIPE, STDOUT
 
+from libconf import load, ConfigParseError, AttrDict
 from flask import Response, make_response
 from jsonschema import validate, ValidationError
-from aops_agent.conf.constant import DATA_MODEL
+from aops_agent.conf.constant import DATA_MODEL, RPM_INFO
+from aops_agent.log.log import LOGGER
 from aops_agent.models.custom_exception import InputError
 
 
@@ -34,7 +37,7 @@ def load_conf(file_path: str) -> configparser.RawConfigParser:
         cf.read(file_path, encoding='utf8')
         if cf.sections:
             return cf
-    raise Exception('file not found or the contents of the file are incorrect.')
+    raise FileNotFoundError('file not found')
 
 
 def validate_data(data: Any, schema: dict) -> bool:
@@ -58,7 +61,8 @@ def validate_data(data: Any, schema: dict) -> bool:
         return False
 
 
-def get_shell_data(command_list: List[str], key: bool = True, stdin: Popen = None) -> Union[str, Popen]:
+def get_shell_data(command_list: List[str],
+                   key: bool = True, stdin: Popen = None) -> Union[str, Popen]:
     """
     execute shell commands
 
@@ -74,7 +78,7 @@ def get_shell_data(command_list: List[str], key: bool = True, stdin: Popen = Non
     Raises:
         FileNotFoundError: linux has no this command
     """
-    schema = DATA_MODEL.get('list_str')
+    schema = DATA_MODEL.get('str_array')
     if validate_data(command_list, schema) is False:
         raise InputError('please check your command')
     try:
@@ -86,17 +90,76 @@ def get_shell_data(command_list: List[str], key: bool = True, stdin: Popen = Non
     return res
 
 
-def create_response(status_code: int, msg: str) -> Response:
+def create_response(status_code: int, data: str) -> Response:
     """
         Construct the response body
 
     Args:
         status_code (int): http status code
-        msg (str): message which you want to tell
+        data (str): json data
 
     Returns:
         Response body
     """
-    rsp = make_response(msg)
+    rsp = make_response(data)
     rsp.status_code = status_code
     return rsp
+
+
+def load_gopher_config(gopher_config_path: str) -> AttrDict:
+    """
+    get AttrDict from config file
+
+    Args:
+        gopher_config_path(str)
+
+    Returns:
+       AttrDict: a subclass of `dict`that exposes string keys as attributes
+    """
+    try:
+        with open(gopher_config_path, 'r', encoding='utf8') as file:
+            cfg = load(file)
+    except FileNotFoundError:
+        LOGGER.error('gopher config not found')
+        return AttrDict()
+    except ConfigParseError:
+        LOGGER.error('gopher config file corrupted')
+        return AttrDict()
+    return cfg
+
+
+def plugin_install_judge(plugin_name: str) -> str:
+    """
+    judge if the plugin is installed
+
+    Args:
+        plugin_name(str)
+
+    Returns:
+        str: plugin running status
+    """
+    rpm_name = RPM_INFO.get(plugin_name, "")
+    status_info = get_shell_data(["systemctl", "status", rpm_name], key=False)
+    res = get_shell_data(["grep", "Active"], stdin=status_info.stdout)
+    return res
+
+
+def change_probe_status(probes: Tuple[AttrDict], gopher_probes_status: dict, res: dict) -> Tuple:
+    """
+    to change gopher probe status
+
+    Args:
+        res(dict): which contains status change success list
+        probes(Tuple[AttrDict]): gopher probes info
+        gopher_probes_status(dict): probe status which need to change
+
+    Returns:
+        Tuple which contains change successful plugin and change fail plugin
+    """
+    failure_list = copy.deepcopy(gopher_probes_status)
+    for probe in probes:
+        if probe.get('name', "") in gopher_probes_status:
+            probe['switch'] = gopher_probes_status[probe['name']]
+            res['success'].append(probe['name'])
+            failure_list.pop(probe['name'])
+    return res, failure_list
