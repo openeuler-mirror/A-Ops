@@ -13,6 +13,7 @@
 import os
 
 BASE_CONFIG_PATH = '/etc/aops'
+BASE_SERVICE_PATH = '/usr/lib/systemd/system'
 
 AGENT_CONFIG_PATH = os.path.join(BASE_CONFIG_PATH, 'aops_agent.conf')
 DEFAULT_TOKEN_PATH = os.path.join(BASE_CONFIG_PATH, 'agent_token.json')
