@@ -19,6 +19,7 @@ import libconf
 from aops_agent.conf import configuration
 from aops_agent.conf.constant import INSTALLABLE_PLUGIN
 from aops_agent.conf.status import PARTIAL_SUCCEED, SUCCESS, FILE_NOT_FOUND, StatusCode, CONFLICT_ERROR
+from aops_agent.log.log import LOGGER
 from aops_agent.tools.util import (
     get_shell_data,
     load_gopher_config,
@@ -64,7 +65,7 @@ class Plugin:
 
     def stop_service(self) -> Tuple[int, str]:
         """
-        make plugin stoppings
+        make plugin stopping
 
         Returns:
             Tuple: status code and info
@@ -100,8 +101,33 @@ class Plugin:
                 installed_plugin.remove(plugin_name)
         return installed_plugin
 
+    def get_plugin_status(self):
+        """
+        Get plugin running status which is installed
 
-@dataclass
+        Returns:
+            str: dead or running
+
+        """
+        plugin_status = get_shell_data(["systemctl", "status", f"{self.rpm_name}"], key=False)
+        active_string = get_shell_data(["grep", "Active"], stdin=plugin_status.stdout)
+        status = re.search(':.+\(', active_string).group()[1:-1].strip()
+        return status
+
+    @classmethod
+    def get_pid(cls, rpm_name):
+        """
+        Get main process id when plugin is running
+
+        Returns:
+            The str type of main process id
+        """
+        res = get_shell_data(["systemctl", "status", f"{rpm_name}"], key=False)
+        main_pid_info = get_shell_data(["grep", "Main"], stdin=res.stdout)
+        main_pid = re.search("[0-9]+[0-9]", main_pid_info).group()
+        return main_pid
+
+
 class Gopher(Plugin):
     """
     Some methods only available to Gopher
@@ -169,7 +195,7 @@ class Gopher(Plugin):
         return res
 
     @classmethod
-    def get_collect_status(cls) -> dict:
+    def get_collect_status(cls) -> List[dict]:
         """
         get probe status
 
@@ -178,10 +204,13 @@ class Gopher(Plugin):
         """
         cfg = load_gopher_config(configuration.gopher.get('CONFIG_PATH'))
         if len(cfg) == 0:
-            return {}
-        res = {}
+            return []
+        porbe_list = []
         for probes in (cfg.get('probes', ()), cfg.get('extend_probes', ())):
             for probe in probes:
+                probe_info = {}
                 if 'name' in probe and 'switch' in probe:
-                    res[probe['name']] = probe['switch']
-        return res
+                    probe_info['probe_name'] = probe['name']
+                    probe_info['probe_status'] = probe['switch']
+                    porbe_list.append(probe_info)
+        return porbe_list

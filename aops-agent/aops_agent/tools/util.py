@@ -33,11 +33,11 @@ def load_conf(file_path: str) -> configparser.RawConfigParser:
         ConfigParser object
     """
     cf = configparser.RawConfigParser()
-    if os.path.exists(file_path):
+    try:
         cf.read(file_path, encoding='utf8')
-        if cf.sections:
-            return cf
-    raise FileNotFoundError('file not found')
+    except FileNotFoundError:
+        LOGGER.error('file not found')
+    return cf
 
 
 def validate_data(data: Any, schema: dict) -> bool:

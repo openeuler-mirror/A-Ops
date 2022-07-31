@@ -94,6 +94,30 @@ paths:
               items:
                 type: "string"
       x-swagger-router-controller: "aops_agent.controllers.plugin_controller"
+  /agent/plugin/info:
+    get:
+      tags:
+        - agent
+      description: 获取agent插件运行信息
+      operationId: agent_plugin_info
+      parameters:
+        - name: access_token
+          in: header
+          required: true
+          description: 授权码
+          type: string
+      responses:
+        '200':
+          description: 获取插件运行信息响应
+          schema:
+            type: array
+            items:
+              $ref: '#/definitions/GetAgentPluginInfoRsp'
+        '400':
+          description: 错误响应
+          schema:
+            $ref: '#/definitions/ErrorRsp'
+      x-swagger-router-controller: "aops_agent.controllers.agent_controller"
 definitions:
   ErrorRsp:
     required:
@@ -158,3 +182,40 @@ definitions:
         probe1: start
         probe2: start
         probe3: start
+  GetAgentPluginInfoRsp:
+    description: 获取agent插件信息响应
+    properties:
+      plugin_name:
+        type: string
+      is_installed:
+        type: boolean
+        description: 是否安装
+      status:
+        type: string
+        description: 运行状态
+      collect_items:
+        description: 采集项信息
+        type: array
+        items:
+          properties:
+            probe_name:
+              type: string
+            probe_status:
+              type: string
+      resource:
+        description: 资源占用值
+        type: array
+        items:
+          properties:
+            name:
+              type: string
+            limit_value:
+              type: string
+            current_value:
+              type: string
+    required:
+      - plugin_name
+      - collect_items
+      - resource
+      - is_installed
+      - status
