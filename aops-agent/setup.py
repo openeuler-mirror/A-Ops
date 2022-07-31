@@ -6,9 +6,15 @@ from setuptools import setup, find_packages
 NAME = "aops_agent"
 VERSION = "1.0.0"
 
-REQUIRES = [
+INSTALL_REQUIRES = [
+    "flask",
+    "flask-testing",
+    "jsonschema",
+    "requests",
+    "libconf",
     "connexion",
-    "swagger-ui-bundle>=0.0.2"
+    "swagger-ui-bundle>=0.0.2",
+    "concurrent_log_handler"
 ]
 
 setup(
@@ -17,9 +23,13 @@ setup(
     description="ApplicationTitle",
     author_email="",
     url="",
-    keywords=["Swagger", "ApplicationTitle"],
-    install_requires=REQUIRES,
+    keywords=["Swagger", "A-Ops agent"],
+    install_requires=INSTALL_REQUIRES,
     packages=find_packages(),
+    data_files=[
+        ('/etc/aops', ['conf/agent.conf', 'conf/agent_token.json']),
+        ('/usr/lib/systemd/system', ['aops-agent.service']),
+    ],
     package_data={'': ['swagger/swagger.yaml']},
     include_package_data=True,
     entry_points={
