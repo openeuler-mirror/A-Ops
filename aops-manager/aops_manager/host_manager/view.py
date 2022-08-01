@@ -16,14 +16,15 @@ Author:
 Description: Restful APIs for host
 """
 from typing import Dict, Tuple
-from flask import jsonify
 
+from flask import jsonify
+from aops_manager.conf.constant import ROUTE_AGENT_HOST_INFO
 from aops_utils.restful.status import SUCCEED, DATABASE_CONNECT_ERROR, NO_DATA, TOKEN_ERROR
 from aops_utils.restful.response import BaseResponse
 from aops_utils.database.helper import operate
-from aops_utils.database.table import User
+from aops_utils.database.table import User, Host
 from aops_utils.log.log import LOGGER
-from aops_manager.database.proxy.host import HostProxy, HostInfoProxy
+from aops_manager.database.proxy.host import HostProxy
 from aops_manager.deploy_manager.ansible_runner.inventory_builder import InventoryBuilder
 from aops_manager.conf import configuration
 from aops_manager.database import SESSION
@@ -95,6 +96,7 @@ class DeleteHost(BaseResponse):
     Interface for delete host.
     Restful API: DELETE
     """
+
     @staticmethod
     def _delete_host_vars(host_list, result):
         """
@@ -270,8 +272,8 @@ class GetHostInfo(BaseResponse):
     Interface for get host info.
     Restful API: POST
     """
-    @staticmethod
-    def _handle(args):
+
+    def _handle(self, args) -> tuple:
         """
         Handle function
 
@@ -283,7 +285,38 @@ class GetHostInfo(BaseResponse):
         """
         basic = args.get('basic')
         if not basic:
-            return operate(HostInfoProxy(configuration), args, 'get_host_info')
+            user = UserCache.get(args.get('username'))
+            if user is None:
+                return TOKEN_ERROR, {}
+
+            proxy = HostProxy()
+            if proxy.connect(SESSION):
+                query_list = proxy.session.query(
+                    Host).filter(Host.host_id.in_(args.get('host_list'))).all()
+                proxy.close()
+            else:
+                LOGGER.error("connect to database error")
+                return DATABASE_CONNECT_ERROR, {}
+            if len(query_list) == 0:
+                LOGGER.error("no such host_id, please check.")
+                return NO_DATA, {}
+
+            headers = {'content-type': 'application/json', 'access_token': user.token}
+            incorrect_host_list = set(args.get('host_list'))
+            host_infos = []
+            for query in query_list:
+                host_info = {'host_id': query.host_id}
+                incorrect_host_list.remove(query.host_id)
+                url = f"http://{query.public_ip}:{configuration.agent.get('PORT')}{ROUTE_AGENT_HOST_INFO}"
+                ret = self.get_response("GET", url, {}, header=headers)
+                if ret.get('code') is None:
+                    host_info['host_info'] = ret
+                else:
+                    host_info['host_info'] = {}
+                host_infos.append(host_info)
+            host_infos.extend({"host_id": host_id, "host_info": {}} for host_id in incorrect_host_list)
+            res = {"host_infos": host_infos}
+            return SUCCEED, res
         return operate(HostProxy(), args, 'get_host_info', SESSION)
 
     def post(self):

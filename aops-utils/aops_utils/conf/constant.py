@@ -67,6 +67,7 @@ USER_CERTIFICATE = "/manage/account/certificate"
 CHANGE_PASSWORD = '/manage/account/change'
 ADD_USER = '/manage/account/add'
 
+AGENT_PLUGIN_INFO = '/manage/agent/plugin/info'
 
 # database route
 DATA_ADD_HOST = "/data/host/add"

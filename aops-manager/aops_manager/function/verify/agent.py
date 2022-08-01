@@ -1,6 +1,6 @@
 #!/usr/bin/python3
 # ******************************************************************************
-# Copyright (c) Huawei Technologies Co., Ltd. 2021-2021. All rights reserved.
+# Copyright (c) Huawei Technologies Co., Ltd. 2022-2022. All rights reserved.
 # licensed under the Mulan PSL v2.
 # You can use this software according to the terms and conditions of the Mulan PSL v2.
 # You may obtain a copy of Mulan PSL v2 at:
@@ -10,20 +10,19 @@
 # PURPOSE.
 # See the Mulan PSL v2 for more details.
 # ******************************************************************************/
-"""
-Time:
-Author:
-Description: manager constant
-"""
-import os
-from aops_utils.conf.constant import BASE_CONFIG_PATH
+from marshmallow import Schema
+from marshmallow import fields
 
-# path of manager configuration
-MANAGER_CONFIG_PATH = os.path.join(BASE_CONFIG_PATH, 'manager.ini')
 
-TEMPLATE_INDEX = "ansible_templates"
-TASK_INDEX = "ansible_task"
-HOST_INFO_INDEX = 'host_information'
+class AgentPluginInfoSchema(Schema):
+    """
+    validators for parameter of /manage/agent/plugin/info
+    """
+    host_id = fields.String(required=True)
 
-ROUTE_AGENT_PLUGIN_INFO = '/v1/agent/plugin/info'
-ROUTE_AGENT_HOST_INFO = '/v1/agent/basic/info'
+
+class AgentHostInfoSchema(AgentPluginInfoSchema):
+    """
+    validators for parameter of /manage/agent/host/info/query
+    """
+    pass
