@@ -1,6 +1,6 @@
 Name:		A-Ops
 Version:	v1.2.0
-Release:	1
+Release:	2
 Summary:	The intelligent ops toolkit for openEuler
 License:	MulanPSL2
 URL:		https://gitee.com/openeuler/A-Ops
@@ -322,6 +322,7 @@ fi
 %attr(0644,root,root) %{_sysconfdir}/aops/manager.ini
 %attr(0644,root,root) %{_sysconfdir}/aops/default.json
 %attr(0755,root,root) %{_bindir}/aops-manager
+%attr(0755,root,root) %{_bindir}/aops-basedatabase
 %attr(0755,root,root) %{_unitdir}/aops-manager.service
 %{python3_sitelib}/aops_manager*.egg-info
 %{python3_sitelib}/aops_manager/*
@@ -394,7 +395,10 @@ fi
 
 
 %changelog
-* Sun Jul 31 2022 zhaoyuxing<zhaoyuxing2@huawei.com> - v1.2.0
+* Mon Aug 1 2022 zhuyuncheng<zhuyuncheng@huawei.com> - v1.2.0-2
+- add base-database executable file into aops-manager to downlaod database.
+
+* Sun Jul 31 2022 zhaoyuxing<zhaoyuxing2@huawei.com> - v1.2.0-1
 - modify spec for gala-gopher&gala-spider and add new features.
 - 1. gala-gopher & gala-spider adapt to the latest code.
 - 2. add new feature gala-anteater.
