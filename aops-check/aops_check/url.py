@@ -15,8 +15,6 @@ Time:
 Author:
 Description: url set
 """
-from aops_check.controllers import algorithm_controller
-# from aops_check.conf.constant import ADD_ALGORITHM
 
 URLS = []
 

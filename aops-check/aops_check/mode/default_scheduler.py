@@ -1,6 +1,6 @@
 #!/usr/bin/python3
 # ******************************************************************************
-# Copyright (c) Huawei Technologies Co., Ltd. 2021-2022. All rights reserved.
+# Copyright (c) Huawei Technologies Co., Ltd. 2022-2022. All rights reserved.
 # licensed under the Mulan PSL v2.
 # You can use this software according to the terms and conditions of the Mulan PSL v2.
 # You may obtain a copy of Mulan PSL v2 at:
@@ -15,16 +15,22 @@ Time:
 Author:
 Description:
 """
-import os
+from typing import NoReturn
 
-# system config
-BASE_CONFIG_PATH = '/etc/aops'
-# check config
-CHECK_CONFIG_PATH = os.path.join(BASE_CONFIG_PATH, 'check.ini')
+from aops_check.mode import mode
+from aops_check.mode.scheduler import Scheduler
 
-APP_INDEX = "app"
 
-# route
-QUERY_APP_LIST = "/check/app/list"
-QUERY_APP = "/check/app"
-CREATE_APP = "/check/create"
+@mode.register('default')
+class DefaultScheduler(Scheduler):
+    """
+    It's a default scheduler which loads default workflow and starts check.
+    """
+
+    @property
+    def name(self) -> str:
+        return "default"
+
+    @staticmethod
+    def run() -> NoReturn:
+        print('default')
