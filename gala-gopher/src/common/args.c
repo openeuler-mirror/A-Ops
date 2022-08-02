@@ -29,6 +29,7 @@ static void __set_default_params(struct probe_params *params)
 {
     (void)memset(params, 0, sizeof(struct probe_params));
     params->period = DEFAULT_PERIOD;
+    params->load_probe = DEFAULT_LOAD_PROBE;
 }
 
 static char __is_digit_str(const char *s)
@@ -118,6 +119,9 @@ static int __period_arg_parse(char opt, char *arg, struct probe_params *params)
             if (arg != NULL) {
                 (void)snprintf((void *)params->netcard_list, MAX_PATH_LEN, "%s", arg);
             }
+            break;
+        case 'P':
+            params->load_probe = (unsigned int)atoi(arg);
             break;
         default:
             return -1;

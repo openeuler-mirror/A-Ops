@@ -15,10 +15,13 @@
 #ifndef __GOPHER_ARGS_H__
 #define __GOPHER_ARGS_H__
 
+#pragma once
+
+#define DEFAULT_LOAD_PROBE  (0xFFFFFFFF)
 #define DEFAULT_PERIOD  5
 #define MAX_PATH_LEN    512
 #define BLOCK_NAME      32
-#define __OPT_S "t:T:J:O:D:F:l:U:L:c:p:w:n:"
+#define __OPT_S "t:T:J:O:D:F:l:U:L:c:p:w:n:P:"
 struct probe_params {
     unsigned int period;          // [-t <>] Sampling period, unit second, default is 5 seconds
     unsigned int latency_thr;     // [-T <>] Threshold of latency time, unit ms, default is 0 milliseconds
@@ -26,6 +29,7 @@ struct probe_params {
     unsigned int offline_thr;     // [-O <>] Threshold of offline time, unit ms, default is 0 milliseconds
     unsigned int drops_count_thr; // [-D <>] Threshold of the number of drop packets, default is 0
     unsigned int filter_pid;      // [-F <>] Filtering PID monitoring ranges by specific pid, default is 0 (no filter)
+    unsigned int load_probe;      // [-P <>] Specifies the range of probe programs to be loaded, default is 0xFFFFFFFF (Load all probes)
     char logs;                    // [-l <warn>] Enable the logs function
     char pad[3];                  // Reserved fields;
     char filter_task_probe;       // [-F <>] Filtering PID monitoring ranges by task probe, default is 0 (no filter)
