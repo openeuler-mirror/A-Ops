@@ -80,7 +80,6 @@ class KafkaConsumer(threading.Thread):
         """Processes the kafka messages and update the shared variables"""
         if metadata.get("meta_name", "") == "ksliprobe":
             EntityVariable.variable = metadata
-            log.info("Loaded the latest CONF information!")
 
     def run(self):
         """Run Kafka Consumer to collect messages"""
