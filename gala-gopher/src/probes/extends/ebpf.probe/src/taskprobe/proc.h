@@ -68,10 +68,26 @@ struct dns_op_s {
     u64 gethostname_failed;
 };
 
+struct proc_ts_s {
+    u64 ts_syscall;
+    u64 ts_syscall_io;
+    u64 ts_syscall_net;
+    u64 ts_syscall_sched;
+    u64 ts_syscall_fork;
+
+    u64 ts_ext4_op;
+    u64 ts_overlay_op;
+    u64 ts_tmpfs_op;
+
+    u64 ts_page;
+    u64 ts_dns;
+};
+
 struct proc_data_s {
     char comm[TASK_COMM_LEN];
     u32 proc_id;
-    u64 ts;
+    u32 flags;
+    struct proc_ts_s stats_ts;
     u64 fs_op_start_ts;
     struct syscall_s syscall;
     struct fs_op_s op_ext4;

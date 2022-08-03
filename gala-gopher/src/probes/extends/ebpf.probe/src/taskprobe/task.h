@@ -17,49 +17,34 @@
 
 #pragma once
 
-#define SHARE_MAP_TASK_MAX_ENTRIES (10 * 1024)
+#include "args.h"
+#include "bpf.h"
 
-enum task_status_type {
-    TASK_STATUS_ACTIVE = 0,
-    TASK_STATUS_INACTIVE,
-    TASK_STATUS_INVALID,
-    TASK_STATUS_MAX,
-};
+#define TASK_PROBE_SYSCALL          (u32)(1)
+#define TASK_PROBE_IO_SYSCALL       (u32)(1 << 1)
+#define TASK_PROBE_NET_SYSCALL      (u32)(1 << 2)
+#define TASK_PROBE_SCHED_SYSCALL    (u32)(1 << 3)
+#define TASK_PROBE_FORK_SYSCALL     (u32)(1 << 4)
+#define TASK_PROBE_EXT4_OP          (u32)(1 << 5)
+#define TASK_PROBE_OVERLAY_OP       (u32)(1 << 6)
+#define TASK_PROBE_TMPFS_OP         (u32)(1 << 7)
+#define TASK_PROBE_PAGE_OP          (u32)(1 << 8)
+#define TASK_PROBE_DNS_OP           (u32)(1 << 9)
+#define TASK_PROBE_THREAD_IO        (u32)(1 << 10)
+#define TASK_PROBE_THREAD_CPU       (u32)(1 << 11)
 
-struct task_io_data {
-    __u64 bio_bytes_read;
-    __u64 bio_bytes_write;
+#define TASK_PROBE_ALL       (u32)(TASK_PROBE_SYSCALL | TASK_PROBE_IO_SYSCALL \
+                | TASK_PROBE_NET_SYSCALL | TASK_PROBE_SCHED_SYSCALL \
+                | TASK_PROBE_FORK_SYSCALL | TASK_PROBE_EXT4_OP | TASK_PROBE_OVERLAY_OP \
+                | TASK_PROBE_TMPFS_OP | TASK_PROBE_PAGE_OP | TASK_PROBE_DNS_OP \
+                | TASK_PROBE_THREAD_IO | TASK_PROBE_THREAD_CPU)
 
-    __u64 iowait_us;
-    __u32 hang_count;
-
-    __u32 bio_err_count;
-};
-
-struct task_cpu_data {
-    int off_cpu_no;
-    __u64 off_cpu_ns;
-    __u64 off_cpu_start;
-    int preempt_id;                     // Preemptor process ID
-    char preempt_comm[TASK_COMM_LEN];   // Preemptor process name
-
-    u32 migration_count;
-    int current_cpu_no;
-};
-
-struct task_id {
-    int tgid;                   // task group id
-    int pid;                    // tid: thread id
-    int ppid;                   // parent process id
-    int pgid;                   // process group id
-    char comm[TASK_COMM_LEN];   // process comm
-};
-
-struct task_data {
-    __u64 ts;
-    struct task_id id;
-    struct task_io_data io;
-    struct task_cpu_data cpu;
-};
+static __always_inline __maybe_unused char is_load_probe(struct probe_params *args, u32 probe)
+{
+    if (args->load_probe & probe) {
+        return 1;
+    }
+    return 0;
+}
 
 #endif

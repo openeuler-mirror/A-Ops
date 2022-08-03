@@ -10,19 +10,27 @@
  * See the Mulan PSL v2 for more details.
  * Author: luzhihao
  * Create: 2022-07-13
- * Description: ex4 fs bpf prog
+ * Description: syscall bpf prog
  ******************************************************************************/
 #ifdef BPF_PROG_USER
 #undef BPF_PROG_USER
 #endif
 #define BPF_PROG_KERN
+#include "bpf.h"
 #include "task.h"
-#include "fs_op.h"
+#include "proc_syscall.h"
 #include "output_proc.h"
 
 char g_linsence[] SEC("license") = "GPL";
 
-KPROBE_FS_OP(ext4_file_read_iter, ext4, read, TASK_PROBE_EXT4_OP)
-KPROBE_FS_OP(ext4_file_write_iter, ext4, write, TASK_PROBE_EXT4_OP)
-KPROBE_FS_OP(ext4_file_open, ext4, open, TASK_PROBE_EXT4_OP)
-KPROBE_FS_OP(ext4_sync_file, ext4, flush, TASK_PROBE_EXT4_OP)
+#if defined(__TARGET_ARCH_x86)
+KPROBE_SYSCALL(__x64_sys_, fork, fork, TASK_PROBE_FORK_SYSCALL)
+KPROBE_SYSCALL(__x64_sys_, vfork, vfork, TASK_PROBE_FORK_SYSCALL)
+KPROBE_SYSCALL(__x64_sys_, clone, clone, TASK_PROBE_FORK_SYSCALL)
+
+#elif defined(__TARGET_ARCH_arm64)
+KPROBE_SYSCALL(__arm64_sys_, fork, fork, TASK_PROBE_FORK_SYSCALL)
+KPROBE_SYSCALL(__arm64_sys_, vfork, vfork, TASK_PROBE_FORK_SYSCALL)
+KPROBE_SYSCALL(__arm64_sys_, clone, clone, TASK_PROBE_FORK_SYSCALL)
+
+#endif

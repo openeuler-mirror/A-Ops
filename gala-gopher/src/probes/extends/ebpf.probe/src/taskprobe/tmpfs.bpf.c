@@ -16,12 +16,13 @@
 #undef BPF_PROG_USER
 #endif
 #define BPF_PROG_KERN
+#include "task.h"
 #include "fs_op.h"
 #include "output_proc.h"
 
 char g_linsence[] SEC("license") = "GPL";
 
-KPROBE_FS_OP(generic_file_read_iter, tmpfs, read)
-KPROBE_FS_OP(generic_file_write_iter, tmpfs, write)
-KPROBE_FS_OP(noop_fsync, tmpfs, flush)
+KPROBE_FS_OP(generic_file_read_iter, tmpfs, read, TASK_PROBE_TMPFS_OP)
+KPROBE_FS_OP(generic_file_write_iter, tmpfs, write, TASK_PROBE_TMPFS_OP)
+KPROBE_FS_OP(noop_fsync, tmpfs, flush, TASK_PROBE_TMPFS_OP)
 
