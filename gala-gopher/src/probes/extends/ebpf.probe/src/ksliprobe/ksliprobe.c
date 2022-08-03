@@ -29,11 +29,13 @@
 
 #include "bpf.h"
 #include "args.h"
+#include "event.h"
 #include "ksliprobe.skel.h"
 #include "tc_loader.h"
 #include "ksliprobe.h"
 
-#define OO_NAME "ksliprobe"
+#define OO_NAME "sli"
+#define SLI_TBL_NAME "redis_sli"
 
 static volatile sig_atomic_t stop;
 static struct probe_params params = {.period = DEFAULT_PERIOD};
@@ -43,6 +45,41 @@ static void sig_int(int signo)
     stop = 1;
 }
 
+#define MS2NS(ms)   ((u64)(ms) * 1000000)
+#define __ENTITY_ID_LEN 128
+
+static void report_sli_event(struct msg_event_data_t *msg_evt_data)
+{
+    char entityId[__ENTITY_ID_LEN];
+    u64 latency_thr_ns = MS2NS(params.latency_thr);
+    unsigned char ser_ip_str[INET6_ADDRSTRLEN];
+    unsigned char cli_ip_str[INET6_ADDRSTRLEN];
+
+    entityId[0] = 0;
+    (void)snprintf(entityId, __ENTITY_ID_LEN, "%d_%d",
+        msg_evt_data->conn_id.tgid,
+        msg_evt_data->conn_id.fd);
+
+    if ((latency_thr_ns > 0) && (latency_thr_ns < msg_evt_data->latency.rtt_nsec)) {
+        ip_str(msg_evt_data->server_ip_info.family, (unsigned char *)&(msg_evt_data->server_ip_info.ipaddr),
+            ser_ip_str, INET6_ADDRSTRLEN);
+        ip_str(msg_evt_data->client_ip_info.family, (unsigned char *)&(msg_evt_data->client_ip_info.ipaddr),
+            cli_ip_str, INET6_ADDRSTRLEN);
+
+        report_logs(OO_NAME,
+                    entityId,
+                    "rtt_nsec",
+                    EVT_SEC_WARN,
+                    "Process(TID:%d, CIP(%s:%u), SIP(%s:%u)) SLI(%s:%llu) exceed the threshold.",
+                    msg_evt_data->conn_id.tgid,
+                    cli_ip_str,
+                    ntohs(msg_evt_data->client_ip_info.port),
+                    ser_ip_str,
+                    msg_evt_data->server_ip_info.port,
+                    msg_evt_data->latency.command,
+                    msg_evt_data->latency.rtt_nsec);
+    }
+}
 
 static void msg_event_handler(void *ctx, int cpu, void *data, unsigned int size)
 {
@@ -50,6 +87,9 @@ static void msg_event_handler(void *ctx, int cpu, void *data, unsigned int size)
     unsigned char ser_ip_str[INET6_ADDRSTRLEN];
     unsigned char cli_ip_str[INET6_ADDRSTRLEN];
     const char *protocol;
+
+    report_sli_event(msg_evt_data);
+
     ip_str(msg_evt_data->server_ip_info.family, (unsigned char *)&(msg_evt_data->server_ip_info.ipaddr),
         ser_ip_str, INET6_ADDRSTRLEN);
     ip_str(msg_evt_data->client_ip_info.family, (unsigned char *)&(msg_evt_data->client_ip_info.ipaddr),
@@ -63,8 +103,8 @@ static void msg_event_handler(void *ctx, int cpu, void *data, unsigned int size)
             break;
     }
     fprintf(stdout,
-            "|%s|%d|%d|%s|%s|%u|%s|%u|%s|%llu|%s|%llu|%s|%llu|%u|\n",
-            OO_NAME,
+            "|%s|%d|%d|%s|%s|%u|%s|%u|%s|%llu|\n",
+            SLI_TBL_NAME,
             msg_evt_data->conn_id.tgid,
             msg_evt_data->conn_id.fd,
             protocol,
@@ -72,13 +112,8 @@ static void msg_event_handler(void *ctx, int cpu, void *data, unsigned int size)
             msg_evt_data->server_ip_info.port,
             cli_ip_str,
             ntohs(msg_evt_data->client_ip_info.port),
-            msg_evt_data->max.command,
-            msg_evt_data->max.rtt_nsec,
-            msg_evt_data->min.command,
-            msg_evt_data->min.rtt_nsec,
-            msg_evt_data->recent.command,
-            msg_evt_data->recent.rtt_nsec,
-            msg_evt_data->sample_num);
+            msg_evt_data->latency.command,
+            msg_evt_data->latency.rtt_nsec);
     (void)fflush(stdout);
 
     return;
@@ -144,7 +179,7 @@ int main(int argc, char **argv)
     printf("The kernel version does not support loading the tc tstamp program\n");
 #endif
 
-	INIT_BPF_APP(ksliprobe, EBPF_RLIM_LIMITED);
+    INIT_BPF_APP(ksliprobe, EBPF_RLIM_LIMITED);
     LOAD(ksliprobe, err);
     load_args(GET_MAP_FD(ksliprobe, args_map), &params);
     

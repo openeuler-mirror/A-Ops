@@ -74,8 +74,6 @@ struct conn_id_t {
     enum conn_protocol_t protocol;
     struct ip_info_t server_ip_info;
     struct ip_info_t client_ip_info;
-
-    __u64 ts_nsec;                      // 连接创建的时间戳
 };
 
 struct rtt_cmd_t {
@@ -86,22 +84,15 @@ struct rtt_cmd_t {
 struct conn_data_t {
     struct conn_id_t id;
     void *sk;                               // tcp连接对应的 sk 地址
-    struct rtt_cmd_t max;
-    struct rtt_cmd_t min;
-    struct rtt_cmd_t recent;
-    struct rtt_cmd_t current;
+    struct rtt_cmd_t latency;
     __u64 last_report_ts_nsec;              // 上一次上报完成的时间点
-    __u32 sample_num;                       // 上报周期内采样数
 };
 
 struct msg_event_data_t {
     struct conn_id_t conn_id;
-    struct rtt_cmd_t max;
-    struct rtt_cmd_t min;
-    struct rtt_cmd_t recent;
+    struct rtt_cmd_t latency;
     struct ip_info_t server_ip_info;
     struct ip_info_t client_ip_info;
-    __u32 sample_num;                       // 上报周期内采样数
 };
 
 #define KSLIPROBE_RET(func, type, caller_type, fd, init) \
