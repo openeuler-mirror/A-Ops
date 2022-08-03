@@ -28,6 +28,7 @@
 #endif
 
 #include "bpf.h"
+#include "task.h"
 #include "proc.h"
 #include "glibc.skel.h"
 #include "bpf_prog.h"
@@ -45,6 +46,10 @@ struct bpf_prog_s* load_glibc_bpf_prog(struct probe_params *args)
     int link_num = 0;
     char glibc_path[PATH_LEN];
     struct bpf_prog_s *prog;
+
+    if (!(args->load_probe & TASK_PROBE_DNS_OP)) {
+        return NULL;
+    }
 
     prog = alloc_bpf_prog();
     if (prog == NULL) {

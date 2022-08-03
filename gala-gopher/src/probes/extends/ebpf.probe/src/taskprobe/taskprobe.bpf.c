@@ -57,12 +57,13 @@ static __always_inline int get_task_pgid(const struct task_struct *cur_task)
     return pgid;
 }
 
-static __always_inline int is_task_in_probe_range(const struct task_struct *task)
+static __always_inline int is_task_in_probe_range(const char *comm)
 {
     int flag = 0;
     struct probe_process pname = {0};
 
-    bpf_probe_read_str(&pname.name, TASK_COMM_LEN * sizeof(char), (char *)task->comm);
+    __builtin_memcpy(pname.name, comm, TASK_COMM_LEN);
+
     char *buf = (char *)bpf_map_lookup_elem(&probe_proc_map, &pname);
     if (buf != (char *)0) {
         flag = *buf;
@@ -72,29 +73,45 @@ static __always_inline int is_task_in_probe_range(const struct task_struct *task
 
 KRAWTRACE(sched_process_fork, bpf_raw_tracepoint_args)
 {
-    int pid, ppid;
-    struct task_data data = {0};
+    int pid, tgid;
+    char comm[TASK_COMM_LEN];
 
-    struct task_struct* parent = (struct task_struct*)ctx->args[0];
     struct task_struct* child = (struct task_struct*)ctx->args[1];
 
-    int flag = is_task_in_probe_range(child);
+    (void)bpf_probe_read_str(&comm,
+        TASK_COMM_LEN * sizeof(char), (char *)child->comm);
 
-    if (flag == 1) {
+    if (is_task_in_probe_range((const char *)comm)) {
         /* Add child task info to task_map */
         pid = _(child->pid);
-        ppid = _(parent->pid);
+        tgid = _(child->tgid);
 
-        data.id.pid = pid;
-        data.id.tgid = _(child->tgid);
-        data.id.ppid = ppid;
-        data.id.pgid = get_task_pgid(child);
-        (void)bpf_probe_read_str(&data.id.comm,
-            TASK_COMM_LEN * sizeof(char), (char *)child->comm);
-        (void)task_add(pid, &data);
-        if (data.id.tgid == data.id.pid) {
-            proc_add_entry((u32)data.id.tgid, data.id.comm);
+        if (pid == tgid) {
+            proc_add_entry((u32)tgid, (const char *)comm);
         }
+    }
+}
+
+KRAWTRACE(sched_wakeup_new, bpf_raw_tracepoint_args)
+{
+    struct task_data data = {0};
+    struct task_struct* parent;
+    struct task_struct* task = (struct task_struct*)ctx->args[0];
+
+    (void)bpf_probe_read_str(&(data.id.comm),
+        TASK_COMM_LEN * sizeof(char), (char *)task->comm);
+
+    if (is_task_in_probe_range((const char *)data.id.comm)) {
+        /* Add child task info to task_map */
+
+        data.id.pid = _(task->pid);
+        data.id.tgid = _(task->tgid);
+        parent = _(task->parent);
+        if (parent) {
+            data.id.ppid = _(parent->pid);
+        }
+        data.id.pgid = get_task_pgid(task);
+        (void)task_add(data.id.pid, &data);
     }
 }
 

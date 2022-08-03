@@ -21,7 +21,7 @@
 #include <bpf/bpf_tracing.h>
 #include <bpf/bpf_core_read.h>
 #include "vmlinux.h"
-#include "task.h"
+#include "thread.h"
 
 #define __TASK_MAX      1000
 struct bpf_map_def SEC("maps") g_task_map = {
@@ -34,13 +34,6 @@ struct bpf_map_def SEC("maps") g_task_map = {
 static __always_inline __maybe_unused struct task_data* get_task(int pid)
 {
     return (struct task_data *)bpf_map_lookup_elem(&g_task_map, &pid);
-}
-
-static __always_inline __maybe_unused int task_add2(int pid)
-{
-    struct task_data data = {0};
-
-    return bpf_map_update_elem(&g_task_map, &pid, &data, BPF_ANY);
 }
 
 static __always_inline __maybe_unused int task_add(int pid, struct task_data *data)

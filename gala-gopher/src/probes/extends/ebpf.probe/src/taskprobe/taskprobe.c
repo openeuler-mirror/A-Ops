@@ -33,7 +33,7 @@
 #include "taskprobe.h"
 #include "bpf_prog.h"
 #include "proc.h"
-#include "task.h"
+#include "thread.h"
 
 #define RM_TASK_MAP_PATH "/usr/bin/rm -rf /sys/fs/bpf/probe/__taskprobe*"
 
@@ -237,9 +237,6 @@ int main(int argc, char **argv)
 
     // Load glibc bpf prog
     glibc_bpf_progs = load_glibc_bpf_prog(&tp_params);
-    if (glibc_bpf_progs == NULL) {
-        goto err;
-    }
 
     printf("Successfully started!\n");
 
@@ -250,7 +247,6 @@ int main(int argc, char **argv)
         if ((ret = perf_buffer__poll(proc_bpf_progs->pb, THOUSAND)) < 0) {
             break;
         }
-        sleep(tp_params.period);
     }
 
 err:

@@ -60,7 +60,7 @@ static __always_inline __maybe_unused void store_start_ts(void)
     proc->fs_op_start_ts = bpf_ktime_get_ns();
 }
 
-#define KPROBE_FS_OP(func, fs, field) \
+#define KPROBE_FS_OP(func, fs, field, flags) \
     KRETPROBE(func, pt_regs)\
     { \
         u64 res; \
@@ -68,7 +68,7 @@ static __always_inline __maybe_unused void store_start_ts(void)
         \
         if (proc && (res > proc->op_##fs.ns_##field)) { \
             proc->op_##fs.ns_##field = res; \
-            report_proc(ctx, proc); \
+            report_proc(ctx, proc, flags); \
         } \
     } \
     \
