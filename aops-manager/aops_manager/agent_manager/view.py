@@ -1,6 +1,6 @@
 #!/usr/bin/python3
 # ******************************************************************************
-# Copyright (c) Huawei Technologies Co., Ltd. 2021-2021. All rights reserved.
+# Copyright (c) Huawei Technologies Co., Ltd. 2021-2022. All rights reserved.
 # licensed under the Mulan PSL v2.
 # You can use this software according to the terms and conditions of the Mulan PSL v2.
 # You may obtain a copy of Mulan PSL v2 at:
@@ -14,7 +14,6 @@ import requests
 from flask import jsonify, json, Response
 
 from aops_manager.account_manager.cache import UserCache
-from aops_manager.conf import configuration
 from aops_manager.database import SESSION
 from aops_manager.database.proxy.host import HostProxy
 from aops_manager.function.verify.agent import AgentPluginInfoSchema
@@ -87,13 +86,14 @@ class AgentUtil:
         return SUCCEED, res
 
     @classmethod
-    def get_data_from_agent(cls, host_ip: str, host_token: str, agent_url: str) -> dict:
+    def get_data_from_agent(cls, host_ip: str, host_token: str, agent_port: int, agent_url: str) -> dict:
         """
             Get the data we want from agent
 
         Args:
             host_ip(str):
             host_token(str): The host token obtained when adds a user
+            agent_port(int)
             agent_url(str): how to visit agent
 
         Returns:
@@ -102,8 +102,7 @@ class AgentUtil:
         """
         headers = {'content-type': 'application/json',
                    'access_token': host_token}
-        port = configuration.agent.get("PORT")
-        url = f"http://{host_ip}:{port}{agent_url}"
+        url = f"http://{host_ip}:{agent_port}{agent_url}"
         try:
             ret = requests.get(url=url, headers=headers)
         except requests.exceptions.ConnectionError:
