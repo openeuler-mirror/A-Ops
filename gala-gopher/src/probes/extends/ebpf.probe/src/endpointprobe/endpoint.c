@@ -37,10 +37,13 @@
 #include "event.h"
 
 #define EP_ENTITY_ID_LEN 64
-#define LISTEN_NAME "listen"
-#define CONNECT_NAME "connect"
-#define UDP_BIND_NAME "bind"
-#define UDP_NAME "udp"
+
+#define OO_NAME     "endpoint"
+
+#define LISTEN_TBL_NAME     "listen"
+#define CONNECT_TBL_NAME    "connect"
+#define BIND_TBL_NAME       "bind"
+#define UDP_TBL_NAME        "udp"
 
 #define ENDPOINT_PATH "/sys/fs/bpf/probe/__endpoint_sock"
 #define OUTPUT_PATH "/sys/fs/bpf/probe/__endpoint_output"
@@ -59,10 +62,12 @@ static struct probe_params params = {.period = DEFAULT_PERIOD};
 static void print_tcp_listen_metrics(struct endpoint_val_t *value)
 {
     fprintf(stdout,
-            "|%s|%d|%d|%lu|%lu|%lu|%lu|%lu|%lu|\n",
-            LISTEN_NAME,
+            "|%s|%d|%s|%d|%s|%lu|%lu|%lu|%lu|%lu|%lu|\n",
+            LISTEN_TBL_NAME,
             value->key.key.tcp_listen_key.tgid,
+            "",
             value->key.key.tcp_listen_key.port,
+            LISTEN_TBL_NAME,
             value->ep_stats.stats[EP_STATS_LISTEN_DROPS],
             value->ep_stats.stats[EP_STATS_ACCEPT_OVERFLOW],
             value->ep_stats.stats[EP_STATS_SYN_OVERFLOW],
@@ -79,10 +84,12 @@ static void print_tcp_connect_metrics(struct endpoint_val_t *value)
            s_addr, 
            INET6_ADDRSTRLEN);
     fprintf(stdout,
-            "|%s|%d|%s|%lu|%lu|\n",
-            CONNECT_NAME,
+            "|%s|%d|%s|%d|%s|%lu|%lu|\n",
+            CONNECT_TBL_NAME,
             value->key.key.tcp_connect_key.tgid,
             s_addr,
+            0,
+            CONNECT_TBL_NAME,
             value->ep_stats.stats[EP_STATS_ACTIVE_OPENS],
             value->ep_stats.stats[EP_STATS_ACTIVE_FAILS]);
 }
@@ -95,10 +102,12 @@ static void print_bind_metrics(struct endpoint_val_t *value)
            s_addr, 
            INET6_ADDRSTRLEN);
     fprintf(stdout,
-            "|%s|%d|%s|%lu|%lu|%lu|%d|\n",
-            UDP_BIND_NAME,
+            "|%s|%d|%s|%d|%s|%lu|%lu|%lu|%d|\n",
+            BIND_TBL_NAME,
             value->key.key.udp_server_key.tgid,
             s_addr,
+            0,
+            BIND_TBL_NAME,
             value->ep_stats.stats[EP_STATS_QUE_RCV_FAILED],
             value->ep_stats.stats[EP_STATS_UDP_SENDS],
             value->ep_stats.stats[EP_STATS_UDP_RCVS],
@@ -113,10 +122,12 @@ static void print_udp_metrics(struct endpoint_val_t *value)
            s_addr, 
            INET6_ADDRSTRLEN);
     fprintf(stdout,
-            "|%s|%d|%s|%lu|%lu|%lu|%d|\n",
-            UDP_NAME,
+            "|%s|%d|%s|%d|%s|%lu|%lu|%lu|%d|\n",
+            UDP_TBL_NAME,
             value->key.key.udp_client_key.tgid,
             s_addr,
+            0,
+            UDP_TBL_NAME,
             value->ep_stats.stats[EP_STATS_QUE_RCV_FAILED],
             value->ep_stats.stats[EP_STATS_UDP_SENDS],
             value->ep_stats.stats[EP_STATS_UDP_RCVS],
@@ -128,33 +139,41 @@ static void build_entity_id(struct endpoint_val_t *ep, char *buf, int buf_len)
     unsigned char s_addr[INET6_ADDRSTRLEN];
 
     if (ep->key.type == SK_TYPE_LISTEN_TCP) {
-        (void)snprintf(buf, buf_len, "%d_%d",
+        (void)snprintf(buf, buf_len, "%d_%s_%d_%s",
                         ep->key.key.tcp_listen_key.tgid,
-                        ep->key.key.tcp_listen_key.port);
+                        "",
+                        ep->key.key.tcp_listen_key.port,
+                        LISTEN_TBL_NAME);
     } else if (ep->key.type == SK_TYPE_CLIENT_TCP) {
         ip_str(ep->key.key.tcp_connect_key.ip_addr.family, 
                (unsigned char *)&(ep->key.key.tcp_connect_key.ip_addr.ip), 
                s_addr, 
                INET6_ADDRSTRLEN);
-        (void)snprintf(buf, buf_len, "%d_%s",
+        (void)snprintf(buf, buf_len, "%d_%s_%d_%s",
                         ep->key.key.tcp_connect_key.tgid,
-                        s_addr);
+                        s_addr,
+                        0,
+                        CONNECT_TBL_NAME);
     } else if (ep->key.type == SK_TYPE_LISTEN_UDP) {
         ip_str(ep->key.key.udp_server_key.ip_addr.family, 
                (unsigned char *)&(ep->key.key.udp_server_key.ip_addr.ip), 
                s_addr, 
                INET6_ADDRSTRLEN);
-        (void)snprintf(buf, buf_len, "%d_%s",
+        (void)snprintf(buf, buf_len, "%d_%s_%d_%s",
                         ep->key.key.udp_server_key.tgid,
-                        s_addr);
+                        s_addr,
+                        0,
+                        BIND_TBL_NAME);
     } else {
         ip_str(ep->key.key.udp_client_key.ip_addr.family, 
                (unsigned char *)&(ep->key.key.udp_client_key.ip_addr.ip), 
                s_addr, 
                INET6_ADDRSTRLEN);
-        (void)snprintf(buf, buf_len, "%d_%s",
+        (void)snprintf(buf, buf_len, "%d_%s_%d_%s",
                         ep->key.key.udp_client_key.tgid,
-                        s_addr);
+                        s_addr,
+                        0,
+                        UDP_TBL_NAME);
     }
 }
 
@@ -168,7 +187,7 @@ static void report_ep(struct endpoint_val_t *ep)
     entityId[0] = 0;
     if (ep->ep_stats.stats[EP_STATS_LISTEN_DROPS] != 0) {
         build_entity_id(ep, entityId, EP_ENTITY_ID_LEN);
-        report_logs(LISTEN_NAME,
+        report_logs(OO_NAME,
                     entityId,
                     "listendrop",
                     EVT_SEC_WARN,
@@ -180,7 +199,7 @@ static void report_ep(struct endpoint_val_t *ep)
         if (entityId[0] != 0)
             build_entity_id(ep, entityId, EP_ENTITY_ID_LEN);
 
-        report_logs(LISTEN_NAME,
+        report_logs(OO_NAME,
                     entityId,
                     "accept_overflow",
                     EVT_SEC_WARN,
@@ -192,7 +211,7 @@ static void report_ep(struct endpoint_val_t *ep)
         if (entityId[0] != 0)
             build_entity_id(ep, entityId, EP_ENTITY_ID_LEN);
 
-        report_logs(LISTEN_NAME,
+        report_logs(OO_NAME,
                     entityId,
                     "syn_overflow",
                     EVT_SEC_WARN,
@@ -204,7 +223,7 @@ static void report_ep(struct endpoint_val_t *ep)
         if (entityId[0] != 0)
             build_entity_id(ep, entityId, EP_ENTITY_ID_LEN);
 
-        report_logs(LISTEN_NAME,
+        report_logs(OO_NAME,
                     entityId,
                     "passive_open_failed",
                     EVT_SEC_WARN,
@@ -215,7 +234,7 @@ static void report_ep(struct endpoint_val_t *ep)
     entityId[0] = 0;
     if (ep->ep_stats.stats[EP_STATS_ACTIVE_FAILS] != 0) {
         build_entity_id(ep, entityId, EP_ENTITY_ID_LEN);
-        report_logs(CONNECT_NAME,
+        report_logs(OO_NAME,
                     entityId,
                     "active_open_failed",
                     EVT_SEC_WARN,
@@ -228,16 +247,16 @@ static void report_ep(struct endpoint_val_t *ep)
         build_entity_id(ep, entityId, EP_ENTITY_ID_LEN);
 
         if (ep->key.type == SK_TYPE_LISTEN_UDP) {
-            report_logs(UDP_BIND_NAME,
+            report_logs(OO_NAME,
                         entityId,
-                        "que_rcv_drops",
+                        "bind_rcv_drops",
                         EVT_SEC_WARN,
                         "UDP(S) queue drops(%lu).",
                         ep->ep_stats.stats[EP_STATS_QUE_RCV_FAILED]);
         } else {
-            report_logs(UDP_NAME,
+            report_logs(OO_NAME,
                         entityId,
-                        "que_rcv_drops",
+                        "udp_rcv_drops",
                         EVT_SEC_WARN,
                         "UDP(C) queue drops(%lu).",
                         ep->ep_stats.stats[EP_STATS_QUE_RCV_FAILED]);
