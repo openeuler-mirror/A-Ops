@@ -16,7 +16,7 @@ Add view and url into api
 from flask.blueprints import Blueprint
 from flask_restful import Api
 
-from .url import URLS
+from aops_check.url import URLS
 
 CHECK = Blueprint('check', __name__)
 

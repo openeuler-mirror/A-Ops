@@ -34,6 +34,7 @@ class AppDao(ElasticsearchProxy):
     """
     It's a dao of app.
     """
+
     def __is_app_exists(self, username: str, app_name: str, index: str) -> bool:
         """
         Judge whether app has existed, the judge rule is that app's name of the user is same.
