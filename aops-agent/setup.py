@@ -8,7 +8,13 @@ VERSION = "1.0.0"
 
 REQUIRES = [
     "connexion",
-    "swagger-ui-bundle>=0.0.2"
+    "swagger-ui-bundle>=0.0.2",
+    "requests",
+    "flask",
+    "concurrent_log_handler",
+    "responses",
+    "jsonschema",
+    "libconf"
 ]
 
 setup(

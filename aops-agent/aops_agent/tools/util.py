@@ -12,8 +12,10 @@
 # ******************************************************************************/
 import configparser
 import copy
-import os
-from typing import Union, List, Any, Tuple
+import json
+import argparse
+from socket import socket, AF_INET, SOCK_DGRAM
+from typing import Union, List, Any, Tuple, Dict, Callable
 from subprocess import Popen, PIPE, STDOUT
 
 from libconf import load, ConfigParseError, AttrDict
@@ -139,6 +141,8 @@ def plugin_install_judge(plugin_name: str) -> str:
         str: plugin running status
     """
     rpm_name = RPM_INFO.get(plugin_name, "")
+    if rpm_name == "":
+        return ""
     status_info = get_shell_data(["systemctl", "status", rpm_name], key=False)
     res = get_shell_data(["grep", "Active"], stdin=status_info.stdout)
     return res
@@ -163,3 +167,76 @@ def change_probe_status(probes: Tuple[AttrDict], gopher_probes_status: dict, res
             res['success'].append(probe['name'])
             failure_list.pop(probe['name'])
     return res, failure_list
+
+
+def get_uuid() -> str:
+    """
+        get uuid about disk
+
+    Returns:
+        uuid(str)
+    """
+    fstab_info = get_shell_data(['dmidecode'], key=False)
+    uuid_info = get_shell_data(['grep', 'UUID'], stdin=fstab_info.stdout)
+    uuid = uuid_info.replace("-", "").split(':')[1].strip()
+    return uuid
+
+
+def get_host_ip() -> str:
+    """
+        get host ip by create udp package
+    Returns:
+        host ip(str)
+    """
+    sock = socket(AF_INET, SOCK_DGRAM)
+    try:
+        sock.connect(('8.8.8.8', 80))
+        host_ip = sock.getsockname()[0]
+    except OSError:
+        LOGGER.error("please check internet")
+        host_ip = ''
+    finally:
+        sock.close()
+    return host_ip
+
+
+def get_dict_from_file(file_path: str) -> Dict:
+    """
+        Get json data from file and return related dict
+    Args:
+        file_path(str): the json data file absolute path
+
+    Returns:
+        dict(str)
+    """
+    try:
+        with open(file_path, "r") as f:
+            data = json.load(f)
+    except FileNotFoundError:
+        LOGGER.error('file not found')
+        data = {}
+    except json.decoder.JSONDecodeError:
+        LOGGER.error('file structure is not json')
+        data = {}
+    if not isinstance(data, dict):
+        data = {}
+    return data
+
+
+def register_info_to_dict(string: str) -> Dict:
+    """
+    Convert JSON string to dictionary
+    Args:
+        string(str)
+
+    Returns:
+        dict
+    """
+    try:
+        res = json.loads(string)
+    except json.decoder.JSONDecodeError:
+        LOGGER.error('Parameter error')
+        res = {}
+    if not isinstance(res, dict):
+        res = {}
+    return res
