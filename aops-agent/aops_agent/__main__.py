@@ -12,13 +12,13 @@
 # ******************************************************************************/
 from json import encoder
 from typing import NoReturn
-
 import argparse
+
 import connexion
 from aops_agent.conf import configuration
-from aops_agent.conf.constant import REGISTER_HELP_INFO
+from aops_agent.conf.constant import REGISTER_HELP_INFO, AGENT_CONFIG_PATH
 from aops_agent.manages.command_manage import Command
-from aops_agent.tools.util import get_dict_from_file, register_info_to_dict
+from aops_agent.tools.util import get_dict_from_file, register_info_to_dict, update_ini_data_value
 
 
 def start(*args) -> NoReturn:
@@ -42,18 +42,23 @@ def register_on_manager(args: argparse.Namespace) -> NoReturn:
         register_info = register_info_to_dict(args.data)
     else:
         register_info = get_dict_from_file(args.path)
+    if register_info.get('agent_host') is not None:
+        update_ini_data_value(AGENT_CONFIG_PATH,
+                              'agent', 'port', register_info.get('agent_host'))
     print(Command.register(register_info))
 
 
 def main():
     parser = argparse.ArgumentParser()
-    parser.add_argument('-H', '--Help', action='store_true', help='more info about register')
+    parser.add_argument('-H', '--Help', action='store_true',
+                        help='more info about register')
 
     subparsers = parser.add_subparsers()
     subparse_start = subparsers.add_parser('start', help='start plugin')
     subparse_start.set_defaults(function=start)
 
-    subparse_register = subparsers.add_parser('register', help='to register in manager')
+    subparse_register = subparsers.add_parser('register',
+                                              help='to register in manager')
     group = subparse_register.add_mutually_exclusive_group(required=True)
     group.add_argument('-f', '--path', type=str,
                        help="file contains data which register need")
