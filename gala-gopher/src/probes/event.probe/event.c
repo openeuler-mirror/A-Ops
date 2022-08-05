@@ -15,7 +15,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <time.h>
-
+#include "nprobe_fprintf.h"
 #include "event.h"
 
 #define LOG_MESSAGES "/var/log/messages"
@@ -34,7 +34,7 @@ void PrintEventOutput(const struct event_data *event)
     char timestamp[LEN_BUF] = {0};
     sprintf(timestamp, "%llu", event->timestamp);
 
-    fprintf(stdout, "|%s|%s|%s|%s|\n", "event", timestamp, event->level, event->body);
+    nprobe_fprintf(stdout, "|%s|%s|%s|%s|\n", "event", timestamp, event->level, event->body);
 }
 
 static int GetFileLineNum(const char * filename)

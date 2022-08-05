@@ -17,6 +17,7 @@
 #include <string.h>
 #include <unistd.h>
 #include <stdbool.h>
+#include "nprobe_fprintf.h"
 #include "system_cpu.h"
 
 #define METRICS_CPU_NAME        "system_cpu"
@@ -195,7 +196,7 @@ int system_cpu_probe(void)
         return 0;
     }
     for (size_t i = 0; i < cpus_num; i++) {
-        ret = fprintf(stdout, "|%s|%d|%llu|%llu|%llu|%llu|%llu|%llu|%llu|%llu|%llu|%llu|\n",
+        ret = nprobe_fprintf(stdout, "|%s|%d|%llu|%llu|%llu|%llu|%llu|%llu|%llu|%llu|%llu|%llu|\n",
             METRICS_CPU_NAME,
             cur_cpus[i]->cpu_num,
             cur_cpus[i]->rcu - old_cpus[i]->rcu,
