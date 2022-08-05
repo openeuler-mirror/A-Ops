@@ -33,15 +33,16 @@ setup(
         ('/usr/lib/systemd/system/', ['service/gala-anteater.service']),
     ],
     install_requires=[
-        "APScheduler==3.9.1",
+        "APScheduler",
         "kafka-python>=2.0.2",
-        "joblib==0.14.1",
-        "numpy==1.21.6",
-        "pandas==1.0.1",
-        "requests==2.28.1",
-        "scikit_learn==0.24.2",
-        "scipy==1.7.3",
-        "torch==1.11.0"
+        "joblib",
+        "numpy",
+        "pandas",
+        "requests",
+        "scikit_learn",
+        "scipy",
+        "torch"
+
     ],
     entry_points={
         "console_scripts": [

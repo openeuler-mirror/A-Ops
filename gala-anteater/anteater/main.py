@@ -15,7 +15,6 @@ Time:
 Author:
 Description: The main function of gala-anteater project.
 """
-
 import argparse
 from datetime import datetime, timezone
 from functools import partial

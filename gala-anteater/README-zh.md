@@ -107,7 +107,20 @@ bin/kafka-console-consumer.sh --topic gala_anteater_hybrid_model --from-beginnin
 
 本文档介绍异常检测格式，`kafka、arangodb`的API参考其官方文档。
 
-### 3.2 数据示例
+### 3.2 输出数据
+
+#### 3.2.1 输出数据格式
+
+| 参数 |  参数含义  | 描述 |
+|:---:|:------:|---|
+| Timestamp |  时间戳   | 异常事件上报时间戳(datetime.now(timezone.utc).timestamp()) |
+| Attributes |  属性值   | 主要包括实体ID:Entity_ID<br>* Entiry_ID命名规则：<machine_id>_<table_name>_<keys> |
+| Resource |   资源   | 异常检测模型输出的信息，主要包括：<br>* anomaly_score: 异常得分（异常点个数/被检测样本点个数）<br>* anomaly_count: 异常点个数<br>* total_count：被检测样本点个数<br>* duration: 检测时间窗口（seconds）<br>* anomaly_ratio: 异常比例，同anomaly_score<br>* metric_label: 异常metric标签信息（例如：{"machine_id": "xxx", "tgid": "1234", "conn_fd": "xx"}）<br>* recommend_metrics: 推荐的 Top N 根因信息<br>* metric_id: 异常检测的主指标 <br>  |
+| SeverityText | 异常事件类型 | INFO WARN ERROR FATAL |
+| SeverityNumber | 异常事件编号 | 9, 13, 178, 21 ... |
+| Body | 异常事件信息 | 字符串，对当前异常事件的描述信息 |
+
+#### 3.2.2 输出数据示例
 
 ```json
 {
