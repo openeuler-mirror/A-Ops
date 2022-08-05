@@ -46,7 +46,8 @@ class HostProxy(MysqlProxy):
                     "host_group_name": "group1",
                     "host_id": "id1",
                     "public_ip": "127.0.0.1",
-                    "management": False
+                    "management": False,
+                    "agent_port": 1122
                 }
 
         Returns:
@@ -305,7 +306,7 @@ class HostProxy(MysqlProxy):
         result = {}
         result['host_infos'] = temp_res
         query_fields = [Host.host_id, Host.host_name, Host.public_ip,
-                        Host.host_group_name, Host.management, Host.status, Host.scene]
+                        Host.host_group_name, Host.management, Host.status, Host.scene, Host.agent_port]
         filters = {
             Host.user == username
         }
@@ -321,7 +322,8 @@ class HostProxy(MysqlProxy):
                     "public_ip": host.public_ip,
                     "management": host.management,
                     "status": host.status,
-                    "scene": host.scene
+                    "scene": host.scene,
+                    "agent_port": host.agent_port
                 }
                 temp_res.append(host_info)
             self.session.commit()

@@ -35,7 +35,3 @@ elasticsearch = {
     "PORT": 9200,
     "MAX_ES_QUERY_NUM": 10000000
 }
-
-agent = {
-    "PORT": 12000
-}

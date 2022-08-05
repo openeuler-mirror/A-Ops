@@ -202,7 +202,8 @@ class TestHostDatabase(unittest.TestCase):
                 "host_id": "id1",
                 "public_ip": "127.0.0.1",
                 "management": False,
-                "username": "admin"
+                "username": "admin",
+                "agent_port": 1111
             },
             {
                 "host_name": "host2",
@@ -210,7 +211,8 @@ class TestHostDatabase(unittest.TestCase):
                 "host_id": "id2",
                 "public_ip": "127.0.0.2",
                 "management": True,
-                "username": "admin"
+                "username": "admin",
+                "agent_port": 1111
             },
             {
                 "host_name": "host3",
@@ -218,7 +220,8 @@ class TestHostDatabase(unittest.TestCase):
                 "host_id": "id3",
                 "public_ip": "127.0.0.3",
                 "management": False,
-                "username": "admin"
+                "username": "admin",
+                "agent_port": 1111
             },
             {
                 "host_name": "host4",
@@ -226,7 +229,8 @@ class TestHostDatabase(unittest.TestCase):
                 "host_id": "id4",
                 "public_ip": "127.0.0.4",
                 "management": True,
-                "username": "admin"
+                "username": "admin",
+                "agent_port": 1111
             },
             {
                 "host_name": "host5",
@@ -234,7 +238,8 @@ class TestHostDatabase(unittest.TestCase):
                 "host_id": "id5",
                 "public_ip": "127.0.0.5",
                 "management": False,
-                "username": "admin"
+                "username": "admin",
+                "agent_port": 1111
             }
         ]
         for host in data:
@@ -272,6 +277,7 @@ class TestHostDatabase(unittest.TestCase):
             "public_ip": "127.0.0.1",
             "management": False,
             "username": "admin",
+            "agent_port": 1111
         }
         res = self.proxy.add_host(data)
         self.assertEqual(res, NO_DATA)
@@ -284,6 +290,7 @@ class TestHostDatabase(unittest.TestCase):
             "public_ip": "127.0.0.1",
             "management": False,
             "username": "admin",
+            "agent_port": 1111
         }
         res = self.proxy.add_host(data)
         self.assertEqual(res, DATA_EXIST)
@@ -307,7 +314,7 @@ class TestHostDatabase(unittest.TestCase):
                 "public_ip": "127.0.0.5",
                 "management": False,
                 "status": None,
-                "scene": None
+                "scene": None,
             },
             {
                 "host_id": "id4",
@@ -376,7 +383,8 @@ class TestHostDatabase(unittest.TestCase):
                 "public_ip": "127.0.0.1",
                 "management": False,
                 "status": None,
-                "scene": None
+                "scene": None,
+                "agent_port": 1111
             },
             {
                 "host_name": "host2",
@@ -385,7 +393,8 @@ class TestHostDatabase(unittest.TestCase):
                 "public_ip": "127.0.0.2",
                 "management": True,
                 "status": None,
-                "scene": None
+                "scene": None,
+                "agent_port": 1111
             }
         ]
         res = self.proxy.get_host_info(args)
