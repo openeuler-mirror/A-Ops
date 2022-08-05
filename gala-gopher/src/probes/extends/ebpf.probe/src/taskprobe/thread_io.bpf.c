@@ -17,6 +17,7 @@
 #endif
 #define BPF_PROG_KERN
 #include "bpf.h"
+#include "task.h"
 #include "task_map.h"
 #include "output_task.h"
 
@@ -70,7 +71,7 @@ static __always_inline void end_bio(void *ctx, struct bio *bio)
         struct task_data* data = get_task(*pid);
         if (data) {
             __sync_fetch_and_add(&(data->io.bio_err_count), 1);
-            report_task(ctx, data);
+            report_task(ctx, data, TASK_PROBE_THREAD_IO);
         }
         return;
     }
@@ -97,7 +98,7 @@ KPROBE(submit_bio, pt_regs)
 
     if (is_read_bio(bio)) {
         data->io.bio_bytes_read += _(bio->bi_iter.bi_size);
-        report_task(ctx, data);
+        report_task(ctx, data, TASK_PROBE_THREAD_IO);
 
         store_bio(bio, pid);
         return;
@@ -105,7 +106,7 @@ KPROBE(submit_bio, pt_regs)
 
     if (is_write_bio(bio)) {
         data->io.bio_bytes_write += _(bio->bi_iter.bi_size);
-        report_task(ctx, data);
+        report_task(ctx, data, TASK_PROBE_THREAD_IO);
 
         store_bio(bio, pid);
         return;
@@ -126,7 +127,7 @@ KRAWTRACE(sched_stat_iowait, bpf_raw_tracepoint_args)
     struct task_data *data = get_task((int)_(task->pid));
     if (data) {
         __sync_fetch_and_add(&(data->io.iowait_us), delta);
-        report_task(ctx, data);
+        report_task(ctx, data, TASK_PROBE_THREAD_IO);
     }
 }
 
@@ -136,6 +137,6 @@ KRAWTRACE(sched_process_hang, bpf_raw_tracepoint_args)
     struct task_data *data = get_task((int)_(task->pid));
     if (data) {
         __sync_fetch_and_add(&(data->io.hang_count), 1);
-        report_task(ctx, data);
+        report_task(ctx, data, TASK_PROBE_THREAD_IO);
     }
 }

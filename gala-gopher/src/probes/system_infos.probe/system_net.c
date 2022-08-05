@@ -17,6 +17,7 @@
 #include <string.h>
 #include <unistd.h>
 #include "event.h"
+#include "nprobe_fprintf.h"
 #include "system_net.h"
 
 #define METRICS_TCP_NAME        "system_tcp"
@@ -93,7 +94,7 @@ int system_tcp_probe(void)
         }
     }
     /* output */
-    (void)fprintf(stdout, "|%s|%s|%llu|%llu|%llu|%llu|%llu|\n",
+    (void)nprobe_fprintf(stdout, "|%s|%s|%llu|%llu|%llu|%llu|%llu|\n",
         METRICS_TCP_NAME,
         "/proc/dev/snmp",
         g_snmp_stats.tcp_curr_estab,
@@ -102,7 +103,7 @@ int system_tcp_probe(void)
         g_snmp_stats.tcp_retrans_segs - temp.tcp_retrans_segs,
         g_snmp_stats.tcp_in_errs - temp.tcp_in_errs);
 
-    (void)fprintf(stdout, "|%s|%s|%llu|%llu|\n",
+    (void)nprobe_fprintf(stdout, "|%s|%s|%llu|%llu|\n",
         METRICS_UDP_NAME,
         "/proc/dev/snmp",
         g_snmp_stats.udp_in_datagrams - temp.udp_in_datagrams,
@@ -241,7 +242,7 @@ int system_net_probe(struct probe_params *params)
         if (get_netdev_fileds(line, &g_dev_stats[index]) < 0) {
             continue;
         }
-        (void)fprintf(stdout, "|%6s|%s|%llu|%llu|%llu|%llu|%llu|%llu|%llu|%llu|\n",
+        (void)nprobe_fprintf(stdout, "|%6s|%s|%llu|%llu|%llu|%llu|%llu|%llu|%llu|%llu|\n",
             METRICS_NET_NAME,
             g_dev_stats[index].dev_name,
             g_dev_stats[index].rx_bytes - temp.rx_bytes,

@@ -19,6 +19,7 @@
 #include <dirent.h>
 #include <errno.h>
 #include "object.h"
+#include "nprobe_fprintf.h"
 #include "system_procs.h"
 
 #define METRICS_PROC_NAME   "system_proc"
@@ -579,7 +580,7 @@ static void output_proc_infos(proc_hash_t *one_proc)
     u32 fd_free = one_proc->info.max_fd_limit - one_proc->info.fd_count;
     float fd_free_per = fd_free / (float)one_proc->info.max_fd_limit * 100;
 
-    fprintf(stdout,
+    nprobe_fprintf(stdout,
         "|%s|%lu|%d|%d|%s|%s|%s|%u|%.2f|%llu|%llu|%u|%u|%llu|%llu|%llu|%lu|%lu|%lu|%lu|%lu|%lu|%lu|%lu|%llu|%llu|%llu|%llu|%llu|%llu|\n",
         METRICS_PROC_NAME,
         one_proc->key.pid,

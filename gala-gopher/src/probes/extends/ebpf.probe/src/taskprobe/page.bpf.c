@@ -17,6 +17,7 @@
 #endif
 #define BPF_PROG_KERN
 #include "bpf.h"
+#include "task.h"
 #include "proc_map.h"
 #include "output_proc.h"
 
@@ -57,7 +58,7 @@ static __always_inline void update_reclaim_ns(void *ctx)
     proc->page_op.reclaim_start_ts = 0;
     if (delta > proc->page_op.reclaim_ns) {
         proc->page_op.reclaim_ns = delta;
-        report_proc(ctx, proc);
+        report_proc(ctx, proc, TASK_PROBE_PAGE_OP);
     }
 }
 
@@ -83,7 +84,7 @@ KRAWTRACE(mm_vmscan_direct_reclaim_end, bpf_raw_tracepoint_args)
         \
         __sync_fetch_and_add(&(proc->page_op.count_##field), 1); \
         \
-        report_proc(ctx, proc); \
+        report_proc(ctx, proc, TASK_PROBE_PAGE_OP); \
     }
 
 KPROBE_PAGE_CACHE(mark_page_accessed, access_pagecache)

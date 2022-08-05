@@ -2,7 +2,7 @@ version = "1.0.0"
 measurements:
 (
     {
-        table_name: "thread",
+        table_name: "thread_io",
         entity_name: "thread",
         fields:
         (
@@ -45,6 +45,28 @@ measurements:
                 description: "Thread bio err count",
                 type: "gauge",
                 name: "bio_err_count",
+            }
+        )
+    },
+    {
+        table_name: "thread_cpu",
+        entity_name: "thread",
+        fields:
+        (
+            {
+                description: "ID of the thread",
+                type: "key",
+                name: "pid",
+            },
+            {
+                description: "PID id of thd process",
+                type: "label",
+                name: "tgid",
+            },
+            {
+                description: "comm of the process",
+                type: "label",
+                name: "comm",
             },
             {
                 description: "Thread offcpu times, unit is ns.",

@@ -2,8 +2,8 @@ version = "1.0.0"
 measurements:
 (
     {
-        table_name: "ksliprobe",
-        entity_name: "ksliprobe",
+        table_name: "redis_sli",
+        entity_name: "sli",
         fields:
         (
             {
@@ -44,37 +44,12 @@ measurements:
             {
                 description: "the cmd of max rtt req",
                 type: "label",
-                name: "max_command",
+                name: "command",
             },
             {
-                description: "the rtt(ns) of max rtt req",
+                description: "the rtt(ns) of req",
                 type: "gauge",
-                name: "max_rtt_nsec",
-            },
-            {
-                description: "the cmd of min rtt req",
-                type: "label",
-                name: "min_command",
-            },
-            {
-                description: "the rtt(ns) of min rtt req",
-                type: "gauge",
-                name: "min_rtt_nsec",
-            },
-            {
-                description: "the cmd of recent rtt req",
-                type: "label",
-                name: "recent_command",
-            },
-            {
-                description: "the rtt(ns) of recent rtt req",
-                type: "gauge",
-                name: "recent_rtt_nsec",
-            },
-            {
-                description: "the number of samples in one sample period",
-                type: "gauge",
-                name: "sample_num",
+                name: "rtt_nsec",
             }
         )
     }

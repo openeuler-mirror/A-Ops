@@ -19,7 +19,7 @@
 #include <unistd.h>
 
 #include "bpf.h"
-#include "task.h"
+#include "thread.h"
 
 #define TASK_PID_COMMAND \
     "ps -T -p \"%d\" | awk 'NR > 1 {print $2}'"

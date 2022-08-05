@@ -16,16 +16,17 @@ Add view and url into api
 from flask.blueprints import Blueprint
 from flask_restful import Api
 
-from aops_check.url import urls
+from aops_check.url import URLS
 
+CHECK = Blueprint('check', __name__)
 
-diagnose = Blueprint('diag', __name__)
+API = Api()
 
-api = Api()
+for view, url in URLS:
+    API.add_resource(view, url)
 
-for view, url, operation in urls:
-    api.add_resource(view, url)
-
-blue_point = [
-    (diagnose, api)
+BLUE_POINT = [
+    (CHECK, API)
 ]
+
+__all__ = ['BLUE_POINT']

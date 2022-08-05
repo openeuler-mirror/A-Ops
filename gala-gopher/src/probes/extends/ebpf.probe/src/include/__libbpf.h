@@ -19,6 +19,7 @@
 
 #if !defined( BPF_PROG_KERN ) && !defined( BPF_PROG_USER )
 
+#include <stdlib.h>
 #include <bpf/libbpf.h>
 #include <bpf/bpf.h>
 #include <sys/resource.h>
@@ -134,15 +135,15 @@ static __always_inline int set_memlock_rlimit(unsigned long limit)
 #define MAP_SET_PIN_PATH(probe_name, map_name, map_path, load) \
     do { \
         if (load) \
-        {\
-            __MAP_SET_PIN_PATH(probe_name, map_name, map_path);\
-        }\
+        { \
+            __MAP_SET_PIN_PATH(probe_name, map_name, map_path); \
+        } \
     } while (0)
     
 #define LOAD_ATTACH(probe_name, end, load) \
     do { \
         if (load) \
-        {\
+        { \
             int err; \
             __PIN_SHARE_MAP_ALL(probe_name); \
             if (probe_name##_bpf__load(probe_name##_skel)) { \
@@ -158,7 +159,7 @@ static __always_inline int set_memlock_rlimit(unsigned long limit)
                 goto end; \
             } \
             INFO("Succeed to load and attach BPF " #probe_name " skeleton\n"); \
-        }\
+        } \
     } while (0)
 
 #define UNLOAD(probe_name) \
@@ -264,6 +265,65 @@ static __always_inline __maybe_unused void poll_pb(struct perf_buffer *pb, int t
     while ((ret = perf_buffer__poll(pb, timeout_ms)) >= 0) {
         ;
     }
+    return;
+}
+
+#define SKEL_MAX_NUM  20
+typedef void (*skel_destroy_fn)(void *);
+
+struct __bpf_skel_s {
+    skel_destroy_fn fn;
+    void *skel;
+    void *_link[PATH_NUM];
+    size_t _link_num;
+};
+struct bpf_prog_s {
+    struct perf_buffer* pb;
+    struct __bpf_skel_s skels[SKEL_MAX_NUM];
+    size_t num;
+};
+
+static __always_inline __maybe_unused void free_bpf_prog(struct bpf_prog_s *prog)
+{
+    (void)free(prog);
+}
+
+static __always_inline __maybe_unused struct bpf_prog_s *alloc_bpf_prog(void)
+{
+    struct bpf_prog_s *prog = malloc(sizeof(struct bpf_prog_s));
+    if (prog == NULL) {
+        return NULL;
+    }
+
+    (void)memset(prog, 0, sizeof(struct bpf_prog_s));
+    return prog;
+}
+
+static __always_inline __maybe_unused void unload_bpf_prog(struct bpf_prog_s **unload_prog)
+{
+    struct bpf_prog_s *prog = *unload_prog;
+
+    *unload_prog = NULL;
+    if (prog == NULL) {
+        return;
+    }
+
+    for (int i = 0; i < prog->num; i++) {
+        if (prog->skels[i].skel) {
+            prog->skels[i].fn(prog->skels[i].skel);
+
+            for (int j = 0; j < prog->skels[i]._link_num; j++) {
+                if (prog->skels[i]._link[j]) {
+                    (void)bpf_link__destroy(prog->skels[i]._link[j]);
+                }
+            }
+        }
+    }
+
+    if (prog->pb) {
+        perf_buffer__free(prog->pb);
+    }
+    free_bpf_prog(prog);
     return;
 }
 

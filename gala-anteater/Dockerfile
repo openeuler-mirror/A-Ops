@@ -21,13 +21,15 @@
 #
 
 # base image
-FROM python:3.7
+FROM python:3.7-slim-buster
 
 # Define variables.
 ENV kafka_server "localhost"
 ENV kafka_port "9092"
 ENV prometheus_server "localhost"
 ENV prometheus_port "9090"
+
+ENV PYTHONPATH "${PYTHONPATH}:/gala-anteather/anteater"
 
 # container work directory
 WORKDIR /home/gala-anteather
@@ -52,5 +54,5 @@ CMD echo "kafka_server : ${kafka_server}" && \
     echo "kafka_port : ${kafka_port}" && \
     echo "prometheus_server : ${prometheus_server}" && \
     echo "prometheus_port : ${prometheus_port}" && \
-    python3 ./main.py --kafka_server ${kafka_server} --kafka_port ${kafka_port} \
+    python3 ./anteater/main.py --kafka_server ${kafka_server} --kafka_port ${kafka_port} \
     --prometheus_server ${prometheus_server} --prometheus_port ${prometheus_port}

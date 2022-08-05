@@ -266,7 +266,7 @@ class CollectConfig(Resource):
                                                          params)
         # json to yaml and move to
         inventory_operate(ansible_input_json, inventory)
-        final_res = generate_output(response['host_infos'])
+        final_res = generate_output(result['host_infos'])
         is_par = final_res.get("is_par")
         if not is_par:
             response = StatusCode.make_response(SUCCEED)

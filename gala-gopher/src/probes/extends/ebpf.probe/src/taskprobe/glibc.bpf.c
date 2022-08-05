@@ -18,6 +18,7 @@
 #define BPF_PROG_USER
 
 #include "bpf.h"
+#include "task.h"
 #include "proc_map.h"
 #include "output_proc.h"
 
@@ -63,7 +64,7 @@ static __always_inline void update_gethostname_res(struct pt_regs* ctx)
     proc->dns_op.gethostname_start_ts = 0;
     if (delta > proc->dns_op.gethostname_ns) {
         proc->dns_op.gethostname_ns = delta;
-        report_proc(ctx, proc);
+        report_proc(ctx, proc, TASK_PROBE_DNS_OP);
     }
 }
 

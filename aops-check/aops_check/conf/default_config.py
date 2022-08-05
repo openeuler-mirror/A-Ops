@@ -1,6 +1,6 @@
 #!/usr/bin/python3
 # ******************************************************************************
-# Copyright (c) Huawei Technologies Co., Ltd. 2022-2022. All rights reserved.
+# Copyright (c) Huawei Technologies Co., Ltd. 2021-2021. All rights reserved.
 # licensed under the Mulan PSL v2.
 # You can use this software according to the terms and conditions of the Mulan PSL v2.
 # You may obtain a copy of Mulan PSL v2 at:
@@ -15,19 +15,25 @@ Time:
 Author:
 Description: default config
 """
-producer = {
-    "KAFKA_SERVER_LIST": "127.0.0.1:9092",
-    "API_VERSION": "0.11.5",
-    "ACKS": 1,
-    "RETRIES": 3,
-    "RETRY_BACKOFF_MS": 100
+check = {
+    "IP": "127.0.0.1",
+    "PORT": 11112,
+    "MODE": "configurable"
 }
 
-
-topic = {
-    "NAME": "CHECK_EXECUTE"
+mysql = {
+    "IP": "127.0.0.1",
+    "PORT": 3306,
+    "DATABASE_NAME": "aops",
+    "ENGINE_FORMAT": "mysql+pymysql://@%s:%s/%s",
+    "POOL_SIZE": 10000,
+    "POOL_RECYCLE": 7200
 }
 
+elasticsearch = {
+    "IP": "127.0.0.1",
+    "PORT": 9200
+}
 
 prometheus = {
     "IP": "127.0.0.1",
@@ -37,4 +43,14 @@ prometheus = {
 
 agent = {
     "DEFAULT_INSTANCE_PORT": 9100
+}
+
+kafka = {
+    "KAFKA_SERVER_LIST": "127.0.0.1:9092",
+    "API_VERSION": "0.11.5",
+    "ACKS": 1,
+    "RETRIES": 3,
+    "RETRY_BACKOFF_MS": 100,
+    "TASK_NAME": "CHECK_TASK",
+    "RESULT_NAME": "CHECK_RESULT"
 }

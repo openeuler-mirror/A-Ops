@@ -10,7 +10,7 @@
  * See the Mulan PSL v2 for more details.
  * Author: luzhihao
  * Create: 2022-07-26
- * Description: tcp_probe user prog
+ * Description: tcp establish fd
  ******************************************************************************/
 #define _GNU_SOURCE
 #include <errno.h>
@@ -110,16 +110,28 @@ static int add_estab_tcp_fd(const struct estab_tcp_key *k,
     }
 
     if (item->v.num >= TCP_ESTAB_MAX || item->v.num < 0) {
-        ERROR("ERROR: add established tcp fd failed.(proc_id = %u)\n", k->proc_id);
+        ERROR("[TCPPROBE]: Add established tcp fd failed.(proc_id = %u)\n", k->proc_id);
         return -1;
     }
     item->v.fds[item->v.num].fd = fd;
     item->v.fds[item->v.num].role = role;
     item->v.num++;
+    INFO("[TCPPROBE]: Load established tcp(proc = %u, fd = %d)\n", k->proc_id, fd);
     return 0;
 }
 
 #if 1
+
+static int get_netns_fd(void)
+{
+    const char *fmt = "/proc/%u/ns/net";
+    char path[PATH_LEN];
+
+    path[0] = 0;
+    (void)snprintf(path, PATH_LEN, fmt, getpid());
+    return open(path, O_RDONLY);
+}
+
 static int pidfd_open(pid_t pid, unsigned int flags)
 {
     return syscall(__NR_pidfd_open, pid, flags);
@@ -143,7 +155,7 @@ static int enter_container_netns(const char *container_id)
 
     ret = get_container_pid(container_id, &pid);
     if (ret) {
-        ERROR("ERROR: get container pid failed.(%s, ret = %d)\n", container_id, ret);
+        ERROR("[TCPPROBE]: Get container pid failed.(%s, ret = %d)\n", container_id, ret);
         return ret;
     }
 
@@ -202,7 +214,7 @@ static int do_lkup_established_tcp(const char *container_id, int current_netns)
     if (container_id) {
         ret = enter_container_netns(container_id);
         if (ret) {
-            ERROR("ERROR: enter container netns failed.(%s, ret = %d)\n",
+            ERROR("[TCPPROBE]: Enter container netns failed.(%s, ret = %d)\n",
                 container_id, ret);
             return ret;
         }
@@ -216,21 +228,29 @@ static int do_lkup_established_tcp(const char *container_id, int current_netns)
     return 0;
 }
 
-void lkup_established_tcp(int current_netns)
+void lkup_established_tcp(void)
 {
     int i;
+    int netns_fd = 0;
+
+    netns_fd = get_netns_fd();
+    if (netns_fd <= 0) {
+        ERROR("[TCPPROBE]: Get netns fd failed.\n");
+        return;
+    }
 
     container_tbl* cstbl = get_all_container();
     if (cstbl != NULL) {
         container_info *p = cstbl->cs;
         for (i = 0; i < cstbl->num; i++) {
-            (void)do_lkup_established_tcp((const char *)p->abbrContainerId, current_netns);
+            (void)do_lkup_established_tcp((const char *)p->abbrContainerId, netns_fd);
             p++;
         }
         free_container_tbl(&cstbl);
     }
 
-    (void)do_lkup_established_tcp(NULL, current_netns);
+    (void)do_lkup_established_tcp(NULL, netns_fd);
+    (void)close(netns_fd);
 }
 
 #endif
@@ -247,7 +267,7 @@ static int is_need_load_established_tcp(struct probe_params *args, struct estab_
     }
     return 1;
 }
-
+
 static char is_invalid_established_tcp(struct estab_tcp_hash_t *item)
 {
     return (item->v.try_load_cnt >= MAX_TRY_LOAD);
@@ -311,7 +331,6 @@ void load_established_tcps(struct probe_params *args, int map_fd)
     }
 
     H_ITER(head, item, tmp) {
-
         if (is_invalid_established_tcp(item)) {
             H_DEL(head, item);
             (void)free(item);

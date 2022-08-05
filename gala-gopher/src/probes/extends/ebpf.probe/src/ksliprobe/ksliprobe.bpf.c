@@ -70,6 +70,20 @@ struct bpf_map_def SEC("maps") conn_samp_map = {
     .max_entries = MAX_CONN_LEN,
 };
 
+static __always_inline char is_redis_proc(void)
+{
+    char comm[TASK_COMM_LEN];
+
+    (void)bpf_get_current_comm(&comm, TASK_COMM_LEN);
+
+    if ((comm[0] == 'r') && (comm[1] == 'e')
+        && (comm[2] == 'd') && (comm[3] == 'i') && (comm[4] == 's')) {
+        return 1;
+    }
+
+    return 0;
+}
+
 static __always_inline void init_conn_key(struct conn_key_t *conn_key, int fd, int tgid)
 {
     conn_key->fd = fd;
@@ -97,7 +111,6 @@ static __always_inline int init_conn_id(struct conn_id_t *conn_id, int fd, int t
 
     conn_id->fd = fd;
     conn_id->tgid = tgid;
-    conn_id->ts_nsec = bpf_ktime_get_ns();
     return 0;
 }
 
@@ -121,6 +134,10 @@ static __always_inline int update_conn_map_n_conn_samp_map(int fd, int tgid, str
 
     if (init_conn_id(&conn_data.id, fd, tgid, sk) < 0) {
         return SLI_ERR;
+    }
+
+    if (is_redis_proc()) {
+        conn_data.id.protocol = PROTOCOL_REDIS;
     }
 
     err = bpf_map_update_elem(&conn_map, conn_key, &conn_data, BPF_ANY);
@@ -258,7 +275,7 @@ static __always_inline int parse_req(struct conn_data_t *conn_data, const unsign
     }
 
     // 解析请求中的command，确认协议
-    if (identify_protocol_redis(msg, conn_data->current.command) == SLI_OK) {
+    if (identify_protocol_redis(msg, conn_data->latency.command) == SLI_OK) {
         return PROTOCOL_REDIS;
     }
 
@@ -286,26 +303,22 @@ static __always_inline void periodic_report(u64 ts_nsec, struct conn_data_t *con
 {
     long err;
     u64 period = get_period();
+
     if (ts_nsec > conn_data->last_report_ts_nsec &&
         ts_nsec - conn_data->last_report_ts_nsec >= period) {
-        if (conn_data->sample_num > 0) {
-            if (conn_data->max.rtt_nsec < period) { // rtt larger than period is considered an invalid value
-                struct msg_event_data_t msg_evt_data = {0};
-                msg_evt_data.conn_id = conn_data->id;
-                msg_evt_data.sample_num = conn_data->sample_num;
-                msg_evt_data.server_ip_info = conn_data->id.server_ip_info;
-                msg_evt_data.client_ip_info = conn_data->id.client_ip_info;
-                msg_evt_data.max = conn_data->max;
-                msg_evt_data.min = conn_data->min;
-                msg_evt_data.recent = conn_data->recent;
-                err = bpf_perf_event_output(ctx, &msg_event_map, BPF_F_CURRENT_CPU,
-                                            &msg_evt_data, sizeof(struct msg_event_data_t));
-                if (err < 0) {
-                    bpf_printk("message event sent failed.\n");
-                }
+        if (conn_data->latency.rtt_nsec < period) { // rtt larger than period is considered an invalid value
+            struct msg_event_data_t msg_evt_data = {0};
+            msg_evt_data.conn_id = conn_data->id;
+            msg_evt_data.server_ip_info = conn_data->id.server_ip_info;
+            msg_evt_data.client_ip_info = conn_data->id.client_ip_info;
+            msg_evt_data.latency = conn_data->latency;
+            err = bpf_perf_event_output(ctx, &msg_event_map, BPF_F_CURRENT_CPU,
+                                        &msg_evt_data, sizeof(struct msg_event_data_t));
+            if (err < 0) {
+                bpf_printk("message event sent failed.\n");
             }
-            conn_data->sample_num = 0;
         }
+        conn_data->latency.rtt_nsec = 0;
         conn_data->last_report_ts_nsec = ts_nsec;
     }
     return;
@@ -331,27 +344,26 @@ static __always_inline void process_rdwr_msg(int fd, const char *buf, const unsi
         return;
     }
 
-    if (rw_type == MSG_READ) {
-        // 周期上报
-        periodic_report(ts_nsec, conn_data, ctx);
+    if ((rw_type == MSG_READ) && (conn_data->id.protocol == PROTOCOL_UNKNOWN)) {
+        enum conn_protocol_t protocol = parse_req(conn_data, count, buf);
+        conn_data->id.protocol = protocol;
+    }
 
+    if (conn_data->id.protocol == PROTOCOL_UNKNOWN) {
+        return;
+    }
+
+    if (rw_type == MSG_READ) {
         if (csd->status == SAMP_FINISHED) {
             csd->status = SAMP_INIT;
-            conn_data->current.rtt_nsec = csd->rtt_ts_nsec;
-            conn_data->recent = conn_data->current;
-            if (conn_data->sample_num == 0) {
-                conn_data->max = conn_data->recent;
-                conn_data->min = conn_data->recent;
-            } else {
-                if (conn_data->recent.rtt_nsec > conn_data->max.rtt_nsec) {
-                    conn_data->max = conn_data->recent;
-                } else if (conn_data->recent.rtt_nsec < conn_data->min.rtt_nsec) {
-                    conn_data->min = conn_data->recent;
-                }
+
+            if (conn_data->latency.rtt_nsec < csd->rtt_ts_nsec) {
+                conn_data->latency.rtt_nsec = csd->rtt_ts_nsec;
             }
-            __sync_fetch_and_add(&conn_data->sample_num, 1);
-            __builtin_memset(&(conn_data->current), 0x0, sizeof(conn_data->current));
         }
+
+        // 周期上报
+        periodic_report(ts_nsec, conn_data, ctx);
 
         if (csd->status != SAMP_INIT) {
             // 超过采样周期，则重置采样状态，避免采样状态一直处于不可达的情况
@@ -363,16 +375,14 @@ static __always_inline void process_rdwr_msg(int fd, const char *buf, const unsi
             return;
         }
 
-        enum conn_protocol_t protocol = parse_req(conn_data, count, buf);
-        if (protocol == PROTOCOL_UNKNOWN) {
-            return;
-        }
-        if (conn_data->sample_num == 0) {
-            conn_data->id.protocol = protocol;
-        }
+        __builtin_memset(conn_data->latency.command, 0x0, MAX_COMMAND_REQ_SIZE);
+        (void)parse_req(conn_data, count, buf);
+
+#ifndef KERNEL_SUPPORT_TSTAMP
         if (csd->start_ts_nsec == 0) {
             csd->start_ts_nsec = ts_nsec;
         }
+#endif
         csd->status = SAMP_READ_READY;
     } else {
         if (csd->status == SAMP_READ_READY) {
@@ -490,7 +500,8 @@ KPROBE(tcp_recvmsg, pt_regs)
 
     csd = (struct conn_samp_data_t *)bpf_map_lookup_elem(&conn_samp_map, &sk);
     if (csd != (void *)0) {
-        if (csd->status == SAMP_FINISHED || csd->status == SAMP_INIT) {
+        if ((csd->status == SAMP_FINISHED || csd->status == SAMP_INIT)
+            && (csd->start_ts_nsec == 0)) {
             if (sk != (void *)0) {
                 struct sk_buff *skb = _(sk->sk_receive_queue.next);
                 if (skb != (struct sk_buff *)(&sk->sk_receive_queue)){

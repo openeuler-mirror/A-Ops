@@ -17,6 +17,7 @@
 #endif
 #define BPF_PROG_KERN
 #include "bpf.h"
+#include "task.h"
 #include "proc_map.h"
 #include "output_proc.h"
 
@@ -99,96 +100,7 @@ KRAWTRACE(sys_exit, sys_exit_args)
     __sync_fetch_and_add(&(proc->syscall.failed), 1);
     proc->syscall.last_ret_code = ret;
     proc->syscall.last_syscall_id = id;
-    report_proc(ctx, proc);
+    report_proc(ctx, proc, TASK_PROBE_SYSCALL);
 }
 #endif
 
-static __always_inline void store_syscall_op_start_ts(void)
-{
-    struct proc_data_s *proc;
-    u32 proc_id = bpf_get_current_pid_tgid() >> INT_LEN;
-
-    proc = get_proc_entry(proc_id);
-    if (proc == NULL) {
-        return;
-    }
-
-    proc->syscall.syscall_start_ts = bpf_ktime_get_ns();
-}
-
-static __always_inline struct proc_data_s* get_syscall_op_us(u64 *res)
-{
-    struct proc_data_s *proc;
-    u64 ts = bpf_ktime_get_ns(), delta = 0;
-    u32 proc_id = bpf_get_current_pid_tgid() >> INT_LEN;
-
-    proc = get_proc_entry(proc_id);
-    if (proc == NULL) {
-        return NULL;
-    }
-
-    if (proc->syscall.syscall_start_ts == 0) {
-        return NULL;
-    }
-
-    if (ts > proc->syscall.syscall_start_ts) {
-        delta = ts - proc->syscall.syscall_start_ts;
-        proc->syscall.syscall_start_ts = 0;
-        *res = delta;
-        return proc;
-    } else {
-        proc->syscall.syscall_start_ts = 0;
-        return NULL;
-    }
-}
-
-
-#define KPROBE_SYSCALL(arch, func, field) \
-        KRETPROBE(arch##func, pt_regs) \
-        { \
-            u64 res; \
-            struct proc_data_s *proc = get_syscall_op_us(&res); \
-            \
-            if (proc && (res > proc->syscall.ns_##field)) { \
-                proc->syscall.ns_##field = res; \
-                report_proc(ctx, proc); \
-            } \
-        } \
-        \
-        KPROBE(arch##func, pt_regs) \
-        { \
-            store_syscall_op_start_ts(); \
-        }
-
-#if defined(__TARGET_ARCH_x86)
-KPROBE_SYSCALL(__x64_sys_, mount, mount)
-KPROBE_SYSCALL(__x64_sys_, umount, umount)
-KPROBE_SYSCALL(__x64_sys_, read, read)
-KPROBE_SYSCALL(__x64_sys_, write, write)
-KPROBE_SYSCALL(__x64_sys_, sendmsg, sendmsg)
-KPROBE_SYSCALL(__x64_sys_, recvmsg, recvmsg)
-KPROBE_SYSCALL(__x64_sys_, sched_yield, sched_yield)
-KPROBE_SYSCALL(__x64_sys_, futex, futex)
-KPROBE_SYSCALL(__x64_sys_, epoll_wait, epoll_wait)
-KPROBE_SYSCALL(__x64_sys_, epoll_pwait, epoll_pwait)
-KPROBE_SYSCALL(__x64_sys_, fork, fork)
-KPROBE_SYSCALL(__x64_sys_, vfork, vfork)
-KPROBE_SYSCALL(__x64_sys_, clone, clone)
-
-#elif defined(__TARGET_ARCH_arm64)
-
-KPROBE_SYSCALL(__arm64_sys_, mount, mount)
-KPROBE_SYSCALL(__arm64_sys_, umount, umount)
-KPROBE_SYSCALL(__arm64_sys_, read, read)
-KPROBE_SYSCALL(__arm64_sys_, write, write)
-KPROBE_SYSCALL(__arm64_sys_, sendmsg, sendmsg)
-KPROBE_SYSCALL(__arm64_sys_, recvmsg, recvmsg)
-KPROBE_SYSCALL(__arm64_sys_, sched_yield, sched_yield)
-KPROBE_SYSCALL(__arm64_sys_, futex, futex)
-KPROBE_SYSCALL(__arm64_sys_, epoll_wait, epoll_wait)
-KPROBE_SYSCALL(__arm64_sys_, epoll_pwait, epoll_pwait)
-KPROBE_SYSCALL(__arm64_sys_, fork, fork)
-KPROBE_SYSCALL(__arm64_sys_, vfork, vfork)
-KPROBE_SYSCALL(__arm64_sys_, clone, clone)
-
-#endif

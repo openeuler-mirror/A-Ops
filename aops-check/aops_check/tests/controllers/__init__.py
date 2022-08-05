@@ -1,5 +1,4 @@
 #!/usr/bin/python3
-# encoding: utf-8
 # ******************************************************************************
 # Copyright (c) Huawei Technologies Co., Ltd. 2022-2022. All rights reserved.
 # licensed under the Mulan PSL v2.

@@ -17,6 +17,7 @@
 #include <string.h>
 #include <unistd.h>
 #include "event.h"
+#include "nprobe_fprintf.h"
 #include "system_disk.h"
 
 #define METRICS_DF_NAME         "system_df"
@@ -133,7 +134,7 @@ int system_disk_probe(struct probe_params *params)
             continue;
         }
         /* output */
-        (void)fprintf(stdout, "|%s|%s|%s|%ld|%ld|%ld|%ld|%ld|%ld|%ld|%ld|\n",
+        (void)nprobe_fprintf(stdout, "|%s|%s|%s|%ld|%ld|%ld|%ld|%ld|%ld|%ld|%ld|\n",
             METRICS_DF_NAME,
             inode_stats.mount_on,
             inode_stats.fsys_type,
@@ -261,7 +262,7 @@ int system_iostat_probe(struct probe_params *params)
             cal_disk_io_stats(&temp, &g_disk_stats[index], &io_datas, params->period);
         }
 
-        (void)fprintf(stdout,
+        (void)nprobe_fprintf(stdout,
             "|%s|%s|%.2f|%.2f|%.2f|%.2f|%.2f|%.2f|%.2f|%.2f|%.2f|\n",
             METRICS_IOSTAT_NAME,
             g_disk_stats[index].disk_name,
