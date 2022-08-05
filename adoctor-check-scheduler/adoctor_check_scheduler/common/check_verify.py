@@ -64,7 +64,7 @@ class DeleteCheckRuleSchema(Schema):
     """
     validators for parameter of /check/rule/delete
     """
-    check_items = fields.List(fields.String(), required=True, validate=lambda s: len(s) >= 0)
+    check_items = fields.List(fields.String(), required=True, validate=lambda s: len(s) > 0)
 
 
 class GetCheckResultSchema(Schema):
