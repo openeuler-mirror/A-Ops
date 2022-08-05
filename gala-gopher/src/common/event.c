@@ -21,6 +21,9 @@
 #include <stdarg.h>
 #include "common.h"
 #include "event.h"
+#ifdef NATIVE_PROBE_FPRINTF
+#include "nprobe_fprintf.h"
+#endif
 
 static void __get_local_time(char *buf, int buf_len)
 {
@@ -28,7 +31,7 @@ static void __get_local_time(char *buf, int buf_len)
     struct tm tm;
     char time_str[TIME_STRING_LEN];
 
-    time(&rawtime);
+    (void)time(&rawtime);
     asctime_r(localtime_r(&rawtime, &tm), time_str);
     SPLIT_NEWLINE_SYMBOL(time_str);
     (void)snprintf(buf, (const int)buf_len, "%s", time_str);
@@ -72,6 +75,16 @@ void report_logs(const char* entityName,
     (void)vsnprintf(p, len, fmt, args);
     va_end(args);
 
+#ifdef NATIVE_PROBE_FPRINTF
+    (void)nprobe_fprintf(stdout, "|%s|%s|%s|%s|%s|%d|%s|\n",
+                         "event",
+                         entityName,
+                         entityId,
+                         metrics,
+                         secs[sec].sec_text,
+                         secs[sec].sec_number,
+                         body);
+#else
     (void)fprintf(stdout, "|%s|%s|%s|%s|%s|%d|%s|\n",
                           "event",
                           entityName,
@@ -80,5 +93,6 @@ void report_logs(const char* entityName,
                           secs[sec].sec_text,
                           secs[sec].sec_number,
                           body);
+#endif
     return;
 }

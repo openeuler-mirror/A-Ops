@@ -21,7 +21,7 @@
 #include <sys/prctl.h>
 #include <unistd.h>
 #include <stdarg.h>
-
+#include "nprobe_fprintf.h"
 #include "probe.h"
 
 #define MACRO2STR1(MACRO) #MACRO
@@ -277,7 +277,7 @@ static char* __number(char *str, unsigned long long num, int base, int size, int
     return str;
 }
 
-int __wrap_fprintf(FILE *stream, const char *format, ...)
+int nprobe_fprintf(FILE *stream, const char *format, ...)
 {
     int len;
     unsigned long long num;

@@ -1,10 +1,11 @@
 #include <stdio.h>
 #include <string.h>
 #include "args.h"
+#include "nprobe_fprintf.h"
 
 void example_collect_data()
 {
-    fprintf(stdout, "|%s|%s|%s|%s|\n",
+    nprobe_fprintf(stdout, "|%s|%s|%s|%s|\n",
         "example",
         "10",
         "88",
