@@ -11,7 +11,9 @@
 # See the Mulan PSL v2 for more details.
 # ******************************************************************************/
 from typing import Optional
+
 import pandas as pd
+
 from aops_check.core.experiment.algorithm.base_algo import BaseSingleItemAlgorithm
 
 

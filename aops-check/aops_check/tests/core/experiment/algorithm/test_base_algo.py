@@ -11,16 +11,53 @@
 # See the Mulan PSL v2 for more details.
 # ******************************************************************************/
 import unittest
+from aops_check.core.experiment.algorithm.base_algo import BaseSingleItemAlgorithm, \
+    BaseMultiItemAlgorithmOne, BaseMultiItemAlgorithmTwo
 
-from aops_check.core.experiment.algorithm.base_algo import BaseAlgorithm
+
+class TestBaseSingleItemAlgorithm(unittest.TestCase):
+    """
+    test base algo class BaseSingleItemAlgorithm
+    """
+
+    def test_init_object_should_raise_error_when_calculate_function_wasnt_reloaded(self):
+        class NewAlgo(BaseSingleItemAlgorithm):
+            pass
+
+        def mock_init_algo_object():
+            new_algo = NewAlgo()
+            return new_algo
+
+        self.assertRaises(TypeError, mock_init_algo_object)
 
 
-class TestBaseAlgorithm(unittest.TestCase):
+class TestBaseMultiItemAlgorithmOne(unittest.TestCase):
+    """
+    test base algo class BaseMultiItemAlgorithmOne
+    """
+
+    def test_init_object_should_raise_error_when_calculate_function_wasnt_reloaded(self):
+        class NewAlgo(BaseMultiItemAlgorithmOne):
+            pass
+
+        def mock_init_algo_object():
+            new_algo = NewAlgo()
+            return new_algo
+
+        self.assertRaises(TypeError, mock_init_algo_object)
+
+
+class TestBaseMultiItemAlgorithmTwo(unittest.TestCase):
     """
     test algorithm xgboost
     """
-    def test_inherit(self):
-        class NewAlgo(BaseAlgorithm):
+
+    def test_init_object_should_raise_error_when_calculate_function_wasnt_reloaded(self):
+        class NewAlgo(BaseMultiItemAlgorithmTwo):
             pass
-        new_algo = NewAlgo()
-        self.assertRaises(new_algo.calculate())
+
+        def mock_init_algo_object():
+            new_algo = NewAlgo()
+            return new_algo
+
+        self.assertRaises(TypeError, mock_init_algo_object)

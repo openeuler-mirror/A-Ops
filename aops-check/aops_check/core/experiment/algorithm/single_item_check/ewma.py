@@ -11,40 +11,40 @@
 # See the Mulan PSL v2 for more details.
 # ******************************************************************************/
 from typing import Optional
-import numpy as np
+
+import pandas as pd
+
 from aops_check.core.experiment.algorithm.base_algo import BaseSingleItemAlgorithm
 
 
-class NSigma(BaseSingleItemAlgorithm):
+class EWMA(BaseSingleItemAlgorithm):
 
-    def __init__(self, n: int = 3):
-        self._n = n
+    def __init__(self, var_times: int = 10, alpha: float = 0.9, adjust: bool = True) -> None:
+        self._var_times = var_times
+        self._alpha = alpha
+        self._adjust = adjust
 
     def calculate(self, data: list, time_range: Optional[list] = None) -> list:
         """
-        overload calculate function
+        overload the calculate function
         Args:
             data: single item data with timestamp, like [[1658544527, 100], [1658544527, 100]...]
             time_range: time range of checking. only error found in this range could be record
+
         Returns:
             list: abnormal data with timestamp, like [[1658544527, 100], [1658544527, 100]...]
         """
-        data_time = []
-        data_value = []
+        data = pd.DataFrame(data)
+        data_time = data[0]
+        data_value = data[1]
 
-        for single_data in data:
-            data_time.append(single_data[0])
-            data_value.append(single_data[1])
-
-        ymean = np.mean(data_value)
-        ystd = np.std(data_value)
-        threshold1 = ymean - self._n * ystd
-        threshold2 = ymean + self._n * ystd
+        ewma_line = pd.DataFrame.ewm(data_value, alpha=self._alpha, adjust=self._adjust).mean()
+        ewma_var = self._calculate_variance(data_value, ewma_line)
+        var_delta = ewma_var * self._var_times
 
         abnormal_data = []
-
-        for index in range(0, len(data_value)):
-            if not (data_value[index] < threshold1) | (data_value[index] > threshold2):
+        for index in ewma_line.index:
+            if ewma_line[index] - var_delta <= data_value[index] <= ewma_line[index] + var_delta:
                 continue
             if not time_range:
                 abnormal_data.append([data_time[index], data_value[index]])
@@ -53,3 +53,16 @@ class NSigma(BaseSingleItemAlgorithm):
                 abnormal_data.append([data_time[index], data_value[index]])
 
         return abnormal_data
+
+    @staticmethod
+    def _calculate_variance(data: list, moving_average: pd.core.series.Series):
+        variance = 0
+        flag_list = moving_average.isnull()
+        count = 0
+        for index in range(len(data)):
+            if flag_list[index]:
+                count += 1
+                continue
+            variance += (data[index] - moving_average[index]) ** 2
+        variance /= (len(data) - count)
+        return variance
