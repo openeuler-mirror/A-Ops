@@ -12,12 +12,22 @@
 # ******************************************************************************/
 import re
 from typing import Any
+import json
 
 import connexion
+import requests
 from flask import make_response
 
+from aops_agent.conf.constant import DATA_MODEL, DEFAULT_TOKEN_PATH
+from aops_agent.conf import configuration
+from aops_agent.conf.status import PARAM_ERROR, HTTP_CONNECT_ERROR, SUCCESS
 from aops_agent.manages.token_manage import TokenManage as TOKEN
-from aops_agent.tools.util import get_shell_data
+from aops_agent.tools.util import (
+    get_shell_data,
+    validate_data,
+    get_uuid,
+    get_host_ip, save_data_to_file
+)
 
 
 class Command:
@@ -70,3 +80,53 @@ class Command:
             return res
 
         return wrapper
+
+    @classmethod
+    def register(cls, register_info: dict) -> int:
+        """
+        register on manager
+        Args:
+            register_info(dict): It contains the necessary information to register an account
+            for example:
+            {
+              "web_username": "string",
+              "web_password": "string",
+              "manager_ip": "string",
+              "manager_port": "string",
+              "host_name": "string",
+              "host_group_name": "string",
+              "management": true
+            }
+        Returns:
+            str: status code
+        """
+        if not validate_data(register_info, DATA_MODEL.get('register_schema')):
+            return PARAM_ERROR
+
+        data = {}
+        data['host_name'] = register_info.get('host_name')
+        data['host_group_name'] = register_info.get('host_group_name')
+        data['management'] = register_info.get('management') or False
+        data['username'] = register_info.get('web_username')
+        data['password'] = register_info.get('web_password')
+        data['host_id'] = get_uuid()
+        data['public_ip'] = get_host_ip()
+        data['agent_port'] = register_info.get('agent_port') or \
+                             configuration.agent.get('PORT')
+
+        manager_ip = register_info.get('manager_ip')
+        manager_port = register_info.get('manager_port')
+        url = f'http://{manager_ip}:{manager_port}/manage/host/add'
+        try:
+            ret = requests.post(url, data=json.dumps(data),
+                                headers={'content-type': 'application/json'}, timeout=5)
+        except requests.exceptions.ConnectionError:
+            return HTTP_CONNECT_ERROR
+        ret_data = json.loads(ret.text)
+        if ret_data.get('code') == SUCCESS:
+            TOKEN.set_value(ret_data.get('token'))
+            save_data_to_file(json.dumps({"access_token": ret_data.get('token')}),
+                              DEFAULT_TOKEN_PATH)
+            return SUCCESS
+        else:
+            return int(ret_data.get('code'))

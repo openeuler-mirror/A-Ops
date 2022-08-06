@@ -16,26 +16,34 @@ from typing import NoReturn
 
 from aops_agent.conf.constant import DEFAULT_TOKEN_PATH
 
-global TOKEN
-
 
 class TokenManage:
-    mutex = threading.Lock()
+    _mutex = threading.Lock()
+    token = ''
+    flag = False
+
+    def __init__(self):
+        """
+        Class instance initialization.
+        """
+        if TokenManage.flag:
+            return
+        TokenManage.token = ''
+        TokenManage.flag = True
 
     @classmethod
-    def init(cls) -> NoReturn:
+    def load_token(cls) -> NoReturn:
         """
-            init global var _TOKEN
+            load token from file
         """
-        global TOKEN
-        TokenManage.mutex.acquire()
         try:
             with open(DEFAULT_TOKEN_PATH, "r") as f:
                 row_data = json.load(f)
-                TOKEN = row_data.get('access_token', '')
+                cls.token = row_data.get('access_token', '')
         except FileNotFoundError:
-            TOKEN = ''
-        TokenManage.mutex.release()
+            cls.token = ''
+        except json.decoder.JSONDecodeError:
+            cls.token = ''
 
     @classmethod
     def set_value(cls, value: str) -> NoReturn:
@@ -44,17 +52,17 @@ class TokenManage:
         Args:
             value: token string
         """
-        global TOKEN
-        TokenManage.mutex.acquire()
-        TOKEN = value
-        TokenManage.mutex.release()
+        TokenManage._mutex.acquire()
+        cls.token = value
+        TokenManage._mutex.release()
 
     @classmethod
     def get_value(cls) -> str:
         """
             get token
         """
-        TokenManage.mutex.acquire()
-        token = TOKEN
-        TokenManage.mutex.release()
-        return token
+        TokenManage._mutex.acquire()
+        if cls.token == "":
+            cls.load_token()
+        cls._mutex.release()
+        return cls.token

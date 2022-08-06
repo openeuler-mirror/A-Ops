@@ -60,6 +60,7 @@ def agent_plugin_info() -> List[dict]:
 
         if not plugin_install_judge(plugin_name):
             plugin_running_info['is_installed'] = False
+            continue
         else:
             plugin_running_info['is_installed'] = True
 
