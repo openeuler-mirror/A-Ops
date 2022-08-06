@@ -95,7 +95,7 @@ void report_tcp_abn_evt(struct probe_params *args, struct tcp_metrics_s *metrics
         }
         report_logs(OO_NAME,
                     entityId,
-                    "backlog_drops",
+                    "filter_drops",
                     EVT_SEC_WARN,
                     "TCP filter drops(%u).",
                     abn_stats->filter_drops);
