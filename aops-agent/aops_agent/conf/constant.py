@@ -44,7 +44,15 @@ DATA_MODEL = {
             "agent_port": {"type": "string", "minLength": 1}
         }}}
 INSTALLABLE_PLUGIN = ['gopher']
-RPM_INFO = {"gopher": "gala-gopher"}
+INFORMATION_ABOUT_RPM_SERVICE = {
+    "gopher":   {"rpm_name": "gala-gopher", "service_name": "gala-gopher"},
+    "mysql":    {"rpm_name": "mysql5",      "service_name": "mysqld"},
+    "k8s":      {"rpm_name": "kubernetes",  "service_name": "kubernetes"},
+    "hadoop":   {"rpm_name": "hadoop",      "service_name": "hadoop"},
+    "nginx":    {"rpm_name": "nginx",       "service_name": "nginx"},
+    "docker":   {"rpm_name": "docker",      "service_name": "docker"},
+}
+SCANNED_APPLICATION = ["mysql", "k8s", "hadoop", "nginx", "docker", "gopher"]
 REGISTER_HELP_INFO = """
     you can choose start or register in manager,
     if you choose register,you need to provide the following information.

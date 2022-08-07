@@ -13,9 +13,11 @@
 from __future__ import absolute_import
 
 import json
+from unittest import mock
 
 import requests
 
+from aops_agent.manages.token_manage import TokenManage
 from aops_agent.tests import BaseTestCase
 
 
@@ -128,3 +130,27 @@ class TestAgentController(BaseTestCase):
         headers = {'Content-Type': 'application/json', 'access_token': '123456'}
         response = requests.post(url, headers=headers)
         self.assert400(response, response.text)
+
+
+class TestGetApplicationInfo(BaseTestCase):
+
+    def test_get_application_info_should_return_target_app_running_info_when_with_correct_token(self):
+        TokenManage.set_value('13965d8302b5246a13352680d7c8e602')
+        headers = {'Content-Type': 'application/json', 'access_token': '13965d8302b5246a13352680d7c8e602'}
+        with mock.patch('aops_agent.controllers.agent_controller.plugin_status_judge') as mock_plugin_status:
+            mock_plugin_status.return_value = 'Active: active (running)'
+            response = self.client.get('/v1/agent/application/info', headers=headers)
+            self.assert200(response, response.text)
+
+    def test_get_application_info_should_return_401_when_with_incorrect_token(self):
+        headers = {'Content-Type': 'application/json', 'access_token': '123456'}
+        response = self.client.get('/v1/agent/application/info', headers=headers)
+        self.assert401(response, response.text)
+
+    def test_get_application_info_should_return_400_when_with_no_token(self):
+        response = self.client.get('/v1/agent/application/info')
+        self.assert400(response, response.text)
+
+    def test_get_application_info_should_return_405_when_request_by_incorrect_method(self):
+        response = self.client.post('/v1/agent/application/info')
+        self.assert405(response, response.text)

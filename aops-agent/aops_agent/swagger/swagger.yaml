@@ -118,6 +118,23 @@ paths:
           schema:
             $ref: '#/definitions/ErrorRsp'
       x-swagger-router-controller: "aops_agent.controllers.agent_controller"
+  /agent/application/info:
+    get:
+      tags:
+        - agent
+      operationId: get_application_info
+      parameters:
+        - name: access_token
+          in: header
+          description: 授权码
+          type: string
+          required: true
+      responses:
+        '200':
+          description: 获取agent当前运行的应用
+          schema:
+            $ref: '#/definitions/get_application_info_rsp'
+      x-swagger-router-controller: "aops_agent.controllers.agent_controller"
 definitions:
   ErrorRsp:
     required:
@@ -219,3 +236,12 @@ definitions:
       - resource
       - is_installed
       - status
+  get_application_info_rsp:
+    description: 目标应用运行状态
+    additionalProperties:
+      type: string
+    example:
+        docker: active
+        nginx: inactive
+        gopher: active
+        mysql: active

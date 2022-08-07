@@ -14,8 +14,9 @@ SUCCESS = 200
 FILE_CORRUPTED = 202
 PARTIAL_SUCCEED = 206
 FILE_NOT_FOUND = 410
-PARAM_ERROR = 400
+PARAM_ERROR = 1000
 CONFLICT_ERROR = 409
+SERVER_ERROR = 500
 HTTP_CONNECT_ERROR = 1001
 UNKNOWN_ERROR = 1002
 
@@ -32,7 +33,7 @@ class StatusCode:
             'msg': 'file structure corrupted'
         },
         PARTIAL_SUCCEED: {
-            'msg': 'request partial succceed'
+            'msg': 'request partial succeed'
         },
         FILE_NOT_FOUND: {
             'msg': 'file not found'
@@ -61,6 +62,7 @@ class StatusCode:
         """
         message = cls.mapping.get(code) or cls.mapping.get(UNKNOWN_ERROR)
         response_body = {
+            "code": code,
             "msg": message.get("msg"),
         }
         return response_body

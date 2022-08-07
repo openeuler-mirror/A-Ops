@@ -21,7 +21,7 @@ from subprocess import Popen, PIPE, STDOUT
 from libconf import load, ConfigParseError, AttrDict
 from flask import Response, make_response
 from jsonschema import validate, ValidationError
-from aops_agent.conf.constant import DATA_MODEL, RPM_INFO
+from aops_agent.conf.constant import DATA_MODEL, INFORMATION_ABOUT_RPM_SERVICE
 from aops_agent.log.log import LOGGER
 from aops_agent.models.custom_exception import InputError
 
@@ -92,22 +92,6 @@ def get_shell_data(command_list: List[str],
     return res
 
 
-def create_response(status_code: int, data: str) -> Response:
-    """
-        Construct the response body
-
-    Args:
-        status_code (int): http status code
-        data (str): json data
-
-    Returns:
-        Response body
-    """
-    rsp = make_response(data)
-    rsp.status_code = status_code
-    return rsp
-
-
 def load_gopher_config(gopher_config_path: str) -> AttrDict:
     """
     get AttrDict from config file
@@ -130,7 +114,7 @@ def load_gopher_config(gopher_config_path: str) -> AttrDict:
     return cfg
 
 
-def plugin_install_judge(plugin_name: str) -> str:
+def plugin_status_judge(plugin_name: str) -> str:
     """
     judge if the plugin is installed
 
@@ -140,10 +124,13 @@ def plugin_install_judge(plugin_name: str) -> str:
     Returns:
         str: plugin running status
     """
-    rpm_name = RPM_INFO.get(plugin_name, "")
-    if rpm_name == "":
+    if plugin_name in INFORMATION_ABOUT_RPM_SERVICE.keys():
+        service_name = INFORMATION_ABOUT_RPM_SERVICE.get(plugin_name).get('service_name')
+        if service_name is None:
+            return ""
+    else:
         return ""
-    status_info = get_shell_data(["systemctl", "status", rpm_name], key=False)
+    status_info = get_shell_data(["systemctl", "status", service_name], key=False)
     res = get_shell_data(["grep", "Active"], stdin=status_info.stdout)
     return res
 

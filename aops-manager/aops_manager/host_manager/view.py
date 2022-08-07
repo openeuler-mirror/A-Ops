@@ -307,7 +307,7 @@ class GetHostInfo(BaseResponse):
             for query in query_list:
                 host_info = {'host_id': query.host_id}
                 incorrect_host_list.remove(query.host_id)
-                url = f"http://{query.public_ip}:{configuration.agent.get('PORT')}{ROUTE_AGENT_HOST_INFO}"
+                url = f"http://{query.public_ip}:{query.agent_port}{ROUTE_AGENT_HOST_INFO}"
                 ret = self.get_response("GET", url, {}, header=headers)
                 if ret.get('code') is None:
                     host_info['host_info'] = ret
