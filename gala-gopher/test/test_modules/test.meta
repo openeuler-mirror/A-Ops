@@ -3,7 +3,8 @@ version: "1.0.0"
 measurements:
 (
     {
-        name: "test",
+        table_name: "test",
+        entity_name: "test",
         fields:
         (
             {
