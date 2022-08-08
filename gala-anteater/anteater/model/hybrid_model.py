@@ -17,6 +17,7 @@ Description: The implementation of hybrid model which is a multiple time-series 
 """
 
 import time
+from argparse import ArgumentError
 from datetime import datetime, timedelta
 from functools import reduce
 from typing import Tuple, List
@@ -26,6 +27,7 @@ import pandas as pd
 
 from anteater.model.algorithms.normalization import Normalization
 from anteater.model.algorithms.random_forest import RandomForest
+from anteater.model.algorithms.vae import VAEPredict
 from anteater.source.metric_loader import MetricLoader
 from anteater.utils.config_parser import ModelSettings
 from anteater.utils.data_process import load_metric_operator, parse_operator, metric_value_to_df
@@ -39,16 +41,28 @@ class HybridModel:
     based on multiple time series dataset.
     """
 
-    def __init__(self) -> None:
+    def __init__(self, model) -> None:
         """The hybrid model initializer"""
         settings = ModelSettings()
         props = settings.hybrid_properties
         self.metric_operators = load_metric_operator()
         self.unique_metrics = set([m for m, _ in self.metric_operators])
-        self.pipeline = [
-            ("classifier", RandomForest())
-        ]
         self.threshold = float(props["threshold"])
+        self.model = model
+        self.pipeline = self.select_pipe()
+
+    def select_pipe(self):
+        if self.model == "random_forest":
+            return [
+                ("classifier", RandomForest()),
+            ]
+        elif self.model == "vae":
+            return [
+                ("norm", Normalization()),
+                ("classifier", VAEPredict()),
+            ]
+        else:
+            raise ArgumentError(f"Unknow model name {self.model}.")
 
     def __get_dataframe(self, tim_start: datetime, tim_end: datetime) \
             -> Tuple[List[str], List[pd.DataFrame]]:
@@ -113,7 +127,7 @@ class HybridModel:
 
     def get_training_data(self, utc_now: datetime):
         """Get the training data to support model training"""
-        tim_start = utc_now - timedelta(minutes=100)
+        tim_start = utc_now - timedelta(days=1)
         tim_end = utc_now
         log.info(f"Get training data during {tim_start} to {tim_end}!")
 

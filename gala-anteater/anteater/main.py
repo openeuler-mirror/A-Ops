@@ -15,6 +15,7 @@ Time:
 Author:
 Description: The main function of gala-anteater project.
 """
+
 import argparse
 from datetime import datetime, timezone
 from functools import partial
@@ -79,8 +80,8 @@ def anomaly_detection(hybrid_model, key_metric_model, post_model, parser: Dict[s
 
         y_pred = hybrid_model.predict(df)
         is_abnormal = hybrid_model.is_abnormal(y_pred)
-        if is_abnormal:
-            key_metric_anomalies = key_metric_model.detect_key_metric(utc_now, machine_id)
+        key_metric_anomalies = key_metric_model.detect_key_metric(utc_now, machine_id)
+        if is_abnormal or any([s for s in key_metric_anomalies if round(s[2]/1000000) > 500]):
             rec_anomalies = post_model.top_n_anomalies(utc_now, machine_id, top_n=30)
             for anomalies in key_metric_anomalies:
                 msg = get_kafka_message(round(utc_now.timestamp()), y_pred.tolist(),
@@ -99,13 +100,14 @@ def main():
     update_service_settings(parser)
     sub_thread = update_entity_variable()
 
-    hybrid_model = HybridModel()
+    hybrid_model = HybridModel(model=parser["model"])
     key_metric_model = KeyMetricModel()
     post_model = PostModel()
 
     if parser["retrain"]:
         log.info("Start to re-train the model based on last day metrics dataset!")
         x = hybrid_model.get_training_data(utc_now)
+        log.info(f"The shape of training data: {x.shape}")
         hybrid_model.training(x)
 
     log.info(f"Schedule recurrent job with time interval {parser['duration']} minute(s).")
