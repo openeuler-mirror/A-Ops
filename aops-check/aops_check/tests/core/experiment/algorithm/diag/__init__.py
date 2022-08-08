@@ -15,21 +15,3 @@ Time:
 Author:
 Description:
 """
-class Algorithm:
-    def train(self):
-        ...
-
-    def test(self):
-        ...
-
-    def run(self):
-        ...
-
-    def evaluate(self):
-        ...
-
-    def load(self):
-        ...
-
-    def dump(self):
-        ...
