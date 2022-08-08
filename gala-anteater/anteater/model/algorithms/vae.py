@@ -56,28 +56,26 @@ class VAEPredict:
             log.warning("VAE model parameters was not found! Please run model training in advance!")
             return {}
 
-        flags = os.O_WRONLY | os.O_CREAT | os.O_EXCL
         modes = stat.S_IWUSR | stat.S_IRUSR
-        with os.fdopen(open(self.param_path, flags, modes), "r") as f_out:
+        with os.fdopen(os.open(self.param_path, os.O_RDONLY, modes), "r") as f_out:
             parameters = json.load(f_out)
         return parameters
 
     def dump_parameters(self, parameters):
         """Dumps the parameters to the file"""
-        flags = os.O_WRONLY | os.O_CREAT | os.O_EXCL
         modes = stat.S_IWUSR | stat.S_IRUSR
-        with os.fdopen(open(self.param_path, flags, modes), "w") as f_in:
+        with os.fdopen(os.open(self.param_path, os.O_WRONLY | os.O_CREAT, modes), "w") as f_in:
+            f_in.truncate(0)
             json.dump(parameters, f_in)
 
     def load_model(self):
         """Load variational auto-encoder model"""
         model = None
-        file_path = get_file_path(self.model_path)
-        if not os.path.isfile(file_path):
-            log.warning("VAE model was not found! Please run model training in advance!")
+        if not os.path.isfile(self.model_path):
+            log.error("VAE model was not found! Please run model training in advance!")
             return model
 
-        model = torch.load(file_path)
+        model = torch.load(self.model_path)
         model.eval()
         return model
 
@@ -110,6 +108,8 @@ class VAEPredict:
         x_tensor = torch.Tensor(x_train)
         output = vae(x_tensor)
         y_score = torch.mean(torch.abs(output - x_tensor)).detach().numpy()
+
+        self.vae_model = vae
 
         if not self.parameters:
             self.parameters = {}

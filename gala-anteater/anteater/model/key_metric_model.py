@@ -30,7 +30,7 @@ class KeyMetricModel:
 
     def __init__(self):
         """The post model initializer"""
-        self.key_metric = "gala_gopher_ksliprobe_recent_rtt_nsec"
+        self.key_metric = "gala_gopher_sli_rtt_nsec"
 
     @staticmethod
     def predict(x: List) -> float:
@@ -46,7 +46,7 @@ class KeyMetricModel:
 
     def detect_key_metric(self, utc_now: datetime, machine_id: str) -> List[Tuple[Any, dict, Any]]:
         """Detects key metric by rule-based model"""
-        tim_start = utc_now - timedelta(minutes=10)
+        tim_start = utc_now - timedelta(minutes=1)
         tim_end = utc_now
 
         metric_loader = MetricLoader(tim_start, tim_end)
