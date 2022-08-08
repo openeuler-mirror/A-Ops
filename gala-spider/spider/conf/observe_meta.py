@@ -28,16 +28,13 @@ class EntityType(ValueCheckEnum):
     APPINSTANCE = 'appinstance'
     PROCESS = 'proc'
     THREAD = 'thread'
-    BIND = 'bind'
-    UDP = 'udp'
-    CONNECT = 'connect'
-    LISTEN = 'listen'
+    ENDPOINT = 'endpoint'
     TCP_LINK = 'tcp_link'
     IPVS_LINK = 'ipvs_link'
     NGINX_LINK = 'nginx_link'
     HAPROXY_LINK = 'haproxy_link'
     REDIS_CLIENT = 'redis_client'
-    REDIS_SLI = 'ksliprobe'
+    REDIS_SLI = 'sli'
     DISK = 'disk'
     BLOCK = 'block'
     NETCARD = 'nic'
@@ -81,10 +78,7 @@ entity_level_map = {
     EntityType.THREAD.value: TopologyLevelType.PROCESS.value,
     EntityType.CONTAINER.value: TopologyLevelType.PROCESS.value,
     EntityType.APPINSTANCE.value: TopologyLevelType.PROCESS.value,
-    EntityType.LISTEN.value: TopologyLevelType.PROCESS.value,
-    EntityType.CONNECT.value: TopologyLevelType.PROCESS.value,
-    EntityType.UDP.value: TopologyLevelType.PROCESS.value,
-    EntityType.BIND.value: TopologyLevelType.PROCESS.value,
+    EntityType.ENDPOINT.value: TopologyLevelType.PROCESS.value,
     EntityType.REDIS_SLI.value: TopologyLevelType.PROCESS.value,
     # RPC level
     EntityType.TCP_LINK.value: TopologyLevelType.RPC.value,

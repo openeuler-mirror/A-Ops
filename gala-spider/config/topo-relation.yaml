@@ -70,55 +70,7 @@ topo_relations:
                 from: machine_id
                 to: machine_id
   -
-    type: bind
-    dependingitems:
-      -
-        id: belongs_to
-        layer: direct
-        toTypes:
-          -
-            type: proc
-            matches:
-              -
-                from: tgid
-                to: tgid
-              -
-                from: machine_id
-                to: machine_id
-  -
-    type: udp
-    dependingitems:
-      -
-        id: belongs_to
-        layer: direct
-        toTypes:
-          -
-            type: proc
-            matches:
-              -
-                from: tgid
-                to: tgid
-              -
-                from: machine_id
-                to: machine_id
-  -
-    type: connect
-    dependingitems:
-      -
-        id: belongs_to
-        layer: direct
-        toTypes:
-          -
-            type: proc
-            matches:
-              -
-                from: tgid
-                to: tgid
-              -
-                from: machine_id
-                to: machine_id
-  -
-    type: listen
+    type: endpoint
     dependingitems:
       -
         id: belongs_to
@@ -173,7 +125,7 @@ topo_relations:
                 from: role
                 to: role
   -
-    type: ksliprobe
+    type: sli
     dependingitems:
       -
         id: belongs_to
