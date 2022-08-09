@@ -18,9 +18,10 @@ Description: url set
 from aops_check.conf.constant import (
     QUERY_APP,
     QUERY_APP_LIST,
-    CREATE_APP
+    CREATE_APP,
+    IDENTIFY_SCENE
 )
-from aops_check.controllers import app_controller
+from aops_check.controllers import app_controller, scene_controller
 
 URLS = []
 
@@ -29,6 +30,9 @@ SPECIFIC_URLS = {
         (app_controller.CreateApp, CREATE_APP),
         (app_controller.QueryApp, QUERY_APP),
         (app_controller.QueryAppList, QUERY_APP_LIST)
+    ],
+    'SCENE_URLS': [
+        (scene_controller.RecognizeScene, IDENTIFY_SCENE)
     ]
 }
 

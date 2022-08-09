@@ -141,7 +141,7 @@ KPROBE_RET(tcp_filter, pt_regs, CTX_KERNEL)
         }
     }
 }
-
+#ifndef TCP_WRITE_ERR_PROBE_OFF
 KPROBE(tcp_write_err, pt_regs)
 {
     struct sock *sk = (struct sock *)PT_REGS_PARM1(ctx);
@@ -154,7 +154,7 @@ KPROBE(tcp_write_err, pt_regs)
         report_abn(ctx, metrics, sk, 0);
     }
 }
-
+#endif
 KRAWTRACE(sock_exceed_buf_limit, bpf_raw_tracepoint_args)
 {
     struct sock *sk = (struct sock*)ctx->args[0];

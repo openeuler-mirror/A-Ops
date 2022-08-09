@@ -15,7 +15,7 @@ Time:
 Author:
 Description:
 """
-from typing import Dict, Tuple
+from typing import Dict, Tuple, List
 from collections import defaultdict
 
 APP_SCENE_MAP = {
@@ -74,29 +74,28 @@ class PackageWeightIdentify:
     """
     Identify host's scene by mapping application with scene
     """
-    __slots__ = ["__application", "__app_scene_map", "__scene_collect_map"]
+    __slots__ = ["__application", "__support_collect_items", "__app_scene_map", "__scene_collect_map"]
+    PluginsCollectItems = Dict[str, List[str]]
 
-    def __init__(self, applications: list, app_scene_map: Dict = None,
-                 scene_collect_map: Dict = None):
+    def __init__(self, applications: list, collect_items: PluginsCollectItems, app_scene_map: dict = None,
+                 scene_collect_map: Dict[str, PluginsCollectItems] = None):
         """
         init class
         Args:
             applications: application result
+            collect_items: plugins' support collect items
             app_scene_map: app and scene's matching relationship
             scene_collect_map: scene and collect items' matching relationship
         """
-        if app_scene_map is None:
-            app_scene_map = APP_SCENE_MAP
-        if scene_collect_map is None:
-            scene_collect_map = SCENE_COLLECT_MAP
-        if "unknown" not in scene_collect_map:
+        self.__application = applications
+        self.__support_collect_items = collect_items
+        self.__app_scene_map = app_scene_map or APP_SCENE_MAP
+        self.__scene_collect_map = scene_collect_map or SCENE_COLLECT_MAP
+
+        if "unknown" not in self.__scene_collect_map:
             raise ValueError("An 'unknown' scene should be given in case of no scene matches.")
 
-        self.__application = applications
-        self.__app_scene_map = app_scene_map
-        self.__scene_collect_map = scene_collect_map
-
-    def get_scene(self) -> Tuple[str, Dict]:
+    def get_scene(self) -> Tuple[str, PluginsCollectItems]:
         """
         Get scene and relative collect items.
         """
@@ -114,5 +113,22 @@ class PackageWeightIdentify:
             sorted_scene = sorted(scene_score, key=lambda x: x[1])
             recommend_scene = sorted_scene[0]
 
-        recommend_collect_item = self.__scene_collect_map[recommend_scene]
+        scene_collect_item = self.__scene_collect_map[recommend_scene]
+        recommend_collect_item = self.__get_reco_collect_items(self.__support_collect_items,
+                                                               scene_collect_item)
         return recommend_scene, recommend_collect_item
+
+    @staticmethod
+    def __get_reco_collect_items(support_collect_item: PluginsCollectItems,
+                                 scene_collect_item: PluginsCollectItems) -> PluginsCollectItems:
+        """
+        get recommended collect items of a host
+        """
+        reco_collect_items = {}
+        for plugin in scene_collect_item:
+            if plugin not in support_collect_item:
+                continue
+            collect_items = list(set(support_collect_item[plugin]) & set(scene_collect_item[plugin]))
+            if collect_items:
+                reco_collect_items[plugin] = collect_items
+        return reco_collect_items

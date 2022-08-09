@@ -20,5 +20,5 @@ from marshmallow import fields
 
 
 class IdentifySceneSchema(Schema):
-    applications = fields.List(fields.String(validate=lambda s: len(s) != 0), required=False)
-    collect_items = fields.Dict(required=False)
+    applications = fields.List(fields.String(validate=lambda s: len(s) != 0), required=True)
+    collect_items = fields.Dict(required=True)

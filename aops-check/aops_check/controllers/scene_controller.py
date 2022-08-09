@@ -29,14 +29,23 @@ class RecognizeScene(BaseResponse):
     @staticmethod
     def _handle(args: Dict) -> Tuple[int, Dict]:
         """
-        generate uuid
+        identify scene and recommend collect items
+        Args:
+            args: host info. e.g.
+                {
+                    "applications": ["nginx"],
+                    "collect_items": {
+                        "gala-gopher": ["prob1", "prob2"]
+                    }
+                }
         """
         result = {}
         applications = args["applications"]
-        identify_algo = PackageWeightIdentify(applications)
-        scene, collect_items = identify_algo.get_scene()
+        collect_items = args["collect_items"]
+        identify_algo = PackageWeightIdentify(applications, collect_items)
+        scene, reco_collect_items = identify_algo.get_scene()
         result["scene_name"] = scene
-        result["collect_items"] = collect_items
+        result["collect_items"] = reco_collect_items
         return SUCCEED, result
 
     def post(self):

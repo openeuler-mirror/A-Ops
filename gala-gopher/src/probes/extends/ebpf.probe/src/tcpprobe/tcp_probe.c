@@ -341,6 +341,7 @@ static void output_tcp_metrics(void *ctx, int cpu, void *data, u32 size)
             break;
         }
     }
+    (void)fflush(stdout);
 }
 
 static char is_load_probe(struct probe_params *args, u32 probe)
