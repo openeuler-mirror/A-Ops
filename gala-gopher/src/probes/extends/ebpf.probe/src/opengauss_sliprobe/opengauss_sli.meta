@@ -1,0 +1,41 @@
+version = "1.0.0"
+measurements:
+(
+    {
+        table_name: "opengauss_sli",
+        entity_name: "sli",
+        fields:
+        (
+            {
+                description: "the tgid of server process",
+                type: "key",
+                name: "tgid",
+            },
+            {
+                description: "the socket fd of client connection",
+                type: "key",
+                name: "conn_fd",
+            },
+            {
+                description: "the protocol type",
+                type: "label",
+                name: "protocol",
+            },
+            {
+                description: "the cmd of recent req",
+                type: "label",
+                name: "req_cmd",
+            },
+            {
+                description: "the cmd of recent rsp",
+                type: "label",
+                name: "rsp_cmd",
+            },
+            {
+                description: "the recent rtt(ns)",
+                type: "gauge",
+                name: "rtt_nsec",
+            }
+        )
+    }
+)

@@ -1,0 +1,40 @@
+/******************************************************************************
+ * Copyright (c) Huawei Technologies Co., Ltd. 2022. All rights reserved.
+ * gala-gopher licensed under the Mulan PSL v2.
+ * You can use this software according to the terms and conditions of the Mulan PSL v2.
+ * You may obtain a copy of Mulan PSL v2 at:
+ *     http://license.coscl.org.cn/MulanPSL2
+ * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR
+ * IMPLIED, INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY OR FIT FOR A PARTICULAR
+ * PURPOSE.
+ * See the Mulan PSL v2 for more details.
+ * Author: wo_cow
+ * Create: 2022-7-29
+ * Description: opengauss_sli probe header file
+ ******************************************************************************/
+#ifndef __OPENGAUSS_SLI_H__
+#define __OPENGAUSS_SLI_H__
+
+#define MAX_MSG_LEN_SSL 32
+
+#define SLI_OK       0
+#define SLI_ERR      (-1)
+
+struct ogsli_args_s {
+    __u64 period; // Sampling period, unit ns
+};
+
+struct conn_id_t {
+    __u32 tgid;
+    int fd;
+};
+
+struct msg_event_data_t {
+    __u32 tgid;
+    int fd;
+    char req_cmd;
+    char rsp_cmd;
+    __u64 rtt;
+};
+
+#endif
