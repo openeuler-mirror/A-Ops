@@ -135,6 +135,35 @@ paths:
           schema:
             $ref: '#/definitions/get_application_info_rsp'
       x-swagger-router-controller: "aops_agent.controllers.agent_controller"
+  /agent/file/collect:
+    post:
+      tags:
+        - agent
+      description: 获取系统特定配置文件信息。将文件压缩后传回
+      operationId: collect_file
+      parameters:
+        - name: config_path_list
+          in: body
+          description: 需获取配置文件路径
+          schema:
+            type: array
+            items:
+              type: string
+            example:
+              - configpath1
+              - configpath2
+          required: true
+        - name: access_token
+          in: header
+          description: 授权码
+          type: string
+          required: true
+      responses:
+        '200':
+          description: 返回请求文件内容主体
+          schema:
+            $ref: '#/definitions/collect_file_rsp'
+      x-swagger-router-controller: "aops_agent.controllers.agent_controller"
 definitions:
   ErrorRsp:
     required:
@@ -245,3 +274,64 @@ definitions:
         nginx: inactive
         gopher: active
         mysql: active
+  collect_file_rsp:
+    properties:
+      code:
+        type: integer
+      msg:
+        type: string
+      resp:
+        type: array
+        items:
+          properties:
+            host_id:
+              type: string
+              description: 主机ID
+            success_files:
+              type: array
+              items:
+                type: string
+              description: 收集成功文件列表
+            fail_files:
+              type: array
+              items:
+                type: string
+              description: 收集失败文件列表
+            infos:
+              description: 信息列表
+              type: array
+              items:
+                type: object
+                properties:
+                  path:
+                    type: string
+                    description: 文件路径
+                  file_attr:
+                    description: 文件属性
+                    properties:
+                      mode:
+                        type: string
+                        description: 文件mode
+                      owner:
+                        type: string
+                        description: 文件owner
+                      group:
+                        type: string
+                        description: 文件group
+                    required:
+                      - mode
+                      - owner
+                      - group
+                  content:
+                    type: string
+                    description: 文件内容
+                required:
+                  - path
+                  - file_attr
+                  - content
+          required:
+            - host_id
+            - success_files
+            - fail_files
+            - infos
+        description: 响应体

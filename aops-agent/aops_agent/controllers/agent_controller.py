@@ -10,50 +10,55 @@
 # PURPOSE.
 # See the Mulan PSL v2 for more details.
 # ******************************************************************************/
+import os
 import re
 from typing import List
 
-from aops_agent.conf.constant import INSTALLABLE_PLUGIN, INFORMATION_ABOUT_RPM_SERVICE, SCANNED_APPLICATION
+from flask import Response, jsonify
+
+from aops_agent.conf.constant import INSTALLABLE_PLUGIN, INFORMATION_ABOUT_RPM_SERVICE, SCANNED_APPLICATION, DATA_MODEL
+from aops_agent.conf.status import StatusCode, PARAM_ERROR
 from aops_agent.manages import plugin_manage
 from aops_agent.manages.command_manage import Command
 from aops_agent.manages.resource_manage import Resourse
-from aops_agent.tools.util import plugin_status_judge
+from aops_agent.tools.util import plugin_status_judge, validate_data, get_file_info
 
 
 @Command.validate_token
-def get_host_info() -> dict:
+def get_host_info() -> Response:
     """
     get basic info about machine
 
     Returns:
         a dict which contains os info,bios version and kernel version
     """
-    return Command.get_host_info()
+    return jsonify(Command.get_host_info())
 
 
 @Command.validate_token
-def agent_plugin_info() -> List[dict]:
+def agent_plugin_info() -> Response:
     """
     get all info about agent
 
     Returns:
-        a list which contains cpu,memory,collect items of plugin,running status and so on.for
+        Response:
+            a list which contains cpu,memory,collect items of plugin,running status and so on.for
         example
-    [{
-    "plugin_name": "string",
-    "is_installed": true,
-    "status": "string",
-    "collect_items": [{
-                    "probe_name": "string",
-                    "probe_status": "string"} ],
-    "resource": [{
-                "name": "string",
-                "limit_value": "string",
-                "current_value": "string}]}]
+            [{
+            "plugin_name": "string",
+            "is_installed": true,
+            "status": "string",
+            "collect_items": [{
+                            "probe_name": "string",
+                            "probe_status": "string"} ],
+            "resource": [{
+                        "name": "string",
+                        "limit_value": "string",
+                        "current_value": "string}]}]
     """
     plugin_list = INSTALLABLE_PLUGIN
     if len(plugin_list) == 0:
-        return []
+        return jsonify([])
 
     res = []
     for plugin_name in plugin_list:
@@ -106,16 +111,17 @@ def agent_plugin_info() -> List[dict]:
         plugin_running_info['collect_items'] = collect_items_status
         plugin_running_info['resource'] = resource
         res.append(plugin_running_info)
-    return res
+    return jsonify(res)
 
 
 @Command.validate_token
-def get_application_info() -> List[str]:
+def get_application_info() -> Response:
     """
         get the running applications in the target list
 
     Returns:
-        list[str]: applications which is running
+       Response:
+            List[str]:applications which is running
     """
     target_applications = SCANNED_APPLICATION
     res = []
@@ -125,4 +131,51 @@ def get_application_info() -> List[str]:
             status = re.search(r':.+\(', status_info).group()[1:-1].strip()
             if status == 'active':
                 res.append(application_name)
-    return res
+    return jsonify(res)
+
+
+@Command.validate_token
+def collect_file(config_path_list: List[str]) -> Response:
+    """
+        Get configuration file content
+
+    Args:
+        config_path_list(List[str]): It contains some file path
+
+    Returns:
+        Response:  {
+                "success_files": [],
+                "fail_files": [],
+                "infos": [
+                        {   path: file_path,
+                            file_attr: {
+                            mode:  0755,
+                            owner: owner,
+                            group: group
+                            },
+                            content: content
+                            }
+                        ]
+                }
+
+    """
+    if validate_data(config_path_list, DATA_MODEL.get('str_array')) is False:
+        return jsonify(StatusCode.make_response_body(PARAM_ERROR))
+    result = {
+        "success_files": [],
+        "fail_files": [],
+        "infos": [
+        ]
+    }
+    for file_path in config_path_list:
+        if not os.path.exists(file_path) or not os.path.isfile(file_path):
+            result['fail_files'].append(file_path)
+            continue
+
+        info = get_file_info(file_path)
+        if not info:
+            result['fail_files'].append(file_path)
+            continue
+        result['success_files'].append(file_path)
+        result['infos'].append(info)
+    return jsonify(result)
