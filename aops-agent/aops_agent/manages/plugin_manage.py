@@ -12,14 +12,13 @@
 # ******************************************************************************/
 import re
 from dataclasses import dataclass
-from typing import List, Dict, Tuple
+from typing import List, Dict
 import libconf
 from aops_agent.conf import configuration
 from aops_agent.conf.constant import INSTALLABLE_PLUGIN
 from aops_agent.conf.status import (
     SUCCESS,
     FILE_NOT_FOUND,
-    StatusCode,
     CONFLICT_ERROR
 )
 from aops_agent.tools.util import (
