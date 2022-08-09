@@ -35,7 +35,7 @@ from aops_utils.restful.status import (
 class AgentUtil:
 
     @classmethod
-    def get_host_ip(cls, host_id: str) -> tuple:
+    def get_host_ip_with_port(cls, host_id: str) -> tuple:
         """
             get host ip from database by host id
 
@@ -56,8 +56,8 @@ class AgentUtil:
         else:
             LOGGER.error("connect to database error")
             return '', DATABASE_CONNECT_ERROR
-        host_ip = query_res[0].public_ip
-        return host_ip, SUCCEED
+        host_ip_with_port = f'{query_res[0].public_ip}:{query_res[0].agent_port}'
+        return host_ip_with_port, SUCCEED
 
     @classmethod
     def get_args(cls) -> tuple:
@@ -71,7 +71,7 @@ class AgentUtil:
         data, status = BaseResponse.verify_request(schema=AgentPluginInfoSchema)
         if status != SUCCEED:
             return status, {}
-        host_ip, status_code = cls.get_host_ip(data.get('host_id'))
+        host_ip_with_port, status_code = cls.get_host_ip_with_port(data.get('host_id'))
         if status_code != SUCCEED:
             return status_code, {}
 
@@ -80,13 +80,13 @@ class AgentUtil:
             return TOKEN_ERROR, {}
         host_token = user.token
         res = {
-            'host_ip': host_ip,
+            'host_ip_with_port': host_ip_with_port,
             'host_token': host_token
         }
         return SUCCEED, res
 
     @classmethod
-    def get_data_from_agent(cls, host_ip: str, host_token: str, agent_port: int, agent_url: str) -> dict:
+    def get_data_from_agent(cls, host_ip_with_port: str, host_token: str, agent_url: str) -> dict:
         """
             Get the data we want from agent
 
@@ -102,7 +102,7 @@ class AgentUtil:
         """
         headers = {'content-type': 'application/json',
                    'access_token': host_token}
-        url = f"http://{host_ip}:{agent_port}{agent_url}"
+        url = f"http://{host_ip_with_port}{agent_url}"
         try:
             ret = requests.get(url=url, headers=headers)
         except requests.exceptions.ConnectionError:
@@ -132,5 +132,6 @@ class AgentPluginInfo(BaseResponse):
         status, data = AgentUtil.get_args()
         if status != SUCCEED:
             return jsonify(StatusCode.make_response(status))
-        res = AgentUtil.get_data_from_agent(data.get('host_ip'), data.get('host_token'), ROUTE_AGENT_PLUGIN_INFO)
+        res = AgentUtil.get_data_from_agent(data.get('host_ip_with_port'), data.get('host_token'),
+                                            ROUTE_AGENT_PLUGIN_INFO)
         return jsonify(res)

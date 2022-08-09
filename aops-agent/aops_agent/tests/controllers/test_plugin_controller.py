@@ -10,83 +10,123 @@
 # PURPOSE.
 # See the Mulan PSL v2 for more details.
 # ******************************************************************************/
-import requests
+from unittest import mock
+
+from aops_agent.conf.status import StatusCode, SUCCESS, FILE_NOT_FOUND
 from aops_agent.tests import BaseTestCase
+from aops_agent.manages.token_manage import TokenManage
+from aops_agent.manages.plugin_manage import Plugin
+
+header = {
+    "Content-Type": "application/json; charset=UTF-8"
+}
+
+header_with_token = {
+    "Content-Type": "application/json; charset=UTF-8",
+    "access_token": "13965d8302b5246a13352680d7c8e602"
+}
+
+header_with_incorrect_token = {
+    "Content-Type": "application/json; charset=UTF-8",
+    "access_token": "13965d8302b5246a13352680d7c8e602Ss"
+}
 
 
 class TestPluginController(BaseTestCase):
+    def setUp(self) -> None:
+        TokenManage.set_value('13965d8302b5246a13352680d7c8e602')
 
-    def test_start_plugin_should_return_main_pid_when_input_installed_plugin_name(self):
-        headers = {'Content-Type': 'application/json', 'access_token': '123456'}
+    @mock.patch.object(Plugin, 'start_service')
+    def test_start_plugin_should_return_200_when_input_installed_plugin_name_with_correct_token(self,
+                                                                                                mock_start_service):
         plugin_name = "gopher"
-        url = f"http://localhost:8080/v1/agent/plugin/start?plugin_name={plugin_name}"
-        response = requests.get(url, headers=headers)
+        mock_start_service.return_value = SUCCESS, StatusCode.make_response_body(SUCCESS)
+        response = self.client.get(f'/v1/agent/plugin/start?plugin_name={plugin_name}', headers=header_with_token)
         self.assert200(response, response.text)
 
-    def test_start_plugin_should_return_failure_info_when_input_installable_plugin_name_but_not_install(self):
-        headers = {'Content-Type': 'application/json', 'access_token': '123456'}
+    @mock.patch.object(Plugin, 'start_service')
+    def test_start_plugin_should_return_410_when_input_plugin_name_is_not_installed_with_correct_token(
+            self, mock_start_service):
         plugin_name = "gopher"
-        url = f"http://localhost:8080/v1/agent/plugin/start?plugin_name={plugin_name}"
-        response = requests.get(url, headers=headers)
-        self.assertEqual(410, response.status_code, response.text)
+        mock_start_service.return_value = SUCCESS, StatusCode.make_response_body(FILE_NOT_FOUND)
+        response = self.client.get(f'/v1/agent/plugin/start?plugin_name={plugin_name}', headers=header_with_token)
+        self.assertIn('410', response.text)
 
-    def test_start_plugin_should_return_failure_info_when_input_plugin_name_is_not_installable(self):
-        headers = {'Content-Type': 'application/json', 'access_token': '123456'}
+    def test_start_plugin_should_return_param_error_when_input_plugin_name_is_not_supported_with_correct_token(self):
         plugin_name = "nginx"
-        url = f"http://localhost:8080/v1/agent/plugin/start?plugin_name={plugin_name}"
-        response = requests.get(url, headers=headers)
+        response = self.client.get(f'/v1/agent/plugin/start?plugin_name={plugin_name}', headers=header_with_token)
+        self.assertIn('1000', response.text)
+
+    def test_start_plugin_should_return_param_error_when_input_plugin_name_is_none_with_correct_token(self):
+        response = self.client.get('/v1/agent/plugin/start?plugin_name=', headers=header_with_token)
+        self.assertIn('1000', response.text)
+
+    def test_start_plugin_should_return_400_when_input_none_with_correct_token(self):
+        response = self.client.get('/v1/agent/plugin/start', headers=header_with_token)
         self.assert400(response, response.text)
 
-    def test_start_plugin_should_return_400_when_input_plugin_name_is_none(self):
-        headers = {'Content-Type': 'application/json', 'access_token': '123456'}
-        plugin_name = ""
-        url = f"http://localhost:8080/v1/agent/plugin/start?plugin_name={plugin_name}"
-        response = requests.get(url, headers=headers)
-        self.assert400(response, response.text)
+    def test_start_plugin_should_return_401_when_input_installed_plugin_name_with_incorrect_token(self):
+        response = self.client.get('/v1/agent/plugin/start?plugin_name=gopher', headers=header_with_incorrect_token)
+        self.assert401(response, response.text)
 
-    def test_start_plugin_should_return_400_when_with_no_input(self):
-        headers = {'Content-Type': 'application/json', 'access_token': '123456'}
-        url = "http://localhost:8080/v1/agent/plugin/start"
-        response = requests.get(url, headers=headers)
-        self.assert400(response, response.text)
+    def test_start_plugin_should_return_401_when_input_installed_plugin_name_with_no_token(self):
+        response = self.client.get('/v1/agent/plugin/start?plugin_name=gopher')
+        self.assert401(response, response.text)
 
-    def test_stop_plugin_should_return_plugin_stop_success_when_input_installed_plugin_name_and_plugin_is_running(self):
-        headers = {'Content-Type': 'application/json', 'access_token': '123456'}
+    def test_start_plugin_should_return_405_when_request_by_other_method(self):
+        response = self.client.post('/v1/agent/plugin/start?plugin_name=gopher')
+        self.assert405(response, response.text)
+
+    @mock.patch("aops_agent.controllers.plugin_controller.INFORMATION_ABOUT_RPM_SERVICE")
+    def test_start_plugin_should_return_500_when_input_installed_plugin_name_but_has_no_info_with_correct_token(self, mock_info):
         plugin_name = "gopher"
-        url = f"http://localhost:8080/v1/agent/plugin/stop?plugin_name={plugin_name}"
-        response = requests.get(url, headers=headers)
+        mock_info = {}
+        response = self.client.get(f'/v1/agent/plugin/start?plugin_name={plugin_name}', headers=header_with_token)
+        self.assertIn("500", response.text)
+
+    @mock.patch.object(Plugin, 'stop_service')
+    def test_stop_plugin_should_return_200_when_input_installed_plugin_name_with_correct_token(self, mock_stop_service):
+        mock_stop_service.return_value = SUCCESS, StatusCode.make_response_body(SUCCESS)
+        plugin_name = "gopher"
+        response = self.client.get(f'/v1/agent/plugin/stop?plugin_name={plugin_name}', headers=header_with_token)
         self.assert200(response, response.text)
 
-    def test_stop_plugin_should_return_plugin_has_stooped_when_input_installed_plugin_name_and_plugin_is_stopped(self):
-        headers = {'Content-Type': 'application/json', 'access_token': '123456'}
+    @mock.patch.object(Plugin, 'stop_service')
+    def test_stop_plugin_should_return_410_when_input_plugin_name_is_not_installed_with_correct_token(self,
+                                                                                                      mock_stop_service):
+        mock_stop_service.return_value = SUCCESS, StatusCode.make_response_body(SUCCESS)
         plugin_name = "gopher"
-        url = f"http://localhost:8080/v1/agent/plugin/stop?plugin_name={plugin_name}"
-        response = requests.get(url, headers=headers)
-        self.assertEqual(202, response.status_code, response.text)
+        response = self.client.get(f'/v1/agent/plugin/stop?plugin_name={plugin_name}', headers=header_with_token)
+        self.assert200(response, response.text)
 
-    def test_stop_plugin_should_return_failure_info_when_input_installable_plugin_name_but_plugin_not_install(self):
-        headers = {'Content-Type': 'application/json', 'access_token': '123456'}
+    def test_stop_plugin_should_return_param_error_when_input_plugin_name_is_not_supported_with_correct_token(self):
+        plugin_name = "nginx"
+        response = self.client.get(f'/v1/agent/plugin/stop?plugin_name={plugin_name}', headers=header_with_token)
+        self.assertIn('1000', response.text)
+
+    def test_stop_plugin_should_return_param_error_when_input_plugin_name_is_none_with_correct_token(self):
+        response = self.client.get('/v1/agent/plugin/stop?plugin_name=', headers=header_with_token)
+        self.assertIn('1000', response.text)
+
+    def test_stop_plugin_should_return_400_when_input_none_with_correct_token(self):
+        response = self.client.get('/v1/agent/plugin/stop', headers=header_with_token)
+        self.assert400(response, response.text)
+
+    def test_stop_plugin_should_return_401_when_input_installed_plugin_name_with_incorrect_token(self):
+        response = self.client.get('/v1/agent/plugin/stop?plugin_name=gopher', headers=header_with_incorrect_token)
+        self.assert401(response, response.text)
+
+    def test_stop_plugin_should_return_401_when_input_installed_plugin_name_with_no_token(self):
+        response = self.client.get('/v1/agent/plugin/stop?plugin_name=gopher')
+        self.assert401(response, response.text)
+
+    def test_stop_plugin_should_return_405_when_request_by_other_method(self):
+        response = self.client.post('/v1/agent/plugin/stop?plugin_name=gopher')
+        self.assert405(response, response.text)
+
+    @mock.patch("aops_agent.controllers.plugin_controller.INFORMATION_ABOUT_RPM_SERVICE")
+    def test_stop_plugin_should_return_500_when_input_installed_plugin_name_but_has_no_info_with_correct_token(self, mock_info):
         plugin_name = "gopher"
-        url = f"http://localhost:8080/v1/agent/plugin/stop?plugin_name={plugin_name}"
-        response = requests.get(url, headers=headers)
-        self.assertEqual(410, response.status_code, response.text)
-
-    def test_stop_plugin_should_return_failure_info_when_input_plugin_name_is_not_installable(self):
-        headers = {'Content-Type': 'application/json', 'access_token': '123456'}
-        plugin_name = "docker"
-        url = f"http://localhost:8080/v1/agent/plugin/stop?plugin_name={plugin_name}"
-        response = requests.get(url, headers=headers)
-        self.assert400(response, response.text)
-
-    def test_stop_plugin_should_return_400_when_with_input_plugin_name_is_none(self):
-        headers = {'Content-Type': 'application/json', 'access_token': '123456'}
-        plugin_name = ""
-        url = f"http://localhost:8080/v1/agent/plugin/stop?plugin_name={plugin_name}"
-        response = requests.get(url, headers=headers)
-        self.assert400(response, response.text)
-
-    def test_stop_plugin_should_return_400_when_with_no_input(self):
-        headers = {'Content-Type': 'application/json', 'access_token': '123456'}
-        url = "http://localhost:8080/v1/agent/plugin/stop"
-        response = requests.get(url, headers=headers)
-        self.assert400(response, response.text)
+        mock_info = {}
+        response = self.client.get(f'/v1/agent/plugin/stop?plugin_name={plugin_name}', headers=header_with_token)
+        self.assertIn("500", response.text)

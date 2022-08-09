@@ -10,20 +10,22 @@
 # PURPOSE.
 # See the Mulan PSL v2 for more details.
 # ******************************************************************************/
-import json
 import re
 from dataclasses import dataclass
-from typing import List, Dict, Union, Tuple
-from flask import Response
+from typing import List, Dict, Tuple
 import libconf
 from aops_agent.conf import configuration
 from aops_agent.conf.constant import INSTALLABLE_PLUGIN
-from aops_agent.conf.status import PARTIAL_SUCCEED, SUCCESS, FILE_NOT_FOUND, StatusCode, CONFLICT_ERROR
-from aops_agent.log.log import LOGGER
+from aops_agent.conf.status import (
+    SUCCESS,
+    FILE_NOT_FOUND,
+    StatusCode,
+    CONFLICT_ERROR
+)
 from aops_agent.tools.util import (
     get_shell_data,
     load_gopher_config,
-    plugin_install_judge,
+    plugin_status_judge,
     change_probe_status
 )
 
@@ -44,43 +46,39 @@ class Plugin:
     def rpm_name(self) -> str:
         return self._rpm_name
 
-    def start_service(self) -> Tuple[int, str]:
+    def start_service(self) -> int:
         """
         make plugin running
 
         Returns:
-            Tuple: status code and info
-
+            int: status code
         """
+        status_info = get_shell_data(["systemctl", "status", f"{self.rpm_name}"], key=False)
+        plugin_status = get_shell_data(["grep", "Active"], stdin=status_info.stdout)
+        if "running" in plugin_status:
+            return SUCCESS
         res = get_shell_data(["systemctl", "start", f"{self.rpm_name}"])
         if res == "":
-            status_info = get_shell_data(["systemctl", "status", f"{self.rpm_name}"], key=False)
-            main_pid_info = get_shell_data(["grep", "Main"], stdin=status_info.stdout)
-            main_pid = re.search("[0-9]+[0-9]", main_pid_info).group()
-            return SUCCESS, main_pid
+            return SUCCESS
         if "service not found" in res:
-            msg = json.dumps(StatusCode.make_response_body(FILE_NOT_FOUND))
-            return FILE_NOT_FOUND, msg
-        return CONFLICT_ERROR, res
+            return FILE_NOT_FOUND
+        return CONFLICT_ERROR
 
-    def stop_service(self) -> Tuple[int, str]:
+    def stop_service(self) -> int:
         """
         make plugin stopping
 
         Returns:
-            Tuple: status code and info
+            int: status code
         """
         status_info = get_shell_data(["systemctl", "status", f"{self.rpm_name}"], key=False)
         plugin_status = get_shell_data(["grep", "Active"], stdin=status_info.stdout)
         if "inactive" in plugin_status:
-            msg = f"{self.rpm_name} has stopped !"
-            return SUCCESS, msg
-
+            return SUCCESS
         res = get_shell_data(["systemctl", "stop", f"{self.rpm_name}"])
         if res == "":
-            return SUCCESS, f"{self.rpm_name} stop success !"
-        msg = json.dumps(StatusCode.make_response_body(FILE_NOT_FOUND))
-        return FILE_NOT_FOUND, msg
+            return SUCCESS
+        return FILE_NOT_FOUND
 
     @classmethod
     def get_installed_plugin(cls) -> List[str]:
@@ -97,7 +95,7 @@ class Plugin:
             return []
 
         for plugin_name in INSTALLABLE_PLUGIN:
-            if not plugin_install_judge(plugin_name):
+            if not plugin_status_judge(plugin_name):
                 installed_plugin.remove(plugin_name)
         return installed_plugin
 
@@ -208,7 +206,9 @@ class Gopher(Plugin):
         porbe_list = []
         for probes in (cfg.get('probes', ()), cfg.get('extend_probes', ())):
             for probe in probes:
-                probe_info = {}
+                probe_info = {'support_auto': False}
+                if 'start_check' in probe:
+                    probe_info['support_auto'] = True
                 if 'name' in probe and 'switch' in probe:
                     probe_info['probe_name'] = probe['name']
                     probe_info['probe_status'] = probe['switch']

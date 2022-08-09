@@ -10,13 +10,14 @@
 # PURPOSE.
 # See the Mulan PSL v2 for more details.
 # ******************************************************************************/
+import re
 from typing import List
 
-from aops_agent.conf.constant import INSTALLABLE_PLUGIN, RPM_INFO
+from aops_agent.conf.constant import INSTALLABLE_PLUGIN, INFORMATION_ABOUT_RPM_SERVICE, SCANNED_APPLICATION
 from aops_agent.manages import plugin_manage
 from aops_agent.manages.command_manage import Command
 from aops_agent.manages.resource_manage import Resourse
-from aops_agent.tools.util import plugin_install_judge
+from aops_agent.tools.util import plugin_status_judge
 
 
 @Command.validate_token
@@ -56,28 +57,33 @@ def agent_plugin_info() -> List[dict]:
 
     res = []
     for plugin_name in plugin_list:
-        plugin_running_info = {'plugin_name': plugin_name}
+        plugin_running_info = {
+            'plugin_name': plugin_name,
+            'collect_items': [],
+            'status': None,
+            'resource': []
+        }
 
-        if not plugin_install_judge(plugin_name):
+        if not plugin_status_judge(plugin_name):
             plugin_running_info['is_installed'] = False
+            res.append(plugin_running_info)
             continue
         else:
             plugin_running_info['is_installed'] = True
 
-        rpm_name = RPM_INFO.get(plugin_name)
-        plugin = plugin_manage.Plugin(rpm_name)
-        status = plugin.get_plugin_status()
+        service_name = INFORMATION_ABOUT_RPM_SERVICE.get(plugin_name).get('service_name')
+        plugin = plugin_manage.Plugin(service_name)
 
+        status = plugin.get_plugin_status()
         if status == 'active':
-            pid = plugin_manage.Plugin.get_pid(rpm_name)
-            cpu_current = Resourse.get_cpu(rpm_name, pid)
+            pid = plugin_manage.Plugin.get_pid(service_name)
+            cpu_current = Resourse.get_cpu(service_name, pid)
             memory_current = Resourse.get_memory(pid)
         else:
             cpu_current = None
             memory_current = None
-
-        cpu_limit = Resourse.get_cpu_limit(rpm_name)
-        memory_limit = Resourse.get_memory_limit(rpm_name)
+        cpu_limit = Resourse.get_cpu_limit(service_name)
+        memory_limit = Resourse.get_memory_limit(service_name)
 
         collect_items_status = []
         if hasattr(plugin_manage, plugin_name.title()):
@@ -100,4 +106,23 @@ def agent_plugin_info() -> List[dict]:
         plugin_running_info['collect_items'] = collect_items_status
         plugin_running_info['resource'] = resource
         res.append(plugin_running_info)
+    return res
+
+
+@Command.validate_token
+def get_application_info() -> List[str]:
+    """
+        get the running applications in the target list
+
+    Returns:
+        list[str]: applications which is running
+    """
+    target_applications = SCANNED_APPLICATION
+    res = []
+    for application_name in target_applications:
+        status_info = plugin_status_judge(application_name)
+        if status_info != '':
+            status = re.search(r':.+\(', status_info).group()[1:-1].strip()
+            if status == 'active':
+                res.append(application_name)
     return res
