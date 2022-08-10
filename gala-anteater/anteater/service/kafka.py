@@ -60,13 +60,8 @@ class KafkaConsumer(threading.Thread):
     """
     The Kafka Consumer to consume messages from Kafka.
     """
-    def __init__(self, server, port, topic):
-        """
-        The Kafka Consumer initializer
-        :param server: The kafka server ip
-        :param port: The kafka server port
-        :param topic: The topic
-        """
+    def __init__(self, server, port, topic, entity_name):
+        """The Kafka Consumer initializer"""
         threading.Thread.__init__(self)
         self.topic = topic
         conf = {"bootstrap_servers": f"{server}:{port}",
@@ -74,11 +69,11 @@ class KafkaConsumer(threading.Thread):
                 "auto_offset_reset": "earliest",
                 "enable_auto_commit": False}
         self.consumer = Consumer(self.topic, **conf)
+        self.entity_name = entity_name
 
-    @staticmethod
-    def message_process(metadata):
+    def message_process(self, metadata):
         """Processes the kafka messages and update the shared variables"""
-        if metadata.get("meta_name", "") == "ksliprobe":
+        if metadata.get("entity_name", "") == self.entity_name:
             EntityVariable.variable = metadata
 
     def run(self):

@@ -23,6 +23,7 @@ import numpy as np
 import pandas as pd
 
 from anteater.source.metric_loader import MetricLoader
+from anteater.utils.config_parser import MetricSettings
 
 
 class KeyMetricModel:
@@ -30,7 +31,8 @@ class KeyMetricModel:
 
     def __init__(self):
         """The post model initializer"""
-        self.key_metric = "gala_gopher_sli_rtt_nsec"
+        settings = MetricSettings()
+        self.key_metric = settings.key_metric_name
 
     @staticmethod
     def predict(x: List) -> float:

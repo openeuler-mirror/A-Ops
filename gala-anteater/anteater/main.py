@@ -81,7 +81,7 @@ def anomaly_detection(hybrid_model, key_metric_model, post_model, parser: Dict[s
         y_pred = hybrid_model.predict(df)
         is_abnormal = hybrid_model.is_abnormal(y_pred)
         key_metric_anomalies = key_metric_model.detect_key_metric(utc_now, machine_id)
-        if is_abnormal or any([s for s in key_metric_anomalies if round(s[2]/1000000) > 500]):
+        if is_abnormal or any([s for s in key_metric_anomalies if round(s[2]/1000000) > 1000]):
             rec_anomalies = post_model.top_n_anomalies(utc_now, machine_id, top_n=30)
             for anomalies in key_metric_anomalies:
                 msg = get_kafka_message(round(utc_now.timestamp()), y_pred.tolist(),

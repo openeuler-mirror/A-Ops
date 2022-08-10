@@ -20,7 +20,7 @@ from typing import Dict, Any, List, Tuple
 
 from anteater.service.kafka import KafkaConsumer, KafkaProducer, EntityVariable
 from anteater.service.prometheus import Prometheus
-from anteater.utils.config_parser import ServiceSettings
+from anteater.utils.config_parser import ServiceSettings, MetricSettings
 from anteater.utils.log import Log
 
 log = Log().get_logger()
@@ -48,13 +48,16 @@ def load_prometheus_client() -> Prometheus:
 def update_entity_variable() -> KafkaConsumer:
     """Updates entity variables by querying data from Kafka under sub thread"""
     log.info("Start to try updating global configurations by querying data from Kafka!")
-    settings = ServiceSettings()
 
-    server = settings.kafka_server
-    port = settings.kafka_port
-    topic = settings.kafka_consumer_topic
+    service_settings = ServiceSettings()
+    server = service_settings.kafka_server
+    port = service_settings.kafka_port
+    topic = service_settings.kafka_consumer_topic
 
-    consumer = KafkaConsumer(server, port, topic)
+    metric_settings = MetricSettings()
+    entity_name = metric_settings.entity_name
+
+    consumer = KafkaConsumer(server, port, topic, entity_name)
     consumer.start()
 
     return consumer
