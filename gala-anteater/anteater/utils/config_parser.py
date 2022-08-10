@@ -158,3 +158,23 @@ class ModelSettings(Settings):
     @validate_properties("Normalization")
     def norm_properties(self) -> dict:
         return dict(self.config["Normalization"])
+
+
+class MetricSettings(Settings):
+    """The settings for the metrics."""
+
+    def __init__(self):
+        super().__init__()
+        root_path = os.path.dirname(os.path.dirname(os.path.realpath(__file__)))
+        file_path = os.path.join(root_path, "configuration" + os.sep + "metric.settings.ini")
+        self.load(file_path)
+
+    @property
+    @validate_properties("KeyMetric", "name")
+    def key_metric_name(self) -> dict:
+        return self.config["KeyMetric"]["name"]
+
+    @property
+    @validate_properties("KeyMetric", "name")
+    def entity_name(self) -> dict:
+        return self.config["KeyMetric"]["entity_name"]
