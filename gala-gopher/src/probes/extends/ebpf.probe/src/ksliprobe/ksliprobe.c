@@ -103,7 +103,7 @@ static void msg_event_handler(void *ctx, int cpu, void *data, unsigned int size)
             break;
     }
     fprintf(stdout,
-            "|%s|%d|%d|%s|%s|%u|%s|%u|%s|%llu|\n",
+            "|%s|%d|%d|%s|%s|%u|%s|%u|%s|%llu|%s|%llu|\n",
             SLI_TBL_NAME,
             msg_evt_data->conn_id.tgid,
             msg_evt_data->conn_id.fd,
@@ -113,7 +113,9 @@ static void msg_event_handler(void *ctx, int cpu, void *data, unsigned int size)
             cli_ip_str,
             ntohs(msg_evt_data->client_ip_info.port),
             msg_evt_data->latency.command,
-            msg_evt_data->latency.rtt_nsec);
+            msg_evt_data->latency.rtt_nsec,
+            msg_evt_data->max.command,
+            msg_evt_data->max.rtt_nsec);
     (void)fflush(stdout);
 
     return;

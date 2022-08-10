@@ -42,7 +42,7 @@ measurements:
                 name: "client_port",
             },
             {
-                description: "the cmd of max rtt req",
+                description: "the cmd of req",
                 type: "label",
                 name: "command",
             },
@@ -50,6 +50,16 @@ measurements:
                 description: "the rtt(ns) of req",
                 type: "gauge",
                 name: "rtt_nsec",
+            },
+            {
+                description: "the cmd of max rtt req",
+                type: "label",
+                name: "max_command",
+            },
+            {
+                description: "the rtt(ns) of max rtt req",
+                type: "gauge",
+                name: "max_rtt_nsec",
             }
         )
     }

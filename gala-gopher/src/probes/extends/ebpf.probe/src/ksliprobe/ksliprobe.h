@@ -85,12 +85,15 @@ struct conn_data_t {
     struct conn_id_t id;
     void *sk;                               // tcp连接对应的 sk 地址
     struct rtt_cmd_t latency;
+    struct rtt_cmd_t max;
+    struct rtt_cmd_t current;
     __u64 last_report_ts_nsec;              // 上一次上报完成的时间点
 };
 
 struct msg_event_data_t {
     struct conn_id_t conn_id;
     struct rtt_cmd_t latency;
+    struct rtt_cmd_t max;
     struct ip_info_t server_ip_info;
     struct ip_info_t client_ip_info;
 };
