@@ -27,3 +27,13 @@ HOST_INFO_INDEX = 'host_information'
 
 ROUTE_AGENT_PLUGIN_INFO = '/v1/agent/plugin/info'
 ROUTE_AGENT_HOST_INFO = '/v1/agent/basic/info'
+
+
+# agent
+AGENT_PLUGIN_START = "/v1/agent/plugin/start"
+AGENT_PLUGIN_STOP = "/v1/agent/plugin/stop"
+AGENT_COLLECT_ITEMS_CHANGE = "/v1/agent/collect/items/change"
+AGENT_APPLICATION_INFO = "/v1/agent/application/info"
+
+# check
+CHECK_IDENTIFY_SCENE = "/check/scene/identify"

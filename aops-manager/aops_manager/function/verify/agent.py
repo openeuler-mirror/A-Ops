@@ -12,6 +12,7 @@
 # ******************************************************************************/
 from marshmallow import Schema
 from marshmallow import fields
+from marshmallow import validate
 
 
 class AgentPluginInfoSchema(Schema):
@@ -26,3 +27,34 @@ class AgentHostInfoSchema(AgentPluginInfoSchema):
     validators for parameter of /manage/agent/host/info/query
     """
     pass
+
+
+class GetHostSceneSchema(Schema):
+    """
+    validators for parameter of /manage/host/scene/get
+    """
+    host_id = fields.String(
+        required=True, validate=lambda s: len(s) > 0)
+
+
+class SetAgentPluginStatusSchema(Schema):
+    """
+    validators for parameter of /manage/agent/plugin/set
+    """
+    host_id = fields.String(
+        required=True, validate=lambda s: len(s) > 0)
+    plugins = fields.Dict(required=True, keys=fields.String(validate=lambda s: len(s) > 0),
+                          values=fields.Str(validate=validate.OneOf(["active", "inactive"])))
+
+
+class SetAgentMetricStatusSchema(Schema):
+    """
+    validators for parameter of /manage/agent/metrics/set
+    """
+    host_id = fields.String(
+        required=True, validate=lambda s: len(s) > 0)
+    plugins = fields.Dict(required=True, keys=fields.String(validate=lambda s: len(s) > 0),
+                          values=fields.Dict(keys=fields.String(validate=lambda s: len(s) > 0),
+                                             values=fields.Str(validate=validate.OneOf(["on",
+                                                                                        "off",
+                                                                                        "auto"]))))

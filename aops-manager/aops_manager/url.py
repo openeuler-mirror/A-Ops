@@ -41,7 +41,10 @@ from aops_utils.conf.constant import (
     USER_CERTIFICATE,
     CHANGE_PASSWORD,
     ADD_USER,
-    AGENT_PLUGIN_INFO
+    AGENT_PLUGIN_INFO,
+    AGENT_PLUGIN_SET,
+    AGENT_METRIC_SET,
+    HOST_SCENE_GET
 )
 
 URLS = []
@@ -80,7 +83,10 @@ SPECIFIC_URLS = {
         (config_view.CollectConfig, COLLECT_CONFIG)
     ],
     'AGENT_URLS': [
-        (agent_view.AgentPluginInfo, AGENT_PLUGIN_INFO)
+        (agent_view.AgentPluginInfo, AGENT_PLUGIN_INFO),
+        (agent_view.SetAgentPluginStatus, AGENT_PLUGIN_SET),
+        (agent_view.SetAgentMetricStatus, AGENT_METRIC_SET),
+        (agent_view.GetHostScene, HOST_SCENE_GET)
     ]
 }
 

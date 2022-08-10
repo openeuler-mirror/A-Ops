@@ -546,6 +546,36 @@ class HostProxy(MysqlProxy):
 
         return result
 
+    def save_scene(self, data):
+        """
+        Save scene info of host
+
+        Args:
+            data(dict): parameter, e.g.
+            {
+                "scene": "big data",
+                "host_id": "12345"
+            }
+
+        Returns:
+            dict
+        """
+        scene = data.get("scene")
+        host_id = data.get("host_id")
+        try:
+
+            host = self.session.query(Host).filter(
+                Host.host_id == host_id).one()
+            host.scene = scene
+            self.session.commit()
+            return SUCCEED
+
+        except sqlalchemy.exc.SQLAlchemyError as error:
+            LOGGER.error(error)
+            LOGGER.error("Save host %s scene fail.", host_id)
+            self.session.rollback()
+            return DATABASE_INSERT_ERROR
+
 
 class HostInfoProxy(ElasticsearchProxy):
     """
