@@ -1,4 +1,5 @@
 CMAKE_MINIMUM_REQUIRED(VERSION 3.12.1)
+SET(CMAKE_CXX_COMPILER "/usr/bin/g++")
 PROJECT(gala-gopher-test)
 
 MESSAGE("ENV PROBES_LIST:\n"  ${PROBES_LIST})
@@ -23,10 +24,11 @@ SET(WEBSERVER_DIR   ${SRC_DIR}/web_server)
 
 SET(LIBRDKAFKA_DIR /usr/include/librdkafka)
 
-SET(CMAKE_C_FLAGS "-rdynamic -g -fno-builtin-fprintf -Wl,--wrap=fprintf   \
-    -DPROBES_LIST=\"${PROBES_LIST}\"                        \
+SET(CMAKE_C_FLAGS "-rdynamic -g -DNATIVE_PROBE_FPRINTF \
+    -DPROBES_LIST=\"${PROBES_LIST}\" \
     -DPROBES_META_LIST=\"${PROBES_META_LIST}\" "
 )
+SET(CMAKE_CXX_FLAGS "-rdynamic -g -DNATIVE_PROBE_FPRINTF")
 
 SET(SOURCES main.c test_probes.c
     ${COMMON_DIR}/args.c
@@ -42,6 +44,11 @@ SET(SOURCES main.c test_probes.c
     ${PROBE_DIR}/extend_probe.c
     ${IMDB_DIR}/imdb.c
     ${WEBSERVER_DIR}/web_server.c
+
+    ${COMMON_DIR}/util.c
+    ${COMMON_DIR}/object.c
+    ${COMMON_DIR}/event.c
+    ${COMMON_DIR}/logs.cpp
 )
 
 FOREACH(FILE ${PROBES_C_LIST})
@@ -67,5 +74,5 @@ TARGET_INCLUDE_DIRECTORIES(${EXECUTABLE_TARGET} PRIVATE
     ${WEBSERVER_DIR}
 )
 
-TARGET_LINK_LIBRARIES(${EXECUTABLE_TARGET} PRIVATE config pthread dl rdkafka microhttpd cunit rt)
+TARGET_LINK_LIBRARIES(${EXECUTABLE_TARGET} PRIVATE config pthread dl rdkafka microhttpd cunit rt bpf log4cplus)
 

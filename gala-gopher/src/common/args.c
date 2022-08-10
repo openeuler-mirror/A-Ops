@@ -122,6 +122,10 @@ static int __period_arg_parse(char opt, char *arg, struct probe_params *params)
             break;
         case 'P':
             params->load_probe = (unsigned int)atoi(arg);
+            if (params->load_probe == 0) {
+                // if -P 0 then set load_probe to default
+                params->load_probe = DEFAULT_LOAD_PROBE;
+            }
             break;
         default:
             return -1;

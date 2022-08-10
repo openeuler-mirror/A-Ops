@@ -1,4 +1,5 @@
 CMAKE_MINIMUM_REQUIRED(VERSION 3.12.1)
+SET(CMAKE_CXX_COMPILER "/usr/bin/g++")
 PROJECT(gala-gopher-test)
 
 SET(EXECUTABLE_OUTPUT_PATH ../../)
@@ -39,6 +40,9 @@ ADD_EXECUTABLE(${EXECUTABLE_TARGET}
     ${PROBE_DIR}/extend_probe.c
     ${IMDB_DIR}/imdb.c
     ${WEBSERVER_DIR}/web_server.c
+
+    ${COMMON_DIR}/util.c
+    ${COMMON_DIR}/logs.cpp
 )
 
 TARGET_INCLUDE_DIRECTORIES(${EXECUTABLE_TARGET} PRIVATE ${BASE_DIR}
@@ -55,5 +59,5 @@ TARGET_INCLUDE_DIRECTORIES(${EXECUTABLE_TARGET} PRIVATE ${BASE_DIR}
     ${LIBRDKAFKA_DIR}
 )
 
-TARGET_LINK_LIBRARIES(${EXECUTABLE_TARGET} PRIVATE cunit config pthread dl rdkafka microhttpd rt)
+TARGET_LINK_LIBRARIES(${EXECUTABLE_TARGET} PRIVATE cunit config pthread dl rdkafka microhttpd rt log4cplus)
 

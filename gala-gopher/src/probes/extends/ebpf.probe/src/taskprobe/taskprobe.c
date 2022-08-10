@@ -241,11 +241,15 @@ int main(int argc, char **argv)
     printf("Successfully started!\n");
 
     while (!stop) {
-        if ((ret = perf_buffer__poll(thread_bpf_progs->pb, THOUSAND)) < 0) {
-            break;
+        if (thread_bpf_progs->pb != NULL) {
+            if ((ret = perf_buffer__poll(thread_bpf_progs->pb, THOUSAND)) < 0) {
+                break;
+            }
         }
-        if ((ret = perf_buffer__poll(proc_bpf_progs->pb, THOUSAND)) < 0) {
-            break;
+        if (proc_bpf_progs->pb != NULL) {
+            if ((ret = perf_buffer__poll(proc_bpf_progs->pb, THOUSAND)) < 0) {
+                break;
+            }
         }
     }
 
