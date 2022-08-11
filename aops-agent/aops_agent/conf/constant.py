@@ -23,7 +23,7 @@ DATA_MODEL = {
                                      "additionalProperties":
                                          {"type": "object",
                                           "additionalProperties":
-                                              {"enum": ["on", "off"]}}},
+                                              {"enum": ["on", "off", "auto"]}}},
     'register_schema': {
         "type": "object",
         "required": ["host_name",
@@ -56,7 +56,8 @@ SCANNED_APPLICATION = ["mysql", "k8s", "hadoop", "nginx", "docker", "gopher"]
 REGISTER_HELP_INFO = """
     you can choose start or register in manager,
     if you choose register,you need to provide the following information.
-    you can input it by '-d' 'json-string' or by '-f' '/xxxx/.../xx.json'
+    you can input it by '-d' 'json-string' or 
+            input it from file by '-f' '/xxxx/.../xx.json'
     
     Required parameter: All information cannot be empty
     host_name               type: string
@@ -77,7 +78,6 @@ REGISTER_HELP_INFO = """
     "host_name": "xxx",
     "host_group_name": "xxx", 
     "manager_ip":"192.168.xx.xx",
-    "host_id":"xxxx",
     "management":false,
     "manager_port":"11111",
     "agent_port":"12000"

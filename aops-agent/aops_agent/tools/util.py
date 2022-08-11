@@ -12,14 +12,15 @@
 # ******************************************************************************/
 import configparser
 import copy
+import grp
 import json
 import os
+import pwd
 from socket import socket, AF_INET, SOCK_DGRAM
 from typing import Union, List, Any, Tuple, Dict, NoReturn
 from subprocess import Popen, PIPE, STDOUT
 
 from libconf import load, ConfigParseError, AttrDict
-from flask import Response, make_response
 from jsonschema import validate, ValidationError
 from aops_agent.conf.constant import DATA_MODEL, INFORMATION_ABOUT_RPM_SERVICE
 from aops_agent.log.log import LOGGER
@@ -261,14 +262,58 @@ def update_ini_data_value(file_path: str, section: str, option: str, value) -> N
     try:
         cf.read(file_path, encoding='utf8')
     except FileNotFoundError:
-        LOGGER.error('agent config file has benn deleted')
+        LOGGER.error('agent config file has been deleted')
     except configparser.MissingSectionHeaderError:
-        LOGGER.error('agent config file has benn damaged')
+        LOGGER.error('agent config file has been damaged')
     except configparser.ParsingError:
-        LOGGER.error('agent config file has benn damaged')
+        LOGGER.error('agent config file has been damaged')
     file_dir_path = os.path.dirname(file_path)
     if not os.path.exists(file_dir_path):
         os.makedirs(file_dir_path)
     cf[section] = {option: value}
     with open(file_path, 'w') as f:
         cf.write(f)
+
+
+def get_file_info(file_path: str) -> dict:
+    """
+        get file content and attribute
+    Args:
+        file_path(str): file absolute path
+
+    Returns:
+        dict: { path: file_path,
+                file_attr: {
+                mode:  0755(-rwxr-xr-x),
+                owner: owner,
+                group: group},
+                content: content}
+    """
+    if os.access(file_path, os.X_OK):
+        LOGGER.warning(f"{file_path} is an executable file")
+        return {}
+
+    if os.path.getsize(file_path) > 1024 * 1024 * 1:
+        LOGGER.warning(f"{file_path} is too large")
+        return {}
+
+    try:
+        with open(file_path, 'r', encoding='utf8') as f:
+            content = f.read()
+    except UnicodeDecodeError:
+        LOGGER.error(f'{file_path} may not be a text file')
+        return {}
+    file_attr = os.stat(file_path)
+    file_mode = oct(file_attr.st_mode)[4:]
+    file_owner = pwd.getpwuid(file_attr.st_uid)[0]
+    file_group = grp.getgrgid(file_attr.st_gid)[0]
+    info = {
+        'path': file_path,
+        'file_attr': {
+            'mode': file_mode,
+            'owner': file_owner,
+            'group': file_group
+        },
+        'content': content
+    }
+    return info
