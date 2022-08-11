@@ -159,14 +159,16 @@ def collect_file(config_path_list: List[str]) -> Response:
                 }
 
     """
-    if validate_data(config_path_list, DATA_MODEL.get('str_array')) is False:
+    if not validate_data(config_path_list, DATA_MODEL.get('str_array')):
         return jsonify(StatusCode.make_response_body(PARAM_ERROR))
+
     result = {
         "success_files": [],
         "fail_files": [],
         "infos": [
         ]
     }
+
     for file_path in config_path_list:
         if not os.path.exists(file_path) or not os.path.isfile(file_path):
             result['fail_files'].append(file_path)
