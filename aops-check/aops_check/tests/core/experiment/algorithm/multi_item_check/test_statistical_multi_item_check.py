@@ -12,7 +12,7 @@
 # ******************************************************************************/
 import unittest
 
-from aops_check.core.experiment.algorithm.built_in_algo.statistical_multi_item_check import StatisticalCheck
+from aops_check.core.experiment.algorithm.multi_item_check.statistical_multi_item_check import StatisticalCheck
 
 
 class TestStatisticalMultiItemCheckTestCase(unittest.TestCase):

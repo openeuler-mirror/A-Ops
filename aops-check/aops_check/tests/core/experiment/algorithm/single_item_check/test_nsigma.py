@@ -12,7 +12,7 @@
 # ******************************************************************************/
 import unittest
 
-from aops_check.core.experiment.algorithm.built_in_algo.nsigma import NSigma
+from aops_check.core.experiment.algorithm.single_item_check.nsigma import NSigma
 
 
 class TestNSigma(unittest.TestCase):

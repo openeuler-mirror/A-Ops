@@ -15,12 +15,7 @@ Time:
 Author:
 Description:
 """
-from aops_check.init.app import init_app
-from aops_check.init.elasticsearch import init_es
-from aops_check.init.mysql import init_mysql
 
 
-def init():
-    init_mysql()
-    init_es()
-    init_app()
+def init_app():
+    ...
