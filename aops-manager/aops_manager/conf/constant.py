@@ -27,3 +27,4 @@ HOST_INFO_INDEX = 'host_information'
 
 ROUTE_AGENT_PLUGIN_INFO = '/v1/agent/plugin/info'
 ROUTE_AGENT_HOST_INFO = '/v1/agent/basic/info'
+ROUTE_AGENT_COLLECT_FILE = '/v1/agent/file/collect'

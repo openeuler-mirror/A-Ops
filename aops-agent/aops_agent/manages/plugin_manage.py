@@ -125,12 +125,12 @@ class Plugin:
         return main_pid
 
 
-class Gopher(Plugin):
+class GalaGopher(Plugin):
     """
     Some methods only available to Gopher
     """
     _rpm = 'gala-gopher'
-    _name = 'gopher'
+    _name = 'gala-gopher'
 
     @classmethod
     def get_collect_items(cls) -> set:

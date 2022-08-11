@@ -11,8 +11,8 @@
 # ******************************************************************************/
 from flask import Response, jsonify
 
-from aops_agent.conf.constant import INFORMATION_ABOUT_RPM_SERVICE, INSTALLABLE_PLUGIN, DATA_MODEL
-from aops_agent.conf.status import StatusCode, PARAM_ERROR, SERVER_ERROR
+from aops_agent.conf.constant import INFORMATION_ABOUT_RPM_SERVICE, INSTALLABLE_PLUGIN, DATA_MODEL, PLUGIN_WITH_CLASS
+from aops_agent.conf.status import StatusCode, PARAM_ERROR, SERVER_ERROR, SUCCESS
 from aops_agent.log.log import LOGGER
 from aops_agent.manages.command_manage import Command
 from aops_agent.manages import plugin_manage
@@ -77,25 +77,34 @@ def change_collect_items(collect_items_status) -> Response:
     if validate_data(collect_items_status,
                      DATA_MODEL.get("change_collect_items_request")) is False:
         return jsonify(StatusCode.make_response_body(PARAM_ERROR))
-    res = {}
+    res = {'resp': {}}
     plugin_name_list = list(collect_items_status.keys())
+    unsupported_plugin_list = []
     for plugin_name in plugin_name_list:
 
         if plugin_name not in INSTALLABLE_PLUGIN:
             LOGGER.warning(f'{plugin_name} is not supported by agent')
-            res[plugin_name] = 'No Supported'
+            unsupported_plugin_list.append(plugin_name)
             continue
 
         if not plugin_status_judge(plugin_name):
             LOGGER.warning(f'{plugin_name} is not installed by agent')
-            res[plugin_name] = 'No Supported'
+            unsupported_plugin_list.append(plugin_name)
             continue
 
-        if hasattr(plugin_manage, plugin_name.title()):
-            plugin = getattr(plugin_manage, plugin_name.title())
+        plugin_class_name = PLUGIN_WITH_CLASS.get(plugin_name, '')
+        if hasattr(plugin_manage, plugin_class_name):
+            plugin = getattr(plugin_manage, plugin_class_name)
             if hasattr(plugin, 'change_items_status'):
-                res[plugin_name] = plugin.change_items_status(collect_items_status[plugin_name])
+                res['resp'][plugin_name] = plugin.change_items_status(collect_items_status[plugin_name])
         else:
             LOGGER.warning(f'{plugin_name} is not supported by collect items')
-            res[plugin_name] = 'No Supported'
-    return jsonify(res)
+            unsupported_plugin_list.append(plugin_name)
+
+    for unsupported_plugin in unsupported_plugin_list:
+        res['resp'][unsupported_plugin] = {
+            'success': [],
+            'failure': list(collect_items_status.get(unsupported_plugin).keys())
+        }
+
+    return jsonify(StatusCode.make_response_body((SUCCESS, res)))

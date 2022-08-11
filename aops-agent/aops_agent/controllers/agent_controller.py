@@ -16,8 +16,9 @@ from typing import List
 
 from flask import Response, jsonify
 
-from aops_agent.conf.constant import INSTALLABLE_PLUGIN, INFORMATION_ABOUT_RPM_SERVICE, SCANNED_APPLICATION, DATA_MODEL
-from aops_agent.conf.status import StatusCode, PARAM_ERROR
+from aops_agent.conf.constant import INSTALLABLE_PLUGIN, INFORMATION_ABOUT_RPM_SERVICE, SCANNED_APPLICATION, DATA_MODEL, \
+    PLUGIN_WITH_CLASS
+from aops_agent.conf.status import StatusCode, PARAM_ERROR, SUCCESS
 from aops_agent.manages import plugin_manage
 from aops_agent.manages.command_manage import Command
 from aops_agent.manages.resource_manage import Resourse
@@ -91,8 +92,9 @@ def agent_plugin_info() -> Response:
         memory_limit = Resourse.get_memory_limit(service_name)
 
         collect_items_status = []
-        if hasattr(plugin_manage, plugin_name.title()):
-            plugin_obj = getattr(plugin_manage, plugin_name.title())
+        plugin_class_name = PLUGIN_WITH_CLASS.get(plugin_name, '')
+        if hasattr(plugin_manage, plugin_class_name):
+            plugin_obj = getattr(plugin_manage, plugin_class_name)
             if hasattr(plugin_obj, 'get_collect_items'):
                 collect_items_status = plugin_obj.get_collect_status()
 
@@ -124,14 +126,18 @@ def get_application_info() -> Response:
             List[str]:applications which is running
     """
     target_applications = SCANNED_APPLICATION
-    res = []
+    res = {
+        "resp": {
+            "running": []
+        }
+    }
     for application_name in target_applications:
         status_info = plugin_status_judge(application_name)
         if status_info != '':
             status = re.search(r':.+\(', status_info).group()[1:-1].strip()
             if status == 'active':
-                res.append(application_name)
-    return jsonify(res)
+                res['resp']['running'].append(application_name)
+    return jsonify(StatusCode.make_response_body((SUCCESS, res)))
 
 
 @Command.validate_token
