@@ -66,19 +66,21 @@ class Algorithm(Base, MyBase):
     username = Column(String(40))
 
 
-class Module(Base, MyBase):
+class Model(Base, MyBase):
     """
-    Module info
+    Model info
     """
-    __tablename__ = "module"
+    __tablename__ = "model"
 
-    module_id = Column(String(32), primary_key=True, nullable=False)
-    module_name = Column(String(20), nullable=False)
+    model_id = Column(String(32), primary_key=True, nullable=False)
+    model_name = Column(String(20), nullable=False)
     tag = Column(String(255), nullable=True)
     algo_id = Column(String(32), ForeignKey('algorithm.algo_id'), nullable=False)
     create_time = Column(Integer, nullable=False)
     file_path = Column(String(64), nullable=False)
     precision = Column(Float, nullable=True)
+
+    username = Column(String(40))
 
 
 def create_check_tables(engine=ENGINE):
@@ -91,6 +93,6 @@ def create_check_tables(engine=ENGINE):
 
     """
     # pay attention, the sequence of list is important. Base table need to be listed first.
-    tables = [Workflow, WorkflowHostAssociation, Algorithm, Module]
+    tables = [Workflow, WorkflowHostAssociation, Algorithm, Model]
     tables_objects = [Base.metadata.tables[table.__tablename__] for table in tables]
     create_tables(Base, engine, tables=tables_objects)
