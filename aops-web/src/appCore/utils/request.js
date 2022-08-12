@@ -43,6 +43,13 @@ const errorHandler = error => {
                 });
             }
         }
+    } else {
+        // 请求失败没有返回体时（如请求超时），添加默认错误信息
+        error.response = {
+            data: {
+                msg: 'request failed, no response'
+            }
+        };
     }
     return Promise.reject(error);
 };

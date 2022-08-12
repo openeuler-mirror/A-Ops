@@ -1,4 +1,4 @@
-import request from '@/appCore/utils/request'
+import request from '@/appCore/utils/request';
 
 const api = {
   hostList: '/manage/host/get', // 全量接口待确认
@@ -11,25 +11,28 @@ const api = {
   addHostGroup: '/manage/host/group/add',
   deleteHostGroup: '/manage/host/group/delete',
   transcationDomainConfigList: '/manage/config/get_transcation_domain_config',
-  deleteTranscationDomainConfig: '/manage/config/delete_transcation_domain_config'
-}
+  deleteTranscationDomainConfig: '/manage/config/delete_transcation_domain_config',
 
-export default api
+  // host detail plugin control
+  sceneGet: '/manage/host/scene/get',
+  pluginInfoGet: '/manage/agent/plugin/info',
+  pluginSet: '/manage/agent/plugin/set',
+  metricSet: '/manage/agent/metric/set',
+  getHostDetail: '/manage/host/info/query'
+};
 
-const directionMap = {
-  'ascend': 'asc',
-  'descend': 'desc'
-}
-const managementMap = {
-  'true': true,
-  'false': false
-}
+export default api;
+
+const directionMap = {'ascend': 'asc',
+  'descend': 'desc'};
+const managementMap = {'true': true,
+  'false': false};
 
 // 主机管理
-export function hostList ({ tableInfo, ...parameter }) {
+export function hostList({tableInfo, ...parameter}) {
   const management = tableInfo.filters.management
   ? managementMap[tableInfo.filters.management[0]] // 将字符串true false转换成boolean
-  : undefined
+  : undefined;
   return request({
     url: api.hostList,
     method: 'post',
@@ -42,18 +45,18 @@ export function hostList ({ tableInfo, ...parameter }) {
       page: tableInfo.pagination.current,
       per_page: tableInfo.pagination.pageSize
     }
-  })
-}
+  });
+};
 // 主机统计
-export function hostCount () {
+export function hostCount() {
   return request({
     url: api.hostCount,
     method: 'post',
     data: {}
-  })
-}
+  });
+};
 
-export function hostInfo (parameter) {
+export function hostInfo(parameter) {
   return request({
     url: api.hostInfo,
     method: 'post',
@@ -61,28 +64,31 @@ export function hostInfo (parameter) {
       ...parameter,
       host_list: parameter.host_list
     }
-  })
-}
-// 获取指定主机的基本信息，并以map形式返回。需要特别的代码结构配合使用
-export function hostBasicInfo (list, key) {
-  var hostList = []
+  });
+};
+// 获取指定主机的基本信息，并以map形式返回。需要特别的代码结构配合使用;
+export function hostBasicInfo(list, key) {
+  var hostList = [];
   list.forEach(function (item) {
-    hostList.push(item[key || 'host_id'])
-  })
+    hostList.push(item[key || 'host_id']);
+  });
   return request({
     url: api.hostInfo,
     method: 'post',
-    data: { host_list: hostList, basic: true }
+    data: {
+      host_list: hostList,
+      basic: true
+    }
   }).then(function (data) {
-    var map = {}
+    var map = {};
     data.host_infos.forEach(function (host) {
-      map[host.host_id] = host
-    })
-    return map
-  })
-}
+      map[host.host_id] = host;
+    });
+    return map;
+  });
+};
 
-export function addHost (parameter) {
+export function addHost(parameter) {
   return request({
     url: api.addHost,
     method: 'post',
@@ -99,10 +105,10 @@ export function addHost (parameter) {
       }],
       key: parameter.key
     }
-  })
-}
+  });
+};
 
-export function deleteHost ({ hostList, parameter }) {
+export function deleteHost({hostList, parameter}) {
   return request({
     url: api.deleteHost,
     method: 'delete',
@@ -110,11 +116,11 @@ export function deleteHost ({ hostList, parameter }) {
       host_list: hostList,
       ...parameter
     }
-  })
-}
+  });
+};
 
 // 主机组管理
-export function hostGroupList ({ tableInfo, ...parameter }) {
+export function hostGroupList({tableInfo, ...parameter}) {
   return request({
     url: api.hostGroupList,
     method: 'post',
@@ -125,10 +131,10 @@ export function hostGroupList ({ tableInfo, ...parameter }) {
       page: tableInfo.pagination.current,
       per_page: tableInfo.pagination.pageSize
     }
-  })
-}
+  });
+};
 
-export function addHostGroup ({ name, description, ...parameter }) {
+export function addHostGroup({name, description, ...parameter}) {
   return request({
     url: api.addHostGroup,
     method: 'post',
@@ -137,10 +143,10 @@ export function addHostGroup ({ name, description, ...parameter }) {
       host_group_name: name,
       description
     }
-  })
-}
+  });
+};
 
-export function deleteHostGroup ({ hostGroupList, parameter }) {
+export function deleteHostGroup({hostGroupList, parameter}) {
   return request({
     url: api.deleteHostGroup,
     method: 'delete',
@@ -148,5 +154,61 @@ export function deleteHostGroup ({ hostGroupList, parameter }) {
       host_group_list: hostGroupList,
       ...parameter
     }
-  })
-}
+  });
+};
+
+// host detail plugin control
+export function sceneGet({hostId}) {
+  return request({
+    url: api.sceneGet,
+    method: 'get',
+    params: {
+      host_id: hostId
+    }
+  });
+};
+
+export function pluginInfoGet({hostId}) {
+  return request({
+    url: api.pluginInfoGet,
+    method: 'get',
+    params: {
+      host_id: hostId
+    }
+  });
+};
+
+export function metricSet({metricStatus, parameter}) {
+  return request({
+    url: api.metricSet,
+    method: 'post',
+    data: {
+      host_id: metricStatus.hostId,
+      plugins: metricStatus.plugins,
+      ...parameter
+    }
+  });
+};
+
+export function pluginSet({pluginStatus, parameter}) {
+  return request({
+    url: api.pluginSet,
+    method: 'post',
+    data: {
+      host_id: pluginStatus.hostId,
+      plugins: pluginStatus.plugins,
+      ...parameter
+    }
+  });
+};
+
+export function getHostDetail(hostId, isBasicInfo = false) {
+  return request({
+    url: api.getHostDetail,
+    method: 'post',
+    data: {
+      host_list: [hostId],
+      basic: isBasicInfo
+    }
+  });
+};
