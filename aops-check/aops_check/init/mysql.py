@@ -15,12 +15,19 @@ Time:
 Author:
 Description:
 """
-from aops_check.init.app import init_app
-from aops_check.init.elasticsearch import init_es
-from aops_check.init.mysql import init_mysql
+import sqlalchemy
+from aops_check.database import ENGINE
+from aops_check.database.factory.table import create_check_tables
+from aops_utils.log.log import LOGGER
 
 
-def init():
-    init_mysql()
-    init_es()
-    init_app()
+def init_mysql():
+    """
+    Initialize user, add a default user: admin
+    """
+    try:
+        create_check_tables(ENGINE)
+        LOGGER.info("initialize mysql tables for aops-check succeed.")
+    except sqlalchemy.exc.SQLAlchemyError:
+        LOGGER.error("initialize mysql tables for aops-check failed.")
+        raise sqlalchemy.exc.SQLAlchemyError("create tables fail")
