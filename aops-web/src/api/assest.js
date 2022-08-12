@@ -202,6 +202,10 @@ export function pluginSet({pluginStatus, parameter}) {
   });
 };
 
+/*
+*  isBasicInfo: 值为true时，获取主机的基本信息（主机名、ip地址等）；
+*               值为false时，获取主机下详细的资源信息（缓存、Cpu信息等）。
+*/
 export function getHostDetail(hostId, isBasicInfo = false) {
   return request({
     url: api.getHostDetail,

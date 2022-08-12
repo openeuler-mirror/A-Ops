@@ -8,6 +8,10 @@ import cookie from 'js-cookie';
 import notification from 'ant-design-vue/es/notification';
 import {VueAxios} from './axios';
 
+const errorMsgs = {
+    noResponse: 'request failed, no response'
+};
+
 // 创建 axios 实例
 const request = axios.create({
     // API 请求的默认前缀
@@ -47,7 +51,7 @@ const errorHandler = error => {
         // 请求失败没有返回体时（如请求超时），添加默认错误信息
         error.response = {
             data: {
-                msg: 'request failed, no response'
+                msg: errorMsgs.noResponse
             }
         };
     }

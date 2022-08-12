@@ -176,7 +176,6 @@ const hostInfos = [
 
 const getHosts = (options) => {
   const body = getBody(options)
-  console.log(body)
 
   let hostsData
   if (body.host_group_list && body.host_group_list.length > 0) {
