@@ -265,7 +265,7 @@ static int init_global(const char *tc_bpf_o, enum tc_type_e tc_type)
         DEBUG("tc_bpf_o is null\n");
         return -1;
     }
-    ret = snprintf(g_tc_o, MAX_CMD_LEN, "%s", tc_bpf_o);
+    ret = snprintf(g_tc_o, MAX_NAME_LEN, "%s", tc_bpf_o);
     if (ret < 0) {
         DEBUG("snprintf g_tc_o err\n");
         return -1;
