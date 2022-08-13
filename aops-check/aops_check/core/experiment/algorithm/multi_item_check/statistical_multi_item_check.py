@@ -10,6 +10,7 @@
 # PURPOSE.
 # See the Mulan PSL v2 for more details.
 # ******************************************************************************/
+from typing import Dict
 from aops_check.core.experiment.algorithm.base_algo import BaseMultiItemAlgorithmTwo
 
 
@@ -35,3 +36,14 @@ class StatisticalCheck(BaseMultiItemAlgorithmTwo):
         if abnormal_num / len(data) > self._percent:
             return True
         return False
+
+    @property
+    def info(self) -> Dict[str, str]:
+        data = {
+            "algo_name": "statistical_multi_item_check",
+            "field": "multicheck",
+            "description": "It's a statistical multiple item check method.",
+            "path": "aops_check.core.experiment.algorithm.multi_item_check."
+                    "statistical_multi_item_check.StatisticalCheck"
+        }
+        return data
