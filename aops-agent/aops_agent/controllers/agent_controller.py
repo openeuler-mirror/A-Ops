@@ -45,21 +45,25 @@ def agent_plugin_info() -> Response:
         Response:
             a list which contains cpu,memory,collect items of plugin,running status and so on.for
         example
-            [{
-            "plugin_name": "string",
-            "is_installed": true,
-            "status": "string",
-            "collect_items": [{
+            {
+                code:   int,
+                msg:    string
+                resp:[{
+                        "plugin_name": "string",
+                        "is_installed": true,
+                        "status": "string",
+                        "collect_items": [{
                             "probe_name": "string",
                             "probe_status": "string"} ],
-            "resource": [{
+                        "resource": [{
                         "name": "string",
                         "limit_value": "string",
                         "current_value": "string}]}]
+            }
     """
     plugin_list = INSTALLABLE_PLUGIN
     if len(plugin_list) == 0:
-        return jsonify([])
+        return jsonify(StatusCode.make_response_body((SUCCESS, {'resp': []})))
 
     res = []
     for plugin_name in plugin_list:
@@ -113,7 +117,7 @@ def agent_plugin_info() -> Response:
         plugin_running_info['collect_items'] = collect_items_status
         plugin_running_info['resource'] = resource
         res.append(plugin_running_info)
-    return jsonify(res)
+    return jsonify(StatusCode.make_response_body((SUCCESS, {'resp': res})))
 
 
 @Command.validate_token
