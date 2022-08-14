@@ -56,15 +56,16 @@ class StatisticDiag(Algorithm):
     @property
     def info(self) -> Dict[str, str]:
         data = {
-            "name": "statistic_diag",
+            "algo_name": "statistics_diag",
             "field": "diag",
-            "description": "It's a statistic diagnose method"
+            "description": "It's a statistic diagnose method",
+            "path": "aops_check.core.experiment.algorithm.diag.statistics_diag.StatisticDiag"
         }
         return data
 
     def get_root(self, candidate: List[str], check_result: Dict[str, List[Dict]]) -> str:
         """
-        Choose the root host which has the max score
+        Choose the root host which has the max score.
         """
         root = ""
         max_score = 0
@@ -78,7 +79,8 @@ class StatisticDiag(Algorithm):
     @staticmethod
     def count_fault_score(failure_info: List[Dict], score_map: Optional[Dict] = metric_score) -> int:
         """
-        Count score in each host, each metric may set a weight with a default score 0.5, it's algorithm is shown as below: 
+        Count score in each host, each metric may set a weight with a default score 0.5,
+        its algorithm is shown as below: 
         score = metric1 * weight1 + metric2 * weight2 + ...
         """
         score = 0
@@ -94,7 +96,7 @@ class StatisticDiag(Algorithm):
         """
         Choose the top-K hosts, which are sorted by number of metrics.
         """
-        # # all hosts are candidates
+        # all hosts are candidates
         if len(check_result) <= self.candidate_num:
             return list(check_result.keys())
 
@@ -110,7 +112,7 @@ class StatisticDiag(Algorithm):
 
         return [data[1] for data in topk_list]
 
-    def run(self, check_result: Dict[str, List[Dict]]) -> Tuple[str, str, str]:
+    def calculate(self, check_result: Dict[str, List[Dict]]) -> Tuple[str, str, str]:
         """
         Execute entry.
 
