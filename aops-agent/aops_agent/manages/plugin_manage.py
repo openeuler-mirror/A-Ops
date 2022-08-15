@@ -12,14 +12,13 @@
 # ******************************************************************************/
 import re
 from dataclasses import dataclass
-from typing import List, Dict, Tuple
+from typing import List, Dict
 import libconf
 from aops_agent.conf import configuration
 from aops_agent.conf.constant import INSTALLABLE_PLUGIN
 from aops_agent.conf.status import (
     SUCCESS,
     FILE_NOT_FOUND,
-    StatusCode,
     CONFLICT_ERROR
 )
 from aops_agent.tools.util import (
@@ -126,12 +125,12 @@ class Plugin:
         return main_pid
 
 
-class Gopher(Plugin):
+class GalaGopher(Plugin):
     """
     Some methods only available to Gopher
     """
     _rpm = 'gala-gopher'
-    _name = 'gopher'
+    _name = 'gala-gopher'
 
     @classmethod
     def get_collect_items(cls) -> set:

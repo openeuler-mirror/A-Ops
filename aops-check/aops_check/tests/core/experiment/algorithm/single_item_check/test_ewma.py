@@ -12,7 +12,7 @@
 # ******************************************************************************/
 import unittest
 
-from aops_check.core.experiment.algorithm.built_in_algo.ewma import EWMA
+from aops_check.core.experiment.algorithm.single_item_check.ewma import EWMA
 
 
 class TestEWMA(unittest.TestCase):

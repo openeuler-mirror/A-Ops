@@ -50,19 +50,23 @@ class StatusCode:
     }
 
     @classmethod
-    def make_response_body(cls, code) -> dict:
+    def make_response_body(cls, res) -> dict:
         """
         make response body from mapping
 
         Args:
-            code (int)
+            res (int or tuple)
 
         Returns:
             dict: response body
         """
-        message = cls.mapping.get(code) or cls.mapping.get(UNKNOWN_ERROR)
-        response_body = {
-            "code": code,
-            "msg": message.get("msg"),
-        }
+        if isinstance(res, tuple):
+            response_body = cls.make_response_body(res[0])
+            response_body.update(res[1])
+        else:
+            message = cls.mapping.get(res) or cls.mapping.get(UNKNOWN_ERROR)
+            response_body = {
+                "code": res,
+                "msg": message.get("msg"),
+            }
         return response_body

@@ -17,6 +17,7 @@ import argparse
 import connexion
 from aops_agent.conf import configuration
 from aops_agent.conf.constant import REGISTER_HELP_INFO, AGENT_CONFIG_PATH
+from aops_agent.conf.status import SUCCESS
 from aops_agent.manages.command_manage import Command
 from aops_agent.tools.util import get_dict_from_file, register_info_to_dict, update_ini_data_value
 
@@ -45,7 +46,10 @@ def register_on_manager(args: argparse.Namespace) -> NoReturn:
     if register_info.get('agent_host') is not None:
         update_ini_data_value(AGENT_CONFIG_PATH,
                               'agent', 'port', register_info.get('agent_host'))
-    print(Command.register(register_info))
+    if Command.register(register_info) == SUCCESS:
+        print('Agent Register Success')
+    else:
+        print('Agent Register Fail')
 
 
 def main():

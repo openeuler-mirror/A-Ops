@@ -15,6 +15,7 @@ from __future__ import absolute_import
 import json
 from unittest import mock
 
+import os
 import requests
 
 from aops_agent.manages.token_manage import TokenManage
@@ -133,13 +134,16 @@ class TestAgentController(BaseTestCase):
 
 
 class TestGetApplicationInfo(BaseTestCase):
+    headers = {'Content-Type': 'application/json'}
+    headers_with_token = {'Content-Type': 'application/json', 'access_token': '13965d8302b5246a13352680d7c8e602'}
+    headers_with_incorrect_token = {'Content-Type': 'application/json',
+                                    'access_token': '213965d8302b5246a13352680d7c8e602'}
 
     def test_get_application_info_should_return_target_app_running_info_when_with_correct_token(self):
         TokenManage.set_value('13965d8302b5246a13352680d7c8e602')
-        headers = {'Content-Type': 'application/json', 'access_token': '13965d8302b5246a13352680d7c8e602'}
         with mock.patch('aops_agent.controllers.agent_controller.plugin_status_judge') as mock_plugin_status:
             mock_plugin_status.return_value = 'Active: active (running)'
-            response = self.client.get('/v1/agent/application/info', headers=headers)
+            response = self.client.get('/v1/agent/application/info', headers=self.headers_with_token)
             self.assert200(response, response.text)
 
     def test_get_application_info_should_return_401_when_with_incorrect_token(self):
@@ -153,4 +157,89 @@ class TestGetApplicationInfo(BaseTestCase):
 
     def test_get_application_info_should_return_405_when_request_by_incorrect_method(self):
         response = self.client.post('/v1/agent/application/info')
+        self.assert405(response, response.text)
+
+    @mock.patch.object(os.path, 'exists')
+    @mock.patch.object(os.path, 'isfile')
+    @mock.patch('aops_agent.controllers.agent_controller.get_file_info')
+    def test_collect_file_should_return_file_content_when_input_correct_file_path_with_token(self,
+                                                                                             mock_file_info,
+                                                                                             mock_isfile,
+                                                                                             mock_exists
+                                                                                             ):
+        mock_file_info.return_value = {"path": "file_path",
+                                       "file_attr": {
+                                           "mode": "0755",
+                                           "owner": "owner",
+                                           "group": "group"
+                                       },
+                                       "content": "content"
+                                       }
+        mock_isfile.return_value = True
+        mock_exists.return_value = True
+        data = ['test1', 'test2']
+        response = self.client.post('/v1/agent/file/collect',
+                                    data=json.dumps(data),
+                                    headers=self.headers_with_token)
+        self.assertTrue(json.loads(response.text).get('infos')[0].get('content'), response.text)
+
+    @mock.patch('aops_agent.controllers.agent_controller.get_file_info')
+    @mock.patch.object(os.path, 'exists')
+    @mock.patch.object(os.path, 'isfile')
+    def test_collect_file_should_return_fail_list_when_input_file_path_is_not_exist(self,
+                                                                                    mock_isfile,
+                                                                                    mock_exists,
+                                                                                    mock_file_info
+                                                                                    ):
+        mock_isfile.side_effect = [True, True]
+        mock_exists.side_effect = [True, False]
+        data = ['test1', 'test2']
+        mock_file_info.return_value = {"path": "file_path",
+                                       "file_attr": {
+                                           "mode": "0755",
+                                           "owner": "owner",
+                                           "group": "group"
+                                       },
+                                       "content": "content"
+                                       }
+        response = self.client.post('/v1/agent/file/collect',
+                                    data=json.dumps(data),
+                                    headers=self.headers_with_token)
+        self.assertEqual(json.loads(response.text).get('fail_files'), ['test2'], response.text)
+
+    @mock.patch.object(os.path, 'isfile')
+    @mock.patch.object(os.path, 'exists')
+    def test_collect_file_should_return_fail_list_when_input_file_path_is_not_a_file(self, mock_exists, mock_isfile):
+        mock_exists.return_value = True
+        mock_isfile.side_effect = [False, False]
+        data = ['test1', 'test2']
+        response = self.client.post('/v1/agent/file/collect',
+                                    data=json.dumps(data),
+                                    headers=self.headers_with_token)
+        self.assertEqual(['test1', 'test2'], json.loads(response.text).get('fail_files'), response.text)
+
+    def test_collect_file_should_return_401_when_input_correct_file_path_with_incorrect_token(self):
+        data = ['test1']
+        response = self.client.post('/v1/agent/file/collect',
+                                    data=json.dumps(data),
+                                    headers=self.headers_with_incorrect_token)
+        self.assert401(response, response.text)
+
+    def test_collect_file_should_return_400_when_input_correct_file_path_with_no_token(self):
+        data = ['test1']
+        response = self.client.post('/v1/agent/file/collect', data=json.dumps(data), headers=self.headers)
+        self.assert400(response, response.text)
+
+    def test_collect_file_should_return_400_when_no_input_with_token(self):
+        response = self.client.post('/v1/agent/file/collect', headers=self.headers)
+        self.assert400(response, response.text)
+
+    def test_collect_file_should_return_400_when_input_incorrect_data_with_token(self):
+        data = [2333]
+        response = self.client.post('/v1/agent/file/collect', data=json.dumps(data), headers=self.headers)
+        self.assert400(response, response.text)
+
+    def test_collect_file_should_return_405_when_requset_by_get(self):
+        data = ['test1']
+        response = self.client.get('/v1/agent/file/collect', data=json.dumps(data), headers=self.headers)
         self.assert405(response, response.text)

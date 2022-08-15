@@ -15,7 +15,7 @@ Time:
 Author:
 Description:
 """
-from aops_check.conf.constant import APP_INDEX
+from aops_check.conf.constant import APP_INDEX, WORKFLOW_INDEX
 
 MAPPINGS = {
     APP_INDEX: {
@@ -54,7 +54,26 @@ MAPPINGS = {
                 "detail": {
                     "type": "object"
                 }
-
+            }
+        }
+    },
+    WORKFLOW_INDEX: {
+        "mappings": {
+            "properties": {
+                "username": {
+                    "type": "keyword",
+                    "ignore_above": 256
+                },
+                "workflow_id": {
+                    "type": "keyword",
+                    "ignore_above": 256
+                },
+                "detail": {
+                    "type": "object"
+                },
+                "model_info": {
+                    "type": "object"
+                }
             }
         }
     }

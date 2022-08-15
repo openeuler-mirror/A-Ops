@@ -12,7 +12,7 @@
 # ******************************************************************************/
 import unittest
 
-from aops_check.core.experiment.algorithm.built_in_algo.mae import Mae
+from aops_check.core.experiment.algorithm.single_item_check.mae import Mae
 
 
 class TestMae(unittest.TestCase):

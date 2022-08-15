@@ -21,7 +21,7 @@ from flask import Flask
 
 from aops_check import BLUE_POINT
 from aops_check.conf import configuration
-from aops_check.init.elasticsearch import init_es
+from aops_check.init import init
 from aops_check.mode import mode
 from aops_check.mode.scheduler import Scheduler
 
@@ -41,7 +41,7 @@ class ConfigurableScheduler(Scheduler):
         """
         Init elasticsearch and run a flask app.
         """
-        init_es()
+        init()
 
         app = Flask(__name__)
         for blue, api in BLUE_POINT:
