@@ -377,7 +377,6 @@ class BaseResponse(Resource):
 
         if need_token:
             verify_res = cls.verify_token(access_token, args)
-            args["access_token"] = access_token
 
         return args, verify_res
 

@@ -12,7 +12,7 @@
 # ******************************************************************************/
 from typing import Optional
 import requests
-from flask import jsonify, json, Response
+from flask import jsonify, json, Response, request
 
 from aops_manager.account_manager.cache import UserCache
 from aops_manager.database import SESSION
@@ -300,6 +300,7 @@ class GetHostScene(BaseResponse):
         Returns:
             tuple: (status code, result)
         """
+        access_token = request.headers.get("access_token")
         status, data = AgentUtil.get_args(args)
         if status != SUCCEED:
             LOGGER.error("Get Agent data failed.")
@@ -316,7 +317,7 @@ class GetHostScene(BaseResponse):
 
         # get scene and recommend collect items from check
         check_url_get_scene, check_header = GetHostScene.__get_check_url(CHECK_IDENTIFY_SCENE)
-        check_header['access_token'] = args.get("access_token")
+        check_header['access_token'] = access_token
         response = self.get_response("post", check_url_get_scene, host_scene_info, check_header)
         status_code = response.get("code")
         if status_code != SUCCEED:
