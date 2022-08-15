@@ -18,9 +18,9 @@
             >
               <span slot="header">
                 <span>{{ item }}</span>
-                <span style="marginLeft: 30px">({{ scenePropertys.length }})</span>
+                <span style="marginLeft: 30px">({{ sceneData.collect_items[item].length }})</span>
               </span>
-              <p>采集项：{{ recommendList[item] }}</p>
+              <p>采集项：{{ recommendListMap[item] }}</p>
             </a-collapse-panel>
           </a-collapse>
           <span v-else-if="isEmpty">暂无</span>
@@ -156,7 +156,7 @@ export default {
       columns,
       sceneData: {},
       scenePropertys: [],
-      recommendList: {},
+      recommendListMap: {},
       isEmpty: false,
       // 用户修改的记录
       changedPlugin: [],
@@ -242,6 +242,7 @@ export default {
             _this.sceneData.scene = '暂无'
           } else {
             _this.$set(_this.sceneData, 'collect_items', res.collect_items)
+            // 创建数组scenePropertys存储sceneData.collect_items的属性，即推荐开启的插件列表
             _this.scenePropertys = Object.keys(_this.sceneData.collect_items)
           }
           if (_this.scenePropertys.length === 0) {
@@ -249,9 +250,9 @@ export default {
           } else {
             _this.scenePropertys.forEach(element => {
               if (_this.sceneData.collect_items[element].length === 0) {
-                _this.$set(_this.recommendList, element, '暂无')
+                _this.$set(_this.recommendListMap, element, '暂无')
               } else {
-                _this.$set(_this.recommendList, element, _this.sceneData.collect_items[element].join('、'))
+                _this.$set(_this.recommendListMap, element, _this.sceneData.collect_items[element].join('、'))
               }
             })
           }

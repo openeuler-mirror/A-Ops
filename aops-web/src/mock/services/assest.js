@@ -104,76 +104,119 @@ const hostInfos = [
 ]
 
 // host detail plugin control
-// const recommendMetricList = ['warning', 'devlopprobe', 'systemprobe']
+const recommendMetricList = {
+  gopher: [
+    'probe1',
+    'probe2',
+    'probe3'
+  ],
+  plugin1: [
+    'probe4',
+    'probe5'
+  ],
+  plugin2: [
+    'probe6',
+    'probe7'
+  ]
+}
 
-// const pluginModel = {
-//   plugin_name: 'gitee',
-//   is_installed: true,
-//   status: true,
-//   collect_items: [{
-//     probe_name: 'probe1',
-//     probe_status: true
-//   },
-//   {
-//     probe_name: 'probe2',
-//     probe_status: true
-//   },
-//   {
-//     probe_name: 'probe3',
-//     probe_status: false
-//   },
-//   {
-//     probe_name: 'probe4',
-//     probe_status: true
-//   },
-//   {
-//     probe_name: 'probe5',
-//     probe_status: false
-//   }],
-//   resource: [
-//     {
-//       name: 'cpu',
-//       limit_value: '2G',
-//       current_value: '4核'
-//     },
-//     {
-//       name: 'mem',
-//       limit_value: '2G',
-//       current_value: '4核'
-//     }
-//   ]
-// };
-// const pluginModel2 = {
-//   plugin_name: 'gihub',
-//   is_installed: true,
-//   status: true,
-//   collect_items: [{
-//     probe_name: 'probe1',
-//     probe_status: false
-//   },
-//   {
-//     probe_name: 'probe2',
-//     probe_status: true
-//   },
-//   {
-//     probe_name: 'probe3',
-//     probe_status: false
-//   }
-// ],
-//   resource: [
-//     {
-//       name: 'cpu',
-//       limit_value: '2G',
-//       current_value: '4核'
-//     },
-//     {
-//       name: 'mem',
-//       limit_value: '2G',
-//       current_value: '4核'
-//     }
-//   ]
-// };
+const pluginModel = {
+  plugin_name: 'gropher',
+  is_installed: true,
+  status: 'active',
+  collect_items: [{
+    probe_name: '1ewwe',
+    probe_status: 'off',
+    support_auto: false
+  },
+  {
+    probe_name: '1sfa',
+    probe_status: 'on',
+    support_auto: true
+  },
+  {
+    probe_name: '1sfssa',
+    probe_status: 'on',
+    support_auto: false
+  }],
+  resource: [
+    {
+      name: 'cpu',
+      limit_value: '2G',
+      current_value: '4核'
+    },
+    {
+      name: 'mem',
+      limit_value: '2G',
+      current_value: '4核'
+    }
+  ]
+};
 
+const pluginMode2 = {
+  plugin_name: 'gsdr',
+  is_installed: true,
+  status: 'inactive',
+  collect_items: [{
+    probe_name: '2tdrd',
+    probe_status: 'auto',
+    support_auto: true
+  },
+  {
+    probe_name: '2hfghg',
+    probe_status: 'on',
+    support_auto: true
+  },
+  {
+    probe_name: '2sfssa',
+    probe_status: 'on',
+    support_auto: false
+  }],
+  resource: [
+    {
+      name: 'cpu',
+      limit_value: '2G',
+      current_value: '4核'
+    },
+    {
+      name: 'mem',
+      limit_value: '2G',
+      current_value: '4核'
+    }
+  ]
+};
+const pluginMode3 = {
+  plugin_name: 'ser',
+  is_installed: true,
+  status: 'active',
+  collect_items: [{
+    probe_name: '3pwe',
+    probe_status: 'off',
+    support_auto: true
+  },
+  {
+    probe_name: '3preee',
+    probe_status: 'auto',
+    support_auto: true
+  },
+  {
+    probe_name: '3sfssa',
+    probe_status: 'off',
+    support_auto: false
+  }],
+  resource: [
+    {
+      name: 'cpu',
+      limit_value: '2G',
+      current_value: '4核'
+    },
+    {
+      name: 'mem',
+      limit_value: '2G',
+      current_value: '4核'
+    }
+  ]
+};
 const getHosts = (options) => {
   const body = getBody(options)
 
@@ -242,27 +285,24 @@ const deleteHostGroup = (options) => {
 }
 
 // host detail plugin control
-// const sceneGet = (options) => {
-//   return builder({
-//     'msg': Mock.mock('success'),
-//     'scene_name': '开发者模式',
-//     'recommend_metric_list': recommendMetricList
-//   }, '查询成功', 200, { 'Custom-Header': Mock.mock('@guid') })
-// }
+const sceneGet = (options) => {
+  return builder({
+    'msg': Mock.mock('success'),
+    'scene_name': 'web',
+    'collect_items': recommendMetricList
+  }, '查询成功', 200, { 'Custom-Header': Mock.mock('@guid') })
+}
 
-// const pluginInfoGet = (options) => {
-//   const pluginData = []
-//   for (let i = 0; i < 50; i++) {
-//     pluginData.push(pluginModel)
-//   }
-//   for (let j = 0; j < 55; j++) {
-//     pluginData.push(pluginModel2)
-//   }
-//   return builder({
-//     'msg': Mock.mock('success'),
-//     'info': pluginData
-//   }, '查询成功', 200, { 'Custom-Header': Mock.mock('@guid') })
-// }
+const pluginInfoGet = (options) => {
+  const pluginData = []
+  pluginData.push(pluginModel)
+  pluginData.push(pluginMode2)
+  pluginData.push(pluginMode3)
+  return builder({
+    'msg': Mock.mock('success'),
+    'info': pluginData
+  }, '查询成功', 200, { 'Custom-Header': Mock.mock('@guid') })
+}
 
 // const metricSet = (options) => {
 //   return builder({
@@ -270,7 +310,7 @@ const deleteHostGroup = (options) => {
 //   }, 'probe修改成功', 200, { 'Custom-Header': Mock.mock('@guid') })
 // }
 
-// const pluginChange = (options) => {
+// const pluginSet = (options) => {
 //   return builder({
 //     'msg': Mock.mock('success')
 //   }, 'plugin修改成功', 200, { 'Custom-Header': Mock.mock('@guid') })
@@ -293,7 +333,7 @@ Mock.mock(/\/manage\/host\/delete_host/, 'delete', deleteHost)
 Mock.mock(/\/manage\/host\/info\/query/, 'post', getHostInfoQuery)
 
 // host detail plugin control
-// Mock.mock(/\/manage\/host\/scene\/get/, 'get', sceneGet)
-// Mock.mock(/\/manage\/agent\/plugin\/info/, 'get', pluginInfoGet)
-// Mock.mock(/\/manage\/agent\/plugin\/set/, 'post', pluginChange)
+Mock.mock(/\/manage\/host\/scene\/get/, 'get', sceneGet)
+Mock.mock(/\/manage\/agent\/plugin\/info/, 'get', pluginInfoGet)
+// Mock.mock(/\/manage\/agent\/plugin\/set/, 'post', pluginSet)
 // Mock.mock(/\/manage\/agent\/metric\/set/, 'post', metricSet)
