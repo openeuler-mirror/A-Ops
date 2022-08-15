@@ -10,7 +10,7 @@
 # PURPOSE.
 # See the Mulan PSL v2 for more details.
 # ******************************************************************************/
-from typing import Optional
+from typing import Optional, Dict
 
 import numpy as np
 
@@ -21,6 +21,16 @@ class NSigma(BaseSingleItemAlgorithm):
 
     def __init__(self, n: int = 3):
         self._n = n
+
+    @property
+    def info(self) -> Dict[str, str]:
+        data = {
+            "algo_name": "ngisgma",
+            "field": "singlecheck",
+            "description": "It's a single item check method using nsigma algorithm.",
+            "path": "aops_check.core.experiment.algorithm.single_item_check.nsigma.Nsigma"
+        }
+        return data
 
     def calculate(self, data: list, time_range: Optional[list] = None) -> list:
         """

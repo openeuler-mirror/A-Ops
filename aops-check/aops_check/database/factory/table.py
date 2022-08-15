@@ -40,8 +40,8 @@ class Workflow(Base, MyBase):
     __tablename__ = "workflow"
 
     workflow_id = Column(String(32), primary_key=True, nullable=False)
-    workflow_name = Column(String(20), nullable=False)
-    description = Column(String(50), nullable=False)
+    workflow_name = Column(String(50), nullable=False)
+    description = Column(String(100), nullable=False)
     status = Column(String(20), nullable=False)
     app_name = Column(String(20), nullable=False)
     app_id = Column(String(32), nullable=False)
@@ -59,11 +59,12 @@ class Algorithm(Base, MyBase):
     __tablename__ = "algorithm"
 
     algo_id = Column(String(32), primary_key=True, nullable=False)
-    algo_name = Column(String(20))
+    algo_name = Column(String(50))
     field = Column(String(50), nullable=True)
-    description = Column(String(50), nullable=True)
+    description = Column(String(100), nullable=True)
+    path = Column(String(150), nullable=False)
 
-    username = Column(String(40))
+    username = Column(String(40), nullable=True)
 
 
 class Model(Base, MyBase):
@@ -77,10 +78,10 @@ class Model(Base, MyBase):
     tag = Column(String(255), nullable=True)
     algo_id = Column(String(32), ForeignKey('algorithm.algo_id'), nullable=False)
     create_time = Column(Integer, nullable=False)
-    file_path = Column(String(64), nullable=False)
+    file_path = Column(String(64), nullable=True)
     precision = Column(Float, nullable=True)
 
-    username = Column(String(40))
+    username = Column(String(40), nullable=True)
 
 
 def create_check_tables(engine=ENGINE):

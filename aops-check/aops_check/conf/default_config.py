@@ -45,6 +45,11 @@ agent = {
     "DEFAULT_INSTANCE_PORT": 9100
 }
 
+manager = {
+    "IP": "127.0.0.1",
+    "PORT": 11111
+}
+
 kafka = {
     "KAFKA_SERVER_LIST": "127.0.0.1:9092",
     "API_VERSION": "0.11.5",
