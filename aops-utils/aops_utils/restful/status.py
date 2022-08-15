@@ -41,6 +41,7 @@ CHANGE_PASSWORD_FAIL = 1206
 TASK_EXECUTION_FAIL = 1301
 REPEAT_TASK_EXECUTION = 1302
 SET_AGENT_PLUGIN_STATUS_FAILED = 1401
+WORKFLOW_ASSIGN_MODEL_FAIL = 1501
 
 
 class StatusCode:  # pylint: disable=R0903
@@ -119,6 +120,9 @@ class StatusCode:  # pylint: disable=R0903
         },
         REPEAT_TASK_EXECUTION: {
             "msg": "Task execute repeatedly"
+        },
+        WORKFLOW_ASSIGN_MODEL_FAIL: {
+            "msg": "An error occurred when assign model to the workflow."
         }
     }
 
