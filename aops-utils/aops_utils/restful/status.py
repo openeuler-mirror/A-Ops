@@ -123,6 +123,7 @@ class StatusCode:  # pylint: disable=R0903
         },
         WORKFLOW_ASSIGN_MODEL_FAIL: {
             "msg": "An error occurred when assign model to the workflow."
+        },
         SET_AGENT_PLUGIN_STATUS_FAILED: {
             "msg": "Set agent plugin status failed"
         }
