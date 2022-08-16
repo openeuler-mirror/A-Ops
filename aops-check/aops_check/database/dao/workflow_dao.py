@@ -590,7 +590,7 @@ class WorkflowDao(MysqlProxy, ElasticsearchProxy):
         filters = {Workflow.username == username, Workflow.workflow_id == workflow_id}
         workflow_query = self.session.query(Workflow.status).filter(*filters).one()
 
-        if workflow_query.status == "running" or workflow_query.status == "recommend":
+        if workflow_query.status in ("running", "recommending"):
             LOGGER.info("Delete workflow '%s' failed because it's still %s" % (workflow_id, workflow_query.status))
             return True
         return False
