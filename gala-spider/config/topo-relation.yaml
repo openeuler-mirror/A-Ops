@@ -9,6 +9,25 @@ topo_relations:
           -
             type: host
   -
+    type: container
+    dependingitems:
+      -
+        id: connect
+        layer: indirect
+        toTypes:
+          -
+            type: container
+      -
+        id: runs_on
+        layer: direct
+        toTypes:
+          -
+            type: host
+            matches:
+              -
+                from: machine_id
+                to: machine_id
+  -
     type: proc
     dependingitems:
       -
@@ -21,6 +40,11 @@ topo_relations:
               -
                 from: machine_id
                 to: machine_id
+            requires:
+              -
+                side: from
+                label: container_id
+                value: null
       -
         id: belongs_to
         layer: direct

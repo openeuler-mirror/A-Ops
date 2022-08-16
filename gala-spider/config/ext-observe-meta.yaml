@@ -1,6 +1,7 @@
 observe_entities:
   -
     type: host
+    level: HOST
     keys:
       - machine_id
     labels:
@@ -8,6 +9,7 @@ observe_entities:
     metrics: []
   -
     type: appinstance
+    level: PROCESS
     keys:
       - pgid
       - machine_id
