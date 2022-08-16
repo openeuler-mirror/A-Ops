@@ -1,5 +1,5 @@
 [Unit]
-Description=a-ops gala spider service
+Description=a-ops gala inference service
 After=network.target
 
 [Service]
