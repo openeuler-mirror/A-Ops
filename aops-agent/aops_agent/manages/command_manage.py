@@ -16,11 +16,11 @@ import json
 
 import connexion
 import requests
-from flask import make_response
+from flask import jsonify
 
 from aops_agent.conf.constant import DATA_MODEL, DEFAULT_TOKEN_PATH
 from aops_agent.conf import configuration
-from aops_agent.conf.status import PARAM_ERROR, HTTP_CONNECT_ERROR, SUCCESS
+from aops_agent.conf.status import PARAM_ERROR, HTTP_CONNECT_ERROR, SUCCESS, StatusCode, TOKEN_ERROR
 from aops_agent.log.log import LOGGER
 from aops_agent.manages.token_manage import TokenManage as TOKEN
 from aops_agent.tools.util import (
@@ -75,11 +75,9 @@ class Command:
         def wrapper(*arg, **kwargs):
             token = TOKEN.get_value()
             access_token = connexion.request.headers.get('access_token')
-            if access_token == token:
-                return func(*arg, **kwargs)
-            res = make_response('token error')
-            res.status_code = 401
-            return res
+            if token == '' or access_token != token:
+                return  jsonify(StatusCode.make_response_body(TOKEN_ERROR))
+            return func(*arg, **kwargs)
 
         return wrapper
 

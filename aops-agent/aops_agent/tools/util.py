@@ -136,7 +136,7 @@ def plugin_status_judge(plugin_name: str) -> str:
     return res
 
 
-def change_probe_status(probes: Tuple[AttrDict], gopher_probes_status: dict, res: dict) -> Tuple:
+def change_probe_status(probes: Tuple[AttrDict], gopher_probes_status: dict, res: dict) -> Tuple[dict, dict]:
     """
     to change gopher probe status
 
@@ -150,11 +150,44 @@ def change_probe_status(probes: Tuple[AttrDict], gopher_probes_status: dict, res
     """
     failure_list = copy.deepcopy(gopher_probes_status)
     for probe in probes:
-        if probe.get('name', "") in gopher_probes_status:
+        if judge_probe_can_change(probe, gopher_probes_status):
             probe['switch'] = gopher_probes_status[probe['name']]
             res['success'].append(probe['name'])
             failure_list.pop(probe['name'])
     return res, failure_list
+
+
+def judge_probe_can_change(probe: AttrDict, probe_status: Dict[str, str]) -> bool:
+    """
+        Determine which probe can be changed.
+        It must meet the following conditions
+        1. probe name in gopher config file, the status is on or off.
+        2. probe name in gopher config file, the status is auto and it has an option named 'start_check'.
+
+    Args:
+        probe(AttrDict):
+            e.g AttrDict([('name', 'test'),
+                           ('command', ''),
+                           ('param', ''),
+                           ('start_check', ''),
+                           ('check_type', 'count'),
+                           ('switch', 'on')])
+        probe_status(Dict[str, str]): modification results we expect
+            e.g {
+                    'probe_name1':on,
+                    'probe_name2':off,
+                    'probe_name3':auto,
+                    ...
+                }
+
+    Returns:
+        bool
+    """
+    if probe.get('name', "") in probe_status and probe_status[probe['name']] != 'auto':
+        return True
+    elif probe.get('name', "") in probe_status and probe_status[probe['name']] == 'auto' and 'start_check' in probe:
+        return True
+    return False
 
 
 def get_uuid() -> str:
