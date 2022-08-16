@@ -38,5 +38,9 @@ QUERY_WORKFLOW_LIST = "/check/workflow/list"
 DELETE_WORKFLOW = "/check/workflow"
 UPDATE_WORKFLOW = "/check/workflow/update"
 IF_HOST_IN_WORKFLOW = "/check/workflow/host/exist"
+QUERY_MODEL_LIST = "/check/algo/model/list"
 
 QUERY_HOST_DETAIL = "/manage/host/info/query"
+
+# a user for built-in algorithm and model
+SYSTEM_USER = "system"

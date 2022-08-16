@@ -19,9 +19,17 @@ from aops_check.conf.constant import (
     QUERY_APP,
     QUERY_APP_LIST,
     CREATE_APP,
-    IDENTIFY_SCENE
+    IDENTIFY_SCENE,
+    CREATE_WORKFLOW,
+    DELETE_WORKFLOW,
+    QUERY_WORKFLOW,
+    QUERY_WORKFLOW_LIST,
+    UPDATE_WORKFLOW,
+    IF_HOST_IN_WORKFLOW,
+    QUERY_MODEL_LIST
 )
-from aops_check.controllers import app_controller, scene_controller
+from aops_check.controllers import app_controller, scene_controller, workflow_controller, \
+    model_controller
 
 URLS = []
 
@@ -33,6 +41,17 @@ SPECIFIC_URLS = {
     ],
     'SCENE_URLS': [
         (scene_controller.RecognizeScene, IDENTIFY_SCENE)
+    ],
+    'WORKFLOW_URLS': [
+        (workflow_controller.CreateWorkflow, CREATE_WORKFLOW),
+        (workflow_controller.DeleteWorkflow, DELETE_WORKFLOW),
+        (workflow_controller.QueryWorkflow, QUERY_WORKFLOW),
+        (workflow_controller.QueryWorkflowList, QUERY_WORKFLOW_LIST),
+        (workflow_controller.UpdateWorkflow, UPDATE_WORKFLOW),
+        (workflow_controller.IfHostInWorkflow, IF_HOST_IN_WORKFLOW)
+    ],
+    'MODEL_URLS': [
+        (model_controller.QueryModelList, QUERY_MODEL_LIST)
     ]
 }
 

@@ -42,7 +42,7 @@ class QueryWorkflowListSchema(Schema):
     domain = fields.Integer(required=False, validate=lambda s: s > 0)
     status = fields.Integer(required=False, validate=validate.OneOf(
         ["hold", "running", "recommending"]))
-    page = fields.Integer(required=False, validate= lambda s: s > 0)
+    page = fields.Integer(required=False, validate=lambda s: s > 0)
     per_page = fields.Integer(required=False, validate=lambda s: 0 < s < 50)
 
 
