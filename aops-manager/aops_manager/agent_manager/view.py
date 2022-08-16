@@ -10,7 +10,7 @@
 # PURPOSE.
 # See the Mulan PSL v2 for more details.
 # ******************************************************************************/
-from typing import Optional
+from typing import Optional, Tuple
 import requests
 from flask import jsonify, json, Response, request
 
@@ -147,7 +147,7 @@ class AgentUtil:
     def make_agent_request(cls, agent_url: str, method: str,
                            header: Optional[dict] = None,
                            params: Optional[dict] = None,
-                           data: Optional[dict] = None) -> tuple[int, dict]:
+                           data: Optional[dict] = None) -> Tuple[int, dict]:
         """
             Send request to agent
 
@@ -208,8 +208,7 @@ class AgentPluginInfo(BaseResponse):
                                                                             ROUTE_AGENT_PLUGIN_INFO),
                                                    "get", header=agent_header)
 
-        resp = ret.pop("resp", [])
-        ret["info"] =
+        ret["info"] = ret.pop("resp", [])
         return status, ret
 
     def get(self) -> Response:
@@ -229,7 +228,7 @@ class GetHostScene(BaseResponse):
     """
 
     @staticmethod
-    def __get_check_url(route: str) -> tuple[str, dict]:
+    def __get_check_url(route: str) -> Tuple[str, dict]:
         """
         Get url of check restful
 
@@ -249,7 +248,7 @@ class GetHostScene(BaseResponse):
 
     @staticmethod
     def __get_scene_data_from_agent(host_ip_port: str,
-                                    header: dict) -> tuple[int, dict]:
+                                    header: dict) -> Tuple[int, dict]:
         """
         Get applications and collect items required for scene identification
         form agent
@@ -356,7 +355,7 @@ class SetAgentPluginStatus(BaseResponse):
     }
 
     @staticmethod
-    def _handle(args: dict) -> tuple[int, dict]:
+    def _handle(args: dict) -> Tuple[int, dict]:
         """
         Handle function of set plugin status
 
