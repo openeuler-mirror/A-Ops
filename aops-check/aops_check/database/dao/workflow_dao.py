@@ -76,7 +76,8 @@ class WorkflowDao(MysqlProxy, ElasticsearchProxy):
                     "app_id": "asd",
                     "input": {
                         "domain": "host_group_1",
-                        "hosts": ["host_id1", "host_id2"]
+                        "hosts": {"host1": {"host_ip": "127.0.0.1", "scene": "big_data",
+                                  "host_name": "host1"}}
                     },
                     "step": 5,
                     "period": 10,
@@ -135,7 +136,7 @@ class WorkflowDao(MysqlProxy, ElasticsearchProxy):
 
         data.pop("alert")
         input_hosts = data.pop("input")
-        hosts = input_hosts["hosts"]
+        hosts_info = input_hosts["hosts"]
         detail = data.pop("detail")
         model_info = data.pop("model_info")
 
@@ -149,7 +150,7 @@ class WorkflowDao(MysqlProxy, ElasticsearchProxy):
 
         workflow_id = data["workflow_id"]
         try:
-            self._insert_workflow_host_table(workflow_id, hosts)
+            self._insert_workflow_host_table(workflow_id, hosts_info)
             status_code = self._insert_workflow_into_es(username, workflow_id, detail, model_info)
             if status_code != SUCCEED:
                 raise ElasticsearchException("Insert workflow '%s' in to elasticsearch failed."
@@ -163,15 +164,20 @@ class WorkflowDao(MysqlProxy, ElasticsearchProxy):
             raise
         return SUCCEED
 
-    def _insert_workflow_host_table(self, workflow_id: str, hosts: list):
+    def _insert_workflow_host_table(self, workflow_id: str, hosts_info: dict):
         """
         insert workflow and host's relationship into workflow_host_association table
         Args:
             workflow_id: workflow id
-            hosts: host list
+            hosts_info: host info dict
 
         """
-        rows = [{"workflow_id": workflow_id, "host_id": host_id} for host_id in hosts]
+        rows = []
+        for host_id, host_info in hosts_info.items():
+            row = {"workflow_id": workflow_id, "host_id": host_id, "host_ip": host_info["host_ip"],
+                   "host_name": host_info["host_name"]}
+            rows.append(row)
+
         self.session.bulk_insert_mappings(WorkflowHostAssociation, rows)
 
     def _if_workflow_name_exists(self, workflow_name: str, username: str):
@@ -238,7 +244,8 @@ class WorkflowDao(MysqlProxy, ElasticsearchProxy):
                             "app_id": "app_id",
                             "input": {
                                 "domain": "host_group1",
-                                "hosts": ["host_id1", "host_id2"]
+                                "hosts": {"host1": {"host_ip": "127.0.0.1", "scene": "big_data",
+                                          "host_name": "host1"}}
                             }
                         }
                     ]
@@ -320,16 +327,23 @@ class WorkflowDao(MysqlProxy, ElasticsearchProxy):
         Returns:
             dict: workflow's hosts, e.g.
                 {
-                    "workflow1": ["host_id1", "host_id2"]
+                    "workflow1": {
+                        "host_id1": {
+                            "host_ip": "127.0.0.1",
+                            "host_name": "host1"
+                        }
+                    }
                 }
         """
         hosts_query = self.session.query(WorkflowHostAssociation.workflow_id,
-                                         WorkflowHostAssociation.host_id) \
+                                         WorkflowHostAssociation.host_id,
+                                         WorkflowHostAssociation.host_ip,
+                                         WorkflowHostAssociation.host_name) \
             .filter(WorkflowHostAssociation.workflow_id.in_(workflow_id_list))
 
-        workflow_host = defaultdict(list)
+        workflow_host = defaultdict(dict)
         for row in hosts_query:
-            workflow_host[row.workflow_id].append(row.host_id)
+            workflow_host[row.workflow_id][row.host_id] = {"host_ip": row.host_ip, "host_name": row.host_name}
 
         return dict(workflow_host)
 
@@ -351,7 +365,7 @@ class WorkflowDao(MysqlProxy, ElasticsearchProxy):
                 "app_id": row.app_id,
                 "input": {
                     "domain": row.domain,
-                    "hosts": workflow_host.get(row.workflow_id, [])
+                    "hosts": workflow_host.get(row.workflow_id, {})
                 },
                 "workflow_id": row.workflow_id
             }
@@ -458,7 +472,7 @@ class WorkflowDao(MysqlProxy, ElasticsearchProxy):
             "app_id": workflow_query.app_id,
             "input": {
                 "domain": workflow_query.domain,
-                "hosts": workflow_host.get(workflow_query.workflow_id, [])
+                "hosts": workflow_host.get(workflow_query.workflow_id, {})
             },
             "workflow_id": workflow_query.workflow_id
         }
@@ -613,7 +627,7 @@ class WorkflowDao(MysqlProxy, ElasticsearchProxy):
         try:
             result = self._query_host_in_workflow(data)
             LOGGER.debug("Query if a host exists in a workflow succeed.")
-            return SUCCEED, result
+            return SUCCEED, {"result": result}
         except SQLAlchemyError as error:
             LOGGER.error(error)
             LOGGER.error("Query if a host exists in a workflow failed due to internal error.")
@@ -624,7 +638,8 @@ class WorkflowDao(MysqlProxy, ElasticsearchProxy):
                                         func.count(WorkflowHostAssociation.workflow_id).label("workflow_num")) \
             .join(Workflow, Workflow.workflow_id == WorkflowHostAssociation.workflow_id) \
             .filter(WorkflowHostAssociation.host_id.in_(data["host_list"]),
-                    Workflow.username == data["username"])
+                    Workflow.username == data["username"])\
+            .group_by(WorkflowHostAssociation.host_id)
 
         result = {host_id: False for host_id in data["host_list"]}
         for row in host_query.all():

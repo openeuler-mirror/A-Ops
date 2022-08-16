@@ -59,7 +59,7 @@ class Workflow:
 
     @staticmethod
     def assign_model(username: str, token: str, app_id: str, host_list: list,
-                      assign_logic: str, steps: list = None, workflow_id: str = "") -> dict:
+                     assign_logic: str, steps: list = None, workflow_id: str = "") -> Tuple[dict, dict]:
         """
         assign model to workflow
         Args:
@@ -72,26 +72,29 @@ class Workflow:
             workflow_id: workflow id
 
         Returns:
-            dict: assign result. e.g.
-                {
-                    "singlecheck": {
-                        "host_id1": {
-                            "metric1": "3sigma"
-                        }
-                    },
-                    "multicheck": {
-                        "host_id1": "statistic"
-                    },
-                    "diag": "statistic"
-                }
+            tuple [dict, dict]:
+                1. host_infos:  e.g.
+                    {"host1": {"host_ip": "127.0.0.1", "scene": "big_data", "host_name": "host1"}}
+                2. assign result. e.g.
+                    {
+                        "singlecheck": {
+                            "host_id1": {
+                                "metric1": "3sigma"
+                            }
+                        },
+                        "multicheck": {
+                            "host_id1": "statistic"
+                        },
+                        "diag": "statistic"
+                    }
         Raises:
             WorkflowModelRecoError
         """
         support_assign_logic = ["app", "recommend"]
         if assign_logic not in support_assign_logic:
             raise WorkflowModelAssignError("Assign logic '%s' is not supported, "
-                                            "should be inside %s" %
-                                            (assign_logic, support_assign_logic), workflow_id)
+                                           "should be inside %s" %
+                                           (assign_logic, support_assign_logic), workflow_id)
 
         hosts_info = Workflow.__get_host_info(token, host_list, workflow_id)
         app_detail = Workflow.__get_app_detail(username, app_id, workflow_id)
@@ -101,7 +104,7 @@ class Workflow:
         else:
             workflow_detail = Workflow.__assign_by_builtin_logic(workflow_id, hosts_info,
                                                                  app_detail, steps)
-        return workflow_detail
+        return hosts_info, workflow_detail
 
     @staticmethod
     def __get_app_detail(username: str, app_id: str, workflow_id: str) -> dict:
@@ -124,7 +127,7 @@ class Workflow:
 
         if steps and steps - support_steps:
             raise WorkflowModelAssignError("The step %s is not supported to assign model."
-                                            % list(steps - support_steps), workflow_id)
+                                           % list(steps - support_steps), workflow_id)
         return app_info["result"]["detail"]
 
     @staticmethod
@@ -136,7 +139,7 @@ class Workflow:
             host_list: host id list
             workflow_id: workflow id
         Returns:
-            dict: e.g. {"host1": {"public_ip": "127.0.0.1", "scene": "big_data"}}
+            dict: e.g. {"host1": {"host_ip": "127.0.0.1", "scene": "big_data", "host_name": "host1"}}
         """
         manager_ip = configuration.manager.get("IP")  # pylint: disable=E1101
         manager_port = configuration.manager.get("PORT")  # pylint: disable=E1101
@@ -153,8 +156,9 @@ class Workflow:
 
         result = {}
         for host_info in response["host_infos"]:
-            result[host_info["host_id"]] = {"public_ip": host_info["public_ip"],
-                                            "scene": host_info["scene"]}
+            result[host_info["host_id"]] = {"host_ip": host_info["public_ip"],
+                                            "scene": host_info["scene"],
+                                            "host_name": host_info["host_name"]}
         return result
 
     @staticmethod
@@ -173,7 +177,7 @@ class Workflow:
         """
         if steps and set(steps) - set(app_detail.keys()):
             raise WorkflowModelAssignError("Step '%s' is not in app." %
-                                            list(set(steps) - set(app_detail.keys())), workflow_id)
+                                           list(set(steps) - set(app_detail.keys())), workflow_id)
 
         if not steps:
             steps = app_detail.keys()
@@ -188,7 +192,7 @@ class Workflow:
         Args:
             workflow_id: workflow id
             hosts_info: host basic info.  e.g.
-                {"host1": {"public_ip": "127.0.0.1", "scene": "big_data"}}
+                {"host1": {"host_ip": "127.0.0.1", "scene": "big_data", "host_name": "host1"}}
             step_detail: step which need assigned, if value is None, use recommend logic to assign
 
         Returns:
@@ -200,7 +204,7 @@ class Workflow:
         try:
             if "singlecheck" in step_detail:
                 failed_list, result["singlecheck"] = Workflow.__assign_single_item_model(hosts_info,
-                                                                                          step_detail["singlecheck"])
+                                                                                         step_detail["singlecheck"])
                 if failed_list:
                     LOGGER.debug("Query metric list of host '%s' failed when assign "
                                  "model of workflow %s." % (failed_list, workflow_id))
@@ -218,7 +222,7 @@ class Workflow:
         assign single item check model
         Args:
             hosts_info: host id, ip and scene, e.g.
-                {"host1": {"public_ip": "127.0.0.1", "scene": "big_data"}}
+                {"host1": {"host_ip": "127.0.0.1", "scene": "big_data", "host_name": "host1"}}
             config: single item check config
         Returns:
             list, dict
@@ -234,7 +238,7 @@ class Workflow:
 
         for host_id, value in hosts_info.items():
             # query host's metric list
-            status_code, metric_list = data_proxy.query_metric_list_of_host(value["public_ip"])
+            status_code, metric_list = data_proxy.query_metric_list_of_host(value["host_ip"])
             if status_code != SUCCEED:
                 failed_list.append(host_id)
                 continue
@@ -248,7 +252,7 @@ class Workflow:
         assign multiple item check model
         Args:
             hosts_info: host id, ip and scene, e.g.
-                {"host1": {"public_ip": "127.0.0.1", "scene": "big_data"}}
+                {"host1": {"host_ip": "127.0.0.1", "scene": "big_data", "host_name": "host1"}}
             config: multi item check config
         Returns:
             dict

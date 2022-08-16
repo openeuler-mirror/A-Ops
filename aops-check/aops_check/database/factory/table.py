@@ -28,7 +28,9 @@ class WorkflowHostAssociation(Base, MyBase):
     """
     __tablename__ = "workflow_host"
 
-    host_id = Column(String(32), primary_key=True)
+    host_id = Column(String(32), primary_key=True, nullable=False)
+    host_name = Column(String(20), nullable=False)
+    host_ip = Column(String(16), nullable=False)
     workflow_id = Column(String(32), ForeignKey('workflow.workflow_id', ondelete="CASCADE"),
                          primary_key=True)
 
