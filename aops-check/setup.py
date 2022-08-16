@@ -16,11 +16,13 @@ REQUIRES = [
     'marshmallow>=3.13.0',
     'Flask',
     'Flask-RESTful',
-    'Werkzeug',
     'numpy',
     'pandas',
     'prometheus_api_client',
-    'setuptools'
+    'setuptools',
+    'requests',
+    'SQLAlchemy',
+    'PyMySQL'
 ]
 
 setup(

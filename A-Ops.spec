@@ -1,17 +1,22 @@
 Name:		A-Ops
-Version:	v1.2.0
-Release:	2
+Version:	v1.2.2
+Release:	1
 Summary:	The intelligent ops toolkit for openEuler
 License:	MulanPSL2
 URL:		https://gitee.com/openeuler/A-Ops
 Source0:	%{name}-%{version}.tar.gz
+Source1:	A-Ops-web-node-modules.tar.gz
+
 %ifarch x86_64
-patch0001: 0001-gen-vmlinx-oe2209-x86.patch
+patch0001: 0001-modify-to-adapt-to-oe2209-x86.patch
 %endif
 %ifarch aarch64
-patch0001: 0001-gen-vmlinx-oe2209-arm.patch
+patch0001: 0001-modify-to-adapt-to-oe2209-arm.patch
 %endif
 
+
+# build for web
+BuildRequires: nodejs node-gyp nodejs-yarn
 
 # build for gopher
 BuildRequires:	cmake gcc-c++ yum elfutils-devel clang >= 10.0.1 llvm libconfig-devel
@@ -37,7 +42,7 @@ The intelligent ops toolkit for openEuler
 Summary:    agent for A-Ops
 Requires:   python3-requests python3-flask python3-connexion python3-configparser python3-jsonschema
 Requires:   python3-flask-testing python3-libconf python3-swagger-ui-bundle
-Requires:   python3-concurrent-log-handler dmidecode
+Requires:   python3-concurrent-log-handler dmidecode python3-responses
 
 %description -n aops-agent
 agent for A-Ops
@@ -48,7 +53,7 @@ Summary:    utils for A-Ops
 Requires:   python3-concurrent-log-handler python3-xmltodict python3-pyyaml python3-marshmallow >= 3.13.0
 Requires:   python3-requests python3-xlrd python3-prettytable python3-pygments python3-sqlalchemy
 Requires:   python3-elasticsearch >= 7 python3-prometheus-api-client python3-urllib3 python3-werkzeug
-Requires:   python3-flask python3-flask-restful
+Requires:   python3-flask python3-flask-restful python3-PyMySQL
 
 %description -n aops-utils
 utils for A-Ops
@@ -58,11 +63,22 @@ utils for A-Ops
 Summary:    manager of A-ops
 Requires:   aops-utils = %{version}-%{release} ansible >= 2.9.0
 Requires:   python3-pyyaml python3-marshmallow >= 3.13.0 python3-flask python3-flask-restful
-Requires:   python3-requests sshpass python3-uWSGI python3-sqlalchemy python3-werkzeug
+Requires:   python3-requests sshpass python3-uWSGI python3-sqlalchemy python3-werkzeug python3-PyMySQL
 
 %description -n aops-manager
 manager of A-ops, support software deployment and installation, account management, host management,
 host group management, task and template management of ansible.
+
+
+%package -n aops-check
+Summary:    check module for A-Ops
+Requires:   aops-utils = %{version}-%{release}
+Requires:   python3-requests python3-flask python3-flask-restful python3-marshmallow >= 3.13.0
+Requires:   python3-numpy python3-pandas python3-prometheus-api-client
+Requires:   python3-sqlalchemy python3-PyMySQL
+
+%description -n aops-check
+check module for A-Ops
 
 
 %package -n gala-gopher
@@ -138,10 +154,19 @@ Requires:   python3-pandas python3-requests python3-scikit-learn python3-pytorch
 Python3 package of python3-gala-anteater
 
 
+%package -n aops-web
+Summary:    website for A-Ops
+Requires:   nginx
+
+%description -n aops-web
+website for A-Ops, deployed by Nginx
+
+
 %prep
 %setup
-# %setup -T -D -a 1
+%setup -T -D -a 1
 %patch0001 -p1
+
 
 %build
 # build for aops-agent
@@ -156,6 +181,11 @@ popd
 
 #build for aops-manager
 pushd aops-manager
+%py3_build
+popd
+
+# build for aops-check
+pushd aops-check
 %py3_build
 popd
 
@@ -179,6 +209,11 @@ pushd gala-anteater
 %py3_build
 popd
 
+#build for aops-web
+pushd aops-web
+yarn build
+popd
+
 
 %install
 # install for agent
@@ -198,6 +233,11 @@ mkdir -p %{buildroot}/%{python3_sitelib}/aops_manager/deploy_manager/ansible_han
 cp -r aops_manager/deploy_manager/ansible_handler/* %{buildroot}/%{python3_sitelib}/aops_manager/deploy_manager/ansible_handler
 mkdir -p %{buildroot}/%{python3_sitelib}/aops_manager/deploy_manager/tasks
 cp -r aops_manager/deploy_manager/tasks/* %{buildroot}/%{python3_sitelib}/aops_manager/deploy_manager/tasks
+popd
+
+# install for check
+pushd aops-check
+%py3_install
 popd
 
 #install for gala-gopher
@@ -229,6 +269,16 @@ popd
 #install for gala-anteater
 pushd gala-anteater
 %py3_install
+popd
+
+# install for web
+pushd aops-web
+mkdir -p %{buildroot}/opt/aops_web
+cp -r dist %{buildroot}/opt/aops_web/
+mkdir -p %{buildroot}/%{_sysconfdir}/nginx
+cp -r deploy/aops-nginx.conf %{buildroot}/%{_sysconfdir}/nginx/
+mkdir -p %{buildroot}/usr/lib/systemd/system
+cp -r deploy/aops-web.service %{buildroot}/usr/lib/systemd/system/
 popd
 
 
@@ -303,7 +353,6 @@ fi
 
 %files -n aops-agent
 %attr(0644,root,root) %{_sysconfdir}/aops/agent.conf
-%attr(0644,root,root) %{_sysconfdir}/aops/agent_token.json
 %attr(0755,root,root) %{_unitdir}/aops-agent.service
 %{python3_sitelib}/aops_agent*.egg-info
 %{python3_sitelib}/aops_agent/*
@@ -323,6 +372,14 @@ fi
 %attr(0644,root,root) %{_sysconfdir}/aops/default.json
 %attr(0755,root,root) %{_bindir}/aops-manager
 %attr(0755,root,root) %{_bindir}/aops-basedatabase
+%attr(0755,root,root) %{_unitdir}/aops-manager.service
+%{python3_sitelib}/aops_manager*.egg-info
+%{python3_sitelib}/aops_manager/*
+
+
+%files -n aops-check
+%attr(0644,root,root) %{_sysconfdir}/aops/check.ini
+%attr(0755,root,root) %{_bindir}/aops-check
 %attr(0755,root,root) %{_unitdir}/aops-manager.service
 %{python3_sitelib}/aops_manager*.egg-info
 %{python3_sitelib}/aops_manager/*
@@ -367,7 +424,7 @@ fi
 
 %files -n python3-gala-spider
 %{python3_sitelib}/spider/*
-%{python3_sitelib}/*.egg-info
+%{python3_sitelib}/gala_spider-*.egg-info
 
 
 %files -n gala-inference
@@ -380,21 +437,43 @@ fi
 
 %files -n python3-gala-inference
 %{python3_sitelib}/cause_inference/*
+%{python3_sitelib}/gala_spider-*.egg-info
 
 
 %files -n gala-anteater
-%doc README.md
-%license LICENSE
+%doc gala-anteater/README.md
+%license gala-anteater/LICENSE
 %{_bindir}/gala-anteater
 %{_unitdir}/gala-anteater.service
 
 
 %files -n python3-gala-anteater
 %{python3_sitelib}/anteater/*
-%{python3_sitelib}/*.egg-info
+%{python3_sitelib}/gala_anteater-*.egg-info
+
+
+%files -n aops-web
+%attr(0755, root, root) /opt/aops_web/dist/*
+%attr(0755, root, root) %{_sysconfdir}/nginx/aops-nginx.conf
+%attr(0755, root, root) %{_unitdir}/aops-web.service
 
 
 %changelog
+* Wed Aug 10 2022 zhuyuncheng<zhuyuncheng@huawei.com> - v1.2.2-1
+- New release 1.2.2, bug fix and add new module.
+- add missed requirement python3-PyMySQL
+- add new module, check and web
+
+* Wed Aug 10 2022 zhaoyuxing<zhaoyuxing2@huawei.com> - v1.2.1-1
+- New release 1.2.1, bug fix.
+- modify patch for gala-gopher and rm patch for gala-anteater.
+- reduce the operating noise of gala-gopher.
+- optimize the module of gala-anteater.
+
+* Tue Aug 2 2022 zhaoyuxing<zhaoyuxing2@huawei.com> - v1.2.0-3
+- 1. add patch to modify install_requires of gala-anteater.
+- 2. delete redundant dependent packages for gala-spider.
+
 * Mon Aug 1 2022 zhuyuncheng<zhuyuncheng@huawei.com> - v1.2.0-2
 - add base-database executable file into aops-manager to downlaod database.
 
