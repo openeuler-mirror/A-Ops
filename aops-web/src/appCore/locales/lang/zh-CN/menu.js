@@ -65,5 +65,6 @@ export default {
     'menu.leaks.leak-task-list': '任务',
     'menu.leaks.leak-task-detail': '任务详情',
     'menu.leaks.leak-task-report': '任务报告',
-    'menu.networkTopo': '架构感知'
+    'menu.networkTopo': '架构感知',
+    'menu.assests.host-detail': '主机详情'
 };

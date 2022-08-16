@@ -1,5 +1,5 @@
 <template>
-  <page-header-wrapper>
+  <my-page-header-wrapper>
     <a-card :bordered="false" class="aops-theme">
       <div>
         <div>共获取到{{ tableData.length }}条主机信息</div>
@@ -28,7 +28,7 @@
               ---------------------->
               <a-col>
                 <router-link :to="{ path: `hosts-management/host-create` }">
-                  <a-button type="primary">
+                  <a-button type="primary" disabled>
                     <a-icon type="plus" />添加主机
                   </a-button>
                 </router-link>
@@ -50,17 +50,18 @@
           @change="handleTableChange"
           :loading="tableIsLoading"
         >
-          <span slot="isManagement" slot-scope="isMana">{{ isMana ? '是' : '否' }}</span>
-          <span slot="statusItem" slot-scope="status">{{ status || '暂无' }}</span>
-          <span slot="action" slot-scope="record">
-            <a @click="openDetail(record.host_id)">查看</a>
-            <!------后续增加-----
-            <a-divider type="vertical" />
-            <span>编辑</span>
-            ------------------>
-            <a-divider type="vertical" />
-            <a @click="deleteHost(record)">删除</a>
-          </span>
+            <router-link :to="{ path: `/assests/host/detail/${record.host_id}` }" slot="hostName" slot-scope="hostName, record">{{ hostName }}</router-link>
+            <span slot="isManagement" slot-scope="isMana">{{ isMana ? '是' : '否' }}</span>
+            <span slot="statusItem" slot-scope="status">{{ status || '暂无' }}</span>
+            <span slot="action" slot-scope="record">
+                <!-- <a @click="openDetail(record.host_id)">查看</a>
+                ----后续增加-----
+                <a-divider type="vertical" />
+                <span>编辑</span>
+                ----------------
+                <a-divider type="vertical" /> -->
+                <a @click="deleteHost(record)">{{ getHostId(record.host_id, record.host_name) }}删除</a>
+            </span>
         </a-table>
       </div>
     </a-card>
@@ -69,14 +70,14 @@
       @close="closeDetail"
       :hostId="detailId"
     />
-  </page-header-wrapper>
+  </my-page-header-wrapper>
 </template>
 
 <script>
 import store from '@/store'
 import router from '@/appCore/router'
 
-import { PageHeaderWrapper } from '@ant-design-vue/pro-layout'
+import MyPageHeaderWrapper from '@/views/utils/MyPageHeaderWrapper'
 import HostDetailDrawer from './components/HostDetailDrawer'
 
 import { hostList, deleteHost, hostGroupList } from '@/api/assest'
@@ -92,7 +93,7 @@ const defaultPagination = {
 export default {
     name: 'HostManagement',
     components: {
-        PageHeaderWrapper,
+        MyPageHeaderWrapper,
         HostDetailDrawer
     },
     data () {
@@ -107,7 +108,8 @@ export default {
             selectedRows: [],
             tableIsLoading: false,
             detailId: undefined,
-            detailVisisble: false
+            detailVisisble: false,
+            hostId: []
         }
     },
     computed: {
@@ -120,6 +122,7 @@ export default {
                     dataIndex: 'host_name',
                     key: 'host_name',
                     title: '主机名称',
+                    scopedSlots: { customRender: 'hostName' },
                     sorter: true,
                     sortOrder: sorter.columnKey === 'host_name' && sorter.order
                 },
@@ -127,11 +130,6 @@ export default {
                     dataIndex: 'public_ip',
                     key: 'public_ip',
                     title: 'IP地址'
-                },
-                {
-                    dataIndex: 'ssh_port',
-                    key: 'ssh_port',
-                    title: 'SSH登录接口'
                 },
                 {
                     dataIndex: 'host_group_name',
@@ -167,6 +165,12 @@ export default {
                     scopedSlots: { customRender: 'statusItem' }
                 },
                 {
+                    dataIndex: 'scene',
+                    key: 'scene',
+                    title: '场景',
+                    customRender: scene => scene || '暂无'
+                },
+                {
                     key: 'operation',
                     title: '操作',
                     scopedSlots: { customRender: 'action' }
@@ -188,8 +192,6 @@ export default {
             this.sorter = sorter
             // 出发排序、筛选、分页时，重新请求主机列表
             this.getHostList()
-        },
-        handleInput (e) {
         },
         onSelectChange (selectedRowKeys, selectedRows) {
             this.selectedRowKeys = selectedRowKeys
@@ -283,10 +285,6 @@ export default {
             this.getHostList()
             this.getGroupList()
         },
-        openDetail (hostId) {
-            this.detailId = hostId
-            this.detailVisisble = true
-        },
         closeDetail () {
             this.detailVisisble = false
         },
@@ -307,6 +305,9 @@ export default {
             }).catch(function (err) {
                 _this.$message.error(err.response.data.msg)
             }).finally(function () {})
+        },
+        getHostId(hostId, hostName) {
+            this.hostId[hostName] = hostId
         }
     },
     mounted: function () {
@@ -320,4 +321,5 @@ export default {
 .ant-lert {
     line-height: 14px;
 }
+
 </style>
