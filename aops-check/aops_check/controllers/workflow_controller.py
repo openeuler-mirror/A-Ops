@@ -62,7 +62,7 @@ class CreateWorkflow(BaseResponse):
 
         access_token = request.headers.get('access_token')
         try:
-            detail = Workflow.assign_model(args["username"], access_token, args["app_id"],
+            host_infos, detail = Workflow.assign_model(args["username"], access_token, args["app_id"],
                                             args["input"]["hosts"], "app")
         except (WorkflowModelAssignError, KeyError) as error:
             LOGGER.debug(error)
@@ -78,6 +78,8 @@ class CreateWorkflow(BaseResponse):
         args['workflow_id'] = workflow_id
         args["detail"] = detail
         args["model_info"] = model_info
+        # change host id list to host info dict
+        args["input"]["hosts"] = host_infos
 
         status = operate(WorkflowDao(configuration), args, 'insert_workflow', SESSION)
         if status != SUCCEED:
@@ -184,10 +186,10 @@ class UpdateWorkflow(BaseResponse):
 
 class IfHostInWorkflow(BaseResponse):
     """
-    check if a host in any workflow, it's a get request.
+    if hosts exist in any workflow
     """
 
-    def get(self):
+    def post(self):
         """
         It's get request, step:
             1.verify token
