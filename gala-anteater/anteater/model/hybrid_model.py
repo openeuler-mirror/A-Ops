@@ -62,7 +62,7 @@ class HybridModel:
                 ("classifier", VAEPredict()),
             ]
         else:
-            raise ArgumentError(f"Unknow model name {self.model}.")
+            raise ArgumentError(f"Unknown model name {self.model}.")
 
     def __get_dataframe(self, tim_start: datetime, tim_end: datetime) \
             -> Tuple[List[str], List[pd.DataFrame]]:

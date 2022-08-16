@@ -75,8 +75,13 @@ class VAEPredict:
             log.error("VAE model was not found! Please run model training in advance!")
             return model
 
-        model = torch.load(self.model_path)
-        model.eval()
+        try:
+            model = torch.load(self.model_path)
+            model.eval()
+        except ModuleNotFoundError as e:
+            log.error(f"{e.__class__.__name__}: {str(e)}. "
+                      f"VAE model loading failed, please retrain the model!")
+
         return model
 
     def predict(self, x):
