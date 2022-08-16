@@ -18,9 +18,11 @@ Description:
 from aops_check.init.app import init_app
 from aops_check.init.elasticsearch import init_es
 from aops_check.init.mysql import init_mysql
+from aops_check.init.algorithm import init_algo_and_model
 
 
 def init():
     init_mysql()
     init_es()
     init_app()
+    init_algo_and_model()

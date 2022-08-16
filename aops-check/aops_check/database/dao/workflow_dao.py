@@ -590,7 +590,45 @@ class WorkflowDao(MysqlProxy, ElasticsearchProxy):
         filters = {Workflow.username == username, Workflow.workflow_id == workflow_id}
         workflow_query = self.session.query(Workflow.status).filter(*filters).one()
 
-        if workflow_query.status == "running" or "recommend":
-            LOGGER.info("Delet workflow '%s' failed because it's still %s" % (workflow_id, workflow_query.status))
+        if workflow_query.status in ("running", "recommending"):
+            LOGGER.info("Delete workflow '%s' failed because it's still %s" % (workflow_id, workflow_query.status))
             return True
         return False
+
+    def if_host_in_workflow(self, data: dict) -> Tuple[int, dict]:
+        """
+        if host exist workflow
+        Args:
+            data (dict): parameter, e.g.
+                {
+                    "username": "admin",
+                    "host_list": ["host_id1", "host_id2"]
+                }
+
+        Returns:
+            int: status code
+            bool: if host exists or not:  {"host_id1": True, "host_id2": False}
+        """
+        result = {}
+        try:
+            result = self._query_host_in_workflow(data)
+            LOGGER.debug("Query if a host exists in a workflow succeed.")
+            return SUCCEED, result
+        except SQLAlchemyError as error:
+            LOGGER.error(error)
+            LOGGER.error("Query if a host exists in a workflow failed due to internal error.")
+            return DATABASE_QUERY_ERROR, result
+
+    def _query_host_in_workflow(self, data):
+        host_query = self.session.query(WorkflowHostAssociation.host_id,
+                                        func.count(WorkflowHostAssociation.workflow_id).label("workflow_num")) \
+            .join(Workflow, Workflow.workflow_id == WorkflowHostAssociation.workflow_id) \
+            .filter(WorkflowHostAssociation.host_id.in_(data["host_list"]),
+                    Workflow.username == data["username"])
+
+        result = {host_id: False for host_id in data["host_list"]}
+        for row in host_query.all():
+            if row.workflow_num:
+                result[row.host_id] = True
+
+        return result
