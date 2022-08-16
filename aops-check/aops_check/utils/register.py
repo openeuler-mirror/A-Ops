@@ -15,21 +15,29 @@ Time:
 Author:
 Description:
 """
-class Algorithm:
-    def train(self):
-        ...
 
-    def test(self):
-        ...
 
-    def calculate(self, **kwargs):
-        ...
+class Register:
+    """
+    It's a base register class which realizes register function.
+    """
 
-    def evaluate(self):
-        ...
+    def __init__(self):
+        self.dict = {}
 
-    def load(self, path, **kwargs):
-        ...
+    def register(self, target: str) -> 'add':
+        def add(key, value):
+            self.dict[key] = value
+            return value
 
-    def dump(self, path, **kwargs):
+        if callable(target):
+            raise ValueError("register by method call is not support")
+
+        return lambda x: add(target, x)
+
+    def build(self, name: str) -> 'Register':
+        return self.dict[name]
+
+    @staticmethod
+    def run():
         ...
