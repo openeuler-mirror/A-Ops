@@ -119,6 +119,9 @@ class StatusCode:  # pylint: disable=R0903
         },
         REPEAT_TASK_EXECUTION: {
             "msg": "Task execute repeatedly"
+        },
+        SET_AGENT_PLUGIN_STATUS_FAILED: {
+            "msg": "Set agent plugin status failed"
         }
     }
 
