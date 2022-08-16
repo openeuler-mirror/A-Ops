@@ -59,7 +59,7 @@ class StatisticDiag(Algorithm):
             "algo_name": "statistics_diag",
             "field": "diag",
             "description": "It's a statistic diagnose method",
-            "path": "aops_check.core.experiment.algorithm.diag.statistics_diag.StatisticDiag"
+            "path": "aops_check.core.experiment.algorithm.diag.statistic_diag.StatisticDiag"
         }
         return data
 

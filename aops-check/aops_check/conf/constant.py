@@ -29,7 +29,7 @@ WORKFLOW_INDEX = "workflow"
 # route
 QUERY_APP_LIST = "/check/app/list"
 QUERY_APP = "/check/app"
-CREATE_APP = "/check/create"
+CREATE_APP = "/check/app/create"
 
 IDENTIFY_SCENE = "/check/scene/identify"
 CREATE_WORKFLOW = "/check/workflow/create"
