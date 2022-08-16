@@ -54,7 +54,6 @@ static void sig_int(int signo)
 int main(int argc, char **argv)
 {
     int err = -1;
-    int fd;
     int start_time_second;
     struct bpf_prog_s *tcp_progs = NULL;
     FILE *fp = NULL;
@@ -85,7 +84,7 @@ int main(int argc, char **argv)
         goto err;
     }
 
-    fd = tcp_load_fd_probe();
+    (void)tcp_load_fd_probe();
 
     printf("Successfully started!\n");
 
@@ -96,11 +95,15 @@ int main(int argc, char **argv)
             tcp_unload_fd_probe();
         }
 
-        load_established_tcps(&params, fd);
-
-        if (tcp_progs->pb && ((err = perf_buffer__poll(tcp_progs->pb, THOUSAND)) < 0)) {
-            ERROR("[TCPPROBE]: perf poll failed.\n");
-            break;
+        //if (tcp_progs->pb && ((err = perf_buffer__poll(tcp_progs->pb, THOUSAND)) < 0)) {
+        //    ERROR("[TCPPROBE]: perf poll failed.\n");
+        //    break;
+        //}
+        for (int i = 0; i < tcp_progs->num; i++) {
+            if (tcp_progs->pbs[i] && (err = perf_buffer__poll(tcp_progs->pbs[i], THOUSAND) < 0)) {
+                ERROR("[TCPPROBE]: perf poll prog_%d failed.\n", i);
+                break;
+            }
         }
     }
 
