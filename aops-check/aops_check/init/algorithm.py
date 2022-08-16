@@ -42,7 +42,7 @@ algo_list = [
     },
     {
         "algo_module": "aops_check.core.experiment.algorithm.single_item_check.mae.Mae",
-        "module_info": [{
+        "models": [{
             "model_id": "Mae-1",
             "model_name": "Mae",
             "algo_id": "",
@@ -54,7 +54,7 @@ algo_list = [
     },
     {
         "algo_module": "aops_check.core.experiment.algorithm.single_item_check.nsigma.NSigma",
-        "module_info": [{
+        "models": [{
             "model_id": "NSigma-1",
             "model_name": "NSigma",
             "algo_id": "",
@@ -67,7 +67,7 @@ algo_list = [
     {
         "algo_module": "aops_check.core.experiment.algorithm.multi_item_check.statistical_multi_item_check."
                        "StatisticalCheck",
-        "module_info": [{
+        "models": [{
             "model_id": "StatisticalCheck-1",
             "model_name": "StatisticalCheck",
             "algo_id": "",
@@ -79,7 +79,7 @@ algo_list = [
     },
     {
         "algo_module": "aops_check.core.experiment.algorithm.diag.statistics_diag.StatisticDiag",
-        "module_info": [{
+        "models": [{
             "model_id": "StatisticDiag-1",
             "model_name": "StatisticDiag",
             "algo_id": "",
