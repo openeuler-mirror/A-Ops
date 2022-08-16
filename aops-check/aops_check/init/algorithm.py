@@ -27,53 +27,69 @@ from aops_check.database.dao.algo_dao import AlgorithmDao
 from aops_check.database.dao.model_dao import ModelDao
 
 
-algo_dict = {
-    "aops_check.core.experiment.algorithm.single_item_check.ewma.EWMA": {
-        "model_id": "Ewma-1",
-        "model_name": "Ewma",
-        "algo_id": "",
-        "create_time": 1660471200,
-        "tag": "",
-        "file_path": None,
-        "precision": None
+algo_list = [
+    {
+        "algo_module": "aops_check.core.experiment.algorithm.single_item_check.ewma.EWMA",
+        "models": [{
+            "model_id": "Ewma-1",
+            "model_name": "Ewma",
+            "algo_id": "",
+            "create_time": 1660471200,
+            "tag": "",
+            "file_path": None,
+            "precision": None
+        }]
     },
-    "aops_check.core.experiment.algorithm.single_item_check.mae.Mae": {
-        "model_id": "Mae-1",
-        "model_name": "Mae",
-        "algo_id": "",
-        "create_time": 1660471200,
-        "tag": "",
-        "file_path": None,
-        "precision": None
+    {
+        "algo_module": "aops_check.core.experiment.algorithm.single_item_check.mae.Mae",
+        "module_info": [{
+            "model_id": "Mae-1",
+            "model_name": "Mae",
+            "algo_id": "",
+            "create_time": 1660471200,
+            "tag": "",
+            "file_path": None,
+            "precision": None
+        }]
     },
-    "aops_check.core.experiment.algorithm.single_item_check.nsigma.NSigma": {
-        "model_id": "NSigma-1",
-        "model_name": "NSigma",
-        "algo_id": "",
-        "create_time": 1660471200,
-        "tag": "",
-        "file_path": None,
-        "precision": None
+    {
+        "algo_module": "aops_check.core.experiment.algorithm.single_item_check.nsigma.NSigma",
+        "module_info": [{
+            "model_id": "NSigma-1",
+            "model_name": "NSigma",
+            "algo_id": "",
+            "create_time": 1660471200,
+            "tag": "",
+            "file_path": None,
+            "precision": None
+        }]
     },
-    "aops_check.core.experiment.algorithm.multi_item_check.statistical_multi_item_check.StatisticalCheck": {
-        "model_id": "StatisticalCheck-1",
-        "model_name": "StatisticalCheck",
-        "algo_id": "",
-        "create_time": 1660471200,
-        "tag": "",
-        "file_path": None,
-        "precision": None
+    {
+        "algo_module": "aops_check.core.experiment.algorithm.multi_item_check.statistical_multi_item_check."
+                       "StatisticalCheck",
+        "module_info": [{
+            "model_id": "StatisticalCheck-1",
+            "model_name": "StatisticalCheck",
+            "algo_id": "",
+            "create_time": 1660471200,
+            "tag": "",
+            "file_path": None,
+            "precision": None
+        }]
     },
-    "aops_check.core.experiment.algorithm.diag.statistics_diag.StatisticDiag": {
-        "model_id": "StatisticDiag-1",
-        "model_name": "StatisticDiag",
-        "algo_id": "",
-        "create_time": 1660471200,
-        "tag": "",
-        "file_path": None,
-        "precision": None
+    {
+        "algo_module": "aops_check.core.experiment.algorithm.diag.statistics_diag.StatisticDiag",
+        "module_info": [{
+            "model_id": "StatisticDiag-1",
+            "model_name": "StatisticDiag",
+            "algo_id": "",
+            "create_time": 1660471200,
+            "tag": "",
+            "file_path": None,
+            "precision": None
+        }]
     }
-}
+]
 
 
 def init_algo_and_model():
@@ -90,23 +106,25 @@ def init_algo_and_model():
         LOGGER.error("Connect mysql fail when insert built-in model.")
         raise sqlalchemy.exc.SQLAlchemyError("Connect mysql failed.")
 
-    for algo_path, model_info in algo_dict.items():
-        module_path, class_name = algo_path.rsplit('.', 1)
+    for algo in algo_list:
+        module_path, class_name = algo["algo_module"].rsplit('.', 1)
         algo_module = import_module('.', module_path)
         class_ = getattr(algo_module, class_name)
         algo_info = deepcopy(class_().info)
         algo_id = str(uuid.uuid1()).replace('-', '')
         algo_info["algo_id"] = algo_id
-        model_info["algo_id"] = algo_id
 
         status_code = algo_proxy.insert_algo(algo_info)
         if status_code == DATABASE_INSERT_ERROR:
             LOGGER.error("Insert built-in algorithm '%s' into mysql failed." % algo_info["algo_name"])
             raise sqlalchemy.exc.SQLAlchemyError("Insert mysql failed.")
 
-        status_code = model_proxy.insert_model(model_info)
-        if status_code == DATABASE_INSERT_ERROR:
-            LOGGER.error("Insert built-in model '%s' into mysql failed." % algo_info["model_name"])
-            raise sqlalchemy.exc.SQLAlchemyError("Insert mysql failed.")
+        model_list = algo["models"]
+        for model_info in model_list:
+            model_info["algo_id"] = algo_id
+            status_code = model_proxy.insert_model(model_info)
+            if status_code == DATABASE_INSERT_ERROR:
+                LOGGER.error("Insert built-in model '%s' into mysql failed." % algo_info["model_name"])
+                raise sqlalchemy.exc.SQLAlchemyError("Insert mysql failed.")
 
-    LOGGER.info("Init built-in algorithm and model succeed.")
+        LOGGER.info("Init built-in algorithm and model succeed.")

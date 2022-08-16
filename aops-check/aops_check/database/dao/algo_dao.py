@@ -19,6 +19,7 @@ from typing import Optional
 from sqlalchemy import func
 from sqlalchemy.exc import SQLAlchemyError
 
+from aops_utils.restful.status import SUCCEED
 from aops_utils.database.proxy import MysqlProxy
 from aops_utils.log.log import LOGGER
 from aops_utils.restful.status import DATABASE_INSERT_ERROR, DATA_EXIST
@@ -55,12 +56,12 @@ class AlgorithmDao(MysqlProxy):
             return DATABASE_INSERT_ERROR
 
     def _insert_algo(self, data):
-        if self._if_algo_exists(data.get("username", None), data["algo_name"]):
+        if self._if_algo_exists(data.get("username"), data["algo_name"]):
             return DATA_EXIST
 
         algo = Algorithm(**data)
         self.session.add(algo)
-        return True
+        return SUCCEED
 
     def _if_algo_exists(self, username: Optional[str], algo_name: str) -> bool:
         """
