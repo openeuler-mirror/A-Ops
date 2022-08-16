@@ -43,7 +43,7 @@ static __always_inline void report_rate(void *ctx, struct tcp_metrics_s *metrics
     metrics->report_flags |= TCP_PROBE_RATE;
     (void)bpf_perf_event_output(ctx, &tcp_output, BPF_F_CURRENT_CPU, metrics, sizeof(struct tcp_metrics_s));
     metrics->report_flags &= ~TCP_PROBE_RATE;
-    __builtin_memset(&(metrics->rate_stats), 0x0, sizeof(metrics->rate_stats));
+    //__builtin_memset(&(metrics->rate_stats), 0x0, sizeof(metrics->rate_stats));
 }
 
 static void tcp_compute_busy_time(struct tcp_sock *tcp_sk, struct tcp_rate* rate_stats)
@@ -87,7 +87,7 @@ static void tcp_compute_delivery_rate(struct tcp_sock *tcp_sk, struct tcp_rate* 
         rate64 = (u64)rate * mss_cache * USEC_PER_SEC;
     }
 
-    stats->tcpi_delivery_rate = min_zero(stats->tcpi_delivery_rate, rate64);
+    stats->tcpi_delivery_rate = rate64;
     return;
 }
 
@@ -103,22 +103,18 @@ static void get_tcp_rate(struct sock *sk, struct tcp_rate* stats)
     struct inet_connection_sock *icsk = (struct inet_connection_sock *)sk;
 
     tmp = jiffies_to_usecs(_(icsk->icsk_rto));
-    stats->tcpi_rto = max(stats->tcpi_rto, tmp);
+    stats->tcpi_rto = tmp;
 
     tmp = jiffies_to_usecs(_(icsk->icsk_ack.ato));
-    stats->tcpi_ato = max(stats->tcpi_ato, tmp);
+    stats->tcpi_ato = tmp;
 
-    tmp = _(tcp_sk->snd_ssthresh);
-    stats->tcpi_snd_ssthresh = min_zero(stats->tcpi_snd_ssthresh, tmp);
+    stats->tcpi_snd_ssthresh = _(tcp_sk->snd_ssthresh);
 
-    tmp = _(tcp_sk->rcv_ssthresh);
-    stats->tcpi_rcv_ssthresh = min_zero(stats->tcpi_rcv_ssthresh, tmp);
+    stats->tcpi_rcv_ssthresh = _(tcp_sk->rcv_ssthresh);
 
-    tmp = _(tcp_sk->advmss);
-    stats->tcpi_advmss = max(stats->tcpi_advmss, tmp);
+    stats->tcpi_advmss = _(tcp_sk->advmss);
 
-    tmp = _(tcp_sk->rcvq_space.space);
-    stats->tcpi_rcv_space = min_zero(stats->tcpi_rcv_space, tmp);
+    stats->tcpi_rcv_space = _(tcp_sk->rcvq_space.space);
 
     tcp_compute_delivery_rate(tcp_sk, stats);
 

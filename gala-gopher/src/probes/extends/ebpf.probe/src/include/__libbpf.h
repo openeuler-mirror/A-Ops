@@ -279,6 +279,7 @@ struct __bpf_skel_s {
 };
 struct bpf_prog_s {
     struct perf_buffer* pb;
+    struct perf_buffer* pbs[SKEL_MAX_NUM];  // 支持每个探针拥有各自的perf_buffer，目前tcpprobe使用
     struct __bpf_skel_s skels[SKEL_MAX_NUM];
     size_t num;
 };
@@ -317,6 +318,10 @@ static __always_inline __maybe_unused void unload_bpf_prog(struct bpf_prog_s **u
                     (void)bpf_link__destroy(prog->skels[i]._link[j]);
                 }
             }
+        }
+
+        if (prog->pbs[i]) {
+            perf_buffer__free(prog->pbs[i]);
         }
     }
 

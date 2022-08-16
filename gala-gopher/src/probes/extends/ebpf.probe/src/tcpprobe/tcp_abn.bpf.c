@@ -61,16 +61,11 @@ static __always_inline void report_abn(void *ctx, struct tcp_metrics_s *metrics,
 
 static int get_tcp_abn_stats(struct sock *sk, struct tcp_abn* stats)
 {
-    u32 tmp;
     struct tcp_sock *tcp_sk = (struct tcp_sock *)sk;
 
     stats->sk_drops = _(sk->sk_drops.counter);
-
-    tmp = _(tcp_sk->lost_out);
-    stats->lost_out = max(stats->lost_out, tmp);
-
-    tmp = _(tcp_sk->sacked_out);
-    stats->sacked_out = max(stats->sacked_out, tmp);
+    stats->lost_out = _(tcp_sk->lost_out);
+    stats->sacked_out = _(tcp_sk->sacked_out);
 
     if ((stats->sk_drops > stats->last_time_sk_drops)
         || (stats->lost_out > stats->last_time_lost_out)
