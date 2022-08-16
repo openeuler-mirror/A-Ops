@@ -21,6 +21,7 @@ import os
 BASE_CONFIG_PATH = '/etc/aops'
 # check config
 CHECK_CONFIG_PATH = os.path.join(BASE_CONFIG_PATH, 'check.ini')
+MODEL_FOLDER_PATH = "/opt/aops/models"
 
 APP_INDEX = "app"
 WORKFLOW_INDEX = "workflow"
@@ -31,3 +32,11 @@ QUERY_APP = "/check/app"
 CREATE_APP = "/check/create"
 
 IDENTIFY_SCENE = "/check/scene/identify"
+CREATE_WORKFLOW = "/check/workflow/create"
+QUERY_WORKFLOW = "/check/workflow"
+QUERY_WORKFLOW_LIST = "/check/workflow/list"
+DELETE_WORKFLOW = "/check/workflow"
+UPDATE_WORKFLOW = "/check/workflow/update"
+IF_HOST_IN_WORKFLOW = "/check/workflow/host/exist"
+
+QUERY_HOST_DETAIL = "/manage/host/info/query"

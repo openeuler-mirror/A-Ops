@@ -15,7 +15,7 @@ Time: 2022-07-27
 Author: YangYunYi
 Description: Query raw data from Prometheus
 """
-from typing import Dict, Tuple, List
+from typing import Dict, Tuple, List, Optional
 from datetime import datetime
 from prometheus_api_client import PrometheusApiClientException
 from aops_utils.database.proxy import PromDbProxy
@@ -64,11 +64,13 @@ class DataDao(PromDbProxy):
         label_str = ""
         if "__name__" not in metric.keys():
             return label_str
-
-        for metric_key, metric_value in metric.items():
+        sorted_label_list = sorted(metric.items(), reverse=False)
+        for label in sorted_label_list:
             # The job label is usually "prometheus" in this framework and
             # has no effect on subsequent data requests, so remove it to save space.
             # __name__ label move to the front.
+            metric_key = label[0]
+            metric_value = label[1]
             if metric_key in ["__name__", "job"]:
                 continue
             label_str += "%s=\"%s\"," % (metric_key, metric_value)
@@ -118,7 +120,7 @@ class DataDao(PromDbProxy):
             if host_id not in host_data_list.keys():
                 host_data_list[host_id] = None
 
-            ret, metric_list = self.__query_metric_list_of_host(host_ip, host_port)
+            ret, metric_list = self.query_metric_list_of_host(host_ip, host_port)
             if ret != SUCCEED:
                 status = PARTIAL_SUCCEED
                 continue
@@ -165,7 +167,7 @@ class DataDao(PromDbProxy):
 
         return metric_list
 
-    def __query_metric_list_of_host(self, host_ip: str, host_port: int) -> Tuple[int, List[str]]:
+    def query_metric_list_of_host(self, host_ip: str, host_port: Optional[int] = None) -> Tuple[int, List[str]]:
         """
         Query metric list of a host
         Args:
@@ -179,6 +181,8 @@ class DataDao(PromDbProxy):
                     'metric_name1{label1="value1", label2="value2"}'
                 ]
         """
+        if not host_port:
+            host_port = self.default_instance_port
         query_str = "{instance=\"%s:%s\"}" % (host_ip, str(host_port))
         try:
             data = self._prom.custom_query(

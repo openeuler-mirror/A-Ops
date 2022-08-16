@@ -46,6 +46,7 @@ QUERY_HOST = "/manage/host/get"
 GET_HOST_COUNT = "/manage/host/count"
 
 QUERY_HOST_DETAIL = "/manage/host/info/query"
+HOST_SCENE_GET = '/manage/host/scene/get'
 
 ADD_GROUP = "/manage/host/group/add"
 DELETE_GROUP = "/manage/host/group/delete"
@@ -68,6 +69,8 @@ CHANGE_PASSWORD = '/manage/account/change'
 ADD_USER = '/manage/account/add'
 
 AGENT_PLUGIN_INFO = '/manage/agent/plugin/info'
+AGENT_PLUGIN_SET = '/manage/agent/plugin/set'
+AGENT_METRIC_SET = '/manage/agent/metric/set'
 
 # database route
 DATA_ADD_HOST = "/data/host/add"

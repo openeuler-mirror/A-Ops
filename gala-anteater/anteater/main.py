@@ -33,6 +33,17 @@ from anteater.utils.log import Log
 log = Log().get_logger()
 
 
+def str2bool(arg):
+    if isinstance(arg, bool):
+        return arg
+    if arg.lower() in ('yes', 'true', 't', 'y', '1'):
+        return True
+    elif arg.lower() in ('no', 'false', 'f', 'n', '0'):
+        return False
+    else:
+        raise argparse.ArgumentTypeError('Boolean value expected.')
+
+
 def arg_parser():
     parser = argparse.ArgumentParser(
         description="gala-anteater project for operation system KPI metrics anomaly detection")
@@ -56,7 +67,9 @@ def arg_parser():
                         type=int, default=1, required=False)
     parser.add_argument("-rt", "--retrain",
                         help="If retrain the vae model or not",
-                        type=bool, default=False, required=False)
+                        type=str2bool, nargs='?', const=True, default=False, required=False)
+    parser.add_argument("-st", "--sli_time",
+                        help="The sli time threshold", type=int, default=200, required=False)
     arguments = vars(parser.parse_args())
 
     return arguments
@@ -81,7 +94,7 @@ def anomaly_detection(hybrid_model, key_metric_model, post_model, parser: Dict[s
         y_pred = hybrid_model.predict(df)
         is_abnormal = hybrid_model.is_abnormal(y_pred)
         key_metric_anomalies = key_metric_model.detect_key_metric(utc_now, machine_id)
-        if is_abnormal or any([s for s in key_metric_anomalies if round(s[2]/1000000) > 1000]):
+        if is_abnormal or any([s for s in key_metric_anomalies if round(s[2]/1000000) > parser["sli_time"]]):
             rec_anomalies = post_model.top_n_anomalies(utc_now, machine_id, top_n=30)
             for anomalies in key_metric_anomalies:
                 msg = get_kafka_message(round(utc_now.timestamp()), y_pred.tolist(),

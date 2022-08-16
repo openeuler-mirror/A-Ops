@@ -15,15 +15,10 @@ setup(
         "anteater":
             [
                 # configs
-                "configuration/log.settings.ini",
-                "configuration/model.settings.ini",
-                "configuration/service.settings.ini",
+                "configuration/*",
 
                 # models
-                "file/normalization.pkl",
-                "file/rf_model.pkl",
-                "file/vae_model.torch",
-                "file/vae_parameters.json",
+                "file/*",
 
                 # features
                 "model/observe/metrics.csv",

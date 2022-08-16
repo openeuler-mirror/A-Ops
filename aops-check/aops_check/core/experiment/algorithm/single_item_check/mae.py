@@ -10,7 +10,7 @@
 # PURPOSE.
 # See the Mulan PSL v2 for more details.
 # ******************************************************************************/
-from typing import Optional
+from typing import Optional, Dict
 
 import pandas as pd
 
@@ -22,6 +22,16 @@ class Mae(BaseSingleItemAlgorithm):
     def __init__(self, var_times: float = 0.25, window: int = 5) -> None:
         self._var_times = var_times
         self._window = window
+
+    @property
+    def info(self) -> Dict[str, str]:
+        data = {
+            "algo_name": "mae",
+            "field": "singlecheck",
+            "description": "It's a single item check method using mae algorithm.",
+            "path": "aops_check.core.experiment.algorithm.single_item_check.mae.Mae"
+        }
+        return data
 
     def calculate(self, data: list, time_range: Optional[list] = None) -> list:
         """

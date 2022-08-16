@@ -45,39 +45,56 @@ static __always_inline void report_sockbuf(void *ctx, struct tcp_metrics_s *metr
     (void)bpf_perf_event_output(ctx, &tcp_output, BPF_F_CURRENT_CPU, metrics, sizeof(struct tcp_metrics_s));
 
     metrics->report_flags &= ~TCP_PROBE_SOCKBUF;
-    __builtin_memset(&(metrics->sockbuf_stats), 0x0, sizeof(metrics->sockbuf_stats));
+    //__builtin_memset(&(metrics->sockbuf_stats), 0x0, sizeof(metrics->sockbuf_stats));
 }
 
 static void get_tcp_sock_buf(struct sock *sk, struct tcp_sockbuf* stats)
 {
-    u32 tmp;
+    stats->tcpi_sk_err_que_size = _(sk->sk_error_queue.qlen);
+    stats->tcpi_sk_rcv_que_size = _(sk->sk_receive_queue.qlen);
+    stats->tcpi_sk_wri_que_size = _(sk->sk_write_queue.qlen);
+    stats->tcpi_sk_backlog_size = (u32)_(sk->sk_backlog.len);
+    stats->tcpi_sk_omem_size    = (u32)_(sk->sk_omem_alloc.counter);
+    stats->tcpi_sk_forward_size = (u32)_(sk->sk_forward_alloc);
+    stats->tcpi_sk_wmem_size    = (u32)_(sk->sk_wmem_alloc.refs.counter);
+}
 
-    tmp = _(sk->sk_error_queue.qlen);
-    stats->tcpi_sk_err_que_size = max(stats->tcpi_sk_err_que_size, tmp);
+static void set_last_sockbuf_stats(struct tcp_sockbuf* stats, struct tcp_sockbuf* last_stats)
+{
+    __builtin_memcpy(last_stats, stats, sizeof(struct tcp_sockbuf));
+}
 
-    tmp = _(sk->sk_receive_queue.qlen);
-    stats->tcpi_sk_rcv_que_size = max(stats->tcpi_sk_rcv_que_size, tmp);
-
-    tmp = _(sk->sk_write_queue.qlen);
-    stats->tcpi_sk_wri_que_size = max(stats->tcpi_sk_wri_que_size, tmp);
-
-    tmp = (u32)_(sk->sk_backlog.len);
-    stats->tcpi_sk_backlog_size = max(stats->tcpi_sk_backlog_size, tmp);
-
-    tmp = (u32)_(sk->sk_omem_alloc.counter);
-    stats->tcpi_sk_omem_size = max(stats->tcpi_sk_omem_size, tmp);
-
-    tmp = (u32)_(sk->sk_forward_alloc);
-    stats->tcpi_sk_forward_size = max(stats->tcpi_sk_forward_size, tmp);
-
-    tmp = (u32)_(sk->sk_wmem_alloc.refs.counter);
-    stats->tcpi_sk_wmem_size = max(stats->tcpi_sk_wmem_size, tmp);
+static int is_sockbuf_stats_changed(struct tcp_sockbuf* stats, struct tcp_sockbuf* last_stats)
+{
+    if (last_stats->tcpi_sk_err_que_size != stats->tcpi_sk_err_que_size) {
+        return 1;
+    }
+    if (last_stats->tcpi_sk_rcv_que_size != stats->tcpi_sk_rcv_que_size) {
+        return 1;
+    }
+    if (last_stats->tcpi_sk_wri_que_size != stats->tcpi_sk_wri_que_size) {
+        return 1;
+    }
+    if (last_stats->tcpi_sk_backlog_size != stats->tcpi_sk_backlog_size) {
+        return 1;
+    }
+    if (last_stats->tcpi_sk_omem_size != stats->tcpi_sk_omem_size) {
+        return 1;
+    }
+    if  (last_stats->tcpi_sk_forward_size != stats->tcpi_sk_forward_size) {
+        return 1;
+    }
+    if (last_stats->tcpi_sk_wmem_size != stats->tcpi_sk_wmem_size) {
+        return 1;
+    }
+    return 0;
 }
 
 KRAWTRACE(tcp_probe, bpf_raw_tracepoint_args)
 {
     struct sock *sk = (struct sock*)ctx->args[0];
     struct tcp_metrics_s *metrics;
+    struct tcp_sockbuf last_sockbuf_stats = {0};
     u32 pid __maybe_unused = bpf_get_current_pid_tgid();
 
     // Avoid high performance costs
@@ -87,8 +104,11 @@ KRAWTRACE(tcp_probe, bpf_raw_tracepoint_args)
 
     metrics = get_tcp_metrics(sk);
     if (metrics) {
+        set_last_sockbuf_stats(&(metrics->sockbuf_stats), &last_sockbuf_stats);
         get_tcp_sock_buf(sk, &(metrics->sockbuf_stats));
-        report_sockbuf(ctx, metrics);
+        if (is_sockbuf_stats_changed(&(metrics->sockbuf_stats), &last_sockbuf_stats)) {
+            report_sockbuf(ctx, metrics);
+        }
     }
 }
 

@@ -146,6 +146,7 @@ function check_es_installed() {
 }
 
 function check_mysql_installed() {
+  CONFIG_FILE=$1
   echo "[INFO] mysql check start"
 
   mysql_ip=$(get_config "$CONFIG_FILE" "mysql" "ip")

@@ -10,7 +10,7 @@
 # PURPOSE.
 # See the Mulan PSL v2 for more details.
 # ******************************************************************************/
-from typing import Optional
+from typing import Optional, Dict
 
 import pandas as pd
 
@@ -23,6 +23,16 @@ class EWMA(BaseSingleItemAlgorithm):
         self._var_times = var_times
         self._alpha = alpha
         self._adjust = adjust
+
+    @property
+    def info(self) -> Dict[str, str]:
+        data = {
+            "algo_name": "ewma",
+            "field": "singlecheck",
+            "description": "It's a single item check method using ewma algorithm.",
+            "path": "aops_check.core.experiment.algorithm.single_item_check.ewma.EWMA"
+        }
+        return data
 
     def calculate(self, data: list, time_range: Optional[list] = None) -> list:
         """

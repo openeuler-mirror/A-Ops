@@ -15,14 +15,29 @@ Time:
 Author:
 Description:
 """
-from aops_check.init.app import init_app
-from aops_check.init.elasticsearch import init_es
-from aops_check.init.mysql import init_mysql
-from aops_check.init.algorithm import init_algo_and_model
 
 
-def init():
-    init_mysql()
-    init_es()
-    init_app()
-    init_algo_and_model()
+class Register:
+    """
+    It's a base register class which realizes register function.
+    """
+
+    def __init__(self):
+        self.dict = {}
+
+    def register(self, target: str) -> 'add':
+        def add(key, value):
+            self.dict[key] = value
+            return value
+
+        if callable(target):
+            raise ValueError("register by method call is not support")
+
+        return lambda x: add(target, x)
+
+    def build(self, name: str) -> 'Register':
+        return self.dict[name]
+
+    @staticmethod
+    def run():
+        ...
