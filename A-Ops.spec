@@ -166,6 +166,7 @@ website for A-Ops, deployed by Nginx
 %setup
 %setup -T -D -a 1
 %patch0001 -p1
+cp -rf A-Ops-web-node-modules/node_modules aops-web/
 
 
 %build
