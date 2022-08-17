@@ -1,0 +1,12 @@
+---
+- name: Install aops_agent
+  include: install_aops_agent.yml
+  when: install_aops_agent
+
+- name: Config aops_agent
+  include: config_aops_agent.yml
+  when: config_aops_agent
+
+- name: Start aops_agent
+  include: start_aops_agent.yml
+  when: start_aops_agent

@@ -1,0 +1,10 @@
+---
+- hosts: aops_agent_hosts # Define Execution Host Range
+  gather_facts: no # Do not collect facts during the execution to improve the execution speed.
+  user: "{{ ansible_user }}" # Execution user
+  vars:
+    install_aops_agent: true # Install aops_agent
+    config_aops_agent: true # Config aops_agent
+    start_aops_agent: true # Auto start aops_agent service
+  roles:
+    - ../roles/aops_agent # Install aops_agent
