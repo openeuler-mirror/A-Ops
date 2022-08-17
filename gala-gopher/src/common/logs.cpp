@@ -58,7 +58,7 @@
 
 static struct log_mgr_s *local = NULL;
 
-static void rm_file(char full_path[])
+void rm_log_file(char full_path[])
 {
     FILE *fp = NULL;
     char command[COMMAND_LEN];
@@ -246,11 +246,11 @@ static int que_get_next_file(struct files_queue_s *files_que)
     return 0;
 }
 
-static char que_current_is_invalid(struct files_queue_s *files_que)
+static char que_current_is_invalid(struct files_queue_s *files_que, int max_logs_len)
 {
     (void)pthread_rwlock_wrlock(&(files_que->rwlock));
 
-    char invalid = (files_que->current.len >= LOGS_FILE_SIZE);
+    char invalid = (files_que->current.len >= max_logs_len);
     invalid |= (files_que->current.len == 0);
 
     (void)pthread_rwlock_unlock(&(files_que->rwlock));
@@ -364,7 +364,7 @@ static int append_metrics_logger(struct log_mgr_s * mgr)
 
     g_metrics_logger.removeAllAppenders();
 
-    rm_file(full_path);
+    rm_log_file(full_path);
     SharedAppenderPtr append(new RollingFileAppender(full_path, METRICS_LOGS_FILESIZE, 1, false, true));
     log4cplus::tstring pattern = LOG4CPLUS_TEXT("%m");
     append->setLayout(std::unique_ptr<log4cplus::Layout>(new log4cplus::PatternLayout(pattern)));
@@ -388,7 +388,7 @@ static int append_event_logger(struct log_mgr_s * mgr)
 
     g_event_logger.removeAllAppenders();
 
-    rm_file(full_path);
+    rm_log_file(full_path);
     SharedAppenderPtr append(new RollingFileAppender(full_path, EVENT_LOGS_FILESIZE, 1, false, true));
     log4cplus::tstring pattern = LOG4CPLUS_TEXT("%m%n");
     append->setLayout(std::unique_ptr<log4cplus::Layout>(new log4cplus::PatternLayout(pattern)));
@@ -396,7 +396,7 @@ static int append_event_logger(struct log_mgr_s * mgr)
     return 0;
 }
 
-struct log_mgr_s* create_log_mgr(const char *app_name)
+struct log_mgr_s* create_log_mgr(const char *app_name, int is_metric_out_log, int is_event_out_log)
 {
     struct log_mgr_s *mgr = NULL;
     mgr = (struct log_mgr_s *)malloc(sizeof(struct log_mgr_s));
@@ -405,17 +405,23 @@ struct log_mgr_s* create_log_mgr(const char *app_name)
     }
     (void)memset(mgr, 0, sizeof(struct log_mgr_s));
 
-    mgr->metrics_files = create_queue(METRICS_LOGS_MAXNUM);
-    if (mgr->metrics_files == NULL) {
-        (void)free(mgr);
-        return NULL;
+    if (is_metric_out_log == 1) {
+        mgr->is_metric_out_log = LOGS_SWITCH_ON;
+        mgr->metrics_files = create_queue(METRICS_LOGS_MAXNUM);
+        if (mgr->metrics_files == NULL) {
+            (void)free(mgr);
+            return NULL;
+        }
     }
 
-    mgr->event_files = create_queue(EVENT_LOGS_MAXNUM);
-    if (mgr->event_files == NULL) {
-        destroy_queue(mgr->metrics_files);
-        (void)free(mgr);
-        return NULL;
+    if (is_event_out_log == 1) {
+        mgr->is_event_out_log = LOGS_SWITCH_ON;
+        mgr->event_files = create_queue(EVENT_LOGS_MAXNUM);
+        if (mgr->event_files == NULL) {
+            destroy_queue(mgr->metrics_files);
+            (void)free(mgr);
+            return NULL;
+        }
     }
 
     if (app_name) {
@@ -425,7 +431,7 @@ struct log_mgr_s* create_log_mgr(const char *app_name)
     return mgr;
 }
 
-int init_log_mgr(struct log_mgr_s* mgr)
+int init_log_mgr(struct log_mgr_s* mgr, int is_meta_out_log)
 {
     init_all_logger();
 
@@ -434,9 +440,12 @@ int init_log_mgr(struct log_mgr_s* mgr)
         return -1;
     }
 
-    if ((mgr->meta_path[0] != 0) && append_meta_logger(mgr)) {
-        (void)fprintf(stderr, "Append meta logger failed.\n");
-        return -1;
+    if (is_meta_out_log == 1) {
+        mgr->is_meta_out_log = LOGS_SWITCH_ON;
+        if ((mgr->meta_path[0] != 0) && append_meta_logger(mgr)) {
+            (void)fprintf(stderr, "Append meta logger failed.\n");
+            return -1;
+        }
     }
 
     local = mgr;
@@ -466,7 +475,7 @@ int wr_metrics_logs(const char* logs, size_t logs_len)
         return -1;
     }
 
-    if (que_current_is_invalid(mgr->metrics_files)) {
+    if (que_current_is_invalid(mgr->metrics_files, METRICS_LOGS_FILESIZE)) {
         if (append_metrics_logger(mgr)) {
             return -1;
         }
@@ -505,7 +514,7 @@ int wr_event_logs(const char* logs, size_t logs_len)
         return -1;
     }
 
-    if (que_current_is_invalid(mgr->event_files)) {
+    if (que_current_is_invalid(mgr->event_files, EVENT_LOGS_FILESIZE)) {
         if (append_event_logger(mgr)) {
             return -1;
         }
@@ -647,7 +656,7 @@ void testcase_wr_meta_logs(void)
             (void)fprintf(stderr, "Failed to read logs!\n"); \
             return; \
         } \
-        rm_file(__logs); \
+        rm_log_file(__logs); \
         printf("Succeed to read logs(%s)\n", __logs); \
     } while(0)
 

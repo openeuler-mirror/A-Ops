@@ -133,5 +133,9 @@ int IMDB_DataStr2Json(IMDB_DataBaseMgr *mgr, const char *recordStr, char *jsonSt
 int IMDB_Rec2Json(IMDB_DataBaseMgr *mgr, IMDB_Table *table,
                         IMDB_Record* rec, const char *dataStr, char *jsonStr, uint32_t jsonStrLen);
 
+void WriteMetricsLogsMain(IMDB_DataBaseMgr *mgr);
+int ReadMetricsLogs(char logs_file_name[]);
+void RemoveMetricsLogs(char logs_file_name[]);
+
 #endif
 

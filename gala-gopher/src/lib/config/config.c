@@ -76,6 +76,30 @@ ConfigMgr *ConfigMgrCreate(void)
     }
     memset(mgr->webServerConfig, 0, sizeof(WebServerConfig));
 
+    mgr->logsConfig = (LogsConfig *)malloc(sizeof(LogsConfig));
+    if (mgr->logsConfig == NULL) {
+        goto ERR;
+    }
+    memset(mgr->logsConfig, 0, sizeof(LogsConfig));
+
+    mgr->metricOutConfig = (OutConfig *)malloc(sizeof(OutConfig));
+    if (mgr->metricOutConfig == NULL) {
+        goto ERR;
+    }
+    memset(mgr->metricOutConfig, 0, sizeof(OutConfig));
+
+    mgr->eventOutConfig = (OutConfig *)malloc(sizeof(OutConfig));
+    if (mgr->eventOutConfig == NULL) {
+        goto ERR;
+    }
+    memset(mgr->eventOutConfig, 0, sizeof(OutConfig));
+
+    mgr->metaOutConfig = (OutConfig *)malloc(sizeof(OutConfig));
+    if (mgr->metaOutConfig == NULL) {
+        goto ERR;
+    }
+    memset(mgr->metaOutConfig, 0, sizeof(OutConfig));
+
     return mgr;
 ERR:
     ConfigMgrDestroy(mgr);
@@ -122,6 +146,22 @@ void ConfigMgrDestroy(ConfigMgr *mgr)
         free(mgr->webServerConfig);
     }
 
+    if (mgr->logsConfig != NULL) {
+        free(mgr->logsConfig);
+    }
+
+    if (mgr->metricOutConfig != NULL) {
+        free(mgr->metricOutConfig);
+    }
+
+    if (mgr->eventOutConfig != NULL) {
+        free(mgr->eventOutConfig);
+    }
+
+    if (mgr->metaOutConfig != NULL) {
+        free(mgr->metaOutConfig);
+    }
+
     free(mgr);
     return;
 }
@@ -132,13 +172,13 @@ static int ConfigMgrLoadGlobalConfig(void *config, config_setting_t *settings)
     uint32_t ret = 0;
 
     const char *strVal;
-    ret = config_setting_lookup_string(settings, "log_directory", &strVal);
+    ret = config_setting_lookup_string(settings, "log_file_name", &strVal);
     if (ret == 0) {
-        ERROR("[CONFIG] load config for log_directory failed.\n");
+        ERROR("[CONFIG] load config for log_file_name failed.\n");
         return -1;
     }
 
-    (void)strncpy(globalConfig->logDirectory, strVal, MAX_LOG_DIRECTORY_LEN - 1);
+    (void)strncpy(globalConfig->logFileName, strVal, PATH_LEN - 1);
 
     ret = config_setting_lookup_string(settings, "pin_path", &strVal);
     if (ret == 0) {
@@ -203,27 +243,6 @@ static int ConfigMgrLoadKafkaConfig(void *config, config_setting_t *settings)
     }
     (void)strncpy(kafkaConfig->broker, strVal, MAX_KAFKA_BROKER_LEN - 1);
 
-    ret = config_setting_lookup_string(settings, "kafka_topic", &strVal);
-    if (ret == 0) {
-        ERROR("[CONFIG] load config for kafka_topic failed.\n");
-        return -1;
-    }
-    (void)strncpy(kafkaConfig->metric_topic, strVal, MAX_KAFKA_TOPIC_LEN - 1);
-
-    ret = config_setting_lookup_string(settings, "metadata_topic", &strVal);
-    if (ret == 0) {
-        ERROR("[CONFIG] load config for metadata_topic failed.\n");
-        return -1;
-    }
-    (void)strncpy(kafkaConfig->metadata_topic, strVal, MAX_KAFKA_TOPIC_LEN - 1);
-
-    ret = config_setting_lookup_string(settings, "event_topic", &strVal);
-    if (ret == 0) {
-        ERROR("[CONFIG] load config for event_topic failed.\n");
-        return -1;
-    }
-    (void)strncpy(kafkaConfig->event_topic, strVal, MAX_KAFKA_TOPIC_LEN - 1);
-
     ret = config_setting_lookup_int(settings, "batch_num_messages", &intVal);
     if (ret == 0) {
         ERROR("[CONFIG] load config for batch.num.messages failed.\n");
@@ -259,16 +278,6 @@ static int ConfigMgrLoadKafkaConfig(void *config, config_setting_t *settings)
     }
     kafkaConfig->queueBufferingMaxMs = intVal;
 
-    ret = config_setting_lookup_string(settings, "switch", &strVal);
-    if (ret == 0) {
-        ERROR("[CONFIG] load config for kafka switch failed.\n");
-        return -1;
-    }
-    if (strcmp(strVal, "on") == 0) {
-        kafkaConfig->kafkaSwitch = KAFKA_SWITCH_ON;
-    } else {
-        kafkaConfig->kafkaSwitch = KAFKA_SWITCH_OFF;
-    }
     return 0;
 }
 
@@ -459,16 +468,74 @@ static int ConfigMgrLoadWebServerConfig(void *config, config_setting_t *settings
     }
     webServerConfig->port = (uint16_t)intVal;
 
-    ret = config_setting_lookup_string(settings, "switch", &strVal);
+    return 0;
+}
+
+static int ConfigMgrLoadLogsConfig(void *config, config_setting_t *settings)
+{
+    LogsConfig *logsConfig = (LogsConfig *)config;
+    uint32_t ret = 0;
+    const char *strVal = NULL;
+
+    ret = config_setting_lookup_string(settings, "metric_dir", &strVal);
     if (ret == 0) {
-        ERROR("[CONFIG] load config for webServerConfig swtich failed.\n");
+        ERROR("[CONFIG] load config for metric_dir failed.\n");
         return -1;
     }
-    if (strcmp(strVal, "on") == 0) {
-        webServerConfig->on = 1;
-    } else {
-        webServerConfig->on = 0;
+    (void)strncpy(logsConfig->metricDir, strVal, PATH_LEN - 1);
+
+    ret = config_setting_lookup_string(settings, "event_dir", &strVal);
+    if (ret == 0) {
+        ERROR("[CONFIG] load config for event_dir failed.\n");
+        return -1;
     }
+    (void)strncpy(logsConfig->eventDir, strVal, PATH_LEN - 1);
+
+    ret = config_setting_lookup_string(settings, "meta_dir", &strVal);
+    if (ret == 0) {
+        ERROR("[CONFIG] load config for meta_dir failed.\n");
+        return -1;
+    }
+    (void)strncpy(logsConfig->metaDir, strVal, PATH_LEN - 1);
+
+    ret = config_setting_lookup_string(settings, "debug_dir", &strVal);
+    if (ret == 0) {
+        ERROR("[CONFIG] load config for debug_dir failed.\n");
+        return -1;
+    }
+    (void)strncpy(logsConfig->debugDir, strVal, PATH_LEN - 1);
+
+    return 0;
+}
+
+static int ConfigMgrLoadOutConfig(void *config, config_setting_t *settings)
+{
+    OutConfig *outConfig = (OutConfig  *)config;
+    uint32_t ret = 0;
+    const char *strVal = NULL;
+
+    ret = config_setting_lookup_string(settings, "out_channel", &strVal);
+    if (ret == 0) {
+        ERROR("[CONFIG] load config for out_channel failed.\n");
+        return -1;
+    }
+    if (!strcmp(strVal, "logs")) {
+        outConfig->outChnl = OUT_CHNL_LOGS;
+    } else if (!strcmp(strVal, "kafka")) {
+        outConfig->outChnl = OUT_CHNL_KAFKA;
+    } else if (!strcmp(strVal, "web_server")) {
+        outConfig->outChnl = OUT_CHNL_WEB_SERVER;
+    } else {
+        ERROR("[CONFIG] config out_channel type invalid\n");
+        return -1;
+    }
+
+    ret = config_setting_lookup_string(settings, "kafka_topic", &strVal);
+    if (ret == 0) {
+        ERROR("[CONFIG] load config for out kafka_topic failed.\n");
+        return -1;
+    }
+    (void)strncpy(outConfig->kafka_topic, strVal, MAX_KAFKA_TOPIC_LEN - 1);
 
     return 0;
 }
@@ -491,7 +558,11 @@ int ConfigMgrLoad(const ConfigMgr *mgr, const char *confPath)
         { (void *)mgr->probesConfig, "probes", ConfigMgrLoadProbesConfig },
         { (void *)mgr->extendProbesConfig, "extend_probes", ConfigMgrLoadExtendProbesConfig },
         { (void *)mgr->imdbConfig, "imdb", ConfigMgrLoadIMDBConfig },
-        { (void *)mgr->webServerConfig, "web_server", ConfigMgrLoadWebServerConfig }
+        { (void *)mgr->webServerConfig, "web_server", ConfigMgrLoadWebServerConfig },
+        { (void *)mgr->logsConfig, "logs", ConfigMgrLoadLogsConfig },
+        { (void *)mgr->metricOutConfig, "metric", ConfigMgrLoadOutConfig },
+        { (void *)mgr->eventOutConfig, "event", ConfigMgrLoadOutConfig },
+        { (void *)mgr->metaOutConfig, "meta", ConfigMgrLoadOutConfig }
     };
 
     int ret = 0;
