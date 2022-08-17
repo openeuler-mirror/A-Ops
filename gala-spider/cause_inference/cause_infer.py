@@ -29,8 +29,8 @@ def _get_metric_obj_type(metric_id: str):
     left = metric_id[len(infer_config.data_agent) + 1:]
     obsv_types = ObserveMetaMgt().get_observe_types()
     for obj_type in obsv_types:
-        if left.startswith(obj_type.value + "_"):
-            return obj_type.value
+        if left.startswith(obj_type + "_"):
+            return obj_type
 
     raise MetadataException('Entity type of the metric {} can not be supported.'.format(metric_id))
 
