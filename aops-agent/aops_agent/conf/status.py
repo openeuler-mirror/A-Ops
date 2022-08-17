@@ -19,7 +19,7 @@ CONFLICT_ERROR = 409
 SERVER_ERROR = 500
 HTTP_CONNECT_ERROR = 1001
 UNKNOWN_ERROR = 1002
-
+TOKEN_ERROR = 1201
 
 class StatusCode:
     """
@@ -46,6 +46,9 @@ class StatusCode:
         },
         UNKNOWN_ERROR: {
             "msg": "unknown error"
+        },
+        TOKEN_ERROR: {
+            "msg": "the session is invalid"
         }
     }
 
