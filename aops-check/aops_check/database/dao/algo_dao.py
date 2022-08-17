@@ -15,9 +15,12 @@ Time:
 Author:
 Description:
 """
+from typing import Tuple
+
 from sqlalchemy import func
 from sqlalchemy.exc import SQLAlchemyError
 
+from aops_utils.database.helper import sort_and_page
 from aops_utils.restful.status import SUCCEED
 from aops_utils.database.proxy import MysqlProxy
 from aops_utils.log.log import LOGGER
@@ -30,6 +33,7 @@ class AlgorithmDao(MysqlProxy):
     """
     Algorithm related operation
     """
+
     def insert_algo(self, data) -> int:
         """
         insert algorithm info into database
@@ -79,3 +83,70 @@ class AlgorithmDao(MysqlProxy):
         if name_count:
             return True
         return False
+
+    def query_algorithm_list(self, data) -> Tuple[int, dict]:
+        """
+            get algorithm list
+        Args:
+            data(dict): parameter, e.g.
+                    {
+                        'page': 1,
+                        'per_page': 10,
+                        'field': single,
+                        'username': admin
+                    }
+
+        Returns:
+            int: status code
+            dict: query result
+
+        Notes:
+            If you do not enter anything, query all data by default.
+        """
+        page = data.get('page')
+        per_page = data.get('per_page')
+        filters = {Algorithm.username.in_([data.get('username'), 'system'])}
+        if data.get('field'):
+            filters.add(Algorithm.field == data.get('field'))
+
+        res = {
+            'total_count': 0,
+            'total_page': 0,
+            'algo_list': []
+        }
+        algo_query = self._query_algo_list(filters)
+        total_count = len(algo_query.all())
+        algo_info_list, total_page = sort_and_page(algo_query, None, None, per_page, page)
+        res['algo_list'] = self._algo_rows_to_dict(algo_info_list)
+        res['total_page'] = total_page
+        res['total_count'] = total_count
+
+        return SUCCEED, res
+
+    def _query_algo_list(self, filters):
+        """
+            query needed algo info
+        Args:
+            filters (set): filter given by user
+
+        Returns:
+            sqlalchemy.orm.query.Query
+        """
+        return self.session.query(Algorithm.algo_id, Algorithm.algo_name, Algorithm.field,
+                                  Algorithm.description).filter(*filters)
+
+    @staticmethod
+    def _algo_rows_to_dict(rows):
+        """
+            turn queried rows to list of dict
+        """
+        res = []
+        for row in rows:
+            algo_info = {
+                "algo_id": row.algo_id,
+                "algo_name": row.algo_name,
+                "field": row.field,
+                "description": row.description
+            }
+            res.append(algo_info)
+        return res
