@@ -22,6 +22,7 @@ from importlib import import_module
 
 from aops_utils.log.log import LOGGER
 from aops_utils.restful.status import DATABASE_INSERT_ERROR
+from aops_check.conf.constant import SYSTEM_USER
 from aops_check.database import SESSION
 from aops_check.database.dao.algo_dao import AlgorithmDao
 from aops_check.database.dao.model_dao import ModelDao
@@ -31,6 +32,7 @@ algo_list = [
     {
         "algo_module": "aops_check.core.experiment.algorithm.single_item_check.ewma.EWMA",
         "models": [{
+            "username": SYSTEM_USER,
             "model_id": "Ewma-1",
             "model_name": "Ewma",
             "algo_id": "",
@@ -43,6 +45,7 @@ algo_list = [
     {
         "algo_module": "aops_check.core.experiment.algorithm.single_item_check.mae.Mae",
         "models": [{
+            "username": SYSTEM_USER,
             "model_id": "Mae-1",
             "model_name": "Mae",
             "algo_id": "",
@@ -55,6 +58,7 @@ algo_list = [
     {
         "algo_module": "aops_check.core.experiment.algorithm.single_item_check.nsigma.NSigma",
         "models": [{
+            "username": SYSTEM_USER,
             "model_id": "NSigma-1",
             "model_name": "NSigma",
             "algo_id": "",
@@ -68,6 +72,7 @@ algo_list = [
         "algo_module": "aops_check.core.experiment.algorithm.multi_item_check.statistical_multi_item_check."
                        "StatisticalCheck",
         "models": [{
+            "username": SYSTEM_USER,
             "model_id": "StatisticalCheck-1",
             "model_name": "StatisticalCheck",
             "algo_id": "",
@@ -80,6 +85,7 @@ algo_list = [
     {
         "algo_module": "aops_check.core.experiment.algorithm.diag.statistic_diag.StatisticDiag",
         "models": [{
+            "username": SYSTEM_USER,
             "model_id": "StatisticDiag-1",
             "model_name": "StatisticDiag",
             "algo_id": "",
@@ -113,6 +119,7 @@ def init_algo_and_model():
         algo_info = deepcopy(class_().info)
         algo_id = str(uuid.uuid1()).replace('-', '')
         algo_info["algo_id"] = algo_id
+        algo_info["username"] = SYSTEM_USER
 
         status_code = algo_proxy.insert_algo(algo_info)
         if status_code == DATABASE_INSERT_ERROR:

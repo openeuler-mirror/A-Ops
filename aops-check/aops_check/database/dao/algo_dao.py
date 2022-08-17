@@ -15,7 +15,6 @@ Time:
 Author:
 Description:
 """
-from typing import Optional
 from sqlalchemy import func
 from sqlalchemy.exc import SQLAlchemyError
 
@@ -24,6 +23,7 @@ from aops_utils.database.proxy import MysqlProxy
 from aops_utils.log.log import LOGGER
 from aops_utils.restful.status import DATABASE_INSERT_ERROR, DATA_EXIST
 from aops_check.database.factory.table import Algorithm
+from aops_check.conf.constant import SYSTEM_USER
 
 
 class AlgorithmDao(MysqlProxy):
@@ -63,7 +63,7 @@ class AlgorithmDao(MysqlProxy):
         self.session.add(algo)
         return SUCCEED
 
-    def _if_algo_exists(self, username: Optional[str], algo_name: str) -> bool:
+    def _if_algo_exists(self, username: str, algo_name: str) -> bool:
         """
         if the algorithm name already exists in mysql or not
         Args:
@@ -74,7 +74,8 @@ class AlgorithmDao(MysqlProxy):
             bool
         """
         name_count = self.session.query(func.count(Algorithm.algo_name)) \
-            .filter(Algorithm.algo_name == algo_name, Algorithm.username == username).scalar()
+            .filter(Algorithm.algo_name == algo_name, Algorithm.username.in_([username, SYSTEM_USER])) \
+            .scalar()
         if name_count:
             return True
         return False

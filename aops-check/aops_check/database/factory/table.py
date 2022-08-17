@@ -66,7 +66,7 @@ class Algorithm(Base, MyBase):
     description = Column(String(100), nullable=True)
     path = Column(String(150), nullable=False)
 
-    username = Column(String(40), nullable=True)
+    username = Column(String(40), nullable=False)
 
 
 class Model(Base, MyBase):
@@ -83,7 +83,7 @@ class Model(Base, MyBase):
     file_path = Column(String(64), nullable=True)
     precision = Column(Float, nullable=True)
 
-    username = Column(String(40), nullable=True)
+    username = Column(String(40), nullable=False)
 
 
 def create_check_tables(engine=ENGINE):
