@@ -81,7 +81,7 @@ class ModelDao(MysqlProxy):
             bool
         """
         name_count = self.session.query(func.count(Model.model_name)) \
-            .filter(Model.model_name == model_name, Model.username.in_(username, SYSTEM_USER)) \
+            .filter(Model.model_name == model_name, Model.username.in_([username, SYSTEM_USER])) \
             .scalar()
         if name_count:
             return True
