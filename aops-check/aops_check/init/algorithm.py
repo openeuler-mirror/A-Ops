@@ -78,7 +78,7 @@ algo_list = [
         }]
     },
     {
-        "algo_module": "aops_check.core.experiment.algorithm.diag.statistics_diag.StatisticDiag",
+        "algo_module": "aops_check.core.experiment.algorithm.diag.statistic_diag.StatisticDiag",
         "models": [{
             "model_id": "StatisticDiag-1",
             "model_name": "StatisticDiag",
