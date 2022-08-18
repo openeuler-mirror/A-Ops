@@ -53,12 +53,10 @@ const user = {
                         );
                         const in30Minutes = 1 / 48;
                         cookie.set('aops_token', result.access_token, {
-                            expires: in30Minutes,
-                            secure: true
+                            expires: in30Minutes
                         });
                         cookie.set('user_name', userInfo.username, {
-                            expires: in30Minutes,
-                            secure: true
+                            expires: in30Minutes
                         });
                         commit('SET_TOKEN', result.access_token);
                         commit('SET_NAME', {name: userInfo.username});
