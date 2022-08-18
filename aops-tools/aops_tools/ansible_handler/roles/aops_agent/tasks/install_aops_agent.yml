@@ -1,0 +1,10 @@
+---
+- name: Install packages
+  become: true
+  become_user: root
+  dnf:
+    state: latest
+    disable_gpg_check: yes
+    name:
+      - aops-agent
+
