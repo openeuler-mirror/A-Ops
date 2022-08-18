@@ -34,13 +34,13 @@ class StatisticDiagTestcase(unittest.TestCase):
         self.assertEqual(result, ["1", "2", "3", "4", "5"])
 
     def test_count_fault_score_should_return_correct_value_when_map_is_matched(self):
-        failure_info = [{'name': 'cpu'}, {'name': 'mem'}]
+        failure_info = ['cpu', 'mem']
         score_map = {'cpu': 1, 'mem': 0.2}
         diag = StatisticDiag()
         self.assertEqual(diag.count_fault_score(failure_info, score_map), 1.2)
 
     def test_count_fault_score_should_return_correct_value_when_map_is_not_matched(self):
-        failure_info = [{'name': 'cpu'}, {'name': 'mem'}]
+        failure_info = ['cpu', 'mem']
         score_map = {'cpu': 1, 'ss': 0.2}
         diag = StatisticDiag()
         self.assertEqual(diag.count_fault_score(failure_info, score_map), 1.5)
