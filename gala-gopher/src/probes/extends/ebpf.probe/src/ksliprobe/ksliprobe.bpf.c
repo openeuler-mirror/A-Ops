@@ -75,13 +75,25 @@ struct bpf_map_def SEC("maps") conn_samp_map = {
 
 static __always_inline char is_redis_proc(void)
 {
-    char comm[TASK_COMM_LEN];
+    u32 key = 0;
+    char comm[TASK_COMM_LEN] = {0};
+
+    struct ksli_args_s *args;
+    args = (struct ksli_args_s *)bpf_map_lookup_elem(&args_map, &key);
 
     (void)bpf_get_current_comm(&comm, TASK_COMM_LEN);
 
-    if ((comm[0] == 'r') && (comm[1] == 'e')
-        && (comm[2] == 'd') && (comm[3] == 'i') && (comm[4] == 's')) {
-        return 1;
+    if (args == NULL) {
+        if ((comm[0] == 'r') && (comm[1] == 'e')
+            && (comm[2] == 'd') && (comm[3] == 'i') && (comm[4] == 's')) {
+            return 1;
+        }
+    } else {
+        if ((comm[0] == args->redis_proc[0]) && (comm[1] == args->redis_proc[1])
+            && (comm[2] == args->redis_proc[2]) && (comm[3] == args->redis_proc[3])
+            && (comm[4] == args->redis_proc[4])) {
+            return 1;
+        }
     }
 
     return 0;
@@ -105,7 +117,6 @@ static __always_inline int init_conn_id(struct conn_id_t *conn_id, int fd, int t
         bpf_probe_read(conn_id->client_ip_info.ipaddr.ip6, IP6_LEN, &sk->sk_v6_daddr);
 
     } else {
-        bpf_printk("ip_str family abnormal.\n");
         return -1;
     }
 
@@ -170,22 +181,14 @@ KRETPROBE(__sys_accept4, pt_regs)
 }
 
 // 关闭 tcp 连接
-KSLIPROBE_RET(__close_fd, pt_regs, CTX_USER, (int)PT_REGS_PARM2(ctx), NO_INIT_CONN)
+KPROBE(__close_fd, pt_regs)
 {
     int fd;
     u32 tgid = bpf_get_current_pid_tgid() >> INT_LEN;
-    struct probe_val val;
-
     struct conn_key_t conn_key = {0};
     struct conn_data_t *conn_data;
 
-    if (PROBE_GET_PARMS(__close_fd, ctx, val, CTX_USER) < 0)
-        return;
-
-    if (PT_REGS_RC(ctx) < 0)
-        return;
-
-    fd = (int)PROBE_PARM2(val);
+    fd = (int)PT_REGS_PARM2(ctx);
     init_conn_key(&conn_key, fd, tgid);
     conn_data = (struct conn_data_t *)bpf_map_lookup_elem(&conn_map, &conn_key);
     if (conn_data == (void *)0) {
@@ -255,7 +258,6 @@ static __always_inline int identify_protocol_redis(char *msg, char *command)
 
 #pragma clang loop unroll(full)
     for (int i = 0; i < MAX_COMMAND_REQ_SIZE - 2; i++) {
-        // TODO: 循环内i不能被改变所以先简单写下
        parse_msg_to_redis_cmd(msg[i], &j, command, &find_state);
     }
     if (find_state != FIND_MSG_OK_STOP) {
@@ -417,7 +419,7 @@ static __always_inline void process_rdwr_msg(int fd, const char *buf, const unsi
 }
 
 // 跟踪连接 read 读消息
-KSLIPROBE_RET(ksys_read, pt_regs, CTX_USER, (int)PT_REGS_PARM1(ctx), MAY_INIT_CONN)
+KSLIPROBE_RET(ksys_read, pt_regs, CTX_USER)
 {
     int fd;
     u32 tgid __maybe_unused = bpf_get_current_pid_tgid() >> INT_LEN;
@@ -444,28 +446,18 @@ KSLIPROBE_RET(ksys_read, pt_regs, CTX_USER, (int)PT_REGS_PARM1(ctx), MAY_INIT_CO
 }
 
 // 跟踪连接 write 写消息
-KSLIPROBE_RET(ksys_write, pt_regs, CTX_USER, (int)PT_REGS_PARM1(ctx), NO_INIT_CONN)
+KPROBE(ksys_write, pt_regs)
 {
     int fd;
     u32 tgid __maybe_unused = bpf_get_current_pid_tgid() >> INT_LEN;
-    int count = PT_REGS_RC(ctx);
     char *buf;
-    struct probe_val val;
     int err;
 
-    err = PROBE_GET_PARMS(ksys_write, ctx, val, CTX_USER);
-    if (err < 0) {
-        return;
-    }
+    fd = (int)PT_REGS_PARM1(ctx);
+    buf = (char *)PT_REGS_PARM2(ctx);
 
-    if (count <= 0) {
-        return;
-    }
-
-    fd = (int)PROBE_PARM1(val);
-    buf = (char *)PROBE_PARM2(val);
-
-    process_rdwr_msg(fd, buf, count, MSG_WRITE, ctx);
+    // MSG_WRITE doesn't need pass count
+    process_rdwr_msg(fd, buf, 0, MSG_WRITE, ctx);
 
     return;
 }

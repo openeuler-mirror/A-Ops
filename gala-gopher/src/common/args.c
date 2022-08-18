@@ -127,6 +127,11 @@ static int __period_arg_parse(char opt, char *arg, struct probe_params *params)
                 params->load_probe = DEFAULT_LOAD_PROBE;
             }
             break;
+        case 'N':
+            if (arg != NULL) {
+                (void)snprintf((void *)params->proc_name, MAX_PROC_NAME_LEN, "%s", arg);
+            }
+            break;
         default:
             return -1;
     }
