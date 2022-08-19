@@ -67,7 +67,11 @@ def arg_parser():
                         type=int, default=1, required=False)
     parser.add_argument("-rt", "--retrain",
                         help="If retrain the vae model or not",
+<<<<<<< HEAD
                         type=str2bool, nargs='?', const=True, default=False, required=False)
+=======
+                        type=bool, default=False, required=False)
+>>>>>>> 7266b01 (add a arguments in main.py)
     parser.add_argument("-st", "--sli_time",
                         help="The sli time threshold", type=int, default=200, required=False)
     arguments = vars(parser.parse_args())
