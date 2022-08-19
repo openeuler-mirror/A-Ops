@@ -17,7 +17,8 @@
 
 #define TC_PROG "tc_tstamp.bpf.o"
 
-#define MAX_COMMAND_REQ_SIZE (32 - 1)     // todo:command max待定
+#define MAX_COMMAND_REQ_SIZE (32 - 1)
+#define MAX_REDIS_PROC_NAME_SIZE 6 // must <= MAX_PROC_NAME_LEN
 
 #define FIND0_MSG_START 0
 #define FIND1_PARM_NUM 1
@@ -29,15 +30,13 @@
 #define SLI_OK       0
 #define SLI_ERR      (-1)
 
-#define MAY_INIT_CONN     1
-#define NO_INIT_CONN      0
-
 #if ((CURRENT_KERNEL_VERSION == KERNEL_VERSION(4, 18, 0)) || (CURRENT_KERNEL_VERSION >= KERNEL_VERSION(5, 10, 0)))
 #define KERNEL_SUPPORT_TSTAMP
 #endif
 
 struct ksli_args_s {
     __u64 period;               // Sampling period, unit ns
+    char redis_proc[MAX_REDIS_PROC_NAME_SIZE];
 };
 
 enum msg_event_rw_t {
@@ -98,17 +97,18 @@ struct msg_event_data_t {
     struct ip_info_t client_ip_info;
 };
 
-#define KSLIPROBE_RET(func, type, caller_type, fd, init) \
+#define KSLIPROBE_RET(func, type, caller_type) \
     bpf_section("kprobe/" #func) \
     void __kprobe_bpf_##func(struct type *ctx) { \
         int ret; \
+        int fd = (int)PT_REGS_PARM1(ctx); \
         struct __probe_key __key = {0}; \
         struct __probe_val __val = {0}; \
         struct conn_key_t conn_key = {0}; \
         u32 tgid = bpf_get_current_pid_tgid() >> INT_LEN; \
         init_conn_key(&conn_key, fd, tgid); \
         if ((struct conn_data_t *)bpf_map_lookup_elem(&conn_map, &conn_key) == (void *)0) { \
-            if (init && (update_conn_map_n_conn_samp_map(fd, tgid, &conn_key) != SLI_OK)) \
+            if (update_conn_map_n_conn_samp_map(fd, tgid, &conn_key) != SLI_OK) \
                 return; \
         } \
         __get_probe_key(&__key, (const long)PT_REGS_FP(ctx), caller_type); \
