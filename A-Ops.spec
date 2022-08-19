@@ -161,6 +161,12 @@ Requires:   nginx
 %description -n aops-web
 website for A-Ops, deployed by Nginx
 
+%package -n aops-tools
+Summary:  aops tools
+
+%description -n aops-tools
+tools for aops, it's about agent deploy
+
 
 %prep
 %setup
@@ -280,6 +286,12 @@ mkdir -p %{buildroot}/%{_sysconfdir}/nginx
 cp -r deploy/aops-nginx.conf %{buildroot}/%{_sysconfdir}/nginx/
 mkdir -p %{buildroot}/usr/lib/systemd/system
 cp -r deploy/aops-web.service %{buildroot}/usr/lib/systemd/system/
+popd
+
+# install for aops tools
+pushd aops-tools
+mkdir -p %{buildroot}/opt/aops/
+cp -r aops_tools %{buildroot}/opt/aops/
 popd
 
 
@@ -457,6 +469,9 @@ fi
 %attr(0755, root, root) /opt/aops_web/dist/*
 %attr(0755, root, root) %{_sysconfdir}/nginx/aops-nginx.conf
 %attr(0755, root, root) %{_unitdir}/aops-web.service
+
+%files -n aops-tools
+%attr(0755, root, root) /opt/aops/aops_tools/*
 
 
 %changelog
