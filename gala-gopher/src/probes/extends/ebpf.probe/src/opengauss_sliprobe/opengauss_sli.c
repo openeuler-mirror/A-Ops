@@ -28,18 +28,34 @@
 
 #include "bpf.h"
 #include "args.h"
+#include "event.h"
 #include "hash.h"
-#include "opengauss_sli.skel.h"
+#include "ogsli_kprobe.skel.h"
+#include "ogsli_uprobe.skel.h"
 #include "tc_loader.h"
 #include "container.h"
 #include "opengauss_sli.h"
 
+#define OO_NAME "sli"
 #define SLI_TBL_NAME "opengauss_sli"
 #define GUASSDB_COMM "gaussdb"
 #define PLDD_LIBSSL_COMMAND "pldd %u | grep libssl"
 #define PID_COMM_COMMAND "ps -e -o pid,comm | grep %s | awk '{print $1}'"
 
 #define R_OK    4
+
+#define OPENGAUSS_ARGS_PATH          "/sys/fs/bpf/probe/__opengauss_args"
+#define OPENGAUSS_CONN_PATH          "/sys/fs/bpf/probe/__opengauss_conn"
+#define OPENGAUSS_CONN_SAMP_PATH     "/sys/fs/bpf/probe/__opengauss_conn_samp"
+
+#define RM_OPENGAUSS_PATH "/usr/bin/rm -rf /sys/fs/bpf/probe/__opengauss*"
+
+#define __LOAD_OG_PROBE(probe_name, end, load) \
+    OPEN(probe_name, end, load); \
+    MAP_SET_PIN_PATH(probe_name, args_map, OPENGAUSS_ARGS_PATH, load); \
+    MAP_SET_PIN_PATH(probe_name, conn_map, OPENGAUSS_CONN_PATH, load); \
+    MAP_SET_PIN_PATH(probe_name, conn_samp_map, OPENGAUSS_CONN_SAMP_PATH, load); \
+    LOAD_ATTACH(probe_name, end, load)
 
 static volatile sig_atomic_t stop;
 static struct probe_params params = {.period = DEFAULT_PERIOD};
@@ -51,13 +67,15 @@ enum pid_state_t {
     PID_ELF_ATTACHED
 };
 
+#define MS2NS(ms)   ((u64)(ms) * 1000000)
+#define __ENTITY_ID_LEN 128
+
 struct bpf_link_hash_value {
     enum pid_state_t pid_state;
     char elf_path[MAX_PATH_LEN];
     struct bpf_link *bpf_link_read;
     struct bpf_link *bpf_link_read_ret;
     struct bpf_link *bpf_link_write;
-    struct bpf_link *bpf_link_shudown;
 };
 
 struct bpf_link_hash_t {
@@ -71,18 +89,67 @@ static void sig_int(int signo)
     stop = 1;
 }
 
+static void report_sli_event(struct msg_event_data_t *msg_evt_data)
+{
+    char entityId[__ENTITY_ID_LEN];
+    u64 latency_thr_ns = MS2NS(params.latency_thr);
+    unsigned char ser_ip_str[INET6_ADDRSTRLEN];
+    unsigned char cli_ip_str[INET6_ADDRSTRLEN];
+
+    entityId[0] = 0;
+    (void)snprintf(entityId, __ENTITY_ID_LEN, "%d_%d",
+        msg_evt_data->tgid,
+        msg_evt_data->fd);
+
+    if ((latency_thr_ns > 0) && (latency_thr_ns < msg_evt_data->latency.rtt_nsec)) {
+        ip_str(msg_evt_data->conn_info.server_ip_info.family, (unsigned char *)&(msg_evt_data->conn_info.server_ip_info.ipaddr),
+            ser_ip_str, INET6_ADDRSTRLEN);
+        ip_str(msg_evt_data->conn_info.client_ip_info.family, (unsigned char *)&(msg_evt_data->conn_info.client_ip_info.ipaddr),
+            cli_ip_str, INET6_ADDRSTRLEN);
+
+        report_logs(OO_NAME,
+                    entityId,
+                    "rtt_nsec",
+                    EVT_SEC_WARN,
+                    "Process(TID:%d, CIP(%s:%u), SIP(%s:%u)) SLI(%s:%llu) exceed the threshold.",
+                    msg_evt_data->tgid,
+                    cli_ip_str,
+                    ntohs(msg_evt_data->conn_info.client_ip_info.port),
+                    ser_ip_str,
+                    msg_evt_data->conn_info.server_ip_info.port,
+                    msg_evt_data->latency.req_cmd,
+                    msg_evt_data->latency.rtt_nsec);
+    }
+}
+
 static void msg_event_handler(void *ctx, int cpu, void *data, unsigned int size)
 {
     struct msg_event_data_t *msg_evt_data = (struct msg_event_data_t *)data;
+    unsigned char ser_ip_str[INET6_ADDRSTRLEN];
+    unsigned char cli_ip_str[INET6_ADDRSTRLEN];
+
+    report_sli_event(msg_evt_data);
+
+    ip_str(msg_evt_data->conn_info.server_ip_info.family, (unsigned char *)&(msg_evt_data->conn_info.server_ip_info.ipaddr),
+        ser_ip_str, INET6_ADDRSTRLEN);
+    ip_str(msg_evt_data->conn_info.client_ip_info.family, (unsigned char *)&(msg_evt_data->conn_info.client_ip_info.ipaddr),
+        cli_ip_str, INET6_ADDRSTRLEN);
     fprintf(stdout,
-            "|%s|%u|%d|%s|%c|%c|%llu|\n",
+            "|%s|%d|%d|%s|%s|%u|%s|%u|%c|%c|%llu|%c|%c|%llu|\n",
             SLI_TBL_NAME,
             msg_evt_data->tgid,
             msg_evt_data->fd,
             "POSTGRE",
-            msg_evt_data->req_cmd,
-            msg_evt_data->rsp_cmd,
-            msg_evt_data->rtt);
+            ser_ip_str,
+            msg_evt_data->conn_info.server_ip_info.port,
+            cli_ip_str,
+            ntohs(msg_evt_data->conn_info.client_ip_info.port),
+            msg_evt_data->latency.req_cmd,
+            msg_evt_data->latency.rsp_cmd,
+            msg_evt_data->latency.rtt_nsec,
+            msg_evt_data->max.req_cmd,
+            msg_evt_data->max.rsp_cmd,
+            msg_evt_data->max.rtt_nsec);
     (void)fflush(stdout);
 
     return;
@@ -285,10 +352,9 @@ static void clear_all_bpf_link()
         return;
     }
     H_ITER(head, item, tmp) {
-        UNATTACH_ONELINK(opengauss_sli, item->v.bpf_link_read);
-        UNATTACH_ONELINK(opengauss_sli, item->v.bpf_link_read_ret);
-        UNATTACH_ONELINK(opengauss_sli, item->v.bpf_link_write);
-        UNATTACH_ONELINK(opengauss_sli, item->v.bpf_link_shudown);
+        UNATTACH_ONELINK(ogsli_uprobe, item->v.bpf_link_read);
+        UNATTACH_ONELINK(ogsli_uprobe, item->v.bpf_link_read_ret);
+        UNATTACH_ONELINK(ogsli_uprobe, item->v.bpf_link_write);
         H_DEL(head, item);
         (void)free(item);
     }
@@ -297,6 +363,7 @@ static void clear_all_bpf_link()
 int main(int argc, char **argv)
 {
     int err, ret;
+    FILE *fp = NULL;
     int init = 0;
     struct bpf_link_hash_t *item, *tmp;
 
@@ -306,8 +373,15 @@ int main(int argc, char **argv)
     }
     printf("arg parse interval time:%us\n", params.period);
 
+    fp = popen(RM_OPENGAUSS_PATH, "r");
+    if (fp != NULL) {
+        (void)pclose(fp);
+        fp = NULL;
+    }
+
     INIT_BPF_APP(opengauss_sli, EBPF_RLIM_LIMITED);
-    LOAD(opengauss_sli, init_err);
+    __LOAD_OG_PROBE(ogsli_kprobe, init_k_err, 1);
+    __LOAD_OG_PROBE(ogsli_uprobe, init_err, 1);
 
     if (signal(SIGINT, sig_int) == SIG_ERR) {
         fprintf(stderr, "Can't set signal handler: %d\n", errno);
@@ -325,28 +399,22 @@ int main(int argc, char **argv)
         // attach to libssl
         H_ITER(head, item, tmp) {
             if (item->v.pid_state == PID_ELF_TOBE_ATTACHED) {
-                UBPF_ATTACH_ONELINK(opengauss_sli, SSL_read, item->v.elf_path, SSL_read,
+                UBPF_ATTACH_ONELINK(ogsli_uprobe, SSL_read, item->v.elf_path, SSL_read,
                     item->v.bpf_link_read, ret);
                 if (ret <= 0) {
                     fprintf(stderr, "Can't attach function SSL_read at elf_path %s.\n", item->v.elf_path);
                     goto init_err;
                 }
-                UBPF_RET_ATTACH_ONELINK(opengauss_sli, SSL_read, item->v.elf_path, SSL_read,
+                UBPF_RET_ATTACH_ONELINK(ogsli_uprobe, SSL_read, item->v.elf_path, SSL_read,
                     item->v.bpf_link_read_ret, ret);
                 if (ret <= 0) {
                     fprintf(stderr, "Can't attach ret function SSL_read at elf_path %s.\n", item->v.elf_path);
                     goto init_err;
                 }
-                UBPF_ATTACH_ONELINK(opengauss_sli, SSL_write, item->v.elf_path, SSL_write,
+                UBPF_ATTACH_ONELINK(ogsli_uprobe, SSL_write, item->v.elf_path, SSL_write,
                     item->v.bpf_link_write, ret);
                 if (ret <= 0) {
                     fprintf(stderr, "Can't attach function SSL_write at elf_path %s.\n", item->v.elf_path);
-                    goto init_err;
-                }
-                UBPF_ATTACH_ONELINK(opengauss_sli, SSL_shutdown, item->v.elf_path, SSL_shutdown,
-                    item->v.bpf_link_shudown, ret);
-                if (ret <= 0) {
-                    fprintf(stderr, "Can't attach function SSL_shutdown at elf_path %s.\n", item->v.elf_path);
                     goto init_err;
                 }
                 item->v.pid_state = PID_ELF_ATTACHED;
@@ -355,8 +423,8 @@ int main(int argc, char **argv)
 
         clear_invalid_bpf_link();
         if (init == 0) {
-            load_args(GET_MAP_FD(opengauss_sli, args_map), &params);
-            err = init_conn_mgt_process(GET_MAP_FD(opengauss_sli, msg_event_map));
+            load_args(GET_MAP_FD(ogsli_kprobe, args_map), &params);
+            err = init_conn_mgt_process(GET_MAP_FD(ogsli_uprobe, msg_event_map));
             if (err != 0) {
                 fprintf(stderr, "Init connection management process failed.\n");
                 goto init_err;
@@ -366,8 +434,12 @@ int main(int argc, char **argv)
         sleep(params.period);
     }
 
+
+
 init_err:
     clear_all_bpf_link();
-    UNLOAD(opengauss_sli);
+    UNLOAD(ogsli_uprobe);
+init_k_err:
+    UNLOAD(ogsli_kprobe);
     return -err;
 }
