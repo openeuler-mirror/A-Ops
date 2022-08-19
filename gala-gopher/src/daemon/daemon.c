@@ -103,6 +103,13 @@ static void *DaemonRunMetadataReport(void *arg)
     (void)ReportMetaDataMain(mgr);
 }
 
+static void *DaemonRunMetricsWriteLogs(void *arg)
+{
+    IMDB_DataBaseMgr *mgr = (IMDB_DataBaseMgr *)arg;
+    prctl(PR_SET_NAME, "[METRICLOG]");
+    WriteMetricsLogsMain(mgr);
+}
+
 #endif
 
 static void CleanData(const ResourceMgr *mgr)
@@ -311,7 +318,16 @@ int DaemonRun(const ResourceMgr *mgr)
         INFO("[DAEMON] create extend probe %s thread success.\n", mgr->extendProbeMgr->probes[i]->name);
     }
 
-    // 7. start CmdServer thread
+    // 7. start write metricsLogs thread
+    pthread_t metrics_tid;
+    ret = pthread_create(&metrics_tid, NULL, DaemonRunMetricsWriteLogs, mgr->imdbMgr);
+    if (ret != 0) {
+        ERROR("[DAEMON] create metrics_write_logs thread failed. errno: %d\n", errno);
+        return -1;
+    }
+    INFO("[DAEMON] create metrics_write_logs thread success.\n");
+
+    // 8. start CmdServer thread
     ret = pthread_create(&mgr->ctl_tid, NULL, CmdServer, NULL);
     if (ret != 0) {
         ERROR("[DAEMON] create cmd_server thread failed. errno: %d\n", errno);
@@ -319,7 +335,7 @@ int DaemonRun(const ResourceMgr *mgr)
     }
     INFO("[DAEMON] create cmd_server thread success.\n");
 
-    // 8. create keeplive timer
+    // 9. create keeplive timer
     ret = DaemonCreateTimer((ResourceMgr *)mgr);
     if (ret != 0) {
         ERROR("[DAEMON] create keeplive timer failed. errno: %d\n", ret);

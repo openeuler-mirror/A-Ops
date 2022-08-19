@@ -29,6 +29,8 @@ extern "C" {
 #define PATH_LEN                256
 #endif
 
+#define LOGS_SWITCH_ON  1
+
 struct file_node_s {
     size_t len;
     int file_id;
@@ -44,7 +46,7 @@ struct files_queue_s {
     struct file_node_s queue[0];
 };
 
-struct log_mgr_s {
+typedef struct log_mgr_s {
     struct files_queue_s *metrics_files;
     struct files_queue_s *event_files;
     char app_name[PATH_LEN];
@@ -52,7 +54,11 @@ struct log_mgr_s {
     char event_path[PATH_LEN];
     char metrics_path[PATH_LEN];
     char meta_path[PATH_LEN];
-};
+    char is_debug_log;
+    char is_metric_out_log;
+    char is_event_out_log;
+    char is_meta_out_log;
+} LogsMgr;
 
 int read_metrics_logs(char logs_file_name[], size_t size);
 int wr_metrics_logs(const char* logs, size_t logs_len);
@@ -62,9 +68,11 @@ void wr_meta_logs(const char* logs);
 int wr_event_logs(const char* logs, size_t logs_len);
 int read_event_logs(char logs_file_name[], size_t size);
 
+void rm_log_file(char full_path[]);
+
 void destroy_log_mgr(struct log_mgr_s* mgr);
-int init_log_mgr(struct log_mgr_s* mgr);
-struct log_mgr_s* create_log_mgr(const char *app_name);
+int init_log_mgr(struct log_mgr_s* mgr, int is_meta_out_log);
+struct log_mgr_s* create_log_mgr(const char *app_name, int is_metric_out_log, int is_event_out_log);
 
 #ifdef __cplusplus
 }

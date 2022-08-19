@@ -42,6 +42,8 @@ static int EgressMgrInit(ResourceMgr *resourceMgr);
 static void EgressMgrDeinit(ResourceMgr *resourceMgr);
 static int WebServerInit(ResourceMgr *resourceMgr);
 static void WebServerDeinit(ResourceMgr *resourceMgr);
+static int LogsMgrInit(ResourceMgr *resourceMgr);
+static void LogsMgrDeinit(ResourceMgr *resourceMgr);
 #endif
 
 typedef struct tagSubModuleInitor {
@@ -61,7 +63,8 @@ SubModuleInitor gSubModuleInitorTbl[] = {
     { IMDBMgrInit,          IMDBMgrDeinit },        // IMDB must precede ingress
     { EgressMgrInit,        EgressMgrDeinit },      // egress must precede ingress
     { IngressMgrInit,       IngressMgrDeinit },
-    { WebServerInit,        WebServerDeinit }
+    { WebServerInit,        WebServerDeinit },
+    { LogsMgrInit,          LogsMgrDeinit }
 };
 
 ResourceMgr *ResourceMgrCreate(void)
@@ -318,36 +321,43 @@ static int KafkaMgrInit(ResourceMgr *resourceMgr)
     configMgr = resourceMgr->configMgr;
 
     /* init metric_kafka */
-    if (configMgr->kafkaConfig->kafkaSwitch == KAFKA_SWITCH_OFF) {
-        ERROR("[RESOURCE] kafka switch off, skip kafkaMgr(topic:kafka_topic) create.\n");
-    } else {
+    if (configMgr->metricOutConfig->outChnl == OUT_CHNL_KAFKA) {
         kafkaMgr = KafkaMgrCreate(configMgr, "kafka_topic");
         if (kafkaMgr == NULL) {
-            ERROR("[RESOURCE] create kafkaMgr(topic:kafka_topic) failed.\n");
+            ERROR("[RESOURCE] create kafkaMgr of metric failed.\n");
             return -1;
         }
         resourceMgr->metric_kafkaMgr = kafkaMgr;
-        INFO("[RESOURCE] create kafkaMgr(topic:kafka_topic) success.\n");
+        INFO("[RESOURCE] create kafkaMgr of metric success.\n");
+    } else {
+        INFO("[RESOURCE] metric out_channel isn't kafka, ship create kafkaMgr.\n");
     }
     /* init meta_kafka */
     kafkaMgr = NULL;
-    kafkaMgr = KafkaMgrCreate(configMgr, "metadata_topic");
-    if (kafkaMgr == NULL) {
-        ERROR("[RESOURCE] create kafkaMgr(topic:metadata_topic) failed.\n");
-        return -1;
+    if (configMgr->metaOutConfig->outChnl == OUT_CHNL_KAFKA) {
+        kafkaMgr = KafkaMgrCreate(configMgr, "metadata_topic");
+        if (kafkaMgr == NULL) {
+            ERROR("[RESOURCE] create kafkaMgr of meta failed.\n");
+            return -1;
+        }
+        resourceMgr->meta_kafkaMgr = kafkaMgr;
+        INFO("[RESOURCE] create kafkaMgr of meta success.\n");
+    } else {
+        INFO("[RESOURCE] meta out_channel isn't kafka, ship create kafkaMgr.\n");
     }
-    resourceMgr->meta_kafkaMgr = kafkaMgr;
-    INFO("[RESOURCE] create kafkaMgr(topic:metadata_topic) success.\n");
-
     /* init event_kafka */
     kafkaMgr = NULL;
-    kafkaMgr = KafkaMgrCreate(configMgr, "event_topic");
-    if (kafkaMgr == NULL) {
-        ERROR("[RESOURCE] create kafkaMgr(topic:event_topic) failed.\n");
-        return -1;
+    if (configMgr->eventOutConfig->outChnl == OUT_CHNL_KAFKA) {
+        kafkaMgr = KafkaMgrCreate(configMgr, "event_topic");
+        if (kafkaMgr == NULL) {
+            ERROR("[RESOURCE] create kafkaMgr of event failed.\n");
+            return -1;
+        }
+        resourceMgr->event_kafkaMgr = kafkaMgr;
+        INFO("[RESOURCE] create kafkaMgr of event success.\n");
+    } else {
+        INFO("[RESOURCE] event out_channel isn't kafka, ship create kafkaMgr.\n");
     }
-    resourceMgr->event_kafkaMgr = kafkaMgr;
-    INFO("[RESOURCE] create kafkaMgr(topic:event_topic) success.\n");
 
     return 0;
 }
@@ -524,7 +534,8 @@ static int WebServerInit(ResourceMgr *resourceMgr)
     ConfigMgr *configMgr = resourceMgr->configMgr;
     WebServer *webServer = NULL;
 
-    if (configMgr->webServerConfig->on == 0) {
+    if (configMgr->metricOutConfig->outChnl != OUT_CHNL_WEB_SERVER) {
+        INFO("[RESOURCE] out channel isn't web_server, skip create webServer.\n");
         return 0;
     }
     webServer = WebServerCreate(configMgr->webServerConfig->port);
@@ -533,7 +544,6 @@ static int WebServerInit(ResourceMgr *resourceMgr)
         return -1;
     }
 
-    webServer->imdbMgr = resourceMgr->imdbMgr;
     resourceMgr->webServer = webServer;
     if (resourceMgr->imdbMgr)
         resourceMgr->imdbMgr->webServerOn = 1;
@@ -544,6 +554,42 @@ static void WebServerDeinit(ResourceMgr *resourceMgr)
 {
     WebServerDestroy(resourceMgr->webServer);
     resourceMgr->webServer = NULL;
+    return;
+}
+
+static int LogsMgrInit(ResourceMgr *resourceMgr)
+{
+    ConfigMgr *configMgr = resourceMgr->configMgr;
+    LogsMgr *logsMgr = NULL;
+    int is_metric_out_log, is_meta_out_log, is_event_out_log;
+
+    is_metric_out_log = (configMgr->metricOutConfig->outChnl == OUT_CHNL_WEB_SERVER) ? 1 : 0;
+    is_event_out_log = (configMgr->eventOutConfig->outChnl == OUT_CHNL_LOGS) ? 1: 0;
+    is_meta_out_log = (configMgr->metaOutConfig->outChnl == OUT_CHNL_LOGS) ? 1 : 0;
+
+    logsMgr =  create_log_mgr(configMgr->globalConfig->logFileName, is_metric_out_log, is_event_out_log);
+    if (logsMgr == NULL) {
+        ERROR("[RESOURCE] create logsMgr failed.\n");
+        return -1;
+    }
+
+    (void)strncpy(logsMgr->debug_path, configMgr->logsConfig->debugDir, PATH_LEN - 1);
+    (void)strncpy(logsMgr->metrics_path, configMgr->logsConfig->metricDir, PATH_LEN - 1);
+    (void)strncpy(logsMgr->event_path, configMgr->logsConfig->eventDir, PATH_LEN - 1);
+    (void)strncpy(logsMgr->meta_path, configMgr->logsConfig->metaDir, PATH_LEN - 1);
+
+    if (init_log_mgr(logsMgr, is_meta_out_log) < 0) {
+        return -1;
+    }
+
+    resourceMgr->logsMgr = logsMgr;
+    return 0;
+}
+
+static void LogsMgrDeinit(ResourceMgr *resourceMgr)
+{
+    destroy_log_mgr(resourceMgr->logsMgr);
+    resourceMgr->logsMgr = NULL;
     return;
 }
 
