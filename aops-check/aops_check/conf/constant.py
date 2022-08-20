@@ -31,6 +31,8 @@ QUERY_APP_LIST = "/check/app/list"
 QUERY_APP = "/check/app"
 CREATE_APP = "/check/app/create"
 
+QUERY_ALGO_LIST = '/check/algo/list'
+
 IDENTIFY_SCENE = "/check/scene/identify"
 CREATE_WORKFLOW = "/check/workflow/create"
 QUERY_WORKFLOW = "/check/workflow"
