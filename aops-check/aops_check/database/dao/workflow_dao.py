@@ -196,6 +196,22 @@ class WorkflowDao(MysqlProxy, ElasticsearchProxy):
             return True
         return False
 
+    def _if_workflow_id_exists(self, workflow_id: str, username: str):
+        """
+        if the workflow exists in mysql
+        Args:
+            workflow_id: workflow id
+            username: user name
+
+        Returns:
+            bool
+        """
+        workflow = self.session.query(Workflow) \
+            .filter(Workflow.workflow_id == workflow_id, Workflow.username == username)
+        if len(workflow.all()):
+            return True
+        return False
+
     def _insert_workflow_into_es(self, username: str, workflow_id: str, detail: dict,
                                  model_info: dict, index: Optional[str] = WORKFLOW_INDEX) -> int:
         """
@@ -389,7 +405,12 @@ class WorkflowDao(MysqlProxy, ElasticsearchProxy):
                     "app_id": "app_id1",
                     "input": {
                         "domain": "host_group1",
-                        "hosts": ["host_id1", "host_id2"]
+                        "hosts": {
+                            "host_id1": {
+                                "host_ip": "127.0.0.1",
+                                "host_name": "host1"
+                            }
+                        }
                     },
                     "step": 5,
                     "period": 30,
@@ -459,7 +480,8 @@ class WorkflowDao(MysqlProxy, ElasticsearchProxy):
 
         workflow_query = self.session.query(Workflow.workflow_name, Workflow.workflow_id,
                                             Workflow.description, Workflow.status,
-                                            Workflow.app_name, Workflow.app_id, Workflow.domain) \
+                                            Workflow.app_name, Workflow.app_id, Workflow.domain,
+                                            Workflow.step, Workflow.period) \
             .filter(*filters).one()
 
         workflow_host = self._get_workflow_hosts([workflow_id])
@@ -474,6 +496,8 @@ class WorkflowDao(MysqlProxy, ElasticsearchProxy):
                 "domain": workflow_query.domain,
                 "hosts": workflow_host.get(workflow_query.workflow_id, {})
             },
+            "step": workflow_query.step,
+            "period": workflow_query.period,
             "workflow_id": workflow_query.workflow_id
         }
         return workflow_info
@@ -506,9 +530,15 @@ class WorkflowDao(MysqlProxy, ElasticsearchProxy):
         """
         Update workflow
         Args:
-            data: workflow's detail info.  e.g.
+            data: workflow's info.  e.g.
                 {
                     "username": "admin",
+                    "workflow_id": "",
+                    "workflow_name": "new_name",
+                    "description": "new description",
+                    "step": 10,
+                    "period": 10,
+                    "alert": {},
                     "detail": {
                         {
                             "singlecheck": {
@@ -529,14 +559,46 @@ class WorkflowDao(MysqlProxy, ElasticsearchProxy):
         """
         try:
             status_code = self._update_workflow(data)
-            LOGGER.debug("Finished updating workflow detail info in elasticsearch.")
+            LOGGER.debug("Finished updating workflow info.")
             return status_code
-        except ElasticsearchException as error:
+        except (SQLAlchemyError, ElasticsearchException) as error:
             LOGGER.error(error)
-            LOGGER.error("Updating workflow detail info failed due to internal error.")
+            LOGGER.error("Updating workflow info failed due to internal error.")
             return DATABASE_UPDATE_ERROR
 
-    def _update_workflow(self, data: dict, index: str = WORKFLOW_INDEX) -> int:
+    def _update_workflow(self, data):
+        """
+        update workflow basic info into mysql, detail info into elasticsearch
+        """
+        workflow_exist = self._if_workflow_id_exists(data["workflow_id"], data["username"])
+        if not workflow_exist:
+            return NO_DATA
+
+        self._update_workflow_basic_info(data)
+        status_code = self._update_workflow_detail_info(data)
+        return status_code
+
+    def _update_workflow_basic_info(self, data):
+        """
+        update workflow's basic info in mysql
+        """
+        basic_info_row = {}
+        if "workflow_name" in data:
+            basic_info_row["workflow_name"] = data["workflow_name"]
+        if "description" in data:
+            basic_info_row["description"] = data["description"]
+        if "step" in data:
+            basic_info_row['step'] = data["step"]
+        if "period" in data:
+            basic_info_row['period'] = data["period"]
+
+        if not basic_info_row:
+            return
+        self.session.query(Workflow).filter(Workflow.username == data["username"],
+                                            Workflow.workflow_id == data["workflow_id"]) \
+            .update(basic_info_row)
+
+    def _update_workflow_detail_info(self, data: dict, index: str = WORKFLOW_INDEX) -> int:
         """
         update workflow's detail info in es
         """

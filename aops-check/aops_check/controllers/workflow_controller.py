@@ -154,7 +154,8 @@ class UpdateWorkflow(BaseResponse):
     """
     Update workflow interface, it's a post request.
     """
-    def _handle(self, args: dict):
+    @staticmethod
+    def _handle(args: dict):
         """
         create new model info based on the detail info given by request
         Args:
@@ -162,6 +163,11 @@ class UpdateWorkflow(BaseResponse):
                 {
                     "username": "admin",
                     "workflow_id": "id1",
+                    "workflow_name": "new_name",
+                    "description": "new description",
+                    "step": 10,
+                    "period": 10,
+                    "alert": {},
                     "detail": {...}
                 }
 
@@ -186,7 +192,7 @@ class UpdateWorkflow(BaseResponse):
 
 class IfHostInWorkflow(BaseResponse):
     """
-    if hosts exist in any workflow
+    if hosts exist workflow
     """
 
     def post(self):

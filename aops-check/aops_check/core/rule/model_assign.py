@@ -19,10 +19,10 @@ from typing import Dict, List
 
 
 METRIC_MODEL_MAP = {
-    "default_model": "3sigma-1",  # 3sigma model
+    "default_model": "NSigma-1",  # NSigma model
     "model_info": {
-        "cpu_load15": "3sigma-1",  # 3sigma model
-        "rx_error": "3sigma-1"  # 3sigma model
+        "cpu_load15": "NSigma-1",  # NSigma model
+        "rx_error": "NSigma-1"  # NSigma model
     }
 }
 
