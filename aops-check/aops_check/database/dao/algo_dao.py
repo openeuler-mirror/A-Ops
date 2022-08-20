@@ -15,13 +15,13 @@ Time:
 Author:
 Description:
 """
-from typing import Tuple
+from typing import Tuple, Dict
 
 from sqlalchemy import func
 from sqlalchemy.exc import SQLAlchemyError
 
 from aops_utils.database.helper import sort_and_page
-from aops_utils.restful.status import SUCCEED
+from aops_utils.restful.status import SUCCEED, DATABASE_QUERY_ERROR, NO_DATA
 from aops_utils.database.proxy import MysqlProxy
 from aops_utils.log.log import LOGGER
 from aops_utils.restful.status import DATABASE_INSERT_ERROR, DATA_EXIST
@@ -150,3 +150,43 @@ class AlgorithmDao(MysqlProxy):
             }
             res.append(algo_info)
         return res
+
+    def query_algorithm(self, data: Dict[str, str]) -> Tuple[int, dict]:
+        """
+            query algorithm info from database
+
+        Args:
+            data(dict):
+                {
+                'algo_id':string,
+                'username': admin
+                }
+
+        Returns:
+            int: status code
+            dict: query result
+        """
+        res = {"result": {}}
+        try:
+            algo_info = self.session.query(Algorithm).filter(
+                Algorithm.algo_id == data['algo_id']).all()
+            self.session.commit()
+        except SQLAlchemyError as error:
+            LOGGER.error(error)
+            LOGGER.error("Query algorithm basic info fail.")
+            return DATABASE_QUERY_ERROR, {}
+
+        if len(algo_info) == 0:
+            return NO_DATA, res
+
+        algo_info = algo_info[0]
+        res = {
+            "result": {
+                "algo_id": data['algo_id'],
+                "algo_name": algo_info.algo_name,
+                "field": algo_info.field,
+                "description": algo_info.description
+            }
+        }
+
+        return SUCCEED, res

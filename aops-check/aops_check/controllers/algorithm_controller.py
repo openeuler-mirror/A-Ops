@@ -14,7 +14,7 @@ from flask import jsonify
 
 from aops_check.database import SESSION
 from aops_check.database.dao.algo_dao import AlgorithmDao
-from aops_check.utils.schema.algorithm import QueryAlgorithmListSchema
+from aops_check.utils.schema.algorithm import QueryAlgorithmListSchema, QueryAlgorithmSchema
 from aops_utils.restful.response import BaseResponse
 
 
@@ -48,4 +48,32 @@ class QueryAlgorithmList(BaseResponse):
         return jsonify(self.handle_request_db(QueryAlgorithmListSchema,
                                               AlgorithmDao(),
                                               'query_algorithm_list',
+                                              SESSION))
+
+
+class QueryAlgorithm(BaseResponse):
+    """
+        Interface for get algorithm list.
+        Restful API: GET
+    """
+
+    def get(self):
+        """
+            Get algorithm info
+        Returns:
+            Response:
+                    {
+                        "code": int,
+                        "msg": "string",
+                        "result": {
+                            "algo_id": "string",
+                            "algo_name": "string",
+                            "description": "string",
+                            "field": "string"
+                        }
+                    }
+        """
+        return jsonify(self.handle_request_db(QueryAlgorithmSchema,
+                                              AlgorithmDao(),
+                                              'query_algorithm',
                                               SESSION))
