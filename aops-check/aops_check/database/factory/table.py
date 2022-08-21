@@ -16,7 +16,7 @@ Author:
 Description: mysql tables
 """
 from sqlalchemy import Column, ForeignKey
-from sqlalchemy.sql.sqltypes import Integer, String, Float
+from sqlalchemy.sql.sqltypes import Integer, String, Float, Boolean
 from aops_utils.database.table import Base, MyBase
 from aops_utils.database.helper import create_tables
 from aops_check.database import ENGINE
@@ -78,12 +78,57 @@ class Model(Base, MyBase):
     model_id = Column(String(32), primary_key=True, nullable=False)
     model_name = Column(String(20), nullable=False)
     tag = Column(String(255), nullable=True)
-    algo_id = Column(String(32), ForeignKey('algorithm.algo_id'), nullable=False)
+    algo_id = Column(String(32), ForeignKey(
+        'algorithm.algo_id'), nullable=False)
     create_time = Column(Integer, nullable=False)
     file_path = Column(String(64), nullable=True)
     precision = Column(Float, nullable=True)
 
     username = Column(String(40), nullable=False)
+
+
+class DomainCheckResult(Base, MyBase):
+    """
+    domain check result
+    """
+    __tablename__ = "domain_check_result"
+
+    alert_id = Column(String(32), primary_key=True, nullable=False)
+    domain = Column(String(10), nullable=False)
+    alert_name = Column(String(10))
+    time = Column(Integer, nullable=False)
+    workflow_name = Column(String(10), nullable=False)
+    workflow_id = Column(String(32), nullable=False)
+    username = Column(String(20), nullable=True)
+    level = Column(String(20), nullable=True)
+    confirmed = Column(Integer, nullable=True)
+
+
+class AlertHost(Base, MyBase):
+    """
+    Alert host relationship
+    """
+    __tablename__ = "alert_host"
+
+    host_id = Column(String(32), primary_key=True)
+    alert_id = Column(String(32), ForeignKey('domain_check_result.alert_id', ondelete="CASCADE"),
+                      primary_key=True)
+    host_ip = Column(String(32), nullable=False)
+    host_name = Column(String(20), nullable=False)
+
+
+class HostCheckResult(Base, MyBase):
+    """
+    Host check result
+    """
+    __tablename__ = "host_check_result"
+
+    host_id = Column(String(32), ForeignKey(
+        'alert_host.host_id', ondelete="CASCADE"), primary_key=True)
+    time = Column(Integer, nullable=False)
+    is_root = Column(Boolean, default=False)
+    metric_name = Column(String(20), primary_key=True)
+    metric_label = Column(String(255), primary_key=True)
 
 
 def create_check_tables(engine=ENGINE):
@@ -96,6 +141,8 @@ def create_check_tables(engine=ENGINE):
 
     """
     # pay attention, the sequence of list is important. Base table need to be listed first.
-    tables = [Workflow, WorkflowHostAssociation, Algorithm, Model]
-    tables_objects = [Base.metadata.tables[table.__tablename__] for table in tables]
+    tables = [Workflow, WorkflowHostAssociation, Algorithm,
+              Model, DomainCheckResult, HostCheckResult, AlertHost]
+    tables_objects = [Base.metadata.tables[table.__tablename__]
+                      for table in tables]
     create_tables(Base, engine, tables=tables_objects)
