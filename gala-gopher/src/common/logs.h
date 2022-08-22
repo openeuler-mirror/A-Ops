@@ -54,12 +54,14 @@ typedef struct log_mgr_s {
     char event_path[PATH_LEN];
     char metrics_path[PATH_LEN];
     char meta_path[PATH_LEN];
+    char raw_path[PATH_LEN];
     char is_debug_log;
     char is_metric_out_log;
     char is_event_out_log;
     char is_meta_out_log;
 } LogsMgr;
 
+void wr_raw_logs(const char* format, ...);
 int read_metrics_logs(char logs_file_name[], size_t size);
 int wr_metrics_logs(const char* logs, size_t logs_len);
 

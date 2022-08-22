@@ -33,7 +33,7 @@ char *get_cur_time(void)
     tmp_ptr = localtime(&t);
     (void)snprintf(tm,
         TM_STR_LEN,
-        "%d/%d/%d %02d:%02d:%02d",
+        "%d-%d-%d-%02d-%02d-%02d",
         (1900 + tmp_ptr->tm_year),
         (1 + tmp_ptr->tm_mon),
         tmp_ptr->tm_mday,

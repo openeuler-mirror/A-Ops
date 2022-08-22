@@ -250,7 +250,7 @@ static char que_current_is_invalid(struct files_queue_s *files_que, int max_logs
 {
     (void)pthread_rwlock_wrlock(&(files_que->rwlock));
 
-    char invalid = (files_que->current.len >= max_logs_len);
+    char invalid = ((int)files_que->current.len >= max_logs_len);
     invalid |= (files_que->current.len == 0);
 
     (void)pthread_rwlock_unlock(&(files_que->rwlock));
@@ -273,6 +273,7 @@ Logger g_metrics_logger;
 Logger g_event_logger;
 Logger g_debug_logger;
 Logger g_meta_logger;
+Logger g_raw_logger;
 
 static void init_all_logger(void)
 {
@@ -281,6 +282,7 @@ static void init_all_logger(void)
     g_event_logger = Logger::getInstance("event");
     g_debug_logger = Logger::getInstance("debug");
     g_meta_logger = Logger::getInstance("meta");
+    g_raw_logger = Logger::getInstance("raw");
 }
 
 #define __FULL_PATH_LEN (PATH_LEN * 2)
@@ -304,11 +306,30 @@ static int append_meta_logger(struct log_mgr_s * mgr)
 
     g_meta_logger.removeAllAppenders();
 
-    SharedAppenderPtr append(new RollingFileAppender(full_path, META_LOGS_FILESIZE, 1, false, true));
+    SharedAppenderPtr append(new RollingFileAppender(full_path, META_LOGS_FILESIZE, 1, true, true));
 
     log4cplus::tstring pattern = LOG4CPLUS_TEXT("%m%n");
     append->setLayout(std::unique_ptr<log4cplus::Layout>(new log4cplus::PatternLayout(pattern)));
     g_meta_logger.addAppender(append);
+    return 0;
+}
+
+static int append_raw_logger(struct log_mgr_s * mgr)
+{
+    size_t path_len = strlen(mgr->raw_path);
+    if (path_len == 0) {
+        (void)fprintf(stderr, "Raw path is null.\n");
+        return -1;
+    }
+
+    g_raw_logger.removeAllAppenders();
+
+    SharedAppenderPtr append(new RollingFileAppender(mgr->raw_path, DEBUG_LOGS_FILESIZE, 1, true, true));
+
+    log4cplus::tstring pattern = LOG4CPLUS_TEXT("%m");
+    append->setLayout(std::unique_ptr<log4cplus::Layout>(new log4cplus::PatternLayout(pattern)));
+
+    g_raw_logger.addAppender(append);
     return 0;
 }
 
@@ -339,9 +360,9 @@ static int append_debug_logger(struct log_mgr_s * mgr)
 
     g_debug_logger.removeAllAppenders();
 
-    SharedAppenderPtr append(new RollingFileAppender(full_path, DEBUG_LOGS_FILESIZE, 1, false, true));
+    SharedAppenderPtr append(new RollingFileAppender(full_path, DEBUG_LOGS_FILESIZE, 1, true, true));
 
-    log4cplus::tstring pattern = LOG4CPLUS_TEXT("%d{%m/%d/%y %H:%M:%S}  - %m [%l]%n");
+    log4cplus::tstring pattern = LOG4CPLUS_TEXT("%d{%m/%d/%y %H:%M:%S}  - %m");
     append->setLayout(std::unique_ptr<log4cplus::Layout>(new log4cplus::PatternLayout(pattern)));
 
     g_debug_logger.addAppender(append);
@@ -365,7 +386,7 @@ static int append_metrics_logger(struct log_mgr_s * mgr)
     g_metrics_logger.removeAllAppenders();
 
     rm_log_file(full_path);
-    SharedAppenderPtr append(new RollingFileAppender(full_path, METRICS_LOGS_FILESIZE, 1, false, true));
+    SharedAppenderPtr append(new RollingFileAppender(full_path, METRICS_LOGS_FILESIZE, 1, true, true));
     log4cplus::tstring pattern = LOG4CPLUS_TEXT("%m");
     append->setLayout(std::unique_ptr<log4cplus::Layout>(new log4cplus::PatternLayout(pattern)));
     g_metrics_logger.addAppender(append);
@@ -389,7 +410,7 @@ static int append_event_logger(struct log_mgr_s * mgr)
     g_event_logger.removeAllAppenders();
 
     rm_log_file(full_path);
-    SharedAppenderPtr append(new RollingFileAppender(full_path, EVENT_LOGS_FILESIZE, 1, false, true));
+    SharedAppenderPtr append(new RollingFileAppender(full_path, EVENT_LOGS_FILESIZE, 1, true, true));
     log4cplus::tstring pattern = LOG4CPLUS_TEXT("%m%n");
     append->setLayout(std::unique_ptr<log4cplus::Layout>(new log4cplus::PatternLayout(pattern)));
     g_event_logger.addAppender(append);
@@ -448,6 +469,11 @@ int init_log_mgr(struct log_mgr_s* mgr, int is_meta_out_log)
         }
     }
 
+    if ((mgr->raw_path[0] != 0) && append_raw_logger(mgr)) {
+        (void)fprintf(stderr, "Append raw logger failed.\n");
+        return -1;
+    }
+
     local = mgr;
     return 0;
 }
@@ -462,12 +488,45 @@ void destroy_log_mgr(struct log_mgr_s* mgr)
     g_event_logger.removeAllAppenders();
     g_debug_logger.removeAllAppenders();
     g_meta_logger.removeAllAppenders();
+    g_raw_logger.removeAllAppenders();
 
     local = NULL;
     return;
 }
 
+static void reappend_raw_logger(struct log_mgr_s * mgr)
+{
+    if (access(mgr->raw_path, 0)) {
+        g_raw_logger.removeAllAppenders();
+        (void)append_raw_logger(mgr);
+    }
+}
+
 #if 1
+#define __DEBUG_LEN     (2048)
+
+#define __FMT_LOGS(buf, size) \
+    do { \
+        va_list args; \
+        buf[0] = 0; \
+        va_start(args, format); \
+        (void)vsnprintf(buf, (const unsigned int)size, format, args); \
+        va_end(args); \
+    } while (0)
+
+void wr_raw_logs(const char* format, ...)
+{
+    char buf[__DEBUG_LEN];
+
+    __FMT_LOGS(buf, __DEBUG_LEN);
+    if (local) {
+        reappend_raw_logger(local);
+        LOG4CPLUS_DEBUG(g_raw_logger, buf);
+    } else {
+        printf(buf);
+    }
+}
+
 int wr_metrics_logs(const char* logs, size_t logs_len)
 {
     struct log_mgr_s *mgr = local;
@@ -550,17 +609,6 @@ void wr_meta_logs(const char* logs)
 {
     LOG4CPLUS_DEBUG_FMT(g_meta_logger, logs);
 }
-
-#define __DEBUG_LEN     (256)
-
-#define __FMT_LOGS(buf, size) \
-    do { \
-        va_list args; \
-        buf[0] = 0; \
-        va_start(args, format); \
-        (void)vsnprintf(buf, (const unsigned int)size, format, args); \
-        va_end(args); \
-    } while (0)
 
 void debug_logs(const char* format, ...)
 {
