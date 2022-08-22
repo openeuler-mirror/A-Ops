@@ -63,7 +63,7 @@ class StatisticDiag(Algorithm):
         }
         return data
 
-    def get_root(self, candidate: List[str], check_result: Dict[str, List[str]]) -> str:
+    def get_root(self, candidate: List[str], check_result: Dict[str, List[Dict[str, str]]]) -> str:
         root = ""
         max_score = 0
         for host_id in candidate:
@@ -74,17 +74,17 @@ class StatisticDiag(Algorithm):
         return root
 
     @staticmethod
-    def count_fault_score(failure_info: List[str], score_map: Optional[Dict] = metric_score) -> int:
+    def count_fault_score(failure_info: List[Dict[str, str]], score_map: Optional[Dict] = metric_score) -> int:
         score = 0
         for failure in failure_info:
-            score += score_map.get(failure, 0.5)
+            score += score_map.get(failure['metric_name'], 0.5)
 
         return score
 
     def count_person_coefficient(self):
         ...
 
-    def get_candidate(self, check_result: Dict[str, List[str]]) -> List[str]:
+    def get_candidate(self, check_result: Dict[str, List[Dict[str, str]]]) -> List[str]:
         # # all hosts are candidates
         if len(check_result) <= self.candidate_num:
             return list(check_result.keys())
@@ -101,21 +101,21 @@ class StatisticDiag(Algorithm):
 
         return [data[1] for data in topk_list]
 
-    def calculate(self, check_result: Dict[str, List[str]]) -> Tuple[str, str]:
+    def calculate(self, check_result: Dict[str, List[Dict[str, str]]]) -> Tuple[str, str, str]:
         """
         Execute entry.
 
         Args:
             check_result: e.g.
                 {
-                    "host1": ["metric1", "metric2"],
-                    "host2": ["metric1", "metric2"],
-                    "host3": ["metric1", "metric2"]
+                    "host1": [{"metric_name": "metric1", "metric_label": "label1"],
+                    "host2": [{"metric_name": "metric1", "metric_label": "label1"],
+                    "host3": [{"metric_name": "metric1", "metric_label": "label1"]
                 }
 
         Returns:
-            tuple: 'host1', 'metric1'
+            tuple: 'host1', 'metric1', 'label1
         """
         candidate = self.get_candidate(check_result)
         root_host = self.get_root(candidate, check_result)
-        return root_host, ""
+        return root_host, "", ""
