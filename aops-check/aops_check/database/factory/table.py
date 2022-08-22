@@ -94,14 +94,14 @@ class DomainCheckResult(Base, MyBase):
     __tablename__ = "domain_check_result"
 
     alert_id = Column(String(32), primary_key=True, nullable=False)
-    domain = Column(String(10), nullable=False)
-    alert_name = Column(String(10))
+    domain = Column(String(20), nullable=False)
+    alert_name = Column(String(50))
     time = Column(Integer, nullable=False)
-    workflow_name = Column(String(10), nullable=False)
+    workflow_name = Column(String(50), nullable=False)
     workflow_id = Column(String(32), nullable=False)
     username = Column(String(20), nullable=True)
     level = Column(String(20), nullable=True)
-    confirmed = Column(Integer, nullable=True)
+    confirmed = Column(Boolean, default=False)
 
 
 class AlertHost(Base, MyBase):
@@ -114,7 +114,7 @@ class AlertHost(Base, MyBase):
     alert_id = Column(String(32), ForeignKey('domain_check_result.alert_id', ondelete="CASCADE"),
                       primary_key=True)
     host_ip = Column(String(32), nullable=False)
-    host_name = Column(String(20), nullable=False)
+    host_name = Column(String(50), nullable=False)
 
 
 class HostCheckResult(Base, MyBase):
@@ -123,12 +123,13 @@ class HostCheckResult(Base, MyBase):
     """
     __tablename__ = "host_check_result"
 
+    id = Column(Integer, autoincrement=True, primary_key=True)
     host_id = Column(String(32), ForeignKey(
-        'alert_host.host_id', ondelete="CASCADE"), primary_key=True)
+        'alert_host.host_id', ondelete="CASCADE"))
     time = Column(Integer, nullable=False)
     is_root = Column(Boolean, default=False)
-    metric_name = Column(String(20), primary_key=True)
-    metric_label = Column(String(255), primary_key=True)
+    metric_name = Column(String(50))
+    metric_label = Column(String(255))
 
 
 def create_check_tables(engine=ENGINE):
