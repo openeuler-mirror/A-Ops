@@ -59,6 +59,7 @@ SET(SOURCES main.c daemon.c
     ${COMMON_DIR}/object.c
     ${COMMON_DIR}/event.c
     ${COMMON_DIR}/logs.cpp
+    ${COMMON_DIR}/gopher_elf.c
 )
 
 SET(SOURCE_CMD ${CMD_DIR}/client.c)
@@ -95,4 +96,4 @@ TARGET_INCLUDE_DIRECTORIES(${EXECUTABLE_TARGET} PRIVATE
     ${COMMON_DIR}
 )
 
-TARGET_LINK_LIBRARIES(${EXECUTABLE_TARGET} PRIVATE config pthread rt dl bpf rdkafka microhttpd log4cplus)
+TARGET_LINK_LIBRARIES(${EXECUTABLE_TARGET} PRIVATE config pthread rt dl bpf rdkafka microhttpd elf log4cplus)

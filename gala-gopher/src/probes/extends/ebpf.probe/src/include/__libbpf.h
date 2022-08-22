@@ -24,6 +24,7 @@
 #include <bpf/bpf.h>
 #include <sys/resource.h>
 #include "elf_reader.h"
+#include "gopher_elf.h"
 #include "object.h"
 #include "common.h"
 
@@ -198,8 +199,8 @@ static __always_inline int set_memlock_rlimit(unsigned long limit)
 #define UBPF_ATTACH(probe_name, sec, elf_path, func_name, succeed) \
     do { \
         int err; \
-        uint64_t symbol_offset; \
-        err = resolve_symbol_infos((const char *)elf_path, #func_name, NULL, &symbol_offset); \
+        u64 symbol_offset; \
+        err = gopher_get_elf_symb((const char *)elf_path, #func_name, &symbol_offset); \
         if (err < 0) { \
             ERROR("Failed to get func(" #func_name ") in(%s) offset.\n", elf_path); \
             succeed = 0; \
@@ -223,8 +224,8 @@ static __always_inline int set_memlock_rlimit(unsigned long limit)
 #define UBPF_RET_ATTACH(probe_name, sec, elf_path, func_name, succeed) \
     do { \
         int err; \
-        uint64_t symbol_offset; \
-        err = resolve_symbol_infos((const char *)elf_path, #func_name, NULL, &symbol_offset); \
+        u64 symbol_offset; \
+        err = gopher_get_elf_symb((const char *)elf_path, #func_name, &symbol_offset); \
         if (err < 0) { \
             ERROR("Failed to get func(" #func_name ") in(%s) offset.\n", elf_path); \
             succeed = 0; \
@@ -248,8 +249,8 @@ static __always_inline int set_memlock_rlimit(unsigned long limit)
 #define URETBPF_ATTACH(probe_name, sec, elf_path, func_name, succeed) \
     do { \
         int err; \
-        uint64_t symbol_offset; \
-        err = resolve_symbol_infos((const char *)elf_path, #func_name, NULL, &symbol_offset); \
+        u64 symbol_offset; \
+        err = gopher_get_elf_symb((const char *)elf_path, #func_name, &symbol_offset); \
         if (err < 0) { \
             ERROR("Failed to get func(" #func_name ") in(%s) offset.\n", elf_path); \
             succeed = 0; \
@@ -283,8 +284,8 @@ static __always_inline int set_memlock_rlimit(unsigned long limit)
 #define UBPF_ATTACH_ONELINK(probe_name, sec, elf_path, func_name, bpf_link_p, succeed) \
     do { \
         int err; \
-        uint64_t symbol_offset; \
-        err = resolve_symbol_infos((const char *)elf_path, #func_name, NULL, &symbol_offset); \
+        u64 symbol_offset; \
+        err = gopher_get_elf_symb((const char *)elf_path, #func_name, &symbol_offset); \
         if (err < 0) { \
             ERROR("Failed to get func(" #func_name ") in(%s) offset.\n", elf_path); \
             succeed = 0; \
@@ -307,8 +308,8 @@ static __always_inline int set_memlock_rlimit(unsigned long limit)
 #define UBPF_RET_ATTACH_ONELINK(probe_name, sec, elf_path, func_name, bpf_link_p, succeed) \
     do { \
         int err; \
-        uint64_t symbol_offset; \
-        err = resolve_symbol_infos((const char *)elf_path, #func_name, NULL, &symbol_offset); \
+        u64 symbol_offset; \
+        err = gopher_get_elf_symb((const char *)elf_path, #func_name, &symbol_offset); \
         if (err < 0) { \
             ERROR("Failed to get func(" #func_name ") in(%s) offset.\n", elf_path); \
             succeed = 0; \
@@ -329,13 +330,15 @@ static __always_inline int set_memlock_rlimit(unsigned long limit)
     } while (0)
 
 
-static __always_inline __maybe_unused struct perf_buffer* create_pref_buffer(int map_fd, perf_buffer_sample_fn cb)
+static __always_inline __maybe_unused struct perf_buffer* __do_create_pref_buffer(int map_fd,
+                perf_buffer_sample_fn cb, perf_buffer_lost_fn lost_cb)
 {
     struct perf_buffer_opts pb_opts = {};
     struct perf_buffer *pb;
     int ret;
 
     pb_opts.sample_cb = cb;
+    pb_opts.lost_cb = lost_cb;
     pb = perf_buffer__new(map_fd, 8, &pb_opts);
     if (pb == NULL){
         fprintf(stderr, "ERROR: perf buffer new failed\n");
@@ -348,6 +351,17 @@ static __always_inline __maybe_unused struct perf_buffer* create_pref_buffer(int
         return NULL;
     }
     return pb;
+}
+
+static __always_inline __maybe_unused struct perf_buffer* create_pref_buffer2(int map_fd,
+                perf_buffer_sample_fn cb, perf_buffer_lost_fn lost_cb)
+{
+    return __do_create_pref_buffer(map_fd, cb, lost_cb);
+}
+
+static __always_inline __maybe_unused struct perf_buffer* create_pref_buffer(int map_fd, perf_buffer_sample_fn cb)
+{
+    return __do_create_pref_buffer(map_fd, cb, NULL);
 }
 
 static __always_inline __maybe_unused void poll_pb(struct perf_buffer *pb, int timeout_ms)

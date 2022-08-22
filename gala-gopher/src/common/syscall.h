@@ -1,5 +1,5 @@
 /******************************************************************************
- * Copyright (c) Huawei Technologies Co., Ltd. 2021. All rights reserved.
+ * Copyright (c) Huawei Technologies Co., Ltd. 2022. All rights reserved.
  * gala-gopher licensed under the Mulan PSL v2.
  * You can use this software according to the terms and conditions of the Mulan PSL v2.
  * You may obtain a copy of Mulan PSL v2 at:
@@ -8,20 +8,26 @@
  * IMPLIED, INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY OR FIT FOR A PARTICULAR
  * PURPOSE.
  * See the Mulan PSL v2 for more details.
- * Author: dowzyx
- * Create: 2021-12-08
- * Description: elf parse
+ * Author: Mr.lu
+ * Create: 2022-08-18
+ * Description: syscall defined
  ******************************************************************************/
-#ifndef __ELF_READER_H__
-#define __ELF_READER_H__
+#ifndef __GOPHER_SYSCALL_H__
+#define __GOPHER_SYSCALL_H__
 
-#define BPF_ELF_DESC(desc) 1
+#ifndef _GNU_SOURCE
+#define _GNU_SOURCE
+#endif
 
-int get_glibc_path(const char *container_id, char *path, unsigned int len);
+#include <unistd.h>
+#include <sys/syscall.h>
 
-int get_exec_file_path(const char *binary_file, const char *specified_path, const char *container_id,
-                        char **res_buf, int res_len);
+#pragma once
 
-void free_exec_path_buf(char **ptr, int len);
+#define setns(FD, NSTYPE) syscall(__NR_setns, (int)(FD), (int)(NSTYPE))
+#define open_pid(PID, FLAGS) syscall(__NR_pidfd_open, (int)(PID), (int)(FLAGS))
 
+#define perf_event_open(attr, pid, cpu, group_id, flags) syscall(__NR_perf_event_open, (attr), pid, cpu, group_id, flags)
+
+#define NR_CPUS   sysconf(_SC_NPROCESSORS_CONF)
 #endif
