@@ -59,19 +59,12 @@ def arg_parser():
     parser.add_argument("-m", "--model",
                         help="The machine learning model - random_forest, vae",
                         type=str, default="random_forest", required=False)
-    parser.add_argument("-ty", "--trigger_type",
-                        help="The scheduling type of anomaly detection task",
-                        type=str, default='interval', required=False)
     parser.add_argument("-d", "--duration",
                         help="The time interval of scheduling anomaly detection task (minutes)",
                         type=int, default=1, required=False)
     parser.add_argument("-rt", "--retrain",
                         help="If retrain the vae model or not",
-<<<<<<< HEAD
                         type=str2bool, nargs='?', const=True, default=False, required=False)
-=======
-                        type=bool, default=False, required=False)
->>>>>>> 7266b01 (add a arguments in main.py)
     parser.add_argument("-st", "--sli_time",
                         help="The sli time threshold", type=int, default=200, required=False)
     arguments = vars(parser.parse_args())
@@ -130,7 +123,7 @@ def main():
     log.info(f"Schedule recurrent job with time interval {parser['duration']} minute(s).")
     scheduler = BlockingScheduler()
     scheduler.add_job(partial(anomaly_detection, hybrid_model, key_metric_model, post_model, parser),
-                      parser["trigger_type"], minutes=1)
+                      trigger="interval", minutes=parser["duration"])
     scheduler.start()
 
     sub_thread.join()

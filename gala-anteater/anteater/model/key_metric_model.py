@@ -24,6 +24,9 @@ import pandas as pd
 
 from anteater.source.metric_loader import MetricLoader
 from anteater.utils.config_parser import MetricSettings
+from anteater.utils.log import Log
+
+log = Log().get_logger()
 
 
 class KeyMetricModel:
@@ -54,6 +57,9 @@ class KeyMetricModel:
         metric_loader = MetricLoader(tim_start, tim_end)
 
         labels, values = metric_loader.get_metric(self.key_metric, label_name="machine_id", label_value=machine_id)
+
+        if not labels or not values:
+            log.error(f"Key metric {self.key_metric} is null on the target machine {machine_id}!")
 
         scores = []
         for label, value in zip(labels, values):
