@@ -4,7 +4,7 @@ from unittest import mock
 from aops_check.core.experiment.algorithm.diag.statistic_diag import StatisticDiag
 
 
-class StatisticDiagTestcase(unittest.TestCase):
+class StatisticDiagTestCase(unittest.TestCase):
 
     def test_run_should_return_correct_result_when_input_is_normal(self):
         ...
@@ -34,13 +34,13 @@ class StatisticDiagTestcase(unittest.TestCase):
         self.assertEqual(result, ["1", "2", "3", "4", "5"])
 
     def test_count_fault_score_should_return_correct_value_when_map_is_matched(self):
-        failure_info = ['cpu', 'mem']
+        failure_info = [{"metric_name": 'cpu', "metric_label": "1"}, {"metric_name": 'mem', "metric_label": 'l1'}]
         score_map = {'cpu': 1, 'mem': 0.2}
         diag = StatisticDiag()
         self.assertEqual(diag.count_fault_score(failure_info, score_map), 1.2)
 
     def test_count_fault_score_should_return_correct_value_when_map_is_not_matched(self):
-        failure_info = ['cpu', 'mem']
+        failure_info = [{"metric_name": 'cpu', "metric_label": "1"}, {"metric_name": 'mem', "metric_label": 'l1'}]
         score_map = {'cpu': 1, 'ss': 0.2}
         diag = StatisticDiag()
         self.assertEqual(diag.count_fault_score(failure_info, score_map), 1.5)
