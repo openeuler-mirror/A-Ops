@@ -98,10 +98,10 @@ class ModelDao(MysqlProxy):
                 "sort": "precision",  // sort based on precision of model
                 "direction": "asc",  // asc or desc
                 "filter": {
-                    "tag": ["big_data"],
-                    "field": ["single_check"],
+                    "tag": "big_data",
+                    "field": "single_check",
                     "model_name": "model1",
-                    "algo_name": "algo1",
+                    "algo_name": ["algo1", "algo2"]
                 }
             }
 
@@ -187,10 +187,10 @@ class ModelDao(MysqlProxy):
             username (str): username
             filter_dict(dict): filter dict to filter model list, e.g.
                 {
-                    "tag": ["big_data"],
-                    "field": ["single_check"],
+                    "tag": "big_data",
+                    "field": "single_check",
                     "model_name": "model1",
-                    "algo_name": "algo1",
+                    "algo_name": ["algo1", "algo2"]
                 }
 
         Returns:
@@ -203,11 +203,11 @@ class ModelDao(MysqlProxy):
         if filter_dict.get("model_name"):
             filters.add(Model.model_name.like("%" + filter_dict["model_name"] + "%"))
         if filter_dict.get("algo_name"):
-            filters.add(Algorithm.algo_name.like("%" + filter_dict["algo_name"] + "%"))
+            filters.add(Algorithm.algo_name.in_(filter_dict["algo_name"]))
         if filter_dict.get("tag"):
-            filters.add(Model.tag.in_(filter_dict["tag"]))
+            filters.add(Model.tag.like("%" + filter_dict["tag"] + "%"))
         if filter_dict.get("field"):
-            filters.add(Algorithm.field.in_(filter_dict["field"]))
+            filters.add(Algorithm.field == filter_dict["field"])
 
         return filters
 

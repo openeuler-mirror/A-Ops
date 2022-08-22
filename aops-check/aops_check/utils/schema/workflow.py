@@ -19,7 +19,7 @@ from marshmallow import Schema, fields, validate
 
 
 class CreateWorkflowHostInfoSchema(Schema):
-    domain = fields.Integer(required=True, validate=lambda s: s > 0)
+    domain = fields.String(required=True, validate=lambda s: len(s) > 0)
     hosts = fields.List(fields.String, required=True, validate=lambda s: len(s) > 0)
 
 
@@ -39,9 +39,8 @@ class QueryWorkflowSchema(Schema):
 
 
 class QueryWorkflowListSchema(Schema):
-    domain = fields.Integer(required=False, validate=lambda s: s > 0)
-    status = fields.Integer(required=False, validate=validate.OneOf(
-        ["hold", "running", "recommending"]))
+    domain = fields.String(required=False, validate=lambda s: s > 0)
+    status = fields.String(required=False, validate=validate.OneOf(["hold", "running", "recommending"]))
     page = fields.Integer(required=False, validate=lambda s: s > 0)
     per_page = fields.Integer(required=False, validate=lambda s: 0 < s < 50)
 
@@ -57,7 +56,13 @@ class WorkflowDetailSchema(Schema):
 
 
 class UpdateWorkflowSchema(Schema):
-    detail = fields.Nested(WorkflowDetailSchema, required=True)
+    workflow_id = fields.String(required=True, validate=lambda s: len(s) > 0)
+    workflow_name = fields.String(required=False, validate=lambda s: len(s) > 0)
+    description = fields.String(required=False, validate=lambda s: len(s) > 0)
+    step = fields.Integer(required=False)
+    period = fields.Integer(required=False)
+    alert = fields.Dict(required=False)
+    detail = fields.Nested(WorkflowDetailSchema, required=False)
 
 
 class IfHostInWorkflowSchema(Schema):

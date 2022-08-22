@@ -24,10 +24,10 @@ class ModelListFilterSchema(Schema):
     """
     filter schema of model list getting interface
     """
-    tag = fields.List(fields.String(validate=lambda s: len(s) != 0), required=False)
-    field = fields.List(fields.String(validate=lambda s: len(s) != 0), required=False)
+    tag = fields.String(required=False, validate=lambda s: len(s) != 0)
+    field = fields.String(required=False, validate=validate.OneOf(["singlecheck", "multicheck", "diag"]))
     model_name = fields.String(required=False, validate=lambda s: len(s) != 0)
-    algo_name = fields.String(required=False, validate=lambda s: len(s) != 0)
+    algo_name = fields.List(fields.String(validate=lambda s: len(s) != 0), required=True)
 
 
 class QueryModelListSchema(Schema):
