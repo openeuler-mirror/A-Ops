@@ -32,6 +32,9 @@ QUERY_APP = "/check/app"
 CREATE_APP = "/check/app/create"
 
 QUERY_ALGO_LIST = '/check/algo/list'
+QUERY_ALGO = '/check/algo'
+
+QUERY_HOST_CHECK_RESULT = '/check/result/host'
 
 IDENTIFY_SCENE = "/check/scene/identify"
 CREATE_WORKFLOW = "/check/workflow/create"

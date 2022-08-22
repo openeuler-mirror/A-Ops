@@ -27,14 +27,17 @@ from aops_check.conf.constant import (
     UPDATE_WORKFLOW,
     IF_HOST_IN_WORKFLOW,
     QUERY_MODEL_LIST,
-    QUERY_ALGO_LIST
+    QUERY_ALGO_LIST,
+    QUERY_ALGO,
+    QUERY_HOST_CHECK_RESULT
 )
 from aops_check.controllers import (
     app_controller,
     scene_controller,
     workflow_controller,
     model_controller,
-    algorithm_controller
+    algorithm_controller,
+    result_controller
 )
 
 URLS = []
@@ -60,7 +63,11 @@ SPECIFIC_URLS = {
         (model_controller.QueryModelList, QUERY_MODEL_LIST)
     ],
     'ALGORITHM': [
-        (algorithm_controller.QueryAlgorithmList, QUERY_ALGO_LIST)
+        (algorithm_controller.QueryAlgorithmList, QUERY_ALGO_LIST),
+        (algorithm_controller.QueryAlgorithm, QUERY_ALGO)
+    ],
+    'RESULT': [
+        (result_controller.QueryCheckResultHost, QUERY_HOST_CHECK_RESULT)
     ]
 }
 

@@ -14,11 +14,5 @@ from marshmallow import Schema
 from marshmallow import fields
 
 
-class QueryAlgorithmListSchema(Schema):
-    field = fields.String(validate=lambda x: len(x) > 0)
-    page = fields.Integer(validate=lambda x: x > 0)
-    per_page = fields.Integer(validate=lambda x: 50 >= x > 0)
-
-
-class QueryAlgorithmSchema(Schema):
-    algo_id = fields.String(required=True, validate=lambda s: len(s) > 0)
+class QueryCheckResultHostSchema(Schema):
+    alert_id = fields.String(required=True, validate=lambda s: len(s) > 0)
