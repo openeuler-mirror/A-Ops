@@ -17,7 +17,7 @@ Description: Restful APIs for host
 """
 from typing import Dict, Tuple
 
-from flask import jsonify
+from flask import jsonify, request
 from aops_manager.conf.constant import ROUTE_AGENT_HOST_INFO, CHECK_WORKFLOW_HOST_EXIST
 from aops_utils.restful.status import SUCCEED, DATABASE_CONNECT_ERROR, NO_DATA, TOKEN_ERROR
 from aops_utils.restful.response import BaseResponse
@@ -129,11 +129,12 @@ class DeleteHost(BaseResponse):
         if not proxy.connect(SESSION):
             return DATABASE_CONNECT_ERROR, {}
 
+        args.pop('username')
         resp = self.get_response(
             'POST',
             f'http://{configuration.aops_check["IP"]}:{configuration.aops_check["PORT"]}{CHECK_WORKFLOW_HOST_EXIST}',
             args,
-            {'content-type': 'application/json'}
+            {'content-type': 'application/json', 'access_token': request.headers.get('access_token')}
         )
 
         if resp.get('code') != SUCCEED:
