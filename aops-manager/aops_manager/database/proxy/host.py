@@ -22,7 +22,7 @@ from sqlalchemy.sql.expression import desc, asc
 from sqlalchemy import func
 
 from aops_utils.log.log import LOGGER
-from aops_utils.database.helper import judge_return_code
+from aops_utils.database.helper import judge_return_code, sort_and_page
 from aops_utils.database.proxy import MysqlProxy, ElasticsearchProxy
 from aops_utils.database.table import Host, HostGroup, User
 from aops_utils.restful.status import DATABASE_DELETE_ERROR, DATABASE_INSERT_ERROR,\
@@ -41,7 +41,7 @@ class HostProxy(MysqlProxy):
         Args:
             data: parameter, e.g.
                 {
-                    "username": "admin"
+                    "username": "admin",
                     "host_name": "host1",
                     "host_group_name": "group1",
                     "host_id": "id1",
@@ -69,7 +69,6 @@ class HostProxy(MysqlProxy):
                 return NO_DATA
 
             host_group = host_group_res[0]
-            host_group.host_count += 1
             data['host_group_id'] = host_group.host_group_id
             data['user'] = username
             host = Host(**data)
@@ -114,8 +113,6 @@ class HostProxy(MysqlProxy):
             hosts = self.session.query(Host).filter(
                 Host.host_id.in_(host_list)).all()
             for host in hosts:
-                host_group = host.host_group
-                host_group.host_count -= 1
                 self.session.delete(host)
                 result['succeed_list'].append(host.host_id)
                 host_info[host.host_id] = host.host_name
@@ -435,11 +432,13 @@ class HostProxy(MysqlProxy):
         not_deleted = []
         try:
             # Filter the group if there are hosts in the group
-            host_groups = self.session.query(HostGroup).\
+            host_groups = self.session.query(HostGroup, func.count(Host.host_id).label("host_count")).\
+                outerjoin(Host, HostGroup.host_group_id == Host.host_group_id).\
                 filter(HostGroup.username == username).\
-                filter(HostGroup.host_group_name.in_(host_group_list)).all()
-            for host_group in host_groups:
-                if host_group.host_count > 0:
+                filter(HostGroup.host_group_name.in_(host_group_list)).\
+                group_by(HostGroup.host_group_id).all()
+            for host_group, host_count in host_groups:
+                if host_count > 0:
                     not_deleted.append(host_group.host_group_name)
                     continue
                 deleted.append(host_group.host_group_name)
@@ -486,8 +485,53 @@ class HostProxy(MysqlProxy):
             LOGGER.error(error)
             LOGGER.error("query host group fail")
             return DATABASE_QUERY_ERROR, result
-
+    
     def _sort_group_by_column(self, data):
+        result = {
+            "total_count": 0,
+            "total_page": 1,
+            "host_group_infos": []
+        }
+        host_group_infos = self.session.query(HostGroup.host_group_name,
+                                              HostGroup.description,
+                                              func.count(Host.host_id).label("host_count"))\
+                                        .outerjoin(Host, HostGroup.host_group_id == Host.host_group_id)\
+                                        .filter(HostGroup.username == data['username'])\
+                                        .group_by(HostGroup.host_group_id)
+        total_count = len(host_group_infos.all())
+        if not total_count:
+            return result
+        
+        sort_column = self._get_group_column(data.get('sort'))
+        direction, page, per_page = data.get('direction'), data.get('page'), data.get('per_page')
+        processed_query, total_page = sort_and_page(host_group_infos, sort_column, direction, per_page, page)
+        infos = processed_query.all()
+        host_group_infos = self._group_info_row2dict(infos)
+        result['total_count'] = total_count
+        result['total_page'] = total_page
+        result['host_group_infos'] = host_group_infos
+        return result
+    
+    @staticmethod
+    def _get_group_column(column_name):
+        if not column_name:
+            return None
+        if column_name == "host_count":
+            return func.count(Host.host_id)
+        return getattr(HostGroup, column_name)
+
+    @staticmethod
+    def _group_info_row2dict(rows):
+        result = []
+        for host_group in rows:
+            result.append({
+                "host_group_name": host_group.host_group_name,
+                "description": host_group.description,
+                "host_count": host_group.host_count
+            })
+        return result
+
+    def _sort_group_by_column_old(self, data):
         """
         Sort group info by specified column
 
