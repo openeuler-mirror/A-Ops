@@ -20,7 +20,6 @@ and online, then predict online.
 import json
 import os
 import stat
-from sys import flags
 
 import numpy as np
 import torch
@@ -30,7 +29,7 @@ from sklearn.model_selection import train_test_split
 from torch.utils.data import DataLoader
 
 from anteater.utils.common import get_file_path
-from anteater.utils.config_parser import ModelSettings
+from anteater.utils.settings import ModelSettings
 from anteater.utils.log import Log
 
 log = Log().get_logger()
@@ -46,6 +45,7 @@ class VAEPredict:
         self.model_path = get_file_path(props["file_name"])
         self.param_path = get_file_path(props["param_name"])
         self.threshold = float(props["threshold"])
+        self.quantile = float(props["quantile"])
 
         self.vae_model = self.load_model()
         self.parameters = self.load_parameters()
@@ -112,13 +112,13 @@ class VAEPredict:
 
         x_tensor = torch.Tensor(x_train)
         output = vae(x_tensor)
-        y_score = torch.mean(torch.abs(output - x_tensor)).detach().numpy()
+        y_score = torch.mean(torch.abs(output - x_tensor), dim=1).detach().numpy()
 
         self.vae_model = vae
 
         if not self.parameters:
             self.parameters = {}
-        self.parameters["vae_error_threshold"] = np.quantile(y_score, 0.98)
+        self.parameters["vae_error_threshold"] = np.quantile(y_score, self.quantile)
         self.dump_parameters(self.parameters)
 
 
