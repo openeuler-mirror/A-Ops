@@ -223,6 +223,7 @@ class WorkflowDao(MysqlProxy, ElasticsearchProxy):
             "detail": detail,
             "model_info": model_info
         }
+
         res = ElasticsearchProxy.insert(self, index, data)
         if res:
             LOGGER.info("Add workflow '%s' info into es succeed.", workflow_id)
@@ -240,8 +241,9 @@ class WorkflowDao(MysqlProxy, ElasticsearchProxy):
                     "page": 1,
                     "per_page": 10,
                     "username": "admin",
-                    "domain": "host_group1",
-                    "status": "hold/running/recommending"
+                    "app": ["app1"],
+                    "domain": ["host_group1"],
+                    "status": ["hold","running","recommending"]
                 }
 
         Returns:
@@ -294,7 +296,7 @@ class WorkflowDao(MysqlProxy, ElasticsearchProxy):
         }
 
         workflow_query = self._query_workflow_list(data["username"], data.get("domain"),
-                                                   data.get("status"))
+                                                   data.get("status"), data.get("app"))
         total_count = len(workflow_query.all())
         if not total_count:
             return result
@@ -309,8 +311,8 @@ class WorkflowDao(MysqlProxy, ElasticsearchProxy):
         result['total_count'] = total_count
         return result
 
-    def _query_workflow_list(self, username: str, domain: Optional[str],
-                             status: Optional[str]) -> sqlalchemy.orm.query.Query:
+    def _query_workflow_list(self, username: str, domain: Optional[list],
+                             status: Optional[list], app: Optional[list]) -> sqlalchemy.orm.query.Query:
         """
         query needed workflow basic info list
         Args:
@@ -324,9 +326,11 @@ class WorkflowDao(MysqlProxy, ElasticsearchProxy):
         filters = set()
         filters.add(Workflow.username == username)
         if domain:
-            filters.add(Workflow.domain == domain)
+            filters.add(Workflow.domain.in_(domain))
         if status:
-            filters.add(Workflow.status == status)
+            filters.add(Workflow.status.in_(status))
+        if app:
+            filters.add(Workflow.app_name.in_(app))
 
         workflow_query = self.session.query(Workflow.workflow_name, Workflow.workflow_id,
                                             Workflow.description, Workflow.status,
@@ -388,6 +392,53 @@ class WorkflowDao(MysqlProxy, ElasticsearchProxy):
             result.append(workflow_info)
         return result
 
+    def get_all_workflow_list(self, status: str) -> Tuple[int, dict]:
+        """
+        get all users' workflow list. It's a internal interface for scheduler
+        Args:
+            status: needed workflow status
+
+        Returns:
+            dict,  e.g.
+            {
+                "workflow_id1": {
+                    "workflow_name": "workflow1",
+                    "username": "admin",
+                    "step": 5
+                }
+            }
+        """
+        result = {}
+        try:
+            status_code, result = self._get_all_workflow_list(status)
+            LOGGER.debug("Finished getting all users' workflow list.")
+            return status_code, result
+        except SQLAlchemyError as error:
+            LOGGER.error(error)
+            LOGGER.error("Get all users' workflow list failed due to internal error.")
+            return DATABASE_QUERY_ERROR, result
+
+    def _get_all_workflow_list(self, status: str) -> Tuple[int, dict]:
+        """
+        get all users' workflow from mysql
+        """
+        result = {}
+        workflow_query = self.session.query(Workflow.username, Workflow.workflow_id,
+                                            Workflow.workflow_name, Workflow.step) \
+            .filter(Workflow.status == status)
+
+        if workflow_query.count():
+            return NO_DATA, result
+
+        result = {}
+        for row in workflow_query:
+            result[row.workflow_id] = {
+                "workflow_name": row.workflow_name,
+                "username": row.username,
+                "step": row.step
+            }
+        return SUCCEED, result
+
     def get_workflow(self, data) -> Tuple[int, dict]:
         """
         get workflow's detail info
@@ -397,42 +448,44 @@ class WorkflowDao(MysqlProxy, ElasticsearchProxy):
         Returns:
             dict: workflow detail info  e.g.
                 {
-                    "workflow_id": "workflow_id1",
-                    "workflow_name": "workflow_name1",
-                    "description": "a long description",
-                    "status": "running/hold/recommending",
-                    "app_name": "app1",
-                    "app_id": "app_id1",
-                    "input": {
-                        "domain": "host_group1",
-                        "hosts": {
-                            "host_id1": {
-                                "host_ip": "127.0.0.1",
-                                "host_name": "host1"
-                            }
-                        }
-                    },
-                    "step": 5,
-                    "period": 30,
-                    "alert": {},
-                    "detail": {
-                        {
-                            "singlecheck": {
+                    "result": {
+                        "workflow_id": "workflow_id1",
+                        "workflow_name": "workflow_name1",
+                        "description": "a long description",
+                        "status": "running/hold/recommending",
+                        "app_name": "app1",
+                        "app_id": "app_id1",
+                        "input": {
+                            "domain": "host_group1",
+                            "hosts": {
                                 "host_id1": {
-                                    "metric1": "3sigma"
+                                    "host_ip": "127.0.0.1",
+                                    "host_name": "host1"
                                 }
-                            },
-                            "multicheck": {
-                                "host_id1": "statistic"
-                            },
-                            "diag": "statistic"
-                        }
-                    },
-                    "model_info": {
-                        "model_id1": {
-                            "model_name": "model_name1",
-                            "algo_id": "algo_id1",
-                            "algo_name": "algo_name1"
+                            }
+                        },
+                        "step": 5,
+                        "period": 30,
+                        "alert": {},
+                        "detail": {
+                            {
+                                "singlecheck": {
+                                    "host_id1": {
+                                        "metric1": "3sigma"
+                                    }
+                                },
+                                "multicheck": {
+                                    "host_id1": "statistic"
+                                },
+                                "diag": "statistic"
+                            }
+                        },
+                        "model_info": {
+                            "model_id1": {
+                                "model_name": "model_name1",
+                                "algo_id": "algo_id1",
+                                "algo_name": "algo_name1"
+                            }
                         }
                     }
                 }
@@ -670,6 +723,13 @@ class WorkflowDao(MysqlProxy, ElasticsearchProxy):
             LOGGER.info("Delete workflow '%s' failed because it's still %s" % (workflow_id, workflow_query.status))
             return True
         return False
+
+    def update_workflow_status(self, workflow_id, status):
+        """
+        update workflow status
+        """
+        self.session.query(Workflow).filter(Workflow.workflow_id == workflow_id) \
+            .update({"status": status})
 
     def if_host_in_workflow(self, data: dict) -> Tuple[int, dict]:
         """

@@ -14,26 +14,50 @@ from typing import Dict
 from aops_check.core.experiment.algorithm.base_algo import BaseMultiItemAlgorithmTwo
 
 
+METRIC_WEIGHT_MAP = {
+    "default_weight": 0.1,
+    "metric_weight": {
+        "up": 1,
+        "scrape_duration_seconds": 0.5,
+        "scrape_samples_post_metric_relabeling": 0.1,
+        "scrape_samples_scraped": 0.1,
+        "scrape_series_added": 0.1
+    }
+}
+
+
 class StatisticalCheck(BaseMultiItemAlgorithmTwo):
 
-    def __init__(self, percent: float = 0.5):
-        self._percent = percent
-
-    def calculate(self, data: dict) -> bool:
+    def __init__(self, threshold: float = 1.0, metric_weight_map: dict = None):
         """
-        overload calculate function
+
         Args:
-            data: result of single item check, like {"cpu_load15": True, "rx_error": False}
+            threshold: threshold value, if weighted value is bigger than this, assume the host is abnormal
+            metric_weight_map: weights and metric name matching relationship
+        """
+        self.__threshold = threshold
+        self.__metric_weight_map = metric_weight_map or METRIC_WEIGHT_MAP
+
+    def calculate(self, data: list) -> bool:
+        """
+        calculate total weighted value and compare with threshold
+        Args:
+            data: result of single item check, like [{"metric_name": "m1", "metric_label": "l1"}]
 
         Returns:
             bool
         """
-        abnormal_num = 0
-        for value in data.values():
-            if value:
-                abnormal_num += 1
+        weighted_sum = 0
+        metric_weight = self.__metric_weight_map["metric_weight"]
+        default_weight = self.__metric_weight_map["default_weight"]
+        for metric in data:
+            metric_name = metric["metric_name"]
+            if metric_name in metric_weight:
+                weighted_sum += metric_weight[metric_name]
+            else:
+                weighted_sum += default_weight
 
-        if abnormal_num / len(data) > self._percent:
+        if weighted_sum > self.__threshold:
             return True
         return False
 

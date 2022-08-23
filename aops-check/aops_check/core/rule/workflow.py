@@ -15,8 +15,13 @@ Time:
 Author:
 Description:
 """
+import time
 from typing import Dict, Tuple
-from aops_utils.restful.status import SUCCEED
+
+import sqlalchemy
+from aops_utils.kafka.kafka_exception import ProducerInitError
+from aops_utils.kafka.producer import BaseProducer
+from aops_utils.restful.status import SUCCEED, DATABASE_INSERT_ERROR, TASK_EXECUTION_FAIL, DATABASE_QUERY_ERROR, DATABASE_CONNECT_ERROR
 from aops_utils.log.log import LOGGER
 from aops_utils.restful.response import MyResponse
 from aops_utils.conf.constant import URL_FORMAT, QUERY_HOST_DETAIL
@@ -24,7 +29,7 @@ from aops_utils.database.helper import operate
 
 from aops_check.database import SESSION
 from aops_check.conf import configuration
-from aops_check.errors.workflow_error import WorkflowModelAssignError
+from aops_check.errors.workflow_error import WorkflowExecuteError, WorkflowModelAssignError
 from aops_check.database.dao.data_dao import DataDao
 from aops_check.database.dao.app_dao import AppDao
 from aops_check.database.dao.model_dao import ModelDao
@@ -61,7 +66,7 @@ class Workflow:
     def assign_model(username: str, token: str, app_id: str, host_list: list,
                      assign_logic: str, steps: list = None, workflow_id: str = "") -> Tuple[dict, dict]:
         """
-        assign model to workflow
+        assign model to workflow, for configurable mode
         Args:
             username: username
             token: request token in header
@@ -123,7 +128,8 @@ class Workflow:
         try:
             steps = app_info["result"]["detail"].keys()
         except KeyError as error:
-            raise WorkflowModelAssignError("Parse app info to get steps failed: %s" % error, workflow_id)
+            raise WorkflowModelAssignError("Parse app info to get steps failed: %s"
+                                           % error, workflow_id)
 
         if steps and steps - support_steps:
             raise WorkflowModelAssignError("The step %s is not supported to assign model."
@@ -238,13 +244,34 @@ class Workflow:
 
         for host_id, value in hosts_info.items():
             # query host's metric list
-            status_code, metric_list = data_proxy.query_metric_list_of_host(value["host_ip"])
+            status_code, metric_label_list = data_proxy.query_metric_list_of_host(
+                value["host_ip"])
             if status_code != SUCCEED:
                 failed_list.append(host_id)
                 continue
 
-            host_algo[host_id] = ModelAssign.assign_kpi_model_by_name(metric_list, config)
+            metric_list = Workflow.__get_metric_names(metric_label_list)
+            host_algo[host_id] = ModelAssign.assign_kpi_model_by_name(
+                metric_list, config)
         return failed_list, host_algo
+
+    @staticmethod
+    def __get_metric_names(metric_label_list: list):
+        """
+        split metric name and label, get metric name list
+        Args:
+            metric_label_list: metric name and label string list
+
+        Returns:
+            list: list of metric name
+        """
+        metric_set = set()
+        for metric_label in metric_label_list:
+            index = metric_label.find('{')
+            metric_name = metric_label[:index]
+            metric_set.add(metric_name)
+
+        return list(metric_set)
 
     @staticmethod
     def __assign_multi_item_model(hosts_info: dict, config: dict = None) -> Dict[str, str]:

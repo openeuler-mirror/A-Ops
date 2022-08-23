@@ -49,6 +49,14 @@ class ModelAssign:
         Args:
             metrics: metric name
             metric_model_map: metric and model matching relationship
+                e.g.
+                {
+                    "default_model": "NSigma-1",  # NSigma model
+                    "model_info": {
+                        "cpu_load15": "NSigma-1",  # NSigma model
+                        "rx_error": ""  # if empty, use default model
+                    }
+                }
 
         Raises:
             ValueError
@@ -56,17 +64,21 @@ class ModelAssign:
         if metric_model_map is None:
             metric_model_map = METRIC_MODEL_MAP
         if "default_model" not in metric_model_map:
-            raise ValueError("A 'default_model' should be given in case of no metric matches.")
+            raise ValueError("A 'default_model' should be given for metric with empty model id.")
 
         default_model_info = metric_model_map["default_model"]
         model_info = metric_model_map.get("model_info", {})
 
         assign_model = {}
         for metric in metrics:
-            if metric in model_info:
+            # if a metric not in app's details, no need to check
+            if metric not in model_info:
+                continue
+            if model_info[metric]:
                 assign_model[metric] = model_info[metric]
             else:
                 assign_model[metric] = default_model_info
+
         return assign_model
 
     @staticmethod
