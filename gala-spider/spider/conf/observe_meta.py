@@ -397,16 +397,11 @@ def check_meta(old_obsv_meta: ObserveMeta, new_obsv_meta: ObserveMeta):
     for k1, k2 in zip(old_obsv_meta.keys, new_obsv_meta.keys):
         if k1 != k2:
             raise MetadataException('Keys of metadata not consistent')
-    # check metrics
-    metric_set = set(old_obsv_meta.metrics)
-    for metric in new_obsv_meta.metrics:
-        if metric in metric_set:
-            raise MetadataException('Metric name {} of metadata duplicate'.format(metric))
 
 
 def merge_meta(old_obsv_meta: ObserveMeta, new_obsv_meta: ObserveMeta) -> ObserveMeta:
     merged_labels = list(set(old_obsv_meta.labels + new_obsv_meta.labels))
-    merged_metrics = old_obsv_meta.metrics + new_obsv_meta.metrics
+    merged_metrics = list(set(old_obsv_meta.metrics + new_obsv_meta.metrics))
     obsv_meta = ObserveMeta(
         type=old_obsv_meta.type,
         keys=old_obsv_meta.keys,
