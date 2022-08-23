@@ -50,12 +50,17 @@ manager = {
     "PORT": 11111
 }
 
-kafka = {
+consumer = {
     "KAFKA_SERVER_LIST": "127.0.0.1:9092",
     "API_VERSION": "0.11.5",
     "ACKS": 1,
     "RETRIES": 3,
     "RETRY_BACKOFF_MS": 100,
+    "ENABLE_AUTO_COMMIT": False,
+    "AUTO_OFFSET_RESET": "earliest",
+    "TIMEOUT_MS": 5,
+    "MAX_RECORDS": 3,
     "TASK_NAME": "CHECK_TASK",
+    "TASK_GROUP_ID": "CHECK_TASK_GROUP_ID",
     "RESULT_NAME": "CHECK_RESULT"
 }

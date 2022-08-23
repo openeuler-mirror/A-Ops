@@ -78,7 +78,6 @@ class HostGroup(Base, MyBase):
     host_group_id = Column(Integer, autoincrement=True, primary_key=True)
     host_group_name = Column(String(20))
     description = Column(String(60))
-    host_count = Column(Integer, default=0)
     username = Column(String(40), ForeignKey('user.username'))
 
     user = relationship('User', back_populates='host_groups')
