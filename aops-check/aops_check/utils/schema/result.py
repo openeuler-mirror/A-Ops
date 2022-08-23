@@ -16,3 +16,13 @@ from marshmallow import fields
 
 class QueryCheckResultHostSchema(Schema):
     alert_id = fields.String(required=True, validate=lambda s: len(s) > 0)
+
+
+class QueryCheckResultListSchema(Schema):
+    page = fields.Integer(validate=lambda x: x > 0)
+    per_page = fields.Integer(validate=lambda x: 50 >= x > 0)
+    domain = fields.String(validate=lambda x: len(x) > 0)
+    level = fields.String(validate=lambda x: len(x) > 0)
+    confirmed = fields.Boolean()
+    sort = fields.String(validate=lambda x: x in ('time',))
+    direction = fields.String(validate=lambda x: x in ('asc', 'desc'))

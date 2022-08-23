@@ -14,13 +14,13 @@ from flask import jsonify
 
 from aops_check.database import SESSION
 from aops_check.database.dao.result_dao import ResultDao
-from aops_check.utils.schema.result import QueryCheckResultHostSchema
+from aops_check.utils.schema.result import QueryCheckResultHostSchema, QueryCheckResultListSchema
 from aops_utils.restful.response import BaseResponse
 
 
 class QueryCheckResultHost(BaseResponse):
     """
-        Interface for get check result list.
+        Interface for get check result.
         Restful API: GET
     """
 
@@ -48,4 +48,19 @@ class QueryCheckResultHost(BaseResponse):
         return jsonify(self.handle_request_db(QueryCheckResultHostSchema,
                                               ResultDao(),
                                               'query_result_host',
+                                              SESSION))
+
+
+class QueryCheckResultList(BaseResponse):
+    """
+        Interface for get check result list.
+        Restful API: GET
+    """
+    def get(self):
+        """
+            get check result list from database
+        """
+        return jsonify(self.handle_request_db(QueryCheckResultListSchema,
+                                              ResultDao(),
+                                              'query_result_list',
                                               SESSION))
