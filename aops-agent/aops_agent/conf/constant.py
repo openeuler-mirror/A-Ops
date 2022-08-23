@@ -15,7 +15,7 @@ import os
 BASE_CONFIG_PATH = '/etc/aops'
 BASE_SERVICE_PATH = '/usr/lib/systemd/system'
 
-AGENT_CONFIG_PATH = os.path.join(BASE_CONFIG_PATH, 'aops_agent.conf')
+AGENT_CONFIG_PATH = os.path.join(BASE_CONFIG_PATH, 'agent.conf')
 DEFAULT_TOKEN_PATH = os.path.join(BASE_CONFIG_PATH, 'agent_token.json')
 DATA_MODEL = {
     "str_array": {"type": "array", "items": {"type": "string", "minLength": 1}},

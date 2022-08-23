@@ -26,7 +26,7 @@ def start(*args) -> NoReturn:
     app = connexion.App(__name__, specification_dir='./swagger/')
     app.app.json_encoder = encoder.JSONEncoder
     app.add_api('swagger.yaml', arguments={'title': 'aops_agent'}, pythonic_params=True)
-    app.run(port=configuration.agent.get('PORT'))
+    app.run(host=configuration.agent.get("IP"), port=configuration.agent.get('PORT'))
 
 
 def register_on_manager(args: argparse.Namespace) -> NoReturn:
