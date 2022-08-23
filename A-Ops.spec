@@ -1,6 +1,6 @@
 Name:		A-Ops
 Version:	v1.2.2
-Release:	1
+Release:	2
 Summary:	The intelligent ops toolkit for openEuler
 License:	MulanPSL2
 URL:		https://gitee.com/openeuler/A-Ops
@@ -430,7 +430,9 @@ fi
 %files -n gala-spider
 %doc gala-spider/README.md gala-spider/docs/*
 %license gala-spider/LICENSE
-%{_sysconfdir}/gala-spider/*
+%config(noreplace) %{_sysconfdir}/gala-spider/gala-spider.yaml
+%config(noreplace) %{_sysconfdir}/gala-spider/topo-relation.yaml
+%config(noreplace) %{_sysconfdir}/gala-spider/ext-observe-meta.yaml
 %{_bindir}/spider-storage
 %{_unitdir}/gala-spider.service
 
@@ -443,7 +445,8 @@ fi
 %files -n gala-inference
 %doc gala-spider/README.md gala-spider/docs/*
 %license LICENSE
-%{_sysconfdir}/gala-inference/*
+%config(noreplace) %{_sysconfdir}/gala-inference/gala-inference.yaml
+%config(noreplace) %{_sysconfdir}/gala-inference/ext-observe-meta.yaml
 %{_bindir}/gala-inference
 %{_unitdir}/gala-inference.service
 
@@ -475,6 +478,9 @@ fi
 
 
 %changelog
+* Tue Aug 23 2022 zhaoyuxing<zhaoyuxing2@huawei.com> - v1.2.2-2
+- Set user modification of confs will not be overwrite for gala_spider.
+
 * Wed Aug 10 2022 zhuyuncheng<zhuyuncheng@huawei.com> - v1.2.2-1
 - New release 1.2.2, bug fix and add new module.
 - add missed requirement python3-PyMySQL
