@@ -78,6 +78,7 @@ int RunExtendProbe(ExtendProbe *probe)
     uint32_t index = 0;
 
     f = __DoRunExtProbe(probe);
+    probe->is_exist = 1;
 
     while (feof(f) == 0 && ferror(f) == 0) {
         if (fgets(buffer, sizeof(buffer), f) == NULL)
@@ -129,6 +130,7 @@ int RunExtendProbe(ExtendProbe *probe)
         }
     }
 
+    probe->is_exist = 0;
     pclose(f);
     return 0;
 }
