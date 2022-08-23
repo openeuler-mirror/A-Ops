@@ -393,7 +393,6 @@ static __always_inline void process_rdwr_msg(int fd, const char *buf, const unsi
             if (ts_nsec > csd->start_ts_nsec &&
                 ts_nsec - csd->start_ts_nsec >= __PERIOD) {
                 csd->status = SAMP_INIT;
-                csd->start_ts_nsec = 0;
             }
             return;
         }
@@ -404,9 +403,7 @@ static __always_inline void process_rdwr_msg(int fd, const char *buf, const unsi
         __builtin_memcpy(&csd->command, conn_data->current.command, MAX_COMMAND_REQ_SIZE);
 
 #ifndef KERNEL_SUPPORT_TSTAMP
-        if (csd->start_ts_nsec == 0) {
-            csd->start_ts_nsec = ts_nsec;
-        }
+        csd->start_ts_nsec = ts_nsec;
 #endif
         csd->status = SAMP_READ_READY;
     } else {
@@ -501,7 +498,6 @@ KPROBE(tcp_clean_rtx_queue, pt_regs)
                 return;
             }
             csd->rtt_ts_nsec = end_ts_nsec - csd->start_ts_nsec;
-            csd->start_ts_nsec = 0;
             csd->status = SAMP_FINISHED;
         }
     }
@@ -516,8 +512,7 @@ KPROBE(tcp_recvmsg, pt_regs)
 
     csd = (struct conn_samp_data_t *)bpf_map_lookup_elem(&conn_samp_map, &sk);
     if (csd != (void *)0) {
-        if ((csd->status == SAMP_FINISHED || csd->status == SAMP_INIT)
-            && (csd->start_ts_nsec == 0)) {
+        if ((csd->status == SAMP_FINISHED || csd->status == SAMP_INIT)) {
             if (sk != (void *)0) {
                 struct sk_buff *skb = _(sk->sk_receive_queue.next);
                 if (skb != (struct sk_buff *)(&sk->sk_receive_queue)){
