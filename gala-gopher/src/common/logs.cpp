@@ -30,8 +30,6 @@
 #define IS_VALID_FILE_ID(id)    ((id) != INVALID_FILE_ID)
 
 #if !defined(UTEST)
-#define LOGS_FILE_SIZE          (10 * 1024)
-
 #define METRICS_LOGS_FILESIZE   (100 * 1024 * 1024)
 #define EVENT_LOGS_FILESIZE     (100 * 1024 * 1024)
 #define DEBUG_LOGS_FILESIZE     (100 * 1024 * 1024)
@@ -41,11 +39,10 @@
 #define EVENT_LOGS_MAXNUM       (100)
 #else
 #define LOGS_FILE_SIZE          (1024)
-
-#define METRICS_LOGS_FILESIZE   (204800)
-#define EVENT_LOGS_FILESIZE     (204800)
-#define DEBUG_LOGS_FILESIZE     (204800)
-#define META_LOGS_FILESIZE      (204800)
+#define METRICS_LOGS_FILESIZE   LOGS_FILE_SIZE
+#define EVENT_LOGS_FILESIZE     LOGS_FILE_SIZE
+#define DEBUG_LOGS_FILESIZE     LOGS_FILE_SIZE
+#define META_LOGS_FILESIZE      LOGS_FILE_SIZE
 
 #define METRICS_LOGS_MAXNUM     (5)
 #define EVENT_LOGS_MAXNUM       (5)
@@ -658,142 +655,4 @@ void error_logs(const char* format, ...)
     }
 }
 
-#endif
-
-#if defined(UTEST)
-
-#define METRICS_PATH    "/home/logs/metrics"
-#define EVENT_PATH    "/home/logs/event/"
-#define DEBUG_PATH    "/home/logs/debug"
-#define META_PATH    "/home/logs/meta"
-
-#define DEBUG_WR_COUNT      100
-
-void testcase_wr_debug_logs(void)
-{
-    for (int i = 0; i < DEBUG_WR_COUNT; i++) {
-        error_logs("I'am a debug logs(%d)", i);
-    }
-}
-
-void testcase_wr_meta_logs(void)
-{
-    for (int i = 0; i < DEBUG_WR_COUNT; i++) {
-        wr_meta_logs("I'am a meta logs");
-    }
-}
-
-#define METRICS_LOGS_TEXT   "I'am metrics, len 20"
-
-#define WR_LOGS(count, id, func, txt) \
-    do \
-    { \
-        for (int __index = 0; __index < count; __index++) { \
-            if (func(txt, strlen(txt))) { \
-                (void)fprintf(stderr, "Failed to write logs!\n"); \
-            } \
-        } \
-        printf("Succeed to write file(%d)\n", id); \
-    } while(0)
-
-#define RE_LOGS(func) \
-    do \
-    { \
-        char __logs[PATH_LEN]; \
-        if (func(__logs, PATH_LEN)) { \
-            (void)fprintf(stderr, "Failed to read logs!\n"); \
-            return; \
-        } \
-        rm_log_file(__logs); \
-        printf("Succeed to read logs(%s)\n", __logs); \
-    } while(0)
-
-void testcase_wr_metrics_logs(void)
-{
-    int count;
-
-    count = (LOGS_FILE_SIZE / strlen(METRICS_LOGS_TEXT) + 1);
-
-    WR_LOGS(count, 0, wr_metrics_logs, METRICS_LOGS_TEXT);
-    WR_LOGS(count, 1, wr_metrics_logs, METRICS_LOGS_TEXT);
-    WR_LOGS(count, 2, wr_metrics_logs, METRICS_LOGS_TEXT);
-    WR_LOGS(count, 3, wr_metrics_logs, METRICS_LOGS_TEXT);
-
-    RE_LOGS(read_metrics_logs);
-    RE_LOGS(read_metrics_logs);
-
-    WR_LOGS(count, 4, wr_metrics_logs, METRICS_LOGS_TEXT);
-    WR_LOGS(count, 5, wr_metrics_logs, METRICS_LOGS_TEXT);
-    WR_LOGS(count, 6, wr_metrics_logs, METRICS_LOGS_TEXT);
-
-    RE_LOGS(read_metrics_logs);
-    RE_LOGS(read_metrics_logs);
-    RE_LOGS(read_metrics_logs);
-    RE_LOGS(read_metrics_logs);
-    RE_LOGS(read_metrics_logs);
-
-    WR_LOGS(count, 7, wr_metrics_logs, METRICS_LOGS_TEXT);
-
-    return;
-}
-
-#define EVENT_LOGS_TEXT   "I'am a event, len 20"
-
-void testcase_wr_event_logs(void)
-{
-    int count;
-
-    count = (LOGS_FILE_SIZE / strlen(EVENT_LOGS_TEXT) + 1);
-
-    WR_LOGS(count, 0, wr_event_logs, EVENT_LOGS_TEXT);
-    WR_LOGS(count, 1, wr_event_logs, EVENT_LOGS_TEXT);
-    WR_LOGS(count, 2, wr_event_logs, EVENT_LOGS_TEXT);
-    WR_LOGS(count, 3, wr_event_logs, EVENT_LOGS_TEXT);
-
-    RE_LOGS(read_event_logs);
-    RE_LOGS(read_event_logs);
-
-    WR_LOGS(count, 4, wr_event_logs, EVENT_LOGS_TEXT);
-    WR_LOGS(count, 5, wr_event_logs, EVENT_LOGS_TEXT);
-    WR_LOGS(count, 6, wr_event_logs, EVENT_LOGS_TEXT);
-
-    RE_LOGS(read_event_logs);
-    RE_LOGS(read_event_logs);
-    RE_LOGS(read_event_logs);
-    RE_LOGS(read_event_logs);
-    RE_LOGS(read_event_logs);
-
-    WR_LOGS(count, 7, wr_event_logs, EVENT_LOGS_TEXT);
-
-    return;
-}
-
-int main()
-{
-    struct log_mgr_s* mgr;
-    mgr = create_log_mgr(NULL);
-    if (!mgr) {
-        goto err;
-    }
-
-    (void)strncpy(mgr->metrics_path, METRICS_PATH, PATH_LEN - 1);
-    (void)strncpy(mgr->event_path, EVENT_PATH, PATH_LEN - 1);
-    (void)strncpy(mgr->debug_path, DEBUG_PATH, PATH_LEN - 1);
-    (void)strncpy(mgr->meta_path, META_PATH, PATH_LEN - 1);
-
-    if (init_log_mgr(mgr)) {
-        goto err;
-    }
-
-    testcase_wr_debug_logs();
-    testcase_wr_meta_logs();
-    testcase_wr_event_logs();
-    testcase_wr_metrics_logs();
-err:
-    if (mgr) {
-        destroy_log_mgr(mgr);
-        mgr = NULL;
-    }
-    return 0;
-}
 #endif

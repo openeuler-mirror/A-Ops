@@ -48,6 +48,8 @@
 #endif
 #define OO_NAME  "proc"
 
+static struct probe_params *g_args;
+
 #define PROC_TBL_SYSCALL        "proc_syscall"
 #define PROC_TBL_SYSCALL_IO     "proc_syscall_io"
 #define PROC_TBL_SYSCALL_NET    "proc_syscall_net"
@@ -74,6 +76,10 @@
 static void report_proc_metrics(struct proc_data_s *proc)
 {
     char entityId[INT_LEN];
+
+    if (g_args->logs == 0) {
+        return;
+    }
 
     entityId[0] = 0;
     (void)snprintf(entityId, INT_LEN, "%d", proc->proc_id);
@@ -488,6 +494,8 @@ struct bpf_prog_s* load_proc_bpf_prog(struct probe_params *args)
     is_load_tmpfs = is_load_probe(args, TASK_PROBE_TMPFS_OP);
     is_load_page = is_load_probe(args, TASK_PROBE_PAGE_OP);
 
+    g_args = args;
+
     prog = alloc_bpf_prog();
     if (prog == NULL) {
         return NULL;
@@ -533,6 +541,7 @@ struct bpf_prog_s* load_proc_bpf_prog(struct probe_params *args)
 
 err:
     unload_bpf_prog(&prog);
+    g_args = NULL;
     return NULL;
 }
 

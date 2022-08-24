@@ -59,13 +59,12 @@ int init_config()
     }
 
     (void)strncpy(configMgr->kafkaConfig->broker, KAFKA_BROKER, MAX_KAFKA_BROKER_LEN - 1);
-    (void)strncpy(configMgr->kafkaConfig->metric_topic, KAFKA_TOPIC, MAX_KAFKA_TOPIC_LEN - 1);
+    (void)strncpy(configMgr->metricOutConfig->kafka_topic, KAFKA_TOPIC, MAX_KAFKA_TOPIC_LEN - 1);
     configMgr->kafkaConfig->batchNumMessages = KAFKA_BATCH_NUM_MESSAGES;
     (void)strncpy(configMgr->kafkaConfig->compressionCodec, "none", KAFKA_COMPRESSION_CODEC_LEN - 1);
     configMgr->kafkaConfig->queueBufferingMaxMessages = KAFKA_QUEUE_BUFFER_MESSAGES;
     configMgr->kafkaConfig->queueBufferingMaxKbytes = KAFKA_QUEUE_BUFFER_KBYTES;
     configMgr->kafkaConfig->queueBufferingMaxMs = KAFKA_QUEUE_BUFFER_MS;
-    configMgr->kafkaConfig->kafkaSwitch = KAFKA_SWITCH_OFF;
 
     return 0;
 }

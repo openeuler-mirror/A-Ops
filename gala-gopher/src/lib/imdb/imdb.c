@@ -654,15 +654,42 @@ static int IMDB_BuildEntiyID(const IMDB_DataBaseMgr *mgr,
     return __snprintf(&p, size, &size, fmt, mgr->nodeInfo.machineId, entityName, entityId);
 }
 
-static int IMDB_BuildTmStamp(char *buffer, uint32_t maxLen)
+static int IMDB_BuildEventID(const IMDB_DataBaseMgr *mgr,
+                             const char *entityName,
+                             const char *entityId,
+                             time_t timestamp,
+                             char *buffer, uint32_t maxLen)
+{
+    int size = (int)maxLen;
+    char *p = buffer;
+    const char *fmt = "%lld_%s_%s_%s";  // TIMESTAMP_MACHINEID_ENTITYNAME_ENTITYID
+
+    if (entityName == NULL || entityId == NULL) {
+        return -1;
+    }
+
+    return __snprintf(&p, size, &size, fmt, timestamp, mgr->nodeInfo.machineId, entityName, entityId);
+}
+
+static int IMDB_BuildEventType(char *buffer, uint32_t maxLen)
+{
+    int size = (int)maxLen;
+    char *p = buffer;
+    const char *fmt = "%s";  // "sys" or "app", gopher only use "sys"
+
+    return __snprintf(&p, size, &size, fmt, "sys");
+}
+
+static int IMDB_BuildTmStamp(char *buffer, uint32_t maxLen, time_t *timestamp)
 {
     int size = (int)maxLen;
     time_t now;
     char *p = buffer;
-    const char *fmt = "\"Timestamp\": \"%lld\"";  // "Timestamp": "1586960586000000000"
+    const char *fmt = "\"Timestamp\": %lld";  // "Timestamp": 1586960586000000000
 
     (void)time(&now);
-    return __snprintf(&p, size, &size, fmt, now * THOUSAND);
+    *timestamp = now * THOUSAND;
+    return __snprintf(&p, size, &size, fmt, *timestamp);
 }
 
 // eg: gala_gopher_tcp_link_rx_bytes
@@ -1024,12 +1051,32 @@ static const char* IMDB_GetEvtVal(IMDB_Record *record, const char *metricsName)
     return NULL;
 }
 
+// 对entityID中出现的特殊字符进行替换，替换为':'
+static void transfer_entityID(char *entityID)
+{
+    int i, j;
+    char special_symbols[] = {'/'};     // 不支持的符号集合，可以新增
+    int sym_size = sizeof(special_symbols) / sizeof(special_symbols[0]);
+
+    for (i = 0; i < strlen(entityID); i++) {
+        for (j = 0; j < sym_size; j++) {
+            if (entityID[i] == special_symbols[j]) {
+                entityID[i] = ':';
+            }
+        }
+    }
+    return;
+}
+
 /*
 
 {
-  "Timestamp": "1586960586000000000",
+  "Timestamp": 1586960586000000000,
+  "event_id": "1586xxx_xxxx"
   "Attributes": {
-    "Entity ID": "xx",
+    "entity_id": "xx",
+    "event_id": "1586xxx_xxxx",
+    "event_type": "sys",
     "data": [....],     // optional
     "duration": 30,     // optional
     "occurred count": 6,// optional
@@ -1052,6 +1099,7 @@ static int IMDB_Evt2Json(const IMDB_DataBaseMgr *mgr,
     char *p = jsonStr;
     int len = jsonStrLen;
     int ret = 0;
+    time_t timestamp;
     const char *entityName = IMDB_GetEvtVal(record, __EVT_TBL_ENTITYNAME);
     const char *entityID = IMDB_GetEvtVal(record, __EVT_TBL_ENTITYID);
     const char *metrics = IMDB_GetEvtVal(record, __EVT_TBL_METRICS);
@@ -1059,12 +1107,14 @@ static int IMDB_Evt2Json(const IMDB_DataBaseMgr *mgr,
     const char *secNum = IMDB_GetEvtVal(record, __EVT_TBL_SECNUM);
     const char *body = IMDB_GetEvtVal(record, __EVT_TBL_BODY);
 
+    transfer_entityID(entityID);
+
     ret = __snprintf(&p, len, &len, "%s", "{");
     if (ret < 0) {
         goto err;
     }
 
-    ret = IMDB_BuildTmStamp(p, len);
+    ret = IMDB_BuildTmStamp(p, len, &timestamp);
     if (ret < 0) {
         goto err;
     }
@@ -1074,7 +1124,22 @@ static int IMDB_Evt2Json(const IMDB_DataBaseMgr *mgr,
     p = jsonStr + len;
     len = jsonStrLen - len;
 
-    ret = __snprintf(&p, len, &len, "%s", ", \"Attributes\": { \"Entity ID\": \"");
+    ret = __snprintf(&p, len, &len, "%s", ", \"event_id\": \"");
+    if (ret < 0) {
+        goto err;
+    }
+
+    ret = IMDB_BuildEventID(mgr, entityName, entityID, timestamp, p, len);
+    if (ret < 0) {
+        goto err;
+    }
+
+    // Readdressing end of string
+    len = strlen(jsonStr);
+    p = jsonStr + len;
+    len = jsonStrLen - len;
+
+    ret = __snprintf(&p, len, &len, "%s", "\", \"Attributes\": { \"entity_id\": \"");
     if (ret < 0) {
         goto err;
     }
@@ -1089,7 +1154,37 @@ static int IMDB_Evt2Json(const IMDB_DataBaseMgr *mgr,
     p = jsonStr + len;
     len = jsonStrLen - len;
 
-    ret = __snprintf(&p, len, &len, "%s", "\",}, \"Resource\": { \"metrics\": \"");
+    ret = __snprintf(&p, len, &len, "%s", "\", \"event_id\": \"");
+    if (ret < 0) {
+        goto err;
+    }
+
+    ret = IMDB_BuildEventID(mgr, entityName, entityID, timestamp, p, len);
+    if (ret < 0) {
+        goto err;
+    }
+
+    // Readdressing end of string
+    len = strlen(jsonStr);
+    p = jsonStr + len;
+    len = jsonStrLen - len;
+
+    ret = __snprintf(&p, len, &len, "%s", "\", \"event_type\": \"");
+    if (ret < 0) {
+        goto err;
+    }
+
+    ret = IMDB_BuildEventType(p, len);
+    if (ret < 0) {
+        goto err;
+    }
+
+    // Readdressing end of string
+    len = strlen(jsonStr);
+    p = jsonStr + len;
+    len = jsonStrLen - len;
+
+    ret = __snprintf(&p, len, &len, "%s", "\"}, \"Resource\": { \"metrics\": \"");
     if (ret < 0) {
         goto err;
     }
@@ -1104,7 +1199,7 @@ static int IMDB_Evt2Json(const IMDB_DataBaseMgr *mgr,
     p = jsonStr + len;
     len = jsonStrLen - len;
 
-    ret = __snprintf(&p, len, &len, "\",}, \"SeverityText\": \"%s\",", secTxt);
+    ret = __snprintf(&p, len, &len, "\"}, \"SeverityText\": \"%s\",", secTxt);
     if (ret < 0) {
         goto err;
     }

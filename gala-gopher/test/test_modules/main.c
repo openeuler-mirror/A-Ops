@@ -23,6 +23,7 @@
 #include "test_meta.h"
 #include "test_probe.h"
 #include "test_imdb.h"
+#include "test_logs.h"
 
 typedef struct {
     char *suiteName;
@@ -34,7 +35,8 @@ TestSuite gTestSuites[] = {
     // TEST_SUITE_KAFKA,
     TEST_SUITE_META,
     TEST_SUITE_PROBE,
-    TEST_SUITE_IMDB
+    TEST_SUITE_IMDB,
+    TEST_SUITE_LOGS
 };
 
 int main(int argc, char *argv[])
