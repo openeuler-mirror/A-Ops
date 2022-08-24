@@ -12,9 +12,11 @@
 # ******************************************************************************/
 from typing import Dict, Tuple, List, Any
 
+from sqlalchemy import func
 from sqlalchemy.exc import SQLAlchemyError
 
-from aops_check.database.factory.table import HostCheckResult, AlertHost
+from aops_check.database.factory.table import HostCheckResult, AlertHost, DomainCheckResult
+from aops_utils.database.helper import sort_and_page
 from aops_utils.database.proxy import MysqlProxy
 from aops_utils.log.log import LOGGER
 from aops_utils.restful.status import DATABASE_QUERY_ERROR, SUCCEED, NO_DATA
@@ -121,3 +123,142 @@ class ResultDao(MysqlProxy):
                                                     ). \
             join(host_id_query, HostCheckResult.host_id == host_id_query.c.host_id).all()
         return check_result_info_list
+
+    def query_result_list(self, data: Dict[str, str]) -> Tuple[int, dict]:
+        """
+            query check result host list sorted by alert id
+
+        Args:
+            data(dict): param e.g
+                {
+                    'page': 'int',
+                    'per_page': 'int',
+                    'domain': 'string',
+                    'level': 'string',
+                    'confirmed': boolean,
+                    'sort': 'time',
+                    'direction': 'asc or desc',
+                    'username': 'string'
+                }
+
+        Returns:
+            int: status code
+            dict: e.g
+                {
+                    "total_count": int,
+                    "total_page": int,
+                    "result": [
+                        {
+                            "alert_id": "alert_id",
+                            "alert_name": "alert_name",
+                            "confirmed": True or False,
+                            "domain": "domain_name",
+                            "host_num": int,
+                            "level": "level info",
+                            "time": xxxxxxxx,
+                            "workflow_id": "workflow_id",
+                            "workflow_name": "workflow_name"
+                        },
+                        ...
+                    ]
+                }
+        """
+        page = data.get('page')
+        per_page = data.get('per_page')
+        column = data.get('sort')
+        direction = data.get('direction')
+
+        filters = {DomainCheckResult.username == data.get('username')}
+
+        if data.get('domain'):
+            filters.add(DomainCheckResult.domain == data.get('domain'))
+
+        if data.get('level'):
+            filters.add(DomainCheckResult.level == data.get('level'))
+
+        if data.get('confirmed') and data.get('confirmed').lower() == "true":
+            filters.add(DomainCheckResult.confirmed == 1)
+        elif data.get('confirmed'):
+            filters.add(DomainCheckResult.confirmed == 0)
+
+        res = {
+            'total_count': 0,
+            'total_page': 0,
+            'result': []
+        }
+        check_result_host_query = self._query_check_result_host_list(filters)
+        total_count = len(check_result_host_query.all())
+        check_result_host_list, total_page = sort_and_page(check_result_host_query, column,
+                                                           direction, per_page, page)
+        res['result'] = self._check_result_host_rows_to_list(check_result_host_list)
+        res['total_page'] = total_page
+        res['total_count'] = total_count
+
+        return SUCCEED, res
+
+    def _query_check_result_host_list(self, filters):
+        """
+            query needed check result list
+        Args:
+            filters (set): filter given by user
+
+        Returns:
+            sqlalchemy.orm.query.Query
+        """
+        host_count_query = self.session.query(AlertHost.alert_id,
+                                              func.count(AlertHost.host_id).label('count')). \
+            group_by(AlertHost.alert_id).subquery()
+
+        check_result_host_query = self.session.query(DomainCheckResult.alert_id,
+                                                     DomainCheckResult.alert_name,
+                                                     DomainCheckResult.domain,
+                                                     DomainCheckResult.time,
+                                                     DomainCheckResult.workflow_id,
+                                                     DomainCheckResult.workflow_name,
+                                                     DomainCheckResult.level,
+                                                     DomainCheckResult.confirmed,
+                                                     host_count_query.c.count). \
+            join(host_count_query,
+                 DomainCheckResult.alert_id == host_count_query.c.alert_id).filter(*filters)
+        return check_result_host_query
+
+    @staticmethod
+    def _check_result_host_rows_to_list(rows):
+        """
+            turn queried rows to list of dict
+        Args:
+            sqlalchemy.orm.query.Query
+        Returns:
+            list[dict]: e.g
+                [
+                    {
+                        'alert_id': 'alert_id',
+                        'alert_name': 'alert_name',
+                        'domain': 'domain_name',
+                        'time': int,
+                        'workflow_id': 'workflow_id',
+                        'level': 'level info',
+                        'confirmed': 1 or 0,
+                        'workflow_name': 'workflow_name',
+                        'host_num': int
+                    },
+                    ...
+                ]
+
+        """
+        res = []
+        for row in rows:
+            confirmed = True if row.confirmed == 1 else False
+            check_result_host_info = {
+                "alert_id": row.alert_id,
+                "alert_name": row.alert_name,
+                "domain": row.domain,
+                "time": row.time,
+                "workflow_id": row.workflow_id,
+                "level": row.level,
+                "confirmed": confirmed,
+                "workflow_name": row.workflow_name,
+                "host_num": row.count
+            }
+            res.append(check_result_host_info)
+        return res
