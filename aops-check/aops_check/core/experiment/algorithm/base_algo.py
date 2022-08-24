@@ -24,13 +24,20 @@ class BaseSingleItemAlgorithm(metaclass=ABCMeta):
         """
         overload the calculate function
         Args:
-            data: single item data with timestamp, like [[1658544527, 100], [1658544527, 100]...]
+            data: single item data with timestamp, like [[1658544527, '100'], [1658544527, '100']...]
             time_range: time range of checking. only error found in this range could be record
 
         Returns:
             list: abnormal data with timestamp, like [[1658544527, 100], [1658544527, 100]...]
         """
         pass
+
+    def preprocess(self, data: list):
+        """
+        preprocess data
+        """
+        for single_data in data:
+            single_data[1] = float(single_data[1])
 
 
 class BaseMultiItemAlgorithmOne(metaclass=ABCMeta):

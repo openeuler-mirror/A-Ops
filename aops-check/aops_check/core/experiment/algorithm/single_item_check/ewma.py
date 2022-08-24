@@ -44,6 +44,10 @@ class EWMA(BaseSingleItemAlgorithm):
         Returns:
             list: abnormal data with timestamp, like [[1658544527, 100], [1658544527, 100]...]
         """
+        if not data:
+            return []
+        self.preprocess(data)
+
         data = pd.DataFrame(data)
         data_time = data[0]
         data_value = data[1]
@@ -74,5 +78,5 @@ class EWMA(BaseSingleItemAlgorithm):
                 count += 1
                 continue
             variance += (data[index] - moving_average[index]) ** 2
-        variance /= (len(data) - count)
+        variance /= (len(data) - count + 1)
         return variance

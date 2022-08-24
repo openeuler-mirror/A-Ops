@@ -28,7 +28,7 @@ class NSigma(BaseSingleItemAlgorithm):
             "algo_name": "ngisgma",
             "field": "singlecheck",
             "description": "It's a single item check method using nsigma algorithm.",
-            "path": "aops_check.core.experiment.algorithm.single_item_check.nsigma.Nsigma"
+            "path": "aops_check.core.experiment.algorithm.single_item_check.nsigma.NSigma"
         }
         return data
 
@@ -41,6 +41,10 @@ class NSigma(BaseSingleItemAlgorithm):
         Returns:
             list: abnormal data with timestamp, like [[1658544527, 100], [1658544527, 100]...]
         """
+        if not data:
+            return []
+        self.preprocess(data)
+
         data_time = []
         data_value = []
 
