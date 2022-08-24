@@ -27,7 +27,8 @@ from anteater.model.hybrid_model import HybridModel
 from anteater.model.key_metric_model import KeyMetricModel
 from anteater.model.post_model import PostModel
 from anteater.service.kafka import EntityVariable
-from anteater.utils.common import update_entity_variable, sent_to_kafka, get_kafka_message, update_service_settings
+from anteater.utils.common import update_entity_variable, sent_to_kafka, get_kafka_message, update_service_settings, \
+    update_model_settings
 from anteater.utils.log import Log
 
 log = Log().get_logger()
@@ -62,11 +63,17 @@ def arg_parser():
     parser.add_argument("-d", "--duration",
                         help="The time interval of scheduling anomaly detection task (minutes)",
                         type=int, default=1, required=False)
-    parser.add_argument("-rt", "--retrain",
+    parser.add_argument("-r", "--retrain",
                         help="If retrain the vae model or not",
                         type=str2bool, nargs='?', const=True, default=False, required=False)
-    parser.add_argument("-st", "--sli_time",
-                        help="The sli time threshold", type=int, default=200, required=False)
+    parser.add_argument("-l", "--look_back",
+                        help="Look back window for model training (days)",
+                        type=int, default=4, required=False)
+    parser.add_argument("-t", "--threshold",
+                        help="The model threshold (0, 1), the bigger value, the more strict of anomaly",
+                        type=float, default=0.8, required=False)
+    parser.add_argument("-sli", "--sli_time",
+                        help="The sli time threshold", type=int, default=600, required=False)
     arguments = vars(parser.parse_args())
 
     return arguments
@@ -91,11 +98,11 @@ def anomaly_detection(hybrid_model, key_metric_model, post_model, parser: Dict[s
         y_pred = hybrid_model.predict(df)
         is_abnormal = hybrid_model.is_abnormal(y_pred)
         key_metric_anomalies = key_metric_model.detect_key_metric(utc_now, machine_id)
-        if is_abnormal or any([s for s in key_metric_anomalies if round(s[2]/1000000) > parser["sli_time"]]):
+        if key_metric_anomalies and \
+           (is_abnormal or any([s for s in key_metric_anomalies if round(s[2]/1000000) > parser["sli_time"]])):
             rec_anomalies = post_model.top_n_anomalies(utc_now, machine_id, top_n=30)
             for anomalies in key_metric_anomalies:
-                msg = get_kafka_message(round(utc_now.timestamp()), y_pred.tolist(),
-                                        machine_id, anomalies, rec_anomalies)
+                msg = get_kafka_message(utc_now, y_pred.tolist(), machine_id, anomalies, rec_anomalies)
                 sent_to_kafka(msg)
             log.info(f"END: abnormal events were detected on machine {machine_id}, sent the message to Kafka!")
         else:
@@ -108,6 +115,7 @@ def main():
 
     parser = arg_parser()
     update_service_settings(parser)
+    update_model_settings(parser)
     sub_thread = update_entity_variable()
 
     hybrid_model = HybridModel(model=parser["model"])
@@ -116,7 +124,7 @@ def main():
 
     if parser["retrain"]:
         log.info("Start to re-train the model based on last day metrics dataset!")
-        x = hybrid_model.get_training_data(utc_now)
+        x = hybrid_model.get_training_data(utc_now, look_back=parser["look_back"])
         log.info(f"The shape of training data: {x.shape}")
         hybrid_model.training(x)
 

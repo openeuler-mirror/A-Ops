@@ -57,7 +57,8 @@ class Prometheus:
     @staticmethod
     def fetch(query_url, params: Dict = None) -> Union[List, Dict]:
         """Fetches data from prometheus server by http request"""
-        response = requests.get(query_url, params).json()
+        response = requests.get(query_url, params)
+        response = response.json()
         if response["status"] != 'success':
             log.error(f"Prometheus get data failed, "
                       f"error: {response['error']}, query_url: {query_url}, params: {params}.")
