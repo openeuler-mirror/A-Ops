@@ -18,7 +18,7 @@ from flask import Flask
 from sqlalchemy.orm import scoping
 
 import aops_check
-from aops_utils.restful.status import PARAM_ERROR, TOKEN_ERROR, SUCCEED
+from aops_utils.restful.status import PARAM_ERROR, TOKEN_ERROR, SUCCEED, NO_DATA
 from aops_check.database.dao.result_dao import ResultDao
 
 app = Flask("check")
@@ -138,7 +138,6 @@ class TestResultController(unittest.TestCase):
             'per_page': '5',
             'domain': 'test',
             'level': 'test',
-            'confirmed': 'true',
             'sort': 'time',
             'direction': 'desc'
         }
@@ -146,7 +145,7 @@ class TestResultController(unittest.TestCase):
         check_result_list = [{
             "alert_id": "alert_1",
             "alert_name": "test",
-            "confirmed": 1,
+            "confirmed": False,
             "domain": "test",
             "host_num": 1,
             "level": "test",
@@ -157,7 +156,7 @@ class TestResultController(unittest.TestCase):
             {
                 "alert_id": "alert_2",
                 "alert_name": "test",
-                "confirmed": 1,
+                "confirmed": False,
                 "domain": "test",
                 "host_num": 2,
                 "level": "test",
@@ -192,7 +191,6 @@ class TestResultController(unittest.TestCase):
             'per_page': '5',
             'domain': 'test',
             'level': 'test',
-            'confirmed': 'true',
             'sort': 'time',
             'direction': 'desc'
         }
@@ -200,7 +198,7 @@ class TestResultController(unittest.TestCase):
         check_result_list = [{
             "alert_id": "alert_1",
             "alert_name": "test",
-            "confirmed": 1,
+            "confirmed": False,
             "domain": "test",
             "host_num": 1,
             "level": "test",
@@ -211,7 +209,7 @@ class TestResultController(unittest.TestCase):
             {
                 "alert_id": "alert_2",
                 "alert_name": "test",
-                "confirmed": 1,
+                "confirmed": False,
                 "domain": "test",
                 "host_num": 2,
                 "level": "test",
@@ -246,7 +244,6 @@ class TestResultController(unittest.TestCase):
             'page': '1',
             'domain': 'test',
             'level': 'test',
-            'confirmed': 'true',
             'sort': 'time',
             'direction': 'desc'
         }
@@ -254,7 +251,7 @@ class TestResultController(unittest.TestCase):
         check_result_list = [{
             "alert_id": "alert_1",
             "alert_name": "test",
-            "confirmed": 1,
+            "confirmed": False,
             "domain": "test",
             "host_num": 1,
             "level": "test",
@@ -265,7 +262,7 @@ class TestResultController(unittest.TestCase):
             {
                 "alert_id": "alert_2",
                 "alert_name": "test",
-                "confirmed": 1,
+                "confirmed": False,
                 "domain": "test",
                 "host_num": 2,
                 "level": "test",
@@ -300,7 +297,6 @@ class TestResultController(unittest.TestCase):
             'page': '1',
             'per_page': '5',
             'level': 'test',
-            'confirmed': 'true',
             'sort': 'time',
             'direction': 'desc'
         }
@@ -308,7 +304,7 @@ class TestResultController(unittest.TestCase):
         check_result_list = [{
             "alert_id": "alert_1",
             "alert_name": "test",
-            "confirmed": 1,
+            "confirmed": False,
             "domain": "test1",
             "host_num": 1,
             "level": "test",
@@ -319,7 +315,7 @@ class TestResultController(unittest.TestCase):
             {
                 "alert_id": "alert_2",
                 "alert_name": "test",
-                "confirmed": 1,
+                "confirmed": False,
                 "domain": "test2",
                 "host_num": 2,
                 "level": "test",
@@ -354,7 +350,6 @@ class TestResultController(unittest.TestCase):
             'page': '1',
             'per_page': '5',
             'domain': 'test',
-            'confirmed': 'true',
             'sort': 'time',
             'direction': 'desc'
         }
@@ -362,7 +357,7 @@ class TestResultController(unittest.TestCase):
         check_result_list = [{
             "alert_id": "alert_1",
             "alert_name": "test",
-            "confirmed": 1,
+            "confirmed": False,
             "domain": "test",
             "host_num": 1,
             "level": "test1",
@@ -373,7 +368,7 @@ class TestResultController(unittest.TestCase):
             {
                 "alert_id": "alert_2",
                 "alert_name": "test",
-                "confirmed": 1,
+                "confirmed": False,
                 "domain": "test",
                 "host_num": 2,
                 "level": "test2",
@@ -408,7 +403,6 @@ class TestResultController(unittest.TestCase):
             'page': '1',
             'per_page': '5',
             'domain': 'test',
-            'confirmed': 'true',
             'level': 'test',
             'direction': 'desc'
         }
@@ -416,7 +410,7 @@ class TestResultController(unittest.TestCase):
         check_result_list = [{
             "alert_id": "alert_1",
             "alert_name": "test",
-            "confirmed": 1,
+            "confirmed": False,
             "domain": "test",
             "host_num": 1,
             "level": "test1",
@@ -427,7 +421,7 @@ class TestResultController(unittest.TestCase):
             {
                 "alert_id": "alert_2",
                 "alert_name": "test",
-                "confirmed": 1,
+                "confirmed": False,
                 "domain": "test",
                 "host_num": 2,
                 "level": "test2",
@@ -462,7 +456,6 @@ class TestResultController(unittest.TestCase):
             'page': '1',
             'per_page': '5',
             'domain': 'test',
-            'confirmed': 'true',
             'level': 'test',
             'sort': 'time',
         }
@@ -470,7 +463,7 @@ class TestResultController(unittest.TestCase):
         check_result_list = [{
             "alert_id": "alert_1",
             "alert_name": "test",
-            "confirmed": 1,
+            "confirmed": False,
             "domain": "test",
             "host_num": 1,
             "level": "test1",
@@ -481,7 +474,7 @@ class TestResultController(unittest.TestCase):
             {
                 "alert_id": "alert_2",
                 "alert_name": "test",
-                "confirmed": 1,
+                "confirmed": False,
                 "domain": "test",
                 "host_num": 2,
                 "level": "test2",
@@ -516,7 +509,6 @@ class TestResultController(unittest.TestCase):
             'page': '1',
             'per_page': '5',
             'domain': 'test',
-            'confirmed': 'true',
             'level': 'test',
             'sort': 'time',
         }
@@ -524,7 +516,7 @@ class TestResultController(unittest.TestCase):
         check_result_list = [{
             "alert_id": "alert_1",
             "alert_name": "test",
-            "confirmed": 1,
+            "confirmed": False,
             "domain": "test",
             "host_num": 1,
             "level": "test1",
@@ -535,7 +527,7 @@ class TestResultController(unittest.TestCase):
             {
                 "alert_id": "alert_2",
                 "alert_name": "test",
-                "confirmed": 1,
+                "confirmed": False,
                 "domain": "test",
                 "host_num": 2,
                 "level": "test2",
@@ -568,3 +560,65 @@ class TestResultController(unittest.TestCase):
         resp = client.get(f'/check/result/list?test={mock_param["test"]}', data=mock_param,
                           headers=header_with_token)
         self.assertEqual(PARAM_ERROR, resp.json.get('code'))
+
+    @mock.patch.object(ResultDao, 'query_result_total_count')
+    @mock.patch.object(ResultDao, 'connect')
+    @mock.patch.object(scoping, 'scoped_session')
+    def test_query_result_total_count_should_return_result_list_when_request_with_token(
+            self, mock_session, mock_connect, mock_query):
+        mock_session.return_value = ''
+        mock_connect.return_value = True
+        mock_query.return_value = SUCCEED, {'count': 6}
+        resp = client.get('/check/result/total/count', headers=header_with_token)
+        self.assertEqual(SUCCEED, resp.json.get('code'))
+
+    def test_query_result_total_count_should_return_token_error_when_request_with_no_token(self):
+        resp = client.get('/check/result/total/count')
+        self.assertEqual(TOKEN_ERROR, resp.json.get('code'))
+
+    def test_query_result_total_count_should_return_405_when_request_with_incorrect_method(self):
+        resp = client.post('/check/result/total/count')
+        self.assertEqual(405, resp.status_code)
+
+    @mock.patch.object(ResultDao, 'confirm_check_result')
+    @mock.patch.object(ResultDao, 'connect')
+    @mock.patch.object(scoping, 'scoped_session')
+    def test_confirm_check_result_should_return_succeed_when_input_correct_alert_id(
+            self, mock_session, mock_connect, mock_confirm):
+        mock_session.return_value = ''
+        mock_connect.return_value = True
+        mock_confirm.return_value = SUCCEED
+        mock_param = {'alert_id': "test1"}
+        resp = client.post('/check/result/confirm', json=mock_param, headers=header_with_token)
+        self.assertEqual(SUCCEED, resp.json.get('code'))
+
+    @mock.patch.object(ResultDao, 'confirm_check_result')
+    @mock.patch.object(ResultDao, 'connect')
+    @mock.patch.object(scoping, 'scoped_session')
+    def test_confirm_check_result_should_return_no_data_when_input_alert_id_is_not_in_database(
+            self, mock_session, mock_connect, mock_confirm):
+        mock_session.return_value = ''
+        mock_connect.return_value = True
+        mock_confirm.return_value = NO_DATA
+        mock_param = {'alert_id': "test1"}
+        resp = client.post('/check/result/confirm', json=mock_param, headers=header_with_token)
+        self.assertEqual(NO_DATA, resp.json.get('code'))
+
+    def test_confirm_check_result_should_return_param_error_when_input_alert_id_is_null(self):
+        mock_param = {'alert_id': ""}
+        resp = client.post('/check/result/confirm', json=mock_param, headers=header_with_token)
+        self.assertEqual(PARAM_ERROR, resp.json.get('code'))
+
+    def test_confirm_check_result_should_return_400_when_no_input(self):
+        resp = client.post('/check/result/confirm', headers=header_with_token)
+        self.assertEqual(400, resp.status_code)
+
+    def test_confirm_check_result_should_return_405_when_request_by_other_method(self):
+        mock_param = {'alert_id': "test"}
+        resp = client.get('/check/result/confirm', json=mock_param, headers=header_with_token)
+        self.assertEqual(405, resp.status_code)
+
+    def test_confirm_check_result_should_return_token_error_when_request_with_no_token(self):
+        mock_param = {'alert_id': "test1"}
+        resp = client.post('/check/result/confirm', json=mock_param, headers=header)
+        self.assertEqual(TOKEN_ERROR, resp.json.get('code'))
