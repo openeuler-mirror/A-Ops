@@ -15,6 +15,8 @@
 #ifndef __CONFIG_H__
 #define __CONFIG_H__
 
+#pragma once
+
 #include <stdint.h>
 #include "base.h"
 
@@ -27,7 +29,7 @@ typedef enum {
 } LOG_LEVEL;
 
 typedef struct {
-    char logDirectory[MAX_LOG_DIRECTORY_LEN];
+    char logFileName[PATH_LEN];
     LOG_LEVEL logLevel;
     char bpfPinPath[MAX_PIN_PATH_LEN];
 } GlobalConfig;
@@ -43,15 +45,11 @@ typedef struct {
 
 typedef struct {
     char broker[MAX_KAFKA_BROKER_LEN];
-    char metric_topic[MAX_KAFKA_TOPIC_LEN];
-    char metadata_topic[MAX_KAFKA_TOPIC_LEN];
-    char event_topic[MAX_KAFKA_TOPIC_LEN];
     uint32_t batchNumMessages;
     char compressionCodec[KAFKA_COMPRESSION_CODEC_LEN];
     uint32_t queueBufferingMaxMessages;
     uint32_t queueBufferingMaxKbytes;
     uint32_t queueBufferingMaxMs;
-    KafkaSwitch kafkaSwitch;
 } KafkaConfig;
 
 typedef struct {
@@ -89,8 +87,19 @@ typedef struct  {
 
 typedef struct {
     uint16_t port;
-    uint16_t on;
 } WebServerConfig;
+
+typedef struct {
+    char metricDir[PATH_LEN];
+    char eventDir[PATH_LEN];
+    char metaDir[PATH_LEN];
+    char debugDir[PATH_LEN];
+} LogsConfig;
+
+typedef struct {
+    OutChannelType outChnl;
+    char kafka_topic[MAX_KAFKA_TOPIC_LEN];
+} OutConfig;
 
 typedef struct {
     GlobalConfig *globalConfig;
@@ -101,6 +110,10 @@ typedef struct {
     ExtendProbesConfig *extendProbesConfig;
     IMDBConfig *imdbConfig;
     WebServerConfig *webServerConfig;
+    LogsConfig *logsConfig;
+    OutConfig *metricOutConfig;
+    OutConfig *eventOutConfig;
+    OutConfig *metaOutConfig;
 } ConfigMgr;
 
 ConfigMgr *ConfigMgrCreate(void);

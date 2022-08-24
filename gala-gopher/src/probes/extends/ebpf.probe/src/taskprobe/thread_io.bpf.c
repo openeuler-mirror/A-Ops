@@ -21,9 +21,6 @@
 #include "task_map.h"
 #include "output_task.h"
 
-#define MAX_CPU 8
-#define TASK_REQUEST_MAX 100
-
 #define REQ_OP_BITS 8
 #define REQ_OP_MASK ((1 << REQ_OP_BITS) - 1)
 

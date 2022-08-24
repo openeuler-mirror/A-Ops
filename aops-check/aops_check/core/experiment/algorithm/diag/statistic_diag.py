@@ -56,16 +56,14 @@ class StatisticDiag(Algorithm):
     @property
     def info(self) -> Dict[str, str]:
         data = {
-            "name": "statistic_diag",
+            "algo_name": "statistics_diag",
             "field": "diag",
-            "description": "It's a statistic diagnose method"
+            "description": "It's a statistic diagnose method",
+            "path": "aops_check.core.experiment.algorithm.diag.statistic_diag.StatisticDiag"
         }
         return data
 
-    def get_root(self, candidate: List[str], check_result: Dict[str, List[Dict]]) -> str:
-        """
-        Choose the root host which has the max score
-        """
+    def get_root(self, candidate: List[str], check_result: Dict[str, List[Dict[str, str]]]) -> str:
         root = ""
         max_score = 0
         for host_id in candidate:
@@ -76,24 +74,17 @@ class StatisticDiag(Algorithm):
         return root
 
     @staticmethod
-    def count_fault_score(failure_info: List[Dict], score_map: Optional[Dict] = metric_score) -> int:
-        """
-        Count score in each host, each metric may set a weight with a default score 0.5, it's algorithm is shown as below: 
-        score = metric1 * weight1 + metric2 * weight2 + ...
-        """
+    def count_fault_score(failure_info: List[Dict[str, str]], score_map: Optional[Dict] = metric_score) -> int:
         score = 0
         for failure in failure_info:
-            score += score_map.get(failure['name'], 0.5)
+            score += score_map.get(failure['metric_name'], 0.5)
 
         return score
 
     def count_person_coefficient(self):
         ...
 
-    def get_candidate(self, check_result: Dict[str, List[Dict]]) -> List[str]:
-        """
-        Choose the top-K hosts, which are sorted by number of metrics.
-        """
+    def get_candidate(self, check_result: Dict[str, List[Dict[str, str]]]) -> List[str]:
         # # all hosts are candidates
         if len(check_result) <= self.candidate_num:
             return list(check_result.keys())
@@ -110,22 +101,20 @@ class StatisticDiag(Algorithm):
 
         return [data[1] for data in topk_list]
 
-    def run(self, check_result: Dict[str, List[Dict]]) -> Tuple[str, str, str]:
+    def calculate(self, check_result: Dict[str, List[Dict[str, str]]]) -> Tuple[str, str, str]:
         """
         Execute entry.
 
         Args:
             check_result: e.g.
                 {
-                    "host1": [{"name":"metric1", "label": "label1", "data": []}],
-                    "host2": [{"name":"metric1", "label": "label1", "data": []},
-                              {"name":"metric2", "label": "label1", "data": []}],
-                    "host3": [{"name":"metric2", "label": "label1", "data": []},
-                              {"name":"metric3", "label": "label1", "data": []}]
+                    "host1": [{"metric_name": "metric1", "metric_label": "label1"],
+                    "host2": [{"metric_name": "metric1", "metric_label": "label1"],
+                    "host3": [{"metric_name": "metric1", "metric_label": "label1"]
                 }
 
         Returns:
-            tuple: 'host1', 'metric1', 'label1'
+            tuple: 'host1', 'metric1', 'label1
         """
         candidate = self.get_candidate(check_result)
         root_host = self.get_root(candidate, check_result)

@@ -16,11 +16,12 @@ Author:
 Description: Some common functions are able to use in this project.
 """
 import os
+from datetime import datetime
 from typing import Dict, Any, List, Tuple
 
 from anteater.service.kafka import KafkaConsumer, KafkaProducer, EntityVariable
 from anteater.service.prometheus import Prometheus
-from anteater.utils.config_parser import ServiceSettings, MetricSettings
+from anteater.utils.settings import ServiceSettings, MetricSettings, ModelSettings
 from anteater.utils.log import Log
 
 log = Log().get_logger()
@@ -72,7 +73,13 @@ def update_service_settings(parser: Dict[str, Any]) -> None:
     settings.prometheus_port = parser["prometheus_port"]
 
 
-def get_kafka_message(timestamp: float, y_pred: List, machine_id: str, key_anomalies: Tuple[str, Dict, float],
+def update_model_settings(parser: Dict[str, Any]) -> None:
+    """Updates model settings globally"""
+    settings = ModelSettings()
+    settings.hybrid_model_th = parser["threshold"]
+
+
+def get_kafka_message(utc_now: datetime, y_pred: List, machine_id: str, key_anomalies: Tuple[str, Dict, float],
                       rec_anomalies: List[Tuple[str, Dict, float]]) -> Dict[str, Any]:
     """Generates the Kafka message based the parameters"""
     variable = EntityVariable.variable.copy()
@@ -102,9 +109,10 @@ def get_kafka_message(timestamp: float, y_pred: List, machine_id: str, key_anoma
         recommend_metrics[name] = {"label": label, "score": score}
 
     message = {
-        "Timestamp": timestamp,
+        "Timestamp": round(utc_now.timestamp()),
         "Attributes": {
-            "Entity_ID": entity_id
+            "entity_id": entity_id,
+            "event_id": f"{entity_id}_{utc_now.strftime('%Y_%m_%d_%H_%M_%S')}"
         },
         "Resource": {
             "anomaly_score": anomaly_score,
@@ -123,6 +131,7 @@ def get_kafka_message(timestamp: float, y_pred: List, machine_id: str, key_anoma
         "server_ip": metric_label.get("server_ip", ""),
         "server_port": metric_label.get("server_port", ""),
         "abnormal_metric": metric_id,
+        "event_id": f"{entity_id}_{utc_now.strftime('%Y_%m_%d_%H_%M_%S')}"
     }
 
     return message

@@ -23,7 +23,10 @@ import numpy as np
 import pandas as pd
 
 from anteater.source.metric_loader import MetricLoader
-from anteater.utils.config_parser import MetricSettings
+from anteater.utils.settings import MetricSettings
+from anteater.utils.log import Log
+
+log = Log().get_logger()
 
 
 class KeyMetricModel:
@@ -38,11 +41,11 @@ class KeyMetricModel:
     def predict(x: List) -> float:
         """Predicts anomalous score for the time series values"""
         if isinstance(x, pd.DataFrame):
-            y_pred = x.max(axis=1).to_numpy().flatten()
+            y_pred = x.mean(axis=1).to_numpy().flatten()
         elif isinstance(x, np.ndarray):
-            y_pred = x.max(axis=1).flatten()
+            y_pred = x.mean(axis=1).flatten()
         else:
-            y_pred = max(x)
+            y_pred = np.mean(x)
 
         return y_pred
 
@@ -54,6 +57,9 @@ class KeyMetricModel:
         metric_loader = MetricLoader(tim_start, tim_end)
 
         labels, values = metric_loader.get_metric(self.key_metric, label_name="machine_id", label_value=machine_id)
+
+        if not labels or not values:
+            log.error(f"Key metric {self.key_metric} is null on the target machine {machine_id}!")
 
         scores = []
         for label, value in zip(labels, values):

@@ -16,10 +16,45 @@ import pwd
 import unittest
 from unittest import mock
 
-from aops_agent.tools.util import get_file_info
+from libconf import AttrDict
+from aops_agent.tools.util import get_file_info, change_probe_status
+
+target_probes = (AttrDict([('name', 'test_no_check_1'),
+                           ('command', 'test'),
+                           ('param', ''),
+                           ('switch', 'on')]),
+                 AttrDict([('name', 'test_no_check_2'),
+                           ('command', ''),
+                           ('param', ''),
+                           ('switch', 'off')]),
+                 AttrDict([('name', 'test_with_check_1'),
+                           ('command', ''),
+                           ('param', ''),
+                           ('start_check', ''),
+                           ('check_type', 'count'),
+                           ('switch', 'on')]),
+                 AttrDict([('name', 'test_with_check_2'),
+                           ('command', ''),
+                           ('param', ''),
+                           ('start_check', ''),
+                           ('check_type', 'count'),
+                           ('switch', 'off')]),
+                 AttrDict([('name', 'test_with_check_3'),
+                           ('command', ''),
+                           ('param', ''),
+                           ('start_check', ''),
+                           ('check_type', 'count'),
+                           ('switch', 'auto')]),
+                 AttrDict([('name', 'test_with_check_4'),
+                           ('command', ''),
+                           ('param', ''),
+                           ('start_check', ''),
+                           ('check_type', 'count'),
+                           ('switch', 'auto')]),
+                 )
 
 
-class TestUtils(unittest.TestCase):
+class TestGetFileInfo(unittest.TestCase):
 
     @mock.patch.object(pwd, 'getpwuid')
     @mock.patch.object(grp, 'getgrgid')
@@ -69,3 +104,43 @@ class TestUtils(unittest.TestCase):
             mock_file.side_effect = UnicodeDecodeError('', bytes(), 1, 1, '')
             info = get_file_info(file_path)
         self.assertEqual({}, info)
+
+
+class TestChangeProbeStatus(unittest.TestCase):
+    def test_change_probe_status_should_return_success_list_and_empty_failure_list_when_input_all_right(self):
+        probe_status = {
+            'test_no_check_1': 'off',
+            "test_no_check_2": "on",
+            "test_with_check_1": "auto",
+            "test_with_check_2": "auto",
+            "test_with_check_3": "on",
+            "test_with_check_4": "off"
+        }
+        res, fail_list = change_probe_status(target_probes, probe_status, {'success': []})
+        expect_success_res = list(probe_status.keys())
+        self.assertEqual((expect_success_res, {}), (res['success'], fail_list))
+
+    def test_change_probe_status_should_return_success_list_and_failure_list_when_part_of_input_probe_name_is_not_in_target_probes(
+            self):
+        probe_status = {
+            'test_no_check_1': 'off',
+            "test_no_check_3": "on",
+            "test_with_check_1": "auto",
+            "test_with_check_2": "auto",
+            "test_with_check_3": "on",
+            "test_with_check_5": "off"
+        }
+        res, fail_list = change_probe_status(target_probes, probe_status, {'success': []})
+        expect_success_res = ['test_no_check_1', 'test_with_check_1', 'test_with_check_2', 'test_with_check_3']
+        expect_fail_res = {"test_no_check_3": "on", "test_with_check_5": "off"}
+        self.assertEqual((expect_success_res, expect_fail_res), (res['success'], fail_list))
+
+    def test_change_probe_status_should_return_failure_list_when_input_probe_name_is_not_support_auto(
+            self):
+        probe_status = {
+            'test_no_check_1': 'auto',
+            "test_no_check_2": "auto"
+        }
+        res, fail_list = change_probe_status(target_probes, probe_status, {'success': []})
+        expect_fail_res = {"test_no_check_1": "auto", "test_no_check_2": "auto"}
+        self.assertEqual(expect_fail_res,fail_list)

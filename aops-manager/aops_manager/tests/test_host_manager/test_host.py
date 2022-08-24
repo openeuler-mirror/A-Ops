@@ -69,19 +69,56 @@ class TestHostDatabase(unittest.TestCase):
             "username": "admin",
             "host_group_name": "group2",
             "description": "xxx",
-            "host_count": 3
+            # "host_count": 3
         }
         group_data3 = {
             "username": "admin",
             "host_group_name": "group3",
             "description": "xxx",
-            "host_count": 1
+            # "host_count": 1
         }
         group_data4 = {
             "username": "admin",
             "host_group_name": "group1",
             "description": "xxx",
         }
+        host=[{
+            "username": "admin",
+            "host_name": "host1",
+            "host_group_name": "group2",
+            "host_id": "id1",
+            "public_ip": "127.0.0.1",
+            "management": False,
+            "agent_port": 1122
+        },
+         {
+            "username": "admin",
+            "host_name": "host2",
+            "host_group_name": "group2",
+            "host_id": "id2",
+            "public_ip": "127.0.0.2",
+            "management": False,
+            "agent_port": 1122
+        },
+        {
+            "username": "admin",
+            "host_name": "host3",
+            "host_group_name": "group2",
+            "host_id": "id3",
+            "public_ip": "127.0.0.3",
+            "management": False,
+            "agent_port": 1122
+        },
+        {
+            "username": "admin",
+            "host_name": "host4",
+            "host_group_name": "group3",
+            "host_id": "id4",
+            "public_ip": "127.0.0.4",
+            "management": False,
+            "agent_port": 1122
+        }]
+
         res = self.proxy.add_host_group(group_data1)
         self.assertEqual(res, SUCCEED)
         res = self.proxy.add_host_group(group_data3)
@@ -90,6 +127,8 @@ class TestHostDatabase(unittest.TestCase):
         self.assertEqual(res, SUCCEED)
         res = self.proxy.add_host_group(group_data4)
         self.assertEqual(res, DATA_EXIST)
+        for data in host:
+            self.proxy.add_host(data)
         # ==============get host group=================
         args = {
             "username": "admin",
@@ -189,7 +228,7 @@ class TestHostDatabase(unittest.TestCase):
             "username": "admin",
             "host_group_name": "group2",
             "description": "xxx",
-            "host_count": 0
+            # "host_count": 0
         }
         self.proxy.add_host_group(group_data1)
         self.proxy.add_host_group(group_data2)
@@ -268,7 +307,7 @@ class TestHostDatabase(unittest.TestCase):
         res = self.proxy.get_host_group(args)
         self.assertEqual(res[0], SUCCEED)
         self.assertEqual(res[1]['host_group_infos'], expected_res)
-        
+
         # no such host group
         data = {
             "host_name": "host1",
@@ -281,7 +320,7 @@ class TestHostDatabase(unittest.TestCase):
         }
         res = self.proxy.add_host(data)
         self.assertEqual(res, NO_DATA)
-        
+
         # existed host
         data = {
             "host_name": "host1",

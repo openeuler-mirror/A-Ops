@@ -45,13 +45,13 @@ KafkaMgr *KafkaMgrCreate(const ConfigMgr *configMgr, const char *topic_type)
     }
     if (strcmp(topic_type, "kafka_topic") == 0) {
         /* metric topic */
-        (void)strncpy(mgr->kafkaTopic, configMgr->kafkaConfig->metric_topic, MAX_KAFKA_TOPIC_LEN - 1);
+        (void)strncpy(mgr->kafkaTopic, configMgr->metricOutConfig->kafka_topic, MAX_KAFKA_TOPIC_LEN - 1);
     } else if (strcmp(topic_type, "metadata_topic") == 0) {
         /* metadata topic */
-        (void)strncpy(mgr->kafkaTopic, configMgr->kafkaConfig->metadata_topic, MAX_KAFKA_TOPIC_LEN - 1);
+        (void)strncpy(mgr->kafkaTopic, configMgr->metaOutConfig->kafka_topic, MAX_KAFKA_TOPIC_LEN - 1);
     } else if (strcmp(topic_type, "event_topic") == 0) {
         /* event topic */
-        (void)strncpy(mgr->kafkaTopic, configMgr->kafkaConfig->event_topic, MAX_KAFKA_TOPIC_LEN - 1);
+        (void)strncpy(mgr->kafkaTopic, configMgr->eventOutConfig->kafka_topic, MAX_KAFKA_TOPIC_LEN - 1);
     } else {
         ERROR("input kafka topic_type(%s) error.\n", topic_type);
         free(mgr);

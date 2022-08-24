@@ -1,0 +1,25 @@
+- name: Send register info to manager
+  become: true
+  become_user: root
+  shell: aops_agent register -f /tmp/register.json
+  register: regist_result
+  ignore_errors: true
+
+- name: Delete register.json
+  become: true
+  become_user: root
+  file:
+    path: /tmp/register.json
+    state: absent
+
+- name: Start aops_agent
+  become: true
+  become_user: root
+  service:
+    name: aops-agent
+    state: restarted
+  when: regist_result.stdout == "Agent Register Success"
+
+- name: Verify aops agent is listening on {{ agent_port }}
+  wait_for: host={{ ansible_host }} port={{ agent_port }} delay=10 timeout=20
+  when: regist_result.stdout == "Agent Register Success"

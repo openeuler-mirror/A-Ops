@@ -6,7 +6,6 @@ from scipy.stats import pearsonr
 from scipy.special import expit
 
 from spider.util import logger
-from spider.conf.observe_meta import EntityType
 from spider.conf.observe_meta import RelationType
 from spider.conf.observe_meta import ObserveMetaMgt
 from spider.collector.data_collector import DataCollector
@@ -28,9 +27,10 @@ def _get_metric_obj_type(metric_id: str):
         raise MetadataException('Data source of the metric {} can not be identified.'.format(metric_id))
 
     left = metric_id[len(infer_config.data_agent) + 1:]
-    for obj_type in EntityType:
-        if left.startswith(obj_type.value + "_"):
-            return obj_type.value
+    obsv_types = ObserveMetaMgt().get_observe_types()
+    for obj_type in obsv_types:
+        if left.startswith(obj_type + "_"):
+            return obj_type
 
     raise MetadataException('Entity type of the metric {} can not be supported.'.format(metric_id))
 

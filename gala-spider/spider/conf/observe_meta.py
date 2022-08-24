@@ -224,8 +224,8 @@ def _check_relation_object(data) -> bool:
     requires = data.get("requires", [])
     conflicts = data.get("conflicts", [])
 
-    if not EntityType.check_value(type_):
-        logger.logger.error("Unsupported relation object type: {}".format(type_))
+    if not type_:
+        logger.logger.error("Relation object type can not be empty")
         return False
 
     if not isinstance(matches, list):
@@ -307,7 +307,7 @@ def _check_relation(data) -> bool:
     from_type = data.get("type", "")
     depending_items = data.get("dependingitems", [])
 
-    if not EntityType.check_value(from_type):
+    if not from_type:
         logger.logger.error("From type of the relation must be not empty.")
         return False
 
@@ -323,12 +323,17 @@ def _check_observe_entity(data) -> bool:
         return False
 
     type_ = data.get("type")
+    level = data.get("level")
     keys = data.get("keys")
     labels = data.get("labels", [])
     metrics = data.get("metrics", [])
 
-    if not EntityType.check_value(type_):
-        logger.logger.error("Unsupported entity type: {}.".format(type_))
+    if not type_:
+        logger.logger.error("Entity type can not be empty.")
+        return False
+
+    if level is not None and not TopologyLevelType.check_value(level):
+        logger.logger.error("Unsupported topological level: {}.".format(level))
         return False
 
     if not isinstance(keys, list):
@@ -392,16 +397,11 @@ def check_meta(old_obsv_meta: ObserveMeta, new_obsv_meta: ObserveMeta):
     for k1, k2 in zip(old_obsv_meta.keys, new_obsv_meta.keys):
         if k1 != k2:
             raise MetadataException('Keys of metadata not consistent')
-    # check metrics
-    metric_set = set(old_obsv_meta.metrics)
-    for metric in new_obsv_meta.metrics:
-        if metric in metric_set:
-            raise MetadataException('Metric name {} of metadata duplicate'.format(metric))
 
 
 def merge_meta(old_obsv_meta: ObserveMeta, new_obsv_meta: ObserveMeta) -> ObserveMeta:
     merged_labels = list(set(old_obsv_meta.labels + new_obsv_meta.labels))
-    merged_metrics = old_obsv_meta.metrics + new_obsv_meta.metrics
+    merged_metrics = list(set(old_obsv_meta.metrics + new_obsv_meta.metrics))
     obsv_meta = ObserveMeta(
         type=old_obsv_meta.type,
         keys=old_obsv_meta.keys,
@@ -425,6 +425,9 @@ class ObserveMetaMgt(metaclass=Singleton):
 
     def set_data_agent(self, data_agent):
         self.data_agent = data_agent
+
+    def get_observe_types(self):
+        return list(self.observe_meta_map.keys())
 
     def load_ext_observe_meta_from_yaml(self, observe_path: str) -> bool:
         observe_path = os.path.abspath(observe_path)
@@ -501,9 +504,6 @@ class ObserveMetaMgt(metaclass=Singleton):
         data['type'] = data.get('entity_name')
         if not data['type']:
             return
-        if not EntityType.check_value(data.get('type')):
-            logger.logger.warning('Unsupported entity type {}, ignore it'.format(data.get('type')))
-            return
         table_name = data.get('meta_name')
 
         observe_meta = ObserveMetaMgt._get_observe_meta_from_dict(data)
@@ -556,6 +556,7 @@ class ObserveMetaMgt(metaclass=Singleton):
     @staticmethod
     def _get_observe_meta_from_dict(data: dict) -> ObserveMeta:
         type_ = data.get("type", "")
+        level = data.get("level") or get_entity_topo_level(type_) or ""
         keys = data.get("keys", [])
         labels = data.get("labels", [])
         metrics = data.get("metrics", [])
@@ -566,7 +567,7 @@ class ObserveMetaMgt(metaclass=Singleton):
             keys=keys,
             labels=labels,
             metrics=metrics,
-            level=get_entity_topo_level(type_),
+            level=level,
             version=version
         )
 

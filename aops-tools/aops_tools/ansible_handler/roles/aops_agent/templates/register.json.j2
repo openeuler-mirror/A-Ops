@@ -1,0 +1,10 @@
+{
+  "web_username": "{{ web_username }}",
+  "web_password": "{{ web_password }}",
+  "host_name": "{{ aops_host_name }}",
+  "host_group_name": "{{ host_group_name }}",
+  "manager_ip": "{{ manager_ip }}",
+  "management": {% if management %} true {% else %} false {% endif %},
+  "manager_port": "{{ manager_port }}",
+  "agent_port": "{{ agent_port }}"
+}
