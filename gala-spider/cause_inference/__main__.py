@@ -79,7 +79,7 @@ def main():
     cause_producer = KafkaProducer(bootstrap_servers=[kafka_server])
 
     while True:
-        logger.logger.debug('Start consuming abnormal kpi event...')
+        logger.logger.info('Start consuming abnormal kpi event...')
         kpi_msg = next(kpi_consumer)
         data = json.loads(kpi_msg.value)
         try:
@@ -102,27 +102,31 @@ def main():
         logger.logger.debug('abnormal kpi is: {}'.format(abn_kpi))
         logger.logger.debug('abnormal metrics are: {}'.format(metric_evts))
 
-        causes = []
         try:
-            causes = cause_locating(abn_kpi, metric_evts)
+            cause_res = cause_locating(abn_kpi, metric_evts)
         except InferenceException as ie:
             logger.logger.error(ie)
-        if len(causes) > 0:
-            cause_msg = {
-                'Timestamp': abn_kpi.timestamp,
-                'Atrributes': {},
-                'Resource': {
-                    'abnormal_kpi': abn_kpi.to_dict(),
-                    'cause_metrics': [cause.to_dict() for cause in causes]
-                },
-                'SeverityText': 'WARN',
-                'SeverityNumber': 14,
-                'Body': 'A cause inferring event for an abnormal event',
-            }
-            try:
-                cause_producer.send(infer_kafka_conf.get('topic_id'), json.dumps(cause_msg).encode())
-            except KafkaTimeoutError as ex:
-                logger.logger.error(ex)
+            continue
+
+        attributes = data.get('Attributes', {})
+        cause_msg = {
+            'Timestamp': abn_kpi.timestamp,
+            'event_id': attributes.get('event_id', ''),
+            'Atrributes': {
+                'event_id': attributes.get('event_id', '')
+            },
+            'Resource': cause_res,
+            'SeverityText': 'WARN',
+            'SeverityNumber': 13,
+            'Body': 'A cause inferring event for an abnormal event',
+        }
+        logger.logger.debug(json.dumps(cause_msg, indent=2))
+        try:
+            cause_producer.send(infer_kafka_conf.get('topic_id'), json.dumps(cause_msg).encode())
+        except KafkaTimeoutError as ex:
+            logger.logger.error(ex)
+            continue
+        logger.logger.info('A cause inferring event has been sent to kafka.')
 
 
 if __name__ == '__main__':
