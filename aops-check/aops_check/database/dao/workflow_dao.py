@@ -427,7 +427,7 @@ class WorkflowDao(MysqlProxy, ElasticsearchProxy):
                                             Workflow.workflow_name, Workflow.step) \
             .filter(Workflow.status == status)
 
-        if workflow_query.count():
+        if not workflow_query.count():
             return NO_DATA, result
 
         result = {}

@@ -78,5 +78,5 @@ class EWMA(BaseSingleItemAlgorithm):
                 count += 1
                 continue
             variance += (data[index] - moving_average[index]) ** 2
-        variance /= (len(data) - count+1)
+        variance /= (len(data) - count + 1)
         return variance

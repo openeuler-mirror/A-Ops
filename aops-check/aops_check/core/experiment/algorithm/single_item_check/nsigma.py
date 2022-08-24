@@ -58,7 +58,6 @@ class NSigma(BaseSingleItemAlgorithm):
         threshold2 = ymean + self._n * ystd
 
         abnormal_data = []
-        print("nsigma calculating")
 
         for index in range(0, len(data_value)):
             if not (data_value[index] < threshold1) | (data_value[index] > threshold2):
