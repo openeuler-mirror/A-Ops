@@ -18,17 +18,23 @@ Description:
 import unittest
 from unittest import mock
 from flask import Flask
+from flask_restful import Api
+from flask.blueprints import Blueprint
 
 from aops_utils.restful.status import PARAM_ERROR, TOKEN_ERROR, DATABASE_CONNECT_ERROR, SUCCEED
 
 import aops_check
 from aops_check.conf.constant import CREATE_APP, QUERY_APP, QUERY_APP_LIST
+from aops_check.url import SPECIFIC_URLS
 
+API = Api()
+for view, url in SPECIFIC_URLS['APP_URLS']:
+    API.add_resource(view, url)
 
+CHECK = Blueprint('check', __name__)
 app = Flask("check")
-for blue, api in aops_check.BLUE_POINT:
-    api.init_app(blue)
-    app.register_blueprint(blue)
+API.init_app(CHECK)
+app.register_blueprint(CHECK)
 
 app.testing = True
 client = app.test_client()
