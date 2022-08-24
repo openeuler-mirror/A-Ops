@@ -15,6 +15,8 @@
 #ifndef __BASE_H__
 #define __BASE_H__
 
+#pragma once
+
 #define GALA_GOPHER_INFO(description)   1
 
 #include "common.h"
@@ -53,7 +55,6 @@
 
 // ======== CONFIG ========
 // global config
-#define MAX_LOG_DIRECTORY_LEN 128
 #define MAX_PIN_PATH_LEN 128
 
 // kafka config
@@ -88,6 +89,15 @@ typedef enum {
     PROBE_CHK_CNT = 0,
     PROBE_CHK_MAX
 } ProbeStartCheckType;
+
+// out_channel
+typedef enum {
+    OUT_CHNL_LOGS = 0,
+    OUT_CHNL_KAFKA,
+    OUT_CHNL_WEB_SERVER,
+
+    OUT_CHNL_MAX
+} OutChannelType;
 
 #define GALA_META_DIR_PATH "/opt/gala-gopher/meta"
 #define GALA_CONF_PATH_DEFAULT "/opt/gala-gopher/gala-gopher.conf"

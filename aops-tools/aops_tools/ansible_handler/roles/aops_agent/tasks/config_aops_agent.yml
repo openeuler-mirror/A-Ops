@@ -1,0 +1,11 @@
+---
+- name: Copy register.json
+  become: true
+  become_user: root
+  template: 
+    src: register.json.j2
+    dest: /tmp/register.json
+    owner: root 
+    group: root 
+    mode: 0644 
+

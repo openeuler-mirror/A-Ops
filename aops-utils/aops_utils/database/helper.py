@@ -169,6 +169,8 @@ def sort_and_page(query_result, column, direction, per_page, page):
         query_result = query_result.order_by(direction(column))
 
     if page and per_page:
+        page = int(page)
+        per_page = int(per_page)
         total_page = math.ceil(total_count / per_page)
         query_result = query_result.offset(
             (page - 1) * per_page).limit(per_page)

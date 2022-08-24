@@ -22,14 +22,14 @@ class Algorithm:
     def test(self):
         ...
 
-    def run(self):
+    def calculate(self, **kwargs):
         ...
 
     def evaluate(self):
         ...
 
-    def load(self):
+    def load(self, path, **kwargs):
         ...
 
-    def dump(self):
+    def dump(self, path, **kwargs):
         ...

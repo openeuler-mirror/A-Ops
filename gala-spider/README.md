@@ -54,7 +54,7 @@ gala-spider 项目提供了两个功能模块，它们分别是：
    - 安装
 
      ```
-     yum install gala-spider python3-gala-spider
+     yum install gala-spider
      ```
 
    - 运行
@@ -65,7 +65,21 @@ gala-spider 项目提供了两个功能模块，它们分别是：
 
 #### cause-inference 软件部署
 
-开发中……
+1. 基于rpm包安装
+
+    - 安装
+    
+      ```sh
+      yum install gala-inference
+      ```
+    
+    - 运行
+    
+      ```sh
+      systemctl start gala-inference
+      ```
+    
+      
 
 ### gala-spider 外部依赖软件部署
 
@@ -77,7 +91,23 @@ gala-spider 项目提供了两个功能模块，它们分别是：
 
 我们使用的 arangodb 版本是 3.9 ，arangodb 官方部署文档参见：[arangodb部署](https://www.arangodb.com/docs/3.9/deployment.html) 。
 
-1. 通过 docker 部署
+1. 通过 rpm 部署
+
+   首先，从 openEuler22.09:Epol 源安装 arangodb3 ，
+   
+   ```sh
+   yum install arangodb3
+```
+   
+启动 arangodb3 服务器，
+   
+```sh
+   systemctl start arangodb3
+   ```
+
+   启动之前，可通过配置文件 `/etc/arangodb3/arangod.conf` 修改配置，如修改 `authentication = false` 关闭身份认证。
+   
+2. 通过 docker 部署
 
    ```shell
    docker run -e ARANGO_NO_AUTH=1 -p 192.168.0.1:10000:8529 arangodb/arangodb arangod \
@@ -92,6 +122,8 @@ gala-spider 项目提供了两个功能模块，它们分别是：
    - `-p 192.168.0.1:10000:8529`：建立本地 IP 地址（如 `192.168.0.1` 的 1000 端口）到 arangodb 容器的 8529 端口的端口转发。
 
    详细的部署文档参见：[通过docker部署arangodb](https://www.arangodb.com/docs/3.9/deployment-docker.html)。
+
+   
 
 ## 使用指南
 
@@ -144,6 +176,8 @@ gala-spider 项目提供了两个功能模块，它们分别是：
 ### 接口文档
 
 [拓扑图查询Restful API](docs/guide/zh-CN/api/3d-topo-graph.md)
+
+[根因定位结果API](docs/guide/zh-CN/api/cause-infer.md)
 
 ### 如何新增观测对象
 [如何新增观测对象](docs/how_to_add_new_observe_object.md)

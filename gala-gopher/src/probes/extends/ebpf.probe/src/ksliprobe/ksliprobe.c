@@ -35,6 +35,7 @@
 #include "ksliprobe.h"
 
 #define OO_NAME "sli"
+#define DEFAULT_REDIS_PROC_NAME "redis"
 #define SLI_TBL_NAME "redis_sli"
 
 static volatile sig_atomic_t stop;
@@ -161,6 +162,12 @@ static void load_args(int args_fd, struct probe_params* params)
     struct ksli_args_s args = {0};
 
     args.period = NS(params->period);
+    if (strlen(params->proc_name) > 0) {
+        (void)snprintf(args.redis_proc, MAX_PROC_NAME_LEN, "%s", params->proc_name);
+    } else {
+        (void)snprintf(args.redis_proc, MAX_PROC_NAME_LEN, "%s", DEFAULT_REDIS_PROC_NAME);
+    }
+    args.redis_proc[MAX_REDIS_PROC_NAME_SIZE - 1] = 0;
 
     (void)bpf_map_update_elem(args_fd, &key, &args, BPF_ANY);
 }

@@ -4,7 +4,7 @@ import joblib
 from sklearn.preprocessing import StandardScaler
 
 from anteater.utils.common import get_file_path
-from anteater.utils.config_parser import ModelSettings
+from anteater.utils.settings import ModelSettings
 
 from anteater.utils.log import Log
 

@@ -15,6 +15,8 @@
 #ifndef __RESOURCE_H__
 #define __RESOURCE_H__
 
+#pragma once
+
 #include <stdint.h>
 #include <stdio.h>
 #include <time.h>
@@ -34,6 +36,8 @@
 #include "egress.h"
 
 #include "web_server.h"
+
+#include "logs.h"
 
 typedef struct {
     // config
@@ -62,6 +66,9 @@ typedef struct {
 
     // web server
     WebServer *webServer;
+
+    // logs
+    LogsMgr *logsMgr;
 
     // ctl server
     pthread_t ctl_tid;

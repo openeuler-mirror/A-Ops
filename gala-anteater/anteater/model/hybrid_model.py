@@ -29,7 +29,7 @@ from anteater.model.algorithms.normalization import Normalization
 from anteater.model.algorithms.random_forest import RandomForest
 from anteater.model.algorithms.vae import VAEPredict
 from anteater.source.metric_loader import MetricLoader
-from anteater.utils.config_parser import ModelSettings
+from anteater.utils.settings import ModelSettings
 from anteater.utils.data_process import load_metric_operator, parse_operator, metric_value_to_df
 from anteater.utils.log import Log
 
@@ -44,10 +44,9 @@ class HybridModel:
     def __init__(self, model) -> None:
         """The hybrid model initializer"""
         settings = ModelSettings()
-        props = settings.hybrid_properties
         self.metric_operators = load_metric_operator()
         self.unique_metrics = set([m for m, _ in self.metric_operators])
-        self.threshold = float(props["threshold"])
+        self.threshold = float(settings.hybrid_model_th)
         self.model = model
         self.pipeline = self.select_pipe()
 
@@ -62,7 +61,7 @@ class HybridModel:
                 ("classifier", VAEPredict()),
             ]
         else:
-            raise ArgumentError(f"Unknow model name {self.model}.")
+            raise ArgumentError(f"Unknown model name {self.model}.")
 
     def __get_dataframe(self, tim_start: datetime, tim_end: datetime) \
             -> Tuple[List[str], List[pd.DataFrame]]:
@@ -125,9 +124,9 @@ class HybridModel:
 
         return sum(y_pred) >= len(y_pred) * self.threshold
 
-    def get_training_data(self, utc_now: datetime):
+    def get_training_data(self, utc_now: datetime, look_back=1):
         """Get the training data to support model training"""
-        tim_start = utc_now - timedelta(days=1)
+        tim_start = utc_now - timedelta(days=look_back)
         tim_end = utc_now
         log.info(f"Get training data during {tim_start} to {tim_end}!")
 

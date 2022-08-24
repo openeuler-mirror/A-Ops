@@ -24,6 +24,7 @@
 #include <bpf/bpf.h>
 #include <sys/resource.h>
 #include "elf_reader.h"
+#include "gopher_elf.h"
 #include "object.h"
 #include "common.h"
 
@@ -177,6 +178,14 @@ static __always_inline int set_memlock_rlimit(unsigned long limit)
         } \
     } while (0)
 
+#define UNATTACH_ONELINK(probe_name, bpf_link_p) \
+    do { \
+        int err = bpf_link__destroy(bpf_link_p); \
+        if (err < 0) { \
+            ERROR("Failed to detach BPF" #probe_name " %d\n", err); \
+        } \
+    } while (0)
+
 #define ELF_REAL_PATH(binary_file, elf_abs_path, container_id, elf_path, path_num) \
     do { \
         path_num = get_exec_file_path( #binary_file, (const char *)elf_abs_path, #container_id, elf_path, PATH_NUM); \
@@ -190,8 +199,8 @@ static __always_inline int set_memlock_rlimit(unsigned long limit)
 #define UBPF_ATTACH(probe_name, sec, elf_path, func_name, succeed) \
     do { \
         int err; \
-        uint64_t symbol_offset; \
-        err = resolve_symbol_infos((const char *)elf_path, #func_name, NULL, &symbol_offset); \
+        u64 symbol_offset; \
+        err = gopher_get_elf_symb((const char *)elf_path, #func_name, &symbol_offset); \
         if (err < 0) { \
             ERROR("Failed to get func(" #func_name ") in(%s) offset.\n", elf_path); \
             succeed = 0; \
@@ -215,8 +224,8 @@ static __always_inline int set_memlock_rlimit(unsigned long limit)
 #define UBPF_RET_ATTACH(probe_name, sec, elf_path, func_name, succeed) \
     do { \
         int err; \
-        uint64_t symbol_offset; \
-        err = resolve_symbol_infos((const char *)elf_path, #func_name, NULL, &symbol_offset); \
+        u64 symbol_offset; \
+        err = gopher_get_elf_symb((const char *)elf_path, #func_name, &symbol_offset); \
         if (err < 0) { \
             ERROR("Failed to get func(" #func_name ") in(%s) offset.\n", elf_path); \
             succeed = 0; \
@@ -228,7 +237,7 @@ static __always_inline int set_memlock_rlimit(unsigned long limit)
             probe_name##_skel->progs.ubpf_ret_##sec, true /* uretprobe */, -1, elf_path, (size_t)symbol_offset); \
         err = libbpf_get_error(probe_name##_link[probe_name##_link_current]); \
         if (err) { \
-            ERROR("Failed to attach uprobe(" #sec "): %d\n", err); \
+            ERROR("Failed to attach uretprobe(" #sec "): %d\n", err); \
             succeed = 0; \
             break; \
         } \
@@ -237,13 +246,99 @@ static __always_inline int set_memlock_rlimit(unsigned long limit)
         succeed = 1; \
     } while (0)
 
-static __always_inline __maybe_unused struct perf_buffer* create_pref_buffer(int map_fd, perf_buffer_sample_fn cb)
+#define URETBPF_ATTACH(probe_name, sec, elf_path, func_name, succeed) \
+    do { \
+        int err; \
+        u64 symbol_offset; \
+        err = gopher_get_elf_symb((const char *)elf_path, #func_name, &symbol_offset); \
+        if (err < 0) { \
+            ERROR("Failed to get func(" #func_name ") in(%s) offset.\n", elf_path); \
+            succeed = 0; \
+            break; \
+        } \
+        \
+        /* Attach tracepoint handler */ \
+        probe_name##_link[probe_name##_link_current] = bpf_program__attach_uprobe( \
+            probe_name##_skel->progs.__uprobe_bpf_##sec, false, -1, elf_path, (size_t)symbol_offset); \
+        err = libbpf_get_error(probe_name##_link[probe_name##_link_current]); \
+        if (err) { \
+            ERROR("Failed to attach __uprobe_bpf_(" #sec "): %d\n", err); \
+            succeed = 0; \
+            break; \
+        } \
+        probe_name##_link_current += 1; \
+        probe_name##_link[probe_name##_link_current] = bpf_program__attach_uprobe( \
+            probe_name##_skel->progs.__uprobe_ret_bpf_##sec, true, -1, elf_path, (size_t)symbol_offset); \
+        err = libbpf_get_error(probe_name##_link[probe_name##_link_current]); \
+        if (err) { \
+            ERROR("Failed to attach __uprobe_ret_bpf_(" #sec "): %d\n", err); \
+            succeed = 0; \
+            break; \
+        } \
+        INFO("Success to attach URETBPF_ATTACH(" #probe_name ") to elf: %s\n", elf_path); \
+        probe_name##_link_current += 1; \
+        succeed = 1; \
+    } while (0)
+
+
+#define UBPF_ATTACH_ONELINK(probe_name, sec, elf_path, func_name, bpf_link_p, succeed) \
+    do { \
+        int err; \
+        u64 symbol_offset; \
+        err = gopher_get_elf_symb((const char *)elf_path, #func_name, &symbol_offset); \
+        if (err < 0) { \
+            ERROR("Failed to get func(" #func_name ") in(%s) offset.\n", elf_path); \
+            succeed = 0; \
+            break; \
+        } \
+        \
+        /* Attach tracepoint handler */ \
+        bpf_link_p = bpf_program__attach_uprobe( \
+            probe_name##_skel->progs.ubpf_##sec, false, -1, elf_path, (size_t)symbol_offset); \
+        err = libbpf_get_error(bpf_link_p); \
+        if (err) { \
+            ERROR("Failed to attach uprobe(" #probe_name ") sec(" #sec "): %d\n", err); \
+            succeed = 0; \
+            break; \
+        } \
+        INFO("Success to attach uprobe(" #probe_name ") sec(" #sec "): to elf: %s\n", elf_path); \
+        succeed = 1; \
+    } while (0)
+
+#define UBPF_RET_ATTACH_ONELINK(probe_name, sec, elf_path, func_name, bpf_link_p, succeed) \
+    do { \
+        int err; \
+        u64 symbol_offset; \
+        err = gopher_get_elf_symb((const char *)elf_path, #func_name, &symbol_offset); \
+        if (err < 0) { \
+            ERROR("Failed to get func(" #func_name ") in(%s) offset.\n", elf_path); \
+            succeed = 0; \
+            break; \
+        } \
+        \
+        /* Attach tracepoint handler */ \
+        bpf_link_p = bpf_program__attach_uprobe( \
+            probe_name##_skel->progs.ubpf_ret_##sec, true, -1, elf_path, (size_t)symbol_offset); \
+        err = libbpf_get_error(bpf_link_p); \
+        if (err) { \
+            ERROR("Failed to attach uretprobe(" #probe_name ") sec(" #sec "): %d\n", err); \
+            succeed = 0; \
+            break; \
+        } \
+        INFO("Success to attach uretprobe(" #probe_name ") sec(" #sec ") to elf: %s\n", elf_path); \
+        succeed = 1; \
+    } while (0)
+
+
+static __always_inline __maybe_unused struct perf_buffer* __do_create_pref_buffer(int map_fd,
+                perf_buffer_sample_fn cb, perf_buffer_lost_fn lost_cb)
 {
     struct perf_buffer_opts pb_opts = {};
     struct perf_buffer *pb;
     int ret;
 
     pb_opts.sample_cb = cb;
+    pb_opts.lost_cb = lost_cb;
     pb = perf_buffer__new(map_fd, 8, &pb_opts);
     if (pb == NULL){
         fprintf(stderr, "ERROR: perf buffer new failed\n");
@@ -256,6 +351,17 @@ static __always_inline __maybe_unused struct perf_buffer* create_pref_buffer(int
         return NULL;
     }
     return pb;
+}
+
+static __always_inline __maybe_unused struct perf_buffer* create_pref_buffer2(int map_fd,
+                perf_buffer_sample_fn cb, perf_buffer_lost_fn lost_cb)
+{
+    return __do_create_pref_buffer(map_fd, cb, lost_cb);
+}
+
+static __always_inline __maybe_unused struct perf_buffer* create_pref_buffer(int map_fd, perf_buffer_sample_fn cb)
+{
+    return __do_create_pref_buffer(map_fd, cb, NULL);
 }
 
 static __always_inline __maybe_unused void poll_pb(struct perf_buffer *pb, int timeout_ms)
@@ -279,6 +385,7 @@ struct __bpf_skel_s {
 };
 struct bpf_prog_s {
     struct perf_buffer* pb;
+    struct perf_buffer* pbs[SKEL_MAX_NUM];  // 支持每个探针拥有各自的perf_buffer，目前tcpprobe使用
     struct __bpf_skel_s skels[SKEL_MAX_NUM];
     size_t num;
 };
@@ -318,6 +425,10 @@ static __always_inline __maybe_unused void unload_bpf_prog(struct bpf_prog_s **u
                 }
             }
         }
+
+        if (prog->pbs[i]) {
+            perf_buffer__free(prog->pbs[i]);
+        }
     }
 
     if (prog->pb) {
@@ -326,6 +437,7 @@ static __always_inline __maybe_unused void unload_bpf_prog(struct bpf_prog_s **u
     free_bpf_prog(prog);
     return;
 }
+
 
 #endif
 #endif

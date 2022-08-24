@@ -15,6 +15,8 @@
 #ifndef __WEB_SERVER_H__
 #define __WEB_SERVER_H__
 
+#pragma once
+
 #include <stdint.h>
 #include <semaphore.h>
 #include <microhttpd.h>
@@ -25,7 +27,6 @@
 typedef struct {
     uint16_t port;
 
-    IMDB_DataBaseMgr *imdbMgr;
     struct MHD_Daemon *daemon;
 } WebServer;
 

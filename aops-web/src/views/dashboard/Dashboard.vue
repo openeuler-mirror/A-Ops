@@ -186,11 +186,11 @@ export default {
     CheckResultExpanded
   },
   mounted: function () {
-    this.getRuleCount()
-    this.getHostCount()
-    this.getResultCountTopTen()
-    this.getResultList()
-    this.getCveOverview()
+    // this.getRuleCount()
+    // this.getHostCount()
+    // this.getResultCountTopTen()
+    // this.getResultList()
+    // this.getCveOverview()
   },
   data () {
     return {

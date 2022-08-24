@@ -23,12 +23,14 @@
           </a-input>
         </a-form-item>
         <a-form-item label="REPO内容">
-          <a-textarea
-            v-decorator="['repoData',{rules: [{ required: true, message: '请输入REPO描述' }]}]"
-            :rows="16"
-            placeholder="请输入REPO内容"
-          />
-          <a-button class="download-template" @click="handleGetTemplate">下载模板</a-button>
+          <div>
+            <a-textarea
+              v-decorator="['repoData',{rules: [{ required: true, message: '请输入REPO描述' }]}]"
+              :rows="16"
+              placeholder="请输入REPO内容"
+            />
+            <a-button class="download-template" @click="handleGetTemplate">下载模板</a-button>
+          </div>
         </a-form-item>
         <a-form-item label="上传模板文件" class="upload-row">
           <uploader
@@ -140,7 +142,7 @@
     position: absolute;
     width: 70px;
     padding: 0 4px;
-    bottom: 270px;
+    top: 35px;
     height: 24px;
     left: -80px;
 }

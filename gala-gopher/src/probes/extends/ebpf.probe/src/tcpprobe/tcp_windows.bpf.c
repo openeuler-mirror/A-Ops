@@ -44,12 +44,11 @@ static __always_inline void report_windows(void *ctx, struct tcp_metrics_s *metr
     (void)bpf_perf_event_output(ctx, &tcp_output, BPF_F_CURRENT_CPU, metrics, sizeof(struct tcp_metrics_s));
 
     metrics->report_flags &= ~TCP_PROBE_WINDOWS;
-    __builtin_memset(&(metrics->win_stats), 0x0, sizeof(metrics->win_stats));
+    //__builtin_memset(&(metrics->win_stats), 0x0, sizeof(metrics->win_stats));
 }
 
 static void get_tcp_wnd(struct sock *sk, struct tcp_windows* stats)
 {
-    u32 tmp;
     struct tcp_sock *tcp_sk = (struct tcp_sock *)sk;
 
     u32 write_seq = _(tcp_sk->write_seq);
@@ -59,28 +58,55 @@ static void get_tcp_wnd(struct sock *sk, struct tcp_windows* stats)
     u32 rcv_wnd = _(tcp_sk->rcv_wnd);
 
     if (write_seq > snd_nxt) {
-        stats->tcpi_notsent_bytes = max(write_seq - snd_nxt, stats->tcpi_notsent_bytes);
+        stats->tcpi_notsent_bytes = write_seq - snd_nxt;
     }
 
     if (snd_nxt > snd_una) {
-        stats->tcpi_notack_bytes = max(snd_nxt - snd_una, stats->tcpi_notack_bytes);
+        stats->tcpi_notack_bytes = snd_nxt - snd_una;
     }
 
-    stats->tcpi_snd_wnd = min_zero(stats->tcpi_snd_wnd, snd_wnd);
-    stats->tcpi_rcv_wnd = min_zero(stats->tcpi_rcv_wnd, rcv_wnd);
-
-    tmp = _(tcp_sk->reordering);
-    stats->tcpi_reordering = max(stats->tcpi_reordering, tmp);
-
-    tmp = _(tcp_sk->snd_cwnd);
-    stats->tcpi_snd_cwnd = min_zero(stats->tcpi_snd_cwnd, tmp);
+    stats->tcpi_snd_wnd = snd_wnd;
+    stats->tcpi_rcv_wnd = rcv_wnd;
+    stats->tcpi_reordering = _(tcp_sk->reordering);
+    stats->tcpi_snd_cwnd = _(tcp_sk->snd_cwnd);
 
     return;
 }
 
+static void set_last_win_stats(struct tcp_windows* stats, struct tcp_windows* last_stats)
+{
+    __builtin_memcpy(last_stats, stats, sizeof(struct tcp_windows));
+}
+
+static int is_win_stats_changed(struct tcp_windows* stats, struct tcp_windows* last_stats)
+{
+    if (stats->tcpi_notsent_bytes != last_stats->tcpi_notsent_bytes) {
+        return 1;
+    }
+    if (stats->tcpi_notack_bytes != last_stats->tcpi_notack_bytes) {
+        return 1;
+    }
+    if (stats->tcpi_snd_wnd != last_stats->tcpi_snd_wnd) {
+        return 1;
+    }
+    if (stats->tcpi_rcv_wnd != last_stats->tcpi_rcv_wnd) {
+        return 1;
+    }
+    if (stats->tcpi_reordering != last_stats->tcpi_reordering) {
+        return 1;
+    }
+    if (stats->tcpi_snd_cwnd != last_stats->tcpi_snd_cwnd) {
+        return 1;
+    }
+
+    return 0;
+}
+
+
 KRAWTRACE(tcp_rcv_space_adjust, bpf_raw_tracepoint_args)
 {
     struct tcp_metrics_s *metrics;
+    struct tcp_windows last_win_stats = {0};
     struct sock *sk = (struct sock*)ctx->args[0];
     u32 pid __maybe_unused = bpf_get_current_pid_tgid();
 
@@ -91,8 +117,11 @@ KRAWTRACE(tcp_rcv_space_adjust, bpf_raw_tracepoint_args)
 
     metrics = get_tcp_metrics(sk);
     if (metrics) {
+        set_last_win_stats(&(metrics->win_stats), &last_win_stats);
         get_tcp_wnd(sk, &(metrics->win_stats));
-        report_windows(ctx, metrics);
+        if (is_win_stats_changed(&(metrics->win_stats), &last_win_stats)) {
+            report_windows(ctx, metrics);
+        }
     }
 }
 

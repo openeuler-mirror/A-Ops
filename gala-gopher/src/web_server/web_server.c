@@ -16,11 +16,11 @@
 #include <stdint.h>
 #include <stdlib.h>
 #include <string.h>
-#include <sys/eventfd.h>
+#include <errno.h>
+#include <fcntl.h>
+#include <sys/stat.h>
 #include "web_server.h"
 
-#define MAX_WEBPAGE_BUFFER_SIZE (10 * 1024 * 1024)     // 10 MB
-char g_buffer[MAX_WEBPAGE_BUFFER_SIZE];
 
 #if GALA_GOPHER_INFO("inner func")
 static int WebRequestCallback(void *cls,
@@ -43,9 +43,10 @@ static int WebRequestCallback(void *cls,
                               void **ptr)
 {
     static int dummy;
-    IMDB_DataBaseMgr *imdbMgr = (IMDB_DataBaseMgr *)cls;
+    char log_file_name[256];
     struct MHD_Response *response;
-    int ret, buf_len;
+    int ret, fd;
+    struct stat buf;
 
     if (strcmp(method, "GET") != 0) {
         return MHD_NO;
@@ -61,14 +62,28 @@ static int WebRequestCallback(void *cls,
         return MHD_NO;
     }
 
-    ret = IMDB_DataBase2Prometheus(imdbMgr, g_buffer, MAX_WEBPAGE_BUFFER_SIZE, &buf_len);
-    if (ret < 0) {
+    if (ReadMetricsLogs(log_file_name) < 0) {
+        fprintf(stderr, "Failed to get metric log filename.\n");
         return MHD_NO;
     }
-    response = MHD_create_response_from_buffer(buf_len, (void *)g_buffer, MHD_RESPMEM_PERSISTENT);
+
+    fd = open(log_file_name, O_RDONLY);
+    if (fd < 0) {
+        fprintf(stderr, "Failed to open '%s': %s\n", log_file_name, strerror(errno));
+        return MHD_NO;
+    }
+    if ((fstat(fd, &buf) == -1) || !S_ISREG(buf.st_mode)) {
+        (void)close(fd);
+        return MHD_NO;
+    }
+
+    response = MHD_create_response_from_fd((u64)buf.st_size, fd);
     if (response == NULL) {
+        (void)close(fd);
         return MHD_NO;
     }
+
+    RemoveMetricsLogs(log_file_name);
 
     ret = MHD_add_response_header(response, MHD_HTTP_HEADER_CONTENT_TYPE, "text/plain");
     if (ret == MHD_NO) {
@@ -120,7 +135,7 @@ int WebServerStartDaemon(WebServer *webServer)
                                          NULL,
                                          NULL,
                                          &WebRequestCallback,
-                                         webServer->imdbMgr,
+                                         NULL,
                                          MHD_OPTION_END);
     if (webServer->daemon == NULL) {
         return -1;

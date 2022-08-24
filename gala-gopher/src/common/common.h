@@ -71,6 +71,10 @@
     #define TIME_STRING_LEN     32
 #endif
 
+#ifndef PERF_MAX_STACK_DEPTH
+#define PERF_MAX_STACK_DEPTH        64
+#endif
+
 void debug_logs(const char* format, ...);
 void info_logs(const char* format, ...);
 void warn_logs(const char* format, ...);
@@ -114,7 +118,7 @@ static inline int __debug_printf(const char *format, ...)
 #endif
 
 #ifndef MAX_CPU
-#define MAX_CPU 8
+#define MAX_CPU 128
 #endif
 
 #define NS(sec)  ((__u64)(sec) * 1000000000)

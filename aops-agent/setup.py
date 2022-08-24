@@ -28,7 +28,7 @@ setup(
     install_requires=INSTALL_REQUIRES,
     packages=find_packages(),
     data_files=[
-        ('/etc/aops', ['conf/agent.conf', 'conf/agent_token.json']),
+        ('/etc/aops', ['conf/agent.conf']),
         ('/usr/lib/systemd/system', ['aops-agent.service']),
     ],
     package_data={'': ['swagger/swagger.yaml']},

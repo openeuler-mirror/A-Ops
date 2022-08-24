@@ -135,9 +135,13 @@ class ModelSettings(Settings):
         self.load(file_path)
 
     @property
-    @validate_properties("HybridModel")
-    def hybrid_properties(self) -> dict:
-        return dict(self.config["HybridModel"])
+    @validate_properties("HybridModel", "threshold")
+    def hybrid_model_th(self):
+        return self.config["HybridModel"]["threshold"]
+
+    @hybrid_model_th.setter
+    def hybrid_model_th(self, value):
+        self.config["HybridModel"]["threshold"] = str(value)
 
     @property
     @validate_properties("RandomForest")

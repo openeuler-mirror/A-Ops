@@ -29,70 +29,85 @@ paths:
             $ref: "#/definitions/get_host_info_rsp"
       x-swagger-router-controller: "aops_agent.controllers.agent_controller"
   /agent/plugin/start:
-    get:
+    post:
       tags:
-        - "agent"
-      description: "启动插件。暂时不支持指定配置文件启动"
-      operationId: "start_plugin"
+        - plugin
+      description: 启动插件。暂时不支持指定配置文件启动
+      operationId: start_plugin
       parameters:
-        - name: "plugin_name"
-          in: "query"
-          description: "插件名"
+        - name: plugin_name
+          in: query
           required: true
-          type: "string"
+          description: 插件名
+          type: string
+        - name: access_token
+          in: header
+          description: 授权码
+          type: string
+          required: true
       responses:
-        "200":
-          description: "主进程PID"
+        '200':
+          description: ''
           schema:
-            type: "string"
+            type: object
+            properties:
+              code:
+                type: integer
+              msg:
+                type: string
       x-swagger-router-controller: "aops_agent.controllers.plugin_controller"
   /agent/plugin/stop:
-    get:
+    post:
       tags:
-        - "agent"
-      description: "停止插件"
-      operationId: "stop_plugin"
+        - plugin
+      description: 停止插件
+      operationId: stop_plugin
       parameters:
-        - name: "plugin_name"
-          in: "query"
-          description: "插件名"
+        - name: plugin_name
+          in: query
           required: true
-          type: "string"
+          description: 插件名
+          type: string
+        - name: access_token
+          in: header
+          description: 授权码
+          type: string
+          required: true
       responses:
-        "200":
-          description: ""
+        '200':
+          description: ''
           schema:
-            type: "string"
+            type: object
+            properties:
+              code:
+                type: integer
+              msg:
+                type: string
       x-swagger-router-controller: "aops_agent.controllers.plugin_controller"
   /agent/collect/items/change:
     post:
       tags:
-        - "agent"
-      description: "改变agent中各插件的采集项 。\n插件名称放在外面一层"
-      operationId: "change_collect_items"
+        - plugin
+      description: |-
+        改变agent中各插件的采集项状态
+      operationId: change_collect_items
       parameters:
-        - in: "body"
-          name: "collect_items_status"
-          description: "修改的采集项信息"
+        - name: collect_items_status
+          in: body
           required: true
+          description: 修改的采集项信息
           schema:
-            $ref: "#/definitions/agent_collect_items_change"
+            $ref: '#/definitions/resp_collect_items_change'
+        - name: access_token
+          in: header
+          description: 授权码
+          type: string
+          required: true
       responses:
-        "200":
-          description: "返回设置文件/配置失败的列表"
+        '200':
+          description: '返回设置文件/配置失败的列表'
           schema:
-            type: "object"
-            example:
-              plugin1:
-                - "failure1"
-                - "failure2"
-              plugin2:
-                - "failure1"
-                - "failure2"
-            additionalProperties:
-              type: "array"
-              items:
-                type: "string"
+            $ref: '#/definitions/resp_collect_items_change'
       x-swagger-router-controller: "aops_agent.controllers.plugin_controller"
   /agent/plugin/info:
     get:
@@ -110,9 +125,7 @@ paths:
         '200':
           description: 获取插件运行信息响应
           schema:
-            type: array
-            items:
-              $ref: '#/definitions/GetAgentPluginInfoRsp'
+            $ref: '#/definitions/resp_plugin_info'
         '400':
           description: 错误响应
           schema:
@@ -133,7 +146,7 @@ paths:
         '200':
           description: 获取agent当前运行的应用
           schema:
-            $ref: '#/definitions/get_application_info_rsp'
+            $ref: '#/definitions/resp_application_info'
       x-swagger-router-controller: "aops_agent.controllers.agent_controller"
   /agent/file/collect:
     post:
@@ -162,7 +175,7 @@ paths:
         '200':
           description: 返回请求文件内容主体
           schema:
-            $ref: '#/definitions/collect_file_rsp'
+            $ref: '#/definitions/resp_collect_file'
       x-swagger-router-controller: "aops_agent.controllers.agent_controller"
 definitions:
   ErrorRsp:
@@ -201,80 +214,88 @@ definitions:
         - "kernel"
         - "os_version"
         - "bios_version"
-  collect_items:
-    type: "object"
-    description: "各插件采集的数据项信息。对gopher来讲是探针信息，对fluentd来讲是文件名/路径"
-    example:
-      gopher:
-        probe1:
-          - "info1"
-          - "info2"
-    additionalProperties:
-      type: "object"
-      additionalProperties:
-        type: "string"
-  agent_collect_items_change:
-    description: 更改agen及已安装插件的采集项状态。
-    type: object
-    additionalProperties:
-      additionalProperties:
+  resp_collect_items_change:
+    description: 采集状态修改结果
+    properties:
+      code:
+        type: integer
+      msg:
         type: string
-    example:
-      fluentd:
-        collectconfig1: start
-        collectconfig2: start
-        collectconfig3: start
-      gopher:
-        probe1: start
-        probe2: start
-        probe3: start
-  GetAgentPluginInfoRsp:
+      resp:
+        additionalProperties:
+          properties:
+            success:
+              type: array
+              items:
+                type: string
+            failure:
+              type: array
+              items:
+                type: string
+  resp_plugin_info:
     description: 获取agent插件信息响应
     properties:
-      plugin_name:
+      code:
+        type: integer
+      msg:
         type: string
-      is_installed:
-        type: boolean
-        description: 是否安装
-      status:
-        type: string
-        description: 运行状态
-      collect_items:
-        description: 采集项信息
+      resp:
         type: array
         items:
+          type: object
           properties:
-            probe_name:
+            plugin_name:
+              description: 插件信息
+              properties:
+                is_installed:
+                  type: boolean
+                  description: 是否安装
+                status:
+                  type: string
+                  description: 运行状态
+                resource:
+                  description: 资源占用值
+                  type: array
+                  items:
+                    type: object
+                    properties:
+                      name:
+                        type: string
+                      limit_value:
+                        type: string
+                      current_value:
+                        type: string
+                collect_items:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        probe_name:
+                          type: string
+                        probe_status:
+                          type: string
+                        auto_support:
+                          type: boolean
+          required:
+            - plugin_name
+            - collect_items
+            - resource
+            - is_installed
+            - status
+  resp_application_info:
+    description: 目标应用运行信息
+    properties:
+      code:
+        type: integer
+      msg:
+        type: string
+      resp:
+        properties:
+          running:
+            type: array
+            items:
               type: string
-            probe_status:
-              type: string
-      resource:
-        description: 资源占用值
-        type: array
-        items:
-          properties:
-            name:
-              type: string
-            limit_value:
-              type: string
-            current_value:
-              type: string
-    required:
-      - plugin_name
-      - collect_items
-      - resource
-      - is_installed
-      - status
-  get_application_info_rsp:
-    description: 目标应用运行状态
-    additionalProperties:
-      type: string
-    example:
-        docker: active
-        nginx: inactive
-        gopher: active
-        mysql: active
-  collect_file_rsp:
+  resp_collect_file:
     properties:
       code:
         type: integer

@@ -18,33 +18,24 @@ Description:
 from typing import List
 
 from aops_check.errors.startup_error import StartupError
+from aops_check.utils.register import Register
 
 
-class Mode:
+class Mode(Register):
     """
     It's a base mode class which realizes register function for check mode.
     """
     def __init__(self):
-        self.__dict = {}
-
-    def register(self, target: str) -> 'add':
-        def add(key, value):
-            self.__dict[key] = value
-            return value
-
-        if callable(target):
-            raise ValueError("register by method call is not support")
-
-        return lambda x: add(target, x)
+        super().__init__()
 
     def build(self, name: str) -> 'Mode':
         if name not in self.supported_mode:
             raise StartupError(name, self.supported_mode)
-        return self.__dict[name]
+        return self.dict[name]
 
     @property
     def supported_mode(self) -> List[str]:
-        return list(self.__dict.keys())
+        return list(self.dict.keys())
 
     @staticmethod
     def run():

@@ -45,7 +45,7 @@ static __always_inline void report_rtt(void *ctx, struct tcp_metrics_s *metrics)
     (void)bpf_perf_event_output(ctx, &tcp_output, BPF_F_CURRENT_CPU, metrics, sizeof(struct tcp_metrics_s));
 
     metrics->report_flags &= ~TCP_PROBE_RTT;
-    __builtin_memset(&(metrics->rtt_stats), 0x0, sizeof(metrics->rtt_stats));
+    //__builtin_memset(&(metrics->rtt_stats), 0x0, sizeof(metrics->rtt_stats));
 }
 
 static void get_tcp_rtt(struct sock *sk, struct tcp_rtt* stats)
@@ -54,11 +54,11 @@ static void get_tcp_rtt(struct sock *sk, struct tcp_rtt* stats)
     struct tcp_sock *tcp_sk = (struct tcp_sock *)sk;
 
     tmp = _(tcp_sk->srtt_us) >> 3;  // microseconds to milliseconds
-    stats->tcpi_srtt = max(stats->tcpi_srtt, tmp);
+    stats->tcpi_srtt = tmp;
 
     tmp = _(tcp_sk->rcv_rtt_est.rtt_us);
     tmp = tmp >> 3; // microseconds to milliseconds
-    stats->tcpi_rcv_rtt = max(stats->tcpi_rcv_rtt, tmp);
+    stats->tcpi_rcv_rtt = tmp;
     return;
 }
 

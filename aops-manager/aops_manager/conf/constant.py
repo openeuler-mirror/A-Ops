@@ -37,4 +37,4 @@ ROUTE_AGENT_COLLECT_FILE = '/v1/agent/file/collect'
 
 # check
 CHECK_IDENTIFY_SCENE = "/check/scene/identify"
-
+CHECK_WORKFLOW_HOST_EXIST = '/check/workflow/host/exist'

@@ -20,13 +20,19 @@ const routeMap = {
         title: 'menu.assests',
         path: '/assests',
         children: {
-            HostsManagement: {
+            hostView: {
                 title: 'menu.assests.hosts-management',
-                path: '/assests/hosts-management'
-            },
-            CreateHost: {
-                title: 'menu.assests.create-host',
-                path: '/assests/hosts-management/host-create'
+                path: '/assests/hosts-management',
+                children: {
+                    HostsManagement: {
+                        title: 'menu.assests.hosts-management',
+                        path: '/assests/hosts-management'
+                    },
+                    CreateHost: {
+                        title: 'menu.assests.create-host',
+                        path: '/assests/hosts-management/host-create'
+                    }
+                }
             }
         }
     },
@@ -212,61 +218,114 @@ export const asyncRouterMap = [
                 },
                 children: [
                     {
-                        path: routeMap.assests.children.HostsManagement.path,
-                        name: 'HostsManagement',
-                        component: () =>
-                            import('@/views/assests/HostManagement'),
+                        path: routeMap.assests.children.hostView.path,
+                        name: 'hostView',
+                        redirect:
+                            routeMap.assests.children.hostView.children
+                                .HostsManagement.path,
+                        component: RouteView,
+                        hideChildrenInMenu: true,
                         meta: {
-                            title:
-                                routeMap.assests.children.HostsManagement.title,
+                            title: routeMap.assests.children.hostView.children
+                                .HostsManagement.title,
                             permission: ['assests']
-                        }
-                    },
-                    {
-                        path: routeMap.assests.children.CreateHost.path,
-                        name: 'CreateHost',
-                        hidden: true,
-                        component: () => import('@/views/assests/HostEdition'),
-                        meta: {
-                            title: routeMap.assests.children.CreateHost.title,
-                            permission: ['assests'],
-                            diyBreadcrumb: [
-                                {
-                                    breadcrumbName: routeMap.index.title,
-                                    path: routeMap.index.path
-                                },
-                                {
-                                    breadcrumbName: routeMap.assests.title,
-                                    path: routeMap.assests.path
-                                },
-                                {
-                                    breadcrumbName:
-                                        routeMap.assests.children
+                        },
+                        children: [
+                            {
+                                path: routeMap.assests.children.hostView.children
+                                    .HostsManagement.path,
+                                name: 'HostsManagement',
+                                hidden: true,
+                                component: () =>
+                                    import('@/views/assests/HostManagement'),
+                                meta: {
+                                    title:
+                                        routeMap.assests.children.hostView.children
                                             .HostsManagement.title,
-                                    path:
-                                        routeMap.assests.children
-                                            .HostsManagement.path
-                                },
-                                {
-                                    breadcrumbName:
-                                        routeMap.assests.children.CreateHost
-                                            .title,
-                                    path:
-                                        routeMap.assests.children.CreateHost
-                                            .path
+                                    permission: ['assests'],
+                                    diyBreadcrumb: [
+                                        {
+                                            breadcrumbName:
+                                                routeMap.index.title,
+                                            path: routeMap.index.path
+                                        },
+                                        {
+                                            breadcrumbName:
+                                                routeMap.assests.title,
+                                            path: routeMap.assests.path
+                                        },
+                                        {
+                                            breadcrumbName:
+                                                routeMap.assests.children
+                                                    .hostView.children
+                                                    .HostsManagement.title,
+                                            path:
+                                                routeMap.assests.children
+                                                    .hostView.children
+                                                    .HostsManagement.path
+                                        }
+                                    ]
                                 }
-                            ]
-                        }
-                    },
-                    {
-                        path: '/assests/host/edit/:hostId',
-                        name: 'EditHost',
-                        hidden: true,
-                        component: () => import('@/views/assests/HostEdition'),
-                        meta: {
-                            title: 'menu.assests.edit-host',
-                            permission: ['assests']
-                        }
+                            },
+                            {
+                                path: '/assests/host/detail/:hostId',
+                                name: 'hostDetail',
+                                hidden: true,
+                                component: () => import('@/views/assests/HostDetail'),
+                                meta: {
+                                    title: 'menu.assests.host-detail',
+                                    permission: ['assests']
+                                }
+                            },
+                            {
+                                path: routeMap.assests.children.hostView.children
+                                    .CreateHost.path,
+                                name: 'CreateHost',
+                                hidden: true,
+                                component: () => import('@/views/assests/HostEdition'),
+                                meta: {
+                                    title: routeMap.assests.children.hostView.children
+                                        .CreateHost.title,
+                                    permission: ['assests'],
+                                    diyBreadcrumb: [
+                                        {
+                                            breadcrumbName: routeMap.index.title,
+                                            path: routeMap.index.path
+                                        },
+                                        {
+                                            breadcrumbName: routeMap.assests.title,
+                                            path: routeMap.assests.path
+                                        },
+                                        {
+                                            breadcrumbName:
+                                                routeMap.assests.children.hostView.children
+                                                    .HostsManagement.title,
+                                            path:
+                                                routeMap.assests.children.hostView.children
+                                                    .HostsManagement.path
+                                        },
+                                        {
+                                            breadcrumbName:
+                                                routeMap.assests.children.hostView.children
+                                                .CreateHost.title,
+                                            path:
+                                                routeMap.assests.children.hostView.children
+                                                .CreateHost.path
+                                        }
+                                    ]
+                                }
+                            },
+                            {
+                                path: '/assests/host/edit/:hostId',
+                                name: 'EditHost',
+                                hidden: true,
+                                component: () => import('@/views/assests/HostEdition'),
+                                meta: {
+                                    title: 'menu.assests.edit-host',
+                                    permission: ['assests']
+                                }
+                            }
+                        ]
                     },
                     {
                         path: '/assests/host-group-management',

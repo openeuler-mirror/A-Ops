@@ -32,8 +32,9 @@ typedef struct {
     ProbeSwitch probeSwitch;
     Fifo *fifo;
     pthread_t tid;
-    char is_running;
-    char rsvd[3];
+    char is_running;    // probe switch, 1: turn on / 0: turn off
+    char is_exist;      // probe process is 1: exist / 0: not exist
+    char rsvd[2];
 } ExtendProbe;
 
 typedef struct {
