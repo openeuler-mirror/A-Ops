@@ -50,6 +50,7 @@ static void print_bpf_output(void *ctx, int cpu, void *data, __u32 size)
         pv->signal,
         pv->killed_pid,
         pv->comm);
+    (void)fflush(stdout);
 }
 
 

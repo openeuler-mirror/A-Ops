@@ -436,6 +436,7 @@ static void output_blk_metrics(void *ctx, int cpu, void *data, __u32 size)
         bdata->pc_stats.mark_buffer_dirty,
         bdata->pc_stats.load_page_cache,
         bdata->pc_stats.mark_page_dirty);
+    (void)fflush(stdout);
 }
 
 int main(int argc, char **argv)

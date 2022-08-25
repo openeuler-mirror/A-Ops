@@ -189,8 +189,9 @@ err:
 
 static ELF_CB_RET __search_symbs(const char *symb, u64 addr_start, u64 size, void *ctx)
 {
-    const struct elf_symb_s* target = (const struct elf_symb_s *)ctx;
+    struct elf_symb_s* target = (struct elf_symb_s *)ctx;
     if (target->symb && !strcmp(symb, target->symb)) {
+        target->start_addr = addr_start;
         return ELF_SYMB_CB_BREAK;   // Searched break iter.
     }
     return ELF_SYMB_CB_OK;
