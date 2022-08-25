@@ -20,7 +20,8 @@ SET(WEBSERVER_DIR  ${SRC_DIR}/web_server)
 
 SET(LIBRDKAFKA_DIR /usr/include/librdkafka)
 
-SET(CMAKE_C_FLAGS "-g")
+SET(CMAKE_C_FLAGS "-g -DUTEST")
+SET(CMAKE_CXX_FLAGS "-g -DUTEST")
 
 ADD_EXECUTABLE(${EXECUTABLE_TARGET}
     main.c
@@ -29,6 +30,7 @@ ADD_EXECUTABLE(${EXECUTABLE_TARGET}
     test_meta.c
     test_probe.c
     test_imdb.c
+    test_logs.c
     ${COMMON_DIR}/args.c
     ${CONFIG_DIR}/config.c
     ${EGRESS_DIR}/egress.c
@@ -39,6 +41,7 @@ ADD_EXECUTABLE(${EXECUTABLE_TARGET}
     ${PROBE_DIR}/probe.c
     ${PROBE_DIR}/extend_probe.c
     ${IMDB_DIR}/imdb.c
+    ${IMDB_DIR}/metrics.c
     ${WEBSERVER_DIR}/web_server.c
 
     ${COMMON_DIR}/util.c

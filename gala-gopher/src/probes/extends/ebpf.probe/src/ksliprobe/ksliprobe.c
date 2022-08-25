@@ -56,6 +56,10 @@ static void report_sli_event(struct msg_event_data_t *msg_evt_data)
     unsigned char ser_ip_str[INET6_ADDRSTRLEN];
     unsigned char cli_ip_str[INET6_ADDRSTRLEN];
 
+    if (params.logs == 0) {
+        return;
+    }
+
     entityId[0] = 0;
     (void)snprintf(entityId, __ENTITY_ID_LEN, "%d_%d",
         msg_evt_data->conn_id.tgid,

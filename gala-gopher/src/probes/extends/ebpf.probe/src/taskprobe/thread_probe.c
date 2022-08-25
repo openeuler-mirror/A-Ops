@@ -59,6 +59,10 @@ static void report_task_metrics(struct task_data *data)
     char entityId[INT_LEN];
     u64 latency_thr_us = US(g_args->latency_thr);
 
+    if (g_args->logs == 0) {
+        return;
+    }
+
     entityId[0] = 0;
     (void)snprintf(entityId, INT_LEN, "%d", data->id.pid);
 
