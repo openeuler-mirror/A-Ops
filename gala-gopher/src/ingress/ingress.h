@@ -38,6 +38,8 @@ typedef struct {
 
     // data export
     EgressMgr *egressMgr;
+    OutChannelType event_out_channel;
+
     int epoll_fd;
     pthread_t tid;
 } IngressMgr;

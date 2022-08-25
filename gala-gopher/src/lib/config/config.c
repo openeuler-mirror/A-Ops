@@ -526,8 +526,8 @@ static int ConfigMgrLoadOutConfig(void *config, config_setting_t *settings)
     } else if (!strcmp(strVal, "web_server")) {
         outConfig->outChnl = OUT_CHNL_WEB_SERVER;
     } else {
-        ERROR("[CONFIG] config out_channel type invalid\n");
-        return -1;
+        outConfig->outChnl = -1;
+        WARN("[CONFIG] config out_channel:%s invalid\n", strVal);
     }
 
     ret = config_setting_lookup_string(settings, "kafka_topic", &strVal);

@@ -66,6 +66,11 @@ void WriteMetricsLogsMain(IMDB_DataBaseMgr *mgr)
 {
     int ret;
 
+    if (mgr->webServerOn == 0) {
+        ERROR("[METRICLOG] metric outchannel isn't web_server, break.\n");
+        return;
+    }
+
     for (;;) {
         ret = WriteMetricsLogs(mgr);
         if (ret < 0) {

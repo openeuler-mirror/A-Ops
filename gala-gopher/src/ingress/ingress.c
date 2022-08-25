@@ -19,6 +19,7 @@
 #include <errno.h>
 #include <sys/eventfd.h>
 #include <unistd.h>
+#include "logs.h"
 #include "ingress.h"
 
 IngressMgr *IngressMgrCreate(void)
@@ -134,6 +135,35 @@ err:
     return -1;
 }
 
+static int IngressEventWrite2Logs(IMDB_DataBaseMgr *mgr, IMDB_Table *table, IMDB_Record* rec, const char *dataStr)
+{
+    int ret = 0;
+    int str_len = 0;
+
+    // format data to json
+    char *jsonStr = malloc(MAX_DATA_STR_LEN);
+    if (jsonStr == NULL) {
+        ERROR("[EVENTLOG] alloc jsonStr failed.\n");
+        return -1;
+    }
+    ret = IMDB_Rec2Json(mgr, table, rec, dataStr, jsonStr, MAX_DATA_STR_LEN);
+    if (ret != 0) {
+        ERROR("[EVENTLOG] reformat dataStr to json failed.\n");
+        goto err;
+    }
+
+    str_len = strlen(jsonStr);
+    ret = wr_event_logs(jsonStr, str_len);
+    if (ret < 0) {
+        ERROR("[EVENTLOG] write event logs fail.\n");
+        goto err;
+    }
+
+err:
+    (void)free(jsonStr);
+    return ret;
+}
+
 static int GetTableNameAndContent(const char* buf, char *tblName, size_t size, char **content)
 {
     size_t len;
@@ -175,6 +205,14 @@ static int isRecordCanSend2Egress(IngressMgr *mgr, IMDB_Table *table)
     return 1;
 }
 
+static int isEventWriteLogs(IngressMgr *mgr, IMDB_Table *table)
+{
+    if (strcmp(table->name, "event") == 0 && mgr->event_out_channel == OUT_CHNL_LOGS) {
+        return 1;
+    }
+    return 0;
+}
+
 static int IngressDataProcesssInput(Fifo *fifo, IngressMgr *mgr)
 {
     // read data from fifo
@@ -214,6 +252,16 @@ static int IngressDataProcesssInput(Fifo *fifo, IngressMgr *mgr)
             if (rec == NULL) {
                 ERROR("[INGRESS] insert data into imdb failed.\n");
                 goto next;
+            }
+        }
+
+        if (isEventWriteLogs(mgr, table) == 1) {
+            // write event data to logs
+            ret = IngressEventWrite2Logs(mgr->imdbMgr, table, rec, content);
+            if (ret != 0) {
+                ERROR("[INGRESS] write event to logs failed.\n");
+            } else {
+                DEBUG("[INGRESS] write event to logs succeed.(tbl=%s,content=%s)\n", table->name, content);
             }
         }
 

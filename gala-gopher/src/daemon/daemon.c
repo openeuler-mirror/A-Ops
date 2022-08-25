@@ -98,7 +98,7 @@ static int DaemonCheckProbeNeedStart(char *check_cmd, ProbeStartCheckType chkTyp
 
 static void *DaemonRunMetadataReport(void *arg)
 {
-    ResourceMgr *mgr = (ResourceMgr *)arg;
+    MeasurementMgr *mgr = (MeasurementMgr *)arg;
     prctl(PR_SET_NAME, "[METAREPORT]");
     (void)ReportMetaDataMain(mgr);
 }
@@ -266,15 +266,13 @@ int DaemonRun(const ResourceMgr *mgr)
     }
 
     // 4. start metadata_report thread
-    if (mgr->meta_kafkaMgr) {
-        pthread_t meta_tid;
-        ret = pthread_create(&meta_tid, NULL, DaemonRunMetadataReport, mgr);
-        if (ret != 0) {
-            ERROR("[DAEMON] create metadata_report thread failed. errno: %d\n", ret);
-            return -1;
-        }
-        INFO("[DAEMON] create metadata_report thread success.\n");
+    pthread_t meta_tid;
+    ret = pthread_create(&meta_tid, NULL, DaemonRunMetadataReport, mgr->mmMgr);
+    if (ret != 0) {
+        ERROR("[DAEMON] create metadata_report thread failed. errno: %d\n", ret);
+        return -1;
     }
+    INFO("[DAEMON] create metadata_report thread success.\n");
 
     // 5. start probe thread
     for (int i = 0; i < mgr->probeMgr->probesNum; i++) {
