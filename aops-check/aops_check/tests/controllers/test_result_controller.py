@@ -622,3 +622,243 @@ class TestResultController(unittest.TestCase):
         mock_param = {'alert_id': "test1"}
         resp = client.post('/check/result/confirm', json=mock_param, headers=header)
         self.assertEqual(TOKEN_ERROR, resp.json.get('code'))
+
+    @mock.patch.object(ResultDao, '_domain_check_result_count_rows_to_list')
+    @mock.patch.object(ResultDao, '_query_all_domain_check_count')
+    @mock.patch.object(ResultDao, 'connect')
+    @mock.patch.object(mock.Mock, 'all', create=True)
+    @mock.patch.object(scoping, 'scoped_session')
+    @mock.patch('aops_check.database.dao.result_dao.sort_and_page')
+    def test_query_domain_result_count_should_return_result_count_when_input_all_correct(
+            self,
+            mock_sort,
+            mock_session,
+            mock_count,
+            mock_connect,
+            mock_query_from_db,
+            mock_rows_to_list
+    ):
+        mock_param = {
+            'page': 1,
+            'per_page': 2,
+            'sort': 'count',
+            'direction': 'asc'
+        }
+        mock_domain_result_count = [
+            {'domain': 'domain_name_1', 'count': 1},
+            {'domain': 'domain_name_2', 'count': 2},
+        ]
+        mock_sort.return_value = [], 3
+        mock_session.return_value = ''
+        mock_connect.return_value = True
+        mock_count.return_value = 'a' * 3
+        mock_query_from_db.return_value = mock.Mock
+        mock_rows_to_list.return_value = mock_domain_result_count
+        resp = client.get(f'/check/result/domain/count?{urlencode(mock_param)}',
+                          headers=header_with_token)
+        self.assertEqual(mock_domain_result_count, resp.json.get('results'))
+
+    @mock.patch.object(ResultDao, '_domain_check_result_count_rows_to_list')
+    @mock.patch.object(ResultDao, '_query_all_domain_check_count')
+    @mock.patch.object(ResultDao, 'connect')
+    @mock.patch.object(mock.Mock, 'all', create=True)
+    @mock.patch.object(scoping, 'scoped_session')
+    @mock.patch('aops_check.database.dao.result_dao.sort_and_page')
+    def test_query_domain_result_count_should_return_result_count_when_input_with_no_page(
+            self,
+            mock_sort,
+            mock_session,
+            mock_count,
+            mock_connect,
+            mock_query_from_db,
+            mock_rows_to_list
+    ):
+        mock_param = {
+            'per_page': 2,
+            'sort': 'count',
+            'direction': 'asc'
+        }
+        mock_domain_result_count = [
+            {'domain': 'domain_name_2', 'count': 1},
+            {'domain': 'domain_name_1', 'count': 2},
+            {'domain': 'domain_name_3', 'count': 3},
+        ]
+        mock_sort.return_value = [], 3
+        mock_session.return_value = ''
+        mock_connect.return_value = True
+        mock_count.return_value = 'a' * 3
+        mock_query_from_db.return_value = mock.Mock
+        mock_rows_to_list.return_value = mock_domain_result_count
+        resp = client.get(f'/check/result/domain/count?{urlencode(mock_param)}',
+                          headers=header_with_token)
+        self.assertEqual(mock_domain_result_count, resp.json.get('results'))
+
+    @mock.patch.object(ResultDao, '_domain_check_result_count_rows_to_list')
+    @mock.patch.object(ResultDao, '_query_all_domain_check_count')
+    @mock.patch.object(ResultDao, 'connect')
+    @mock.patch.object(mock.Mock, 'all', create=True)
+    @mock.patch.object(scoping, 'scoped_session')
+    @mock.patch('aops_check.database.dao.result_dao.sort_and_page')
+    def test_query_domain_result_count_should_return_result_count_when_input_with_no_per_page(
+            self,
+            mock_sort,
+            mock_session,
+            mock_count,
+            mock_connect,
+            mock_query_from_db,
+            mock_rows_to_list
+    ):
+        mock_param = {
+            'page': 1,
+            'sort': 'count',
+            'direction': 'asc'
+        }
+        mock_domain_result_count = [
+            {'domain': 'domain_name_1', 'count': 1},
+            {'domain': 'domain_name_2', 'count': 2},
+            {'domain': 'domain_name_3', 'count': 3},
+        ]
+        mock_sort.return_value = [], 3
+        mock_session.return_value = ''
+        mock_connect.return_value = True
+        mock_count.return_value = 'a' * 3
+        mock_query_from_db.return_value = mock.Mock
+        mock_rows_to_list.return_value = mock_domain_result_count
+        resp = client.get(f'/check/result/domain/count?{urlencode(mock_param)}',
+                          headers=header_with_token)
+        self.assertEqual(mock_domain_result_count, resp.json.get('results'))
+
+    @mock.patch.object(ResultDao, '_domain_check_result_count_rows_to_list')
+    @mock.patch.object(ResultDao, '_query_all_domain_check_count')
+    @mock.patch.object(ResultDao, 'connect')
+    @mock.patch.object(mock.Mock, 'all', create=True)
+    @mock.patch.object(scoping, 'scoped_session')
+    @mock.patch('aops_check.database.dao.result_dao.sort_and_page')
+    def test_query_domain_result_count_should_return_result_count_when_input_with_no_sort(
+            self,
+            mock_sort,
+            mock_session,
+            mock_count,
+            mock_connect,
+            mock_query_from_db,
+            mock_rows_to_list
+    ):
+        mock_param = {
+            'page': 1,
+            'per_page': 2,
+            'direction': 'desc'
+        }
+        mock_domain_result_count = [
+            {'domain': 'domain_name_1', 'count': 1},
+            {'domain': 'domain_name_2', 'count': 2},
+        ]
+        mock_sort.return_value = [], 3
+        mock_session.return_value = ''
+        mock_connect.return_value = True
+        mock_count.return_value = 'a' * 3
+        mock_query_from_db.return_value = mock.Mock
+        mock_rows_to_list.return_value = mock_domain_result_count
+        resp = client.get(f'/check/result/domain/count?{urlencode(mock_param)}',
+                          headers=header_with_token)
+        self.assertEqual(mock_domain_result_count, resp.json.get('results'))
+
+    @mock.patch.object(ResultDao, '_domain_check_result_count_rows_to_list')
+    @mock.patch.object(ResultDao, '_query_all_domain_check_count')
+    @mock.patch.object(ResultDao, 'connect')
+    @mock.patch.object(mock.Mock, 'all', create=True)
+    @mock.patch.object(scoping, 'scoped_session')
+    @mock.patch('aops_check.database.dao.result_dao.sort_and_page')
+    def test_query_domain_result_count_should_return_result_count_when_input_with_no_direction(
+            self,
+            mock_sort,
+            mock_session,
+            mock_count,
+            mock_connect,
+            mock_query_from_db,
+            mock_rows_to_list
+    ):
+        mock_param = {
+            'page': 1,
+            'per_page': 2,
+            'sort': 'count'
+        }
+        mock_domain_result_count = [
+            {'domain': 'domain_name_1', 'count': 1},
+            {'domain': 'domain_name_2', 'count': 2},
+        ]
+        mock_sort.return_value = [], 3
+        mock_session.return_value = ''
+        mock_connect.return_value = True
+        mock_count.return_value = 'a' * 3
+        mock_query_from_db.return_value = mock.Mock
+        mock_rows_to_list.return_value = mock_domain_result_count
+        resp = client.get(f'/check/result/domain/count?{urlencode(mock_param)}',
+                          headers=header_with_token)
+        self.assertEqual(mock_domain_result_count, resp.json.get('results'))
+
+    @mock.patch.object(ResultDao, '_domain_check_result_count_rows_to_list')
+    @mock.patch.object(ResultDao, '_query_all_domain_check_count')
+    @mock.patch.object(ResultDao, 'connect')
+    @mock.patch.object(mock.Mock, 'all', create=True)
+    @mock.patch.object(scoping, 'scoped_session')
+    @mock.patch('aops_check.database.dao.result_dao.sort_and_page')
+    def test_query_domain_result_count_should_return_result_count_when_request_with_no_input(
+            self,
+            mock_sort,
+            mock_session,
+            mock_count,
+            mock_connect,
+            mock_query_from_db,
+            mock_rows_to_list
+    ):
+        mock_domain_result_count = [
+            {'domain': 'domain_name_1', 'count': 1},
+            {'domain': 'domain_name_2', 'count': 2},
+        ]
+        mock_sort.return_value = [], 3
+        mock_session.return_value = ''
+        mock_connect.return_value = True
+        mock_count.return_value = 'a' * 3
+        mock_query_from_db.return_value = mock.Mock
+        mock_rows_to_list.return_value = mock_domain_result_count
+        resp = client.get('/check/result/domain/count', headers=header_with_token)
+        self.assertEqual(mock_domain_result_count, resp.json.get('results'))
+
+    def test_query_domain_result_count_should_return_param_error_when_input_per_page_is_greater_than_50(
+            self):
+        mock_param = {
+            'per_page': 51,
+        }
+        resp = client.get(f'/check/result/domain/count?{urlencode(mock_param)}',
+                          headers=header_with_token)
+        self.assertEqual(PARAM_ERROR, resp.json.get('code'))
+
+    def test_query_domain_result_count_should_return_param_error_when_input_sort_is_not_count(self):
+        mock_param = {
+            'sort': 'test',
+        }
+        resp = client.get(f'/check/result/domain/count?{urlencode(mock_param)}',
+                          headers=header_with_token)
+        self.assertEqual(PARAM_ERROR, resp.json.get('code'))
+
+    def test_query_domain_result_count_should_return_param_error_when_input_direction_is_not_asc_or_desc(
+            self):
+        mock_param = {
+            'direction': 'test',
+        }
+        resp = client.get(f'/check/result/domain/count?{urlencode(mock_param)}',
+                          headers=header_with_token)
+        self.assertEqual(PARAM_ERROR, resp.json.get('code'))
+
+    def test_query_domain_result_count_should_return_param_error_when_input_page_is_less_than_1(
+            self):
+        mock_param = {
+            'page': '0',
+        }
+        resp = client.get(f'/check/result/domain/count?{urlencode(mock_param)}',
+                          headers=header_with_token)
+        self.assertEqual(PARAM_ERROR, resp.json.get('code'))
+
+    def test_query_domain_result_count_should_return_token_error_when_request_with_no_token(self):
+        resp = client.get('/check/result/domain/count', headers=header)
+        self.assertEqual(TOKEN_ERROR, resp.json.get('code'))
