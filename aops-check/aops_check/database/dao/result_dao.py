@@ -184,10 +184,16 @@ class ResultDao(MysqlProxy):
             'total_page': 0,
             'result': []
         }
-        check_result_host_query = self._query_check_result_host_list(filters)
-        total_count = len(check_result_host_query.all())
-        check_result_host_list, total_page = sort_and_page(
-            check_result_host_query, column, direction, per_page, page)
+        try:
+            check_result_host_query = self._query_check_result_host_list(filters)
+            total_count = len(check_result_host_query.all())
+            check_result_host_list, total_page = sort_and_page(
+                check_result_host_query, column, direction, per_page, page)
+        except SQLAlchemyError as error:
+            LOGGER.error(error)
+            LOGGER.error("Query check result list failed.")
+            return DATABASE_QUERY_ERROR, res
+
         res['result'] = self._check_result_host_rows_to_list(check_result_host_list)
         res['total_page'] = total_page
         res['total_count'] = total_count
@@ -318,3 +324,96 @@ class ResultDao(MysqlProxy):
             return DATABASE_UPDATE_ERROR
 
         return SUCCEED
+
+    def count_domain_check_result(self, data: Dict[str, str]) -> Tuple[int, dict]:
+        """
+            get number of domain check result
+        Args:
+            data(dict): param e.g
+                {
+                    'page': 'int',
+                    'per_page': 'int',
+                    'sort': 'count',
+                    'direction': 'asc' or 'desc',
+                    'username':'admin'
+                }
+
+        Returns:
+            int: status code
+            dict: e.g
+            {
+                'total_count': int,
+                'total_page': int,
+                'results': [
+                    {
+                    'domain': string
+                    'count': int
+                    }
+                ]
+            }
+        """
+
+        page = data.get('page')
+        per_page = data.get('per_page')
+        column = data.get('sort')
+        direction = data.get('direction')
+
+        res = {
+            'total_count': 0,
+            'total_page': 0,
+            'results': []
+        }
+
+        try:
+            domain_check_result = self._query_all_domain_check_count()
+            total_count = len(domain_check_result.all())
+            domain_check_result_list, total_page = sort_and_page(
+                domain_check_result, column, direction, per_page, page)
+
+        except SQLAlchemyError as error:
+            LOGGER.error(error)
+            LOGGER.error("Get domain check result failed.")
+            return DATABASE_QUERY_ERROR, res
+
+        res['results'] = self._domain_check_result_count_rows_to_list(domain_check_result_list)
+        res['total_page'] = total_page
+        res['total_count'] = total_count
+
+        return SUCCEED, res
+
+    def _query_all_domain_check_count(self):
+        """
+            query all domain check count
+        Returns:
+            sqlalchemy.orm.query.Query
+        """
+
+        return self.session.query(DomainCheckResult.domain,
+                                  func.count(DomainCheckResult.domain). \
+                                  label('count')).group_by(DomainCheckResult.domain)
+
+    @staticmethod
+    def _domain_check_result_count_rows_to_list(rows):
+        """
+            turn queried rows to list of dict
+        Args:
+            sqlalchemy.orm.query.Query
+        Returns:
+            List[dict]: e.g
+                [
+                    {
+                        'domain':'domain_name',
+                        'count': int
+                    },
+                    ...
+                ]
+        """
+
+        res = []
+        for row in rows:
+            domain_count_info = {
+                'domain': row.domain,
+                'count': row.count
+            }
+            res.append(domain_count_info)
+        return res

@@ -17,7 +17,8 @@ from aops_check.database.dao.result_dao import ResultDao
 from aops_check.utils.schema.result import (
     QueryCheckResultHostSchema,
     QueryCheckResultListSchema,
-    CheckResultConfirmSchema
+    CheckResultConfirmSchema,
+    QueryResultDomainCountSchema
 )
 from aops_utils.restful.response import BaseResponse
 
@@ -98,4 +99,17 @@ class ConfirmCheckResult(BaseResponse):
         return jsonify(self.handle_request_db(CheckResultConfirmSchema,
                                               ResultDao(),
                                               'confirm_check_result',
+                                              SESSION))
+
+
+class QueryDomainResultCount(BaseResponse):
+    """
+        Interface for get number of domain check result
+        Restful API: GET
+    """
+
+    def get(self):
+        return jsonify(self.handle_request_db(QueryResultDomainCountSchema,
+                                              ResultDao(),
+                                              'count_domain_check_result',
                                               SESSION))

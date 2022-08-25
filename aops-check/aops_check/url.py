@@ -32,7 +32,8 @@ from aops_check.conf.constant import (
     QUERY_HOST_CHECK_RESULT,
     QUERY_HOST_CHECK_RESULT_LIST,
     QUERY_RESULT_TOTAL_COUNT,
-    CHECK_RESULT_CONFIRM
+    CHECK_RESULT_CONFIRM,
+    QUERY_DOMAIN_COUNT
 )
 from aops_check.controllers import (
     app_controller,
@@ -73,7 +74,8 @@ SPECIFIC_URLS = {
         (result_controller.QueryCheckResultHost, QUERY_HOST_CHECK_RESULT),
         (result_controller.QueryCheckResultList, QUERY_HOST_CHECK_RESULT_LIST),
         (result_controller.QueryResultTotalCount, QUERY_RESULT_TOTAL_COUNT),
-        (result_controller.ConfirmCheckResult, CHECK_RESULT_CONFIRM)
+        (result_controller.ConfirmCheckResult, CHECK_RESULT_CONFIRM),
+        (result_controller.QueryDomainResultCount, QUERY_DOMAIN_COUNT)
     ]
 }
 

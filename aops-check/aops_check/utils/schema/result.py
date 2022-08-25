@@ -29,3 +29,10 @@ class QueryCheckResultListSchema(Schema):
 
 class CheckResultConfirmSchema(QueryCheckResultHostSchema):
     pass
+
+
+class QueryResultDomainCountSchema(Schema):
+    page = fields.Integer(validate=lambda x: x > 0)
+    per_page = fields.Integer(validate=lambda x: 50 >= x > 0)
+    sort = fields.String(validate=lambda x: x in ('count',))
+    direction = fields.String(validate=lambda x: x in ('asc', 'desc'))

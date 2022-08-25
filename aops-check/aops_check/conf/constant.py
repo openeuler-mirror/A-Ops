@@ -38,6 +38,7 @@ QUERY_HOST_CHECK_RESULT = '/check/result/host'
 QUERY_HOST_CHECK_RESULT_LIST = '/check/result/list'
 QUERY_RESULT_TOTAL_COUNT = '/check/result/total/count'
 CHECK_RESULT_CONFIRM = '/check/result/confirm'
+QUERY_DOMAIN_COUNT = '/check/result/domain/count'
 
 IDENTIFY_SCENE = "/check/scene/identify"
 CREATE_WORKFLOW = "/check/workflow/create"
