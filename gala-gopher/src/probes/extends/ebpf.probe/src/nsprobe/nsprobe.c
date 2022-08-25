@@ -83,6 +83,7 @@ static void output_qdisc_metrics(void *ctx, int cpu, void *data, __u32 size)
         qdisc->egress.drops,
         qdisc->egress.requeues,
         qdisc->egress.overlimits);
+    (void)fflush(stdout);
 }
 
 static void load_args(int args_fd, struct probe_params* params)
@@ -159,6 +160,7 @@ void output_containers_metrics(struct container_hash_t **pphead)
             item->v.net_ns_id,
             item->v.proc_id,
             item->v.bps);
+        (void)fflush(stdout);
     }
 }
 

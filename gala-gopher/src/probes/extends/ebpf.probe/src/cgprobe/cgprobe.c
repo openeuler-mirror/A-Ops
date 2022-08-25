@@ -57,6 +57,7 @@ static void print_cg_metrics(void *ctx, int cpu, void *data, __u32 size)
         cg->cgroup_id,
         cg->nr_pages,
         cg->oom_order);
+    (void)fflush(stdout);
 }
 
 static void load_args(int args_fd, struct probe_params* params)
