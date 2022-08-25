@@ -14,7 +14,11 @@ from flask import jsonify
 
 from aops_check.database import SESSION
 from aops_check.database.dao.result_dao import ResultDao
-from aops_check.utils.schema.result import QueryCheckResultHostSchema, QueryCheckResultListSchema
+from aops_check.utils.schema.result import (
+    QueryCheckResultHostSchema,
+    QueryCheckResultListSchema,
+    CheckResultConfirmSchema
+)
 from aops_utils.restful.response import BaseResponse
 
 
@@ -56,6 +60,7 @@ class QueryCheckResultList(BaseResponse):
         Interface for get check result list.
         Restful API: GET
     """
+
     def get(self):
         """
             get check result list from database
@@ -63,4 +68,34 @@ class QueryCheckResultList(BaseResponse):
         return jsonify(self.handle_request_db(QueryCheckResultListSchema,
                                               ResultDao(),
                                               'query_result_list',
+                                              SESSION))
+
+
+class QueryResultTotalCount(BaseResponse):
+    """
+        Interface for get number of alerts
+        Restful API: GET
+    """
+
+    def get(self):
+        """
+            get number of alerts from database
+        """
+        return jsonify(
+            self.handle_request_db(None, ResultDao(), 'query_result_total_count', SESSION))
+
+
+class ConfirmCheckResult(BaseResponse):
+    """
+        Interface for confirm check result
+        Restful API: POST
+    """
+
+    def post(self):
+        """
+            confirm check result, modify confirmed value to True
+        """
+        return jsonify(self.handle_request_db(CheckResultConfirmSchema,
+                                              ResultDao(),
+                                              'confirm_check_result',
                                               SESSION))

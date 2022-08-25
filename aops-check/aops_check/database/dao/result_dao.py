@@ -19,7 +19,7 @@ from aops_check.database.factory.table import HostCheckResult, AlertHost, Domain
 from aops_utils.database.helper import sort_and_page
 from aops_utils.database.proxy import MysqlProxy
 from aops_utils.log.log import LOGGER
-from aops_utils.restful.status import DATABASE_QUERY_ERROR, SUCCEED, NO_DATA
+from aops_utils.restful.status import DATABASE_QUERY_ERROR, SUCCEED, NO_DATA, DATABASE_UPDATE_ERROR
 
 
 class ResultDao(MysqlProxy):
@@ -168,18 +168,16 @@ class ResultDao(MysqlProxy):
         column = data.get('sort')
         direction = data.get('direction')
 
-        filters = {DomainCheckResult.username == data.get('username')}
+        filters = {
+            DomainCheckResult.username == data.get('username'),
+            DomainCheckResult.confirmed == 0
+        }
 
         if data.get('domain'):
             filters.add(DomainCheckResult.domain == data.get('domain'))
 
         if data.get('level'):
             filters.add(DomainCheckResult.level == data.get('level'))
-
-        if data.get('confirmed') and data.get('confirmed').lower() == "true":
-            filters.add(DomainCheckResult.confirmed == 1)
-        elif data.get('confirmed'):
-            filters.add(DomainCheckResult.confirmed == 0)
 
         res = {
             'total_count': 0,
@@ -188,8 +186,8 @@ class ResultDao(MysqlProxy):
         }
         check_result_host_query = self._query_check_result_host_list(filters)
         total_count = len(check_result_host_query.all())
-        check_result_host_list, total_page = sort_and_page(check_result_host_query, column,
-                                                           direction, per_page, page)
+        check_result_host_list, total_page = sort_and_page(
+            check_result_host_query, column, direction, per_page, page)
         res['result'] = self._check_result_host_rows_to_list(check_result_host_list)
         res['total_page'] = total_page
         res['total_count'] = total_count
@@ -248,7 +246,6 @@ class ResultDao(MysqlProxy):
         """
         res = []
         for row in rows:
-            confirmed = True if row.confirmed == 1 else False
             check_result_host_info = {
                 "alert_id": row.alert_id,
                 "alert_name": row.alert_name,
@@ -256,9 +253,68 @@ class ResultDao(MysqlProxy):
                 "time": row.time,
                 "workflow_id": row.workflow_id,
                 "level": row.level,
-                "confirmed": confirmed,
+                "confirmed": False,
                 "workflow_name": row.workflow_name,
                 "host_num": row.count
             }
             res.append(check_result_host_info)
         return res
+
+    def query_result_total_count(self, data: Dict[str, str]) -> Tuple[int, dict]:
+        """
+            query the number of alerts for user
+        Args:
+            data(dict): param e.g {'username': "admin"}
+
+        Returns:
+            int: status code
+            dict: {"count": int}
+        """
+        try:
+            fliters = {
+                DomainCheckResult.username == data['username'],
+                DomainCheckResult.alert_id == AlertHost.alert_id
+            }
+            alert_count_query = self.session.query(
+                func.count(AlertHost.alert_id)).filter(*fliters).scalar()
+
+        except SQLAlchemyError as error:
+            LOGGER.error(error)
+            LOGGER.error("Query check result fail.")
+            return DATABASE_QUERY_ERROR, {'count': 0}
+
+        return SUCCEED, {'count': alert_count_query}
+
+    def confirm_check_result(self, data: Dict[str, str]) -> int:
+        """
+            confirm check result
+        Args:
+            data(dict): parameter, e.g.
+                {
+                    "alert_id": "xxxx",
+                    "username": "xxxx
+                }
+
+        Returns:
+            int: status code
+
+        """
+        filters = {
+            DomainCheckResult.alert_id == data['alert_id'],
+            DomainCheckResult.username == data['username']
+        }
+
+        try:
+            query = self.session.query(DomainCheckResult).filter(*filters)
+            if len(query.all()) == 0:
+                return NO_DATA
+
+            query.update({"confirmed": True})
+            self.session.commit()
+        except SQLAlchemyError as error:
+            LOGGER.error(error)
+            LOGGER.error("Confirm check result fail.")
+            self.session.rollback()
+            return DATABASE_UPDATE_ERROR
+
+        return SUCCEED

@@ -23,6 +23,9 @@ class QueryCheckResultListSchema(Schema):
     per_page = fields.Integer(validate=lambda x: 50 >= x > 0)
     domain = fields.String(validate=lambda x: len(x) > 0)
     level = fields.String(validate=lambda x: len(x) > 0)
-    confirmed = fields.Boolean()
     sort = fields.String(validate=lambda x: x in ('time',))
     direction = fields.String(validate=lambda x: x in ('asc', 'desc'))
+
+
+class CheckResultConfirmSchema(QueryCheckResultHostSchema):
+    pass
