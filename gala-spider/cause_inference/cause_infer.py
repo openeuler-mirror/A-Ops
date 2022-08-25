@@ -1,10 +1,12 @@
-import random
 from typing import List
 
-import networkx as nx
-from scipy.stats import pearsonr
 from scipy.special import expit
 
+from cause_inference.model import Cause
+from cause_inference.model import CausalGraph
+from cause_inference.model import get_metric_obj_type
+from cause_inference.model import AbnormalEvent
+from cause_inference.model import get_entity_keys_of_metric
 from spider.util import logger
 from spider.conf.observe_meta import RelationType
 from spider.conf.observe_meta import ObserveMetaMgt
@@ -20,290 +22,27 @@ from cause_inference.arangodb import connect_to_arangodb
 from cause_inference.arangodb import query_recent_topo_ts
 from cause_inference.arangodb import query_topo_entities
 from cause_inference.arangodb import query_subgraph
-
-
-def _get_metric_obj_type(metric_id: str):
-    if not metric_id.startswith(infer_config.data_agent + "_"):
-        raise MetadataException('Data source of the metric {} can not be identified.'.format(metric_id))
-
-    left = metric_id[len(infer_config.data_agent) + 1:]
-    obsv_types = ObserveMetaMgt().get_observe_types()
-    for obj_type in obsv_types:
-        if left.startswith(obj_type + "_"):
-            return obj_type
-
-    raise MetadataException('Entity type of the metric {} can not be supported.'.format(metric_id))
+from cause_inference.infer_policy import InferPolicy
+from cause_inference.infer_policy import get_infer_policy
 
 
 def normalize_abn_score(score):
     return expit(score)
 
 
-class AbnormalEvent:
-    def __init__(self, timestamp, abnormal_metric_id, abnormal_score, metric_labels):
-        self.timestamp = timestamp
-        self.abnormal_metric_id = abnormal_metric_id
-        self.abnormal_score = abnormal_score
-        self.metric_labels = metric_labels
-        self.hist_data = []
-
-    def __repr__(self):
-        return 'AbnormalEvent(timestamp={}, abnormal_metric_id="{}", abnormal_score={}, metric_labels={})'.format(
-            self.timestamp,
-            self.abnormal_metric_id,
-            self.abnormal_score,
-            self.metric_labels,
-        )
-
-    def set_hist_data(self, hist_data):
-        self.hist_data = hist_data[:]
-
-    def to_dict(self):
-        res = {
-            'metric_id': self.abnormal_metric_id,
-            'timestamp': self.timestamp,
-            'abnormal_score': self.abnormal_score,
-            'metric_labels': self.metric_labels,
-        }
-        return res
-
-
-class CausalGraph:
-    def __init__(self, raw_topo_graph, abnormal_kpi: AbnormalEvent, abnormal_metrics: List[AbnormalEvent],
-                 orig_abn_kpi: AbnormalEvent = None):
-        self.topo_nodes = raw_topo_graph.get('vertices', {})
-        self.topo_edges = raw_topo_graph.get('edges', {})
-        self.abnormal_kpi: AbnormalEvent = abnormal_kpi
-        self.abnormal_metrics: List[AbnormalEvent] = abnormal_metrics
-        self.orig_abn_kpi: AbnormalEvent = orig_abn_kpi
-
-        self.node_id_of_abn_kpi = None
-        self.causal_graph = nx.DiGraph()
-        self.init_casual_graph()
-
-    def init_casual_graph(self):
-        for node_id, node_attrs in self.topo_nodes.items():
-            self.causal_graph.add_node(node_id, **node_attrs)
-            self.set_abnormal_status_of_node(node_id, False)
-
-        # 标记有异常指标的节点
-        abnormal_metrics = [self.abnormal_kpi]
-        abnormal_metrics.extend(self.abnormal_metrics)
-        for abn_metric in abnormal_metrics:
-            try:
-                entity_keys_of_metric = get_entity_keys_of_metric(abn_metric.abnormal_metric_id,
-                                                                  abn_metric.metric_labels)
-            except MetadataException as ex:
-                logger.logger.error(ex)
-                continue
-            for node_id in self.causal_graph.nodes:
-                if not self.is_metric_matched_to_node(node_id, entity_keys_of_metric):
-                    continue
-
-                if abn_metric.abnormal_metric_id == self.abnormal_kpi.abnormal_metric_id:
-                    self.node_id_of_abn_kpi = node_id
-
-                self.set_abnormal_status_of_node(node_id, True)
-                self.append_abnormal_metric_to_node(node_id, abn_metric)
-                break
-
-    def is_metric_matched_to_node(self, node_id, entity_keys_of_metric):
-        matched = True
-        node_attrs = self.causal_graph.nodes[node_id]
-        for key in entity_keys_of_metric:
-            if node_attrs.get(key) != entity_keys_of_metric[key]:
-                matched = False
-                break
-        return matched
-
-    def prune_by_abnormal_node(self):
-        node_ids = list(self.causal_graph.nodes)
-        for node_id in node_ids:
-            if not self.is_abnormal_of_node(node_id):
-                self.causal_graph.remove_node(node_id)
-
-    def set_abnormal_status_of_node(self, node_id, abnormal_status):
-        self.causal_graph.nodes[node_id]['is_abnormal'] = abnormal_status
-
-    def is_abnormal_of_node(self, node_id):
-        if 'is_abnormal' not in self.causal_graph.nodes[node_id]:
-            return False
-        return self.causal_graph.nodes[node_id]['is_abnormal']
-
-    def append_abnormal_metric_to_node(self, node_id, abn_metric):
-        node_attrs = self.causal_graph.nodes[node_id]
-        abn_metrics = node_attrs.setdefault('abnormal_metrics', [])
-        exist = False
-        # 去除（在不同时间点上）重复的异常metric
-        for i, metric in enumerate(abn_metrics):
-            if metric.abnormal_metric_id == abn_metric.abnormal_metric_id:
-                if abn_metric.timestamp > metric.timestamp:
-                    abn_metrics[i] = abn_metric
-                exist = True
-        if not exist:
-            abn_metrics.append(abn_metric)
-
-    def get_abnormal_metrics_of_node(self, node_id):
-        return self.causal_graph.nodes[node_id].get('abnormal_metrics', [])
-
-    def get_abnormal_metric_of_node(self, node_id, idx):
-        return self.causal_graph.nodes[node_id].get('abnormal_metrics')[idx]
-
-
-class Cause:
-    def __init__(self, cause_node: dict, cause_metric: AbnormalEvent, cause_score):
-        self.cause_node = cause_node
-        self.cause_metric = cause_metric
-        self.cause_score = cause_score
-
-    def to_dict(self):
-        res = {
-            'cause_metric': self.cause_metric.to_dict(),
-            'cause_score': self.cause_score,
-            'cause_entity_id': self.cause_node.get('_id'),
-        }
-        return res
-
-
 # 因果推理
 class CauseInferring:
-    def __init__(self, rou=0.05, random_walk_round=10000, default_window_size=1000):
-        self.rou = rou
-        self.random_walk_round = random_walk_round
-        if self.random_walk_round <= 0:
-            raise InferenceException('Random walk round of cause inferring algorithm can not be less than zero')
-        self.default_window_size = default_window_size
-        self.abn_kpi_idx = None
-        self.transfer_matrix = {}
+    def __init__(self, infer_policy: InferPolicy, top_k=1):
+        self.infer_policy = infer_policy
+        self.top_k = top_k
 
-    @staticmethod
-    def calc_corr(data1, data2):
-        valid_len = min(len(data1), len(data2))
-        corr = pearsonr(data1[len(data1)-valid_len:], data2[len(data2)-valid_len:])
-        if str(corr[0]) == 'nan':
-            return 0.0001
-        return corr[0]
-
-    def inferring(self, causal_graph: CausalGraph, top_k=3) -> List[Cause]:
-        res = []
-
-        abn_kpi = causal_graph.abnormal_kpi
-        node_id_of_abn_kpi = causal_graph.node_id_of_abn_kpi
-        if not node_id_of_abn_kpi:
-            logger.logger.error('Can not find observe node of the abnormal kpi.')
-            return []
-        for i, abn_metric in enumerate(causal_graph.get_abnormal_metrics_of_node(node_id_of_abn_kpi)):
-            if abn_metric.abnormal_metric_id == abn_kpi.abnormal_metric_id:
-                self.abn_kpi_idx = (node_id_of_abn_kpi, i)
-                break
-        if self.abn_kpi_idx is None:
-            logger.logger.error('Abnormal kpi is None.')
-            return res
-
-        # 计算转移概率矩阵
-        self.transfer_matrix.clear()
-        for node_id in causal_graph.causal_graph.nodes:
-            for i, _ in enumerate(causal_graph.get_abnormal_metrics_of_node(node_id)):
-                metric_idx = (node_id, i)
-                self.transfer_matrix.setdefault(metric_idx, {})
-                self.calc_transfer_probs(metric_idx, causal_graph)
-
-        walk_nums = self.one_order_random_walk()
-        cause_res = list(walk_nums.items())
-        cause_res = sorted(cause_res, key=lambda k: k[1], reverse=True)
-        cause_res = cause_res[:top_k]
-
-        for item in cause_res:
-            metric_idx = item[0]
-            score = item[1]
-            cause_node_attrs = causal_graph.causal_graph.nodes[metric_idx[0]]
-            cause_metric = causal_graph.get_abnormal_metric_of_node(metric_idx[0], metric_idx[1])
-            try:
-                uni_score = score / self.random_walk_round
-            except ZeroDivisionError as ex:
-                raise InferenceException(ex) from ex
-            cause = Cause(cause_node_attrs, cause_metric, uni_score)
-            res.append(cause)
-
-        return res
-
-    def calc_transfer_probs(self, src_metric_idx, causal_graph: CausalGraph):
-        probs = self.transfer_matrix.get(src_metric_idx)
-        src_abn_metric = causal_graph.get_abnormal_metric_of_node(src_metric_idx[0], src_metric_idx[1])
-
-        # 计算前向转移概率
-        max_corr = 0
-        for node_id in causal_graph.causal_graph.pred.get(src_metric_idx[0]):
-            for i, tgt_abn_metric in enumerate(causal_graph.get_abnormal_metrics_of_node(node_id)):
-                tgt_metric_idx = (node_id, i)
-                corr = abs(tgt_abn_metric.abnormal_score)
-                max_corr = max(max_corr, corr)
-                probs.setdefault(tgt_metric_idx, corr)
-
-        # 计算后向转移概率
-        for node_id in causal_graph.causal_graph.succ.get(src_metric_idx[0]):
-            for i, tgt_abn_metric in enumerate(causal_graph.get_abnormal_metrics_of_node(node_id)):
-                tgt_metric_idx = (node_id, i)
-                corr = abs(tgt_abn_metric.abnormal_score)
-                probs.setdefault(tgt_metric_idx, corr * self.rou)
-
-        # 计算自向转移概率
-        corr = max(0, abs(src_abn_metric.abnormal_score) - max_corr)
-        probs.setdefault(src_metric_idx, corr)
-
-        # 正则化
-        total = sum(probs.values())
-        for tgt_metric_idx, corr in probs.items():
-            try:
-                probs[tgt_metric_idx] = corr / total
-            except ZeroDivisionError as ex:
-                raise InferenceException('Sum of transition probability can not be zero') from ex
-
-    def one_order_random_walk(self):
-        walk_nums = {}
-        curr_node_idx = self.abn_kpi_idx
-        rwr = self.random_walk_round
-        round_ = 0
-        while round_ < rwr:
-            next_node_idx = self.get_next_walk_node(curr_node_idx)
-            num = walk_nums.setdefault(next_node_idx, 0)
-            walk_nums.update({next_node_idx: num + 1})
-            round_ += 1
-
-        return walk_nums
-
-    def get_next_walk_node(self, curr_metric_idx):
-        # 随机选择
-        probs = self.transfer_matrix.get(curr_metric_idx)
-        prob = random.random()
-        next_node_idx = curr_metric_idx
-        for node_idx, node_prob in probs.items():
-            if prob < node_prob:
-                next_node_idx = node_idx
-                break
-            else:
-                prob -= node_prob
-
-        return next_node_idx
-
-
-def get_entity_keys_of_metric(metric_id, metric_labels):
-    metric_entity_type = _get_metric_obj_type(metric_id)
-    observe_meta = ObserveMetaMgt().get_observe_meta(metric_entity_type)
-    if observe_meta is None:
-        raise MetadataException('Can not find observe meta info, observe type={}'.format(metric_entity_type))
-
-    key_labels = {}
-    for entity_key in observe_meta.keys:
-        if entity_key not in metric_labels:
-            raise MetadataException('Observe entity key[{}] miss of metric[{}].'.format(entity_key, metric_id))
-        key_labels[entity_key] = metric_labels[entity_key]
-
-    return key_labels
+    def inferring(self, causal_graph: CausalGraph) -> List[Cause]:
+        causes = self.infer_policy.infer(causal_graph, self.top_k)
+        return causes
 
 
 def get_entity_labels_of_metric(metric_id, metric_labels):
-    metric_entity_type = _get_metric_obj_type(metric_id)
+    metric_entity_type = get_metric_obj_type(metric_id)
     observe_meta = ObserveMetaMgt().get_observe_meta(metric_entity_type)
     if observe_meta is None:
         raise MetadataException('Can not find observe meta info, observe type={}'.format(metric_entity_type))
@@ -393,6 +132,11 @@ def parse_abn_evt(data) -> AbnormalEvent:
     return abn_evt
 
 
+def parse_entity_id(orig_entity_id: str) -> str:
+    fs_idx = orig_entity_id.index('/')
+    return orig_entity_id[fs_idx+1:]
+
+
 def query_hist_data_of_abn_metric(causal_graph):
     collector: DataCollector = PrometheusCollector(base_url=infer_config.prometheus_conf.get('base_url'),
                                                    range_api=infer_config.prometheus_conf.get('range_api'),
@@ -417,33 +161,72 @@ def query_hist_data_of_abn_metric(causal_graph):
             abn_metric.set_hist_data(hist_data)
 
 
+def format_infer_result(causes, causal_graph):
+    abnormal_kpi = causal_graph.abnormal_kpi
+    abn_kpi = {
+        'metric_id': abnormal_kpi.abnormal_metric_id,
+        'entity_id': parse_entity_id(causal_graph.entity_id_of_abn_kpi),
+        'timestamp': abnormal_kpi.timestamp,
+        'metric_labels': abnormal_kpi.metric_labels
+    }
+    cause_metrics = []
+    metric_cause_graph = causal_graph.metric_cause_graph
+    for cause in causes:
+        node_attrs = metric_cause_graph.nodes[(cause.entity_id, cause.metric_id)]
+        cause_metric = {
+            'metric_id': cause.metric_id,
+            'entity_id': parse_entity_id(cause.entity_id),
+            'metric_labels': node_attrs.get('metric_labels', {}),
+            'timestamp': node_attrs.get('timestamp'),
+        }
+        path = []
+        for node_id in cause.path:
+            attrs = metric_cause_graph.nodes[node_id]
+            path.append({
+                'metric_id': node_id[1],
+                'entity_id': parse_entity_id(node_id[0]),
+                'metric_labels': attrs.get('metric_labels', {}),
+                'timestamp': attrs.get('timestamp')
+            })
+        cause_metric['path'] = path
+        cause_metrics.append(cause_metric)
+    res = {
+        'abnormal_kpi': abn_kpi,
+        'cause_metrics': cause_metrics
+    }
+    return res
+
+
 def cause_locating(abnormal_kpi: AbnormalEvent, abnormal_metrics: List[AbnormalEvent],
-                   orig_abn_kpi: AbnormalEvent = None) -> List[Cause]:
+                   orig_abn_kpi: AbnormalEvent = None):
     # 1. 根据异常事件获取异常KPI对应的观测对象
     # 2. 以异常观测对象为中心，查询图数据库，获取拓扑子图
-    abn_subgraph = query_abnormal_topo_subgraph(abnormal_kpi)
+    abn_topo_subgraph = query_abnormal_topo_subgraph(abnormal_kpi)
 
     # 3. 基于专家规则，补全拓扑子图的隐式因果关系
-    causal_graph = CausalGraph(abn_subgraph, abnormal_kpi, abnormal_metrics, orig_abn_kpi)
+    causal_graph = CausalGraph(abn_topo_subgraph, abnormal_kpi, abnormal_metrics, orig_abn_kpi)
     rule_engine.rule_parsing(causal_graph)
     # 4. 根据异常观测对象（存在异常指标的观测对象）对拓扑子图进行剪枝，构建故障传播图
     causal_graph.prune_by_abnormal_node()
+    # 5. 生成异常指标之间的因果图
+    causal_graph.init_metric_cause_graph()
 
-    logger.logger.debug("Causal graph nodes are: {}".format(causal_graph.causal_graph.nodes))
-    logger.logger.debug("Causal graph predecessors: {}".format(causal_graph.causal_graph.pred))
-    logger.logger.debug("Causal graph successors: {}".format(causal_graph.causal_graph.succ))
+    logger.logger.debug("Causal graph nodes are: {}".format(causal_graph.entity_cause_graph.nodes))
+    logger.logger.debug("Causal graph predecessors: {}".format(causal_graph.entity_cause_graph.pred))
+    logger.logger.debug("Causal graph successors: {}".format(causal_graph.entity_cause_graph.succ))
 
-    # 5. 以故障传播图 + 异常KPI为输入，执行根因推导算法，输出 top3 根因指标
-    infer_engine = CauseInferring()
-    causes = infer_engine.inferring(causal_graph, top_k=infer_config.infer_conf.get('root_topk'))
+    # 6. 以故障传播图 + 异常KPI为输入，执行根因推导算法，输出 topK 根因指标
+    infer_policy = get_infer_policy(infer_config.infer_conf.get('infer_policy'))
+    infer_engine = CauseInferring(infer_policy, top_k=infer_config.infer_conf.get('root_topk'))
+    causes = infer_engine.inferring(causal_graph)
     logger.logger.debug('=========inferring result: =============')
     for i, cause in enumerate(causes):
         logger.logger.debug('The top {} root metric output:'.format(i+1))
-        logger.logger.debug('abnormal timestamp is: {}, abnormal metric is: {}, abnormal observe entity is: {}'.format(
-            cause.cause_metric.timestamp,
-            cause.cause_metric.abnormal_metric_id,
-            cause.cause_node.get('_id'),
+        logger.logger.debug('cause metric is: {}, cause entity is: {}, cause score is: {}'.format(
+            cause.metric_id,
+            cause.entity_id,
+            cause.cause_score,
         ))
-        logger.logger.debug('abnormal score is: {}'.format(cause.cause_score))
 
-    return causes
+    res = format_infer_result(causes, causal_graph)
+    return res

@@ -3,6 +3,7 @@ inference:
   tolerated_bias: 120
   topo_depth: 10
   root_topk: 3
+  infer_policy: "dfs"
   # 单位： 秒
   sample_duration: 600
   # 根因定位时，有效的异常指标事件周期，单位：秒

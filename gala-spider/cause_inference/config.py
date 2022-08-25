@@ -13,6 +13,7 @@ class InferConfig:
             'tolerated_bias': 120,
             'topo_depth': 10,
             'root_topk': 3,
+            'infer_policy': 'dfs',
             'sample_duration': 600,
             'evt_valid_duration': 120,
             'evt_aging_duration': 600,

@@ -35,7 +35,7 @@ class SliRule1(Rule):
         for edge1 in tcp_bt_p:
             for edge2 in sli_bt_p:
                 if edge1.get('_to') == edge2.get('_to'):
-                    causal_graph.causal_graph.add_edge(edge1.get('_from'), edge2.get('_from'))
+                    causal_graph.entity_cause_graph.add_edge(edge1.get('_from'), edge2.get('_from'))
 
 
 # 规则：如果观测实例 A 到观测实例 B 存在 belongs_to 关系，则建立 A 到 B 的因果关系。
@@ -43,7 +43,7 @@ class BelongsToRule1(Rule):
     def rule_parsing(self, causal_graph):
         topo_edges = causal_graph.topo_edges
         topo_nodes = causal_graph.topo_nodes
-        cause_graph = causal_graph.causal_graph
+        entity_cause_graph = causal_graph.entity_cause_graph
         for _, edge in topo_edges.items():
             if edge.get('type') != RelationType.BELONGS_TO.value:
                 continue
@@ -54,29 +54,29 @@ class BelongsToRule1(Rule):
 
             if from_type == EntityType.REDIS_SLI.value and to_type == EntityType.PROCESS.value:
                 # 规则：建立 process 到 redis_sli 的因果关系
-                cause_graph.add_edge(edge.get('_to'), edge.get('_from'), **edge)
+                entity_cause_graph.add_edge(edge.get('_to'), edge.get('_from'), **edge)
             elif from_type == EntityType.BLOCK.value and to_type == EntityType.DISK.value:
                 # 规则：建立 disk 到 block 的因果关系
-                cause_graph.add_edge(edge.get('_to'), edge.get('_from'), **edge)
+                entity_cause_graph.add_edge(edge.get('_to'), edge.get('_from'), **edge)
             else:
-                cause_graph.add_edge(edge.get('_from'), edge.get('_to'), **edge)
+                entity_cause_graph.add_edge(edge.get('_from'), edge.get('_to'), **edge)
 
 
 # 规则：如果观测实例 A 到观测实例 B 存在 runs_on 关系，则建立 B 到 A 的因果关系。
 class RunsOnRule1(Rule):
     def rule_parsing(self, causal_graph):
         topo_edges = causal_graph.topo_edges
-        cause_graph = causal_graph.causal_graph
+        entity_cause_graph = causal_graph.entity_cause_graph
         for _, edge in topo_edges.items():
             if edge.get('type') != RelationType.RUNS_ON.value:
                 continue
-            cause_graph.add_edge(edge.get('_to'), edge.get('_from'), **edge)
+            entity_cause_graph.add_edge(edge.get('_to'), edge.get('_from'), **edge)
 
 
 class ProcessRule1(Rule):
     def rule_parsing(self, causal_graph):
         topo_nodes = causal_graph.topo_nodes
-        cause_graph = causal_graph.causal_graph
+        entity_cause_graph = causal_graph.entity_cause_graph
 
         proc_nodes = []
         disk_nodes = []
@@ -94,13 +94,13 @@ class ProcessRule1(Rule):
             for proc_node in proc_nodes:
                 if disk_node.get('machine_id') != proc_node.get('machine_id'):
                     continue
-                cause_graph.add_edge(proc_node.get('_id'), disk_node.get('_id'))
+                entity_cause_graph.add_edge(proc_node.get('_id'), disk_node.get('_id'))
         # 规则：如果 block 和 process 属于同一个主机，则建立 block 到 process 的因果关系
         for blk_node in block_nodes:
             for proc_node in proc_nodes:
                 if blk_node.get('machine_id') != proc_node.get('machine_id'):
                     continue
-                cause_graph.add_edge(blk_node.get('_id'), proc_node.get('_id'))
+                entity_cause_graph.add_edge(blk_node.get('_id'), proc_node.get('_id'))
 
 
 class RuleEngine:
