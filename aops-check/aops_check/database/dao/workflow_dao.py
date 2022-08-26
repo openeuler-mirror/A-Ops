@@ -224,7 +224,7 @@ class WorkflowDao(MysqlProxy, ElasticsearchProxy):
             "model_info": model_info
         }
 
-        res = ElasticsearchProxy.insert(self, index, data)
+        res = ElasticsearchProxy.insert(self, index, data, document_id=workflow_id)
         if res:
             LOGGER.info("Add workflow '%s' info into es succeed.", workflow_id)
             return SUCCEED
@@ -241,9 +241,11 @@ class WorkflowDao(MysqlProxy, ElasticsearchProxy):
                     "page": 1,
                     "per_page": 10,
                     "username": "admin",
-                    "app": ["app1"],
-                    "domain": ["host_group1"],
-                    "status": ["hold","running","recommending"]
+                    "filter": {
+                        "app": ["app1"],
+                        "domain": ["host_group1"],
+                        "status": ["hold","running","recommending"]
+                    }
                 }
 
         Returns:
@@ -295,8 +297,7 @@ class WorkflowDao(MysqlProxy, ElasticsearchProxy):
             "result": []
         }
 
-        workflow_query = self._query_workflow_list(data["username"], data.get("domain"),
-                                                   data.get("status"), data.get("app"))
+        workflow_query = self._query_workflow_list(data["username"], data.get("filter"))
         total_count = len(workflow_query.all())
         if not total_count:
             return result
@@ -311,26 +312,30 @@ class WorkflowDao(MysqlProxy, ElasticsearchProxy):
         result['total_count'] = total_count
         return result
 
-    def _query_workflow_list(self, username: str, domain: Optional[list],
-                             status: Optional[list], app: Optional[list]) -> sqlalchemy.orm.query.Query:
+    def _query_workflow_list(self, username: str, filter_dict: Optional[dict]) -> sqlalchemy.orm.query.Query:
         """
         query needed workflow basic info list
         Args:
             username: user name
-            domain: host group name, could be none if not filtered
-            status: status of workflow, could be none if not filtered
+            filter_dict: dict.  e.g.
+                {
+                    "app": ["app1"],
+                    "domain": ["host_group1"],
+                    "status": ["running", "recommending"]
+                }
 
         Returns:
             sqlalchemy.orm.query.Query
         """
         filters = set()
         filters.add(Workflow.username == username)
-        if domain:
-            filters.add(Workflow.domain.in_(domain))
-        if status:
-            filters.add(Workflow.status.in_(status))
-        if app:
-            filters.add(Workflow.app_name.in_(app))
+        if filter_dict:
+            if filter_dict.get("domain"):
+                filters.add(Workflow.domain.in_(filter_dict["domain"]))
+            if filter_dict.get("status"):
+                filters.add(Workflow.status.in_(filter_dict["status"]))
+            if filter_dict.get("app"):
+                filters.add(Workflow.app_name.in_(filter_dict["app"]))
 
         workflow_query = self.session.query(Workflow.workflow_name, Workflow.workflow_id,
                                             Workflow.description, Workflow.status,
@@ -613,8 +618,10 @@ class WorkflowDao(MysqlProxy, ElasticsearchProxy):
         try:
             status_code = self._update_workflow(data)
             LOGGER.debug("Finished updating workflow info.")
+            self.session.commit()
             return status_code
         except (SQLAlchemyError, ElasticsearchException) as error:
+            self.session.rollback()
             LOGGER.error(error)
             LOGGER.error("Updating workflow info failed due to internal error.")
             return DATABASE_UPDATE_ERROR
@@ -694,12 +701,14 @@ class WorkflowDao(MysqlProxy, ElasticsearchProxy):
         if self._if_workflow_running(data):
             return DATABASE_DELETE_ERROR
 
-        filters = {Workflow.workflow_id == data["workflow_id"], Workflow.username == data["username"]}
+        username = data["username"]
+        workflow_id = data["workflow_id"]
+        filters = {Workflow.workflow_id == workflow_id, Workflow.username == username}
         self.session.query(Workflow).filter(*filters).delete()
 
         query_body = self._general_body()
         query_body["query"]["bool"]["must"].extend(
-            [{"term": {"username": data["username"]}}, {"term": {"workflow_id": data["workflow_id"]}}])
+            [{"term": {"username": data["username"]}}, {"term": {"workflow_id": workflow_id}}])
 
         res = ElasticsearchProxy.delete(self, index, query_body)
         if res:
@@ -730,6 +739,7 @@ class WorkflowDao(MysqlProxy, ElasticsearchProxy):
         """
         self.session.query(Workflow).filter(Workflow.workflow_id == workflow_id) \
             .update({"status": status})
+        self.session.commit()
 
     def if_host_in_workflow(self, data: dict) -> Tuple[int, dict]:
         """
