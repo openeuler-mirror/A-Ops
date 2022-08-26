@@ -18,6 +18,7 @@
 #include <string.h>
 #include <dirent.h>
 #include <libconfig.h>
+#include "logs.h"
 #include "meta.h"
 
 #if GALA_GOPHER_INFO("inner func")
@@ -281,3 +282,335 @@ int MeasurementMgrLoad(const MeasurementMgr *mgr, const char *metaDir)
     closedir(d);
     return 0;
 }
+
+#if GALA_GOPHER_INFO("report_meta_to_kafka func")
+static int metadata_build_timestamp(char *json_str, int max_len)
+{
+    char *str = json_str;
+    int str_len = max_len;
+    time_t now;
+    const char *fmt = "{\"timestamp\": %lld";    // "timestamp": 1655211859000
+
+    (void)time(&now);
+    if (__snprintf(&str, str_len, &str_len, fmt, now * THOUSAND) < 0) {
+        return -1;
+    }
+    return max_len > str_len ? (max_len - str_len) : -1;
+}
+
+static int metadata_build_metaname(const Measurement *mm, char *json_str, int max_len)
+{
+    char *str = json_str;
+    int str_len = max_len;
+    const char *fmt = ", \"meta_name\": \"%s\""; // "meta_name": "block",
+
+    if (__snprintf(&str, str_len, &str_len, fmt, mm->name) < 0) {
+        return -1;
+    }
+    return max_len > str_len ? (max_len - str_len) : -1;
+}
+
+static int metadata_build_entityname(const Measurement *mm, char *json_str, int max_len)
+{
+    char *str = json_str;
+    int str_len = max_len;
+    const char *fmt = ", \"entity_name\": \"%s\""; // "entity_name": "block",
+
+    if (__snprintf(&str, str_len, &str_len, fmt, mm->entity) < 0) {
+        return -1;
+    }
+    return max_len > str_len ? (max_len - str_len) : -1;
+}
+
+static int metadata_build_vrsion(const Measurement *mm, char *json_str, int max_len)
+{
+    char *str = json_str;
+    int str_len = max_len;
+    const char *fmt = ", \"version\": \"%s\""; // "version": "1.0.0",
+
+    if (__snprintf(&str, str_len, &str_len, fmt, mm->version) < 0) {
+        return -1;
+    }
+    return max_len > str_len ? (max_len - str_len) : -1;
+}
+
+/* "keys": ["machine_id", "tgid"] */
+#define META_FIELD_TYPE_KEY "key"
+static int metadata_build_keys(const Measurement *mm, char *json_str, int max_len)
+{
+    int i, ret;
+    char *str = json_str;
+    int str_len = max_len;
+    int total_len = 0;
+
+    ret = snprintf(str, str_len, ", \"keys\": [\"machine_id\"");
+    if (ret < 0 || ret >= str_len) {
+        return -1;
+    }
+    str += ret;
+    str_len -= ret;
+    total_len += ret;
+
+    for (i = 0; i < mm->fieldsNum; i++) {
+        if (strcmp(mm->fields[i].type, META_FIELD_TYPE_KEY) == 0) {
+            ret = snprintf(str, str_len, ", \"%s\"", mm->fields[i].name);
+            if (ret < 0 || ret >= str_len) {
+                return -1;
+            }
+            str += ret;
+            str_len -= ret;
+            total_len += ret;
+        }
+    }
+    ret = snprintf(str, str_len, "]");
+    if (ret < 0 || ret >= str_len) {
+        return -1;
+    }
+    total_len += ret;
+
+    return total_len;
+}
+
+/* "labels": ["hostname", "blk_type", "comm"] */
+#define META_FIELD_TYPE_LABEL "label"
+static int metadata_build_labels(const Measurement *mm, char *json_str, int max_len)
+{
+    int i, ret;
+    char *str = json_str;
+    int str_len = max_len;
+    int total_len = 0;
+
+    ret = snprintf(str, str_len, ", \"labels\": [\"hostname\"");
+    if (ret < 0 || ret >= str_len) {
+        return -1;
+    }
+    str += ret;
+    str_len -= ret;
+    total_len += ret;
+
+    for (i = 0; i < mm->fieldsNum; i++) {
+        if (strcmp(mm->fields[i].type, META_FIELD_TYPE_LABEL) == 0) {
+            ret = snprintf(str, str_len, ", \"%s\"", mm->fields[i].name);
+            if (ret < 0 || ret >= str_len) {
+                return -1;
+            }
+            str += ret;
+            str_len -= ret;
+            total_len += ret;
+        }
+    }
+    ret = snprintf(str, str_len, "]");
+    if (ret < 0 || ret >= str_len) {
+        return -1;
+    }
+    total_len += ret;
+
+    return total_len;
+}
+
+static int is_filed_type_metric(char *field_type)
+{
+    int i;
+
+    const char meta_fileld_type_metric[][MAX_FIELD_TYPE_LEN] = {
+        "counter",
+        "gauge"
+    };
+    int size = sizeof(meta_fileld_type_metric) / sizeof(meta_fileld_type_metric[0]);
+
+    for (i = 0; i < size; i++) {
+        if (strcmp(field_type, meta_fileld_type_metric[i]) == 0) {
+            return 1;
+        }
+    }
+    return 0;
+}
+
+/* "metrics": ["rx_bytes", "tx_bytes"] */
+static int metadata_build_metrics(const Measurement *mm, char *json_str, int max_len)
+{
+    int i, j, ret;
+    char *str = json_str;
+    int str_len = max_len;
+    int total_len = 0;
+    int first_metric = 1;
+
+    ret = snprintf(str, str_len, ", \"metrics\": [");
+    if (ret < 0 || ret >= str_len) {
+        return -1;
+    }
+    str += ret;
+    str_len -= ret;
+    total_len += ret;
+
+    for (i = 0; i < mm->fieldsNum; i++) {
+        if (is_filed_type_metric((char *)mm->fields[i].type) == 0) {
+            /* not metric, continue */
+            continue;
+        }
+        if (first_metric == 1) {
+            ret = snprintf(str, str_len, "\"%s\"", mm->fields[i].name);
+            first_metric = 0;
+        } else {
+            ret = snprintf(str, str_len, ", \"%s\"", mm->fields[i].name);
+        }
+        if (ret < 0 || ret >= str_len) {
+            return -1;
+        }
+        str += ret;
+        str_len -= ret;
+        total_len += ret;
+    }
+
+    ret = snprintf(str, str_len, "]}");
+    if (ret < 0 || ret >= str_len) {
+        return -1;
+    }
+    total_len += ret;
+
+    return total_len;
+}
+
+static int metadata_to_json(const Measurement *mm, char *json_str, int max_json_len)
+{
+    int ret;
+    char *str = json_str;
+    int str_len = max_json_len;
+
+    ret = metadata_build_timestamp(str, str_len);
+    if (ret < 0) {
+        return -1;
+    }
+    str += ret;
+    str_len -= ret;
+
+    ret = metadata_build_metaname(mm, str, str_len);
+    if (ret < 0) {
+        return -1;
+    }
+    str += ret;
+    str_len -= ret;
+
+    ret = metadata_build_entityname(mm, str, str_len);
+    if (ret < 0) {
+        return -1;
+    }
+    str += ret;
+    str_len -= ret;
+
+    ret = metadata_build_vrsion(mm, str, str_len);
+    if (ret < 0) {
+        return -1;
+    }
+    str += ret;
+    str_len -= ret;
+
+    ret = metadata_build_keys(mm, str, str_len);
+    if (ret < 0) {
+        return -1;
+    }
+    str += ret;
+    str_len -= ret;
+
+    ret = metadata_build_labels(mm, str, str_len);
+    if (ret < 0) {
+        return -1;
+    }
+    str += ret;
+    str_len -= ret;
+
+    ret = metadata_build_metrics(mm, str, str_len);
+    if (ret < 0) {
+        return -1;
+    }
+    str += ret;
+    str_len -= ret;
+
+    return 0;
+}
+
+static int report_one_metadata(const MeasurementMgr *mgr, const Measurement *mm)
+{
+    int ret;
+    char *json_str = NULL;
+
+    json_str = (char *)malloc(MAX_DATA_STR_LEN);
+    if (json_str == NULL) {
+        return -1;
+    }
+    json_str[0] = 0;
+
+    ret = metadata_to_json(mm, json_str, MAX_DATA_STR_LEN);
+    if (ret < 0) {
+        ERROR("[META] metadata to json failed.\n");
+        (void)free(json_str);
+        return -1;
+    }
+
+    if (mgr->meta_out_channel == OUT_CHNL_KAFKA) {
+        // Report meta to kafka
+        KafkaMgr *meta_kafka = mgr->meta_kafkaMgr;
+        if (meta_kafka == NULL) {
+            ERROR("[META] kafka topic(metadata_topic) is NULL\n");
+            (void)free(json_str);
+            return -1;
+        }
+        (void)KafkaMsgProduce(meta_kafka, json_str, strlen(json_str));
+        DEBUG("[META] kafka metadata_topic produce one data: %s\n", json_str);
+    }
+
+    if (mgr->meta_out_channel == OUT_CHNL_LOGS) {
+        // Write meta to log
+        wr_meta_logs(json_str);
+        DEBUG("[META] write metadata to logs fail.\n");
+        (void)free(json_str);
+    }
+
+    return 0;
+}
+
+static int ReportMeteData(const MeasurementMgr *mgr)
+{
+    Measurement *mm = NULL;
+    int i, meta_num;
+
+    if (mgr == NULL) {
+        ERROR("[META] measurement mgr is NULL\n");
+        return -1;
+    }
+    meta_num = mgr->measurementsNum;
+
+    for (i = 0; i < meta_num; i++) {
+        mm = mgr->measurements[i];
+        if (report_one_metadata(mgr, mm) != 0) {
+            ERROR("[META] report one metadata to kafka fail.\n");
+            return -1;
+        }
+    }
+    return 0;
+}
+
+#define TEM_MINUTES (10 * 60)
+int ReportMetaDataMain(const MeasurementMgr *mgr)
+{
+    int ret;
+
+    if (mgr->meta_out_channel != OUT_CHNL_LOGS && mgr->meta_out_channel != OUT_CHNL_KAFKA) {
+        ERROR("[META] metadata out channel isn't logs or kafka, break.\n");
+        return -1;
+    }
+    if (mgr->meta_out_channel == OUT_CHNL_KAFKA && mgr->meta_kafkaMgr == NULL) {
+        ERROR("[META] metadata out channel is kafka but kafkaMgr is NULL, break.\n");
+        return -1;
+    }
+
+    for (;;) {
+        ret = ReportMeteData(mgr);
+        if (ret < 0) {
+            return -1;
+        }
+        sleep(TEM_MINUTES);
+    }
+}
+
+#endif

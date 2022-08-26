@@ -19,6 +19,7 @@
 
 #include <stdint.h>
 #include "base.h"
+#include "kafka.h"
 
 typedef struct {
     char description[MAX_FIELD_DESCRIPTION_LEN];
@@ -41,6 +42,11 @@ typedef struct {
     uint32_t fields_num_max;
 
     Measurement **measurements;
+
+    // metadata output
+    KafkaMgr *meta_kafkaMgr;
+    OutChannelType meta_out_channel;
+
 } MeasurementMgr;
 
 MeasurementMgr *MeasurementMgrCreate(uint32_t measurementsCapability, uint32_t fields_num_max);
@@ -48,6 +54,8 @@ void MeasurementMgrDestroy(MeasurementMgr *mgr);
 
 int MeasurementMgrLoad(const MeasurementMgr *mgr, const char *metaDir);
 int MeasurementMgrLoadSingleMeta(MeasurementMgr *mgr, const char *metaPath);
+
+int ReportMetaDataMain(const MeasurementMgr *mgr);
 
 #endif
 
