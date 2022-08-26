@@ -34,8 +34,9 @@ def load_model(model_id: str, model_path: str, algo_path: str) -> object:
         if model_path:
             model.load(model_path)
         LOGGER.debug(f"load model {model_id} succeed")
-    except (ModuleNotFoundError, TypeError, KeyError):
+    except (ModuleNotFoundError, TypeError, KeyError) as error:
         model = None
+        LOGGER.error(error)
         LOGGER.error(f"load model {model_id} fail")
     finally:
         return model

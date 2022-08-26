@@ -141,14 +141,16 @@ class ModelDao(MysqlProxy):
             "result": []
         }
 
-        filters = self._get_model_list_filters(data["username"], data.get("filter"))
+        filters = self._get_model_list_filters(
+            data["username"], data.get("filter"))
         model_query = self._query_model_list(filters)
 
         total_count = len(model_query.all())
         if not total_count:
             return result
 
-        direction, page, per_page = data.get('direction'), data.get('page'), data.get('per_page')
+        direction, page, per_page = data.get(
+            'direction'), data.get('page'), data.get('per_page')
         if data.get("sort"):
             sort_column = getattr(Model, data["sort"])
         else:
@@ -201,7 +203,8 @@ class ModelDao(MysqlProxy):
             return filters
 
         if filter_dict.get("model_name"):
-            filters.add(Model.model_name.like("%" + filter_dict["model_name"] + "%"))
+            filters.add(Model.model_name.like(
+                "%" + filter_dict["model_name"] + "%"))
         if filter_dict.get("algo_name"):
             filters.add(Algorithm.algo_name.in_(filter_dict["algo_name"]))
         if filter_dict.get("tag"):
@@ -245,7 +248,8 @@ class ModelDao(MysqlProxy):
             return status_code, result
         except (SQLAlchemyError, KeyError) as error:
             LOGGER.error(error)
-            LOGGER.error("Get model's algorithm info failed due to internal error.")
+            LOGGER.error(
+                "Get model's algorithm info failed due to internal error.")
             return DATABASE_QUERY_ERROR, result
 
     def _get_model_algo_info(self, model_list: list) -> Tuple[int, dict]:
@@ -266,7 +270,43 @@ class ModelDao(MysqlProxy):
         fail_list = list(set(model_list) - set(succeed_list))
         if fail_list:
             fail_str = ",".join(fail_list)
-            LOGGER.debug("No data found when getting the info of model: %s." % fail_str)
+            LOGGER.debug(
+                "No data found when getting the info of model: %s." % fail_str)
+
+        status_dict = {"succeed_list": succeed_list, "fail_list": fail_list}
+        status_code = judge_return_code(status_dict, NO_DATA)
+
+        return status_code, result
+
+    # builtin interface
+    def get_model(self, model_list: List[str]) -> Tuple[int, Dict[str, dict]]:
+        """
+        The interface is for model loading, offering model path and algorithm path.
+        """
+        result = {}
+        try:
+            status_code, result = self._get_model_info(model_list)
+            LOGGER.debug("Finished getting model's algorithm info.")
+            return status_code, result
+        except SQLAlchemyError:
+            LOGGER.error("Get model info failed due to internal error.")
+            return DATABASE_QUERY_ERROR, result
+
+    def _get_model_info(self, model_list: List[str]) -> Tuple[int, Dict[str, dict]]:
+        model_query = self.session.query(Model.model_id, Model.model_name, Model.file_path, Algorithm.path) \
+            .join(Algorithm, Model.algo_id == Algorithm.algo_id) \
+            .filter(Model.model_id.in_(model_list))
+
+        result = {}
+        for row in model_query:
+            result[row.model_id] = {
+                "model_path": row.file_path, "algo_path": row.path}
+
+        succeed_list = list(result.keys())
+        fail_list = list(set(model_list) - set(succeed_list))
+        if fail_list:
+            LOGGER.error(
+                "No data found when getting the info of model: %s" % fail_list)
 
         status_dict = {"succeed_list": succeed_list, "fail_list": fail_list}
         status_code = judge_return_code(status_dict, NO_DATA)
