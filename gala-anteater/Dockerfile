@@ -40,10 +40,6 @@ COPY requirements.txt requirements.txt
 # Copy source code into the image
 COPY . /home/gala-anteather
 
-# RUN pip3 config set global.index-url https://pypi.tuna.tsinghua.edu.cn/simple
-RUN pip3 config set global.index-url http://cmc-cd-mirror.rnd.huawei.com/pypi/simple/ && \
-    pip3 config set global.trusted-host cmc-cd-mirror.rnd.huawei.com
-
 # install python3 library dependencies
 RUN pip3 install --no-cache-dir -r requirements.txt
 
