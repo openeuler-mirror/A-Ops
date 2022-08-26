@@ -10,8 +10,8 @@ import getopt
 import requests
 import libconf
 
-DOCKER = "/docker/"
 DOCKER_LEN = 8
+CONTAINER_ABBR_ID_LEN = 12
 FILTER_BY_TASKPROBE = "task"
 PROJECT_PATH = os.path.dirname(os.path.dirname(os.path.abspath(__file__))) # /opt/gala-gopher/
 PATTERN = re.compile(r'/[a-z0-9]+')
@@ -112,7 +112,7 @@ def parse_container_id(metric_str):
         container_id = sub_str.group(0)
     if len(container_id) - 1 != 64: # len of container_id is 64
         return ""
-    return container_id[1:]
+    return container_id[1:CONTAINER_ABBR_ID_LEN + 1]
 
 
 def parse_metrics(raw_metrics):
@@ -192,6 +192,7 @@ def print_metrics():
                             value = record[field_name]
                     s = s + value + "|"
                 print(s)
+                sys.stdout.flush()
 
 
 def clean_metrics():
@@ -228,14 +229,14 @@ class CadvisorProbe(object):
         g_cadvisor_pid = ps.pid
         print("[cadvisor_probe]cAdvisor started at port %s." % self.port)
 
-    def get_metrics(self):
-        url = "http://localhost:%s/metrics" % (self.port)
-        r = requests.get(url)
-        r.raise_for_status()
 
-        parse_metrics(r.text)
-        print_metrics()
-        clean_metrics()
+def get_metrics(session, port):
+    r = session.get("http://localhost:%s/metrics" % port)
+    r.raise_for_status()
+
+    parse_metrics(r.text)
+    print_metrics()
+    clean_metrics()
 
 
 def stop_cadvisor():
@@ -295,9 +296,11 @@ if __name__ == "__main__":
     signal.signal(signal.SIGINT, signal_handler)
     convert_meta()
 
+    s = requests.Session()
     while True:
         time.sleep(g_params.period)
         try:
-            probe.get_metrics()
+            get_metrics(s, g_params.port)
         except Exception as e:
             print("[cadvisor_probe]get metrics failed. Err: %s" % repr(e))
+            s = requests.Session()

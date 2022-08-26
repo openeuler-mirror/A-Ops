@@ -115,7 +115,6 @@ static __always_inline int init_conn_id(struct conn_id_t *conn_id, int fd, int t
     } else if (conn_id->client_ip_info.family == AF_INET6) {
         bpf_probe_read(conn_id->server_ip_info.ipaddr.ip6, IP6_LEN, &sk->sk_v6_rcv_saddr);
         bpf_probe_read(conn_id->client_ip_info.ipaddr.ip6, IP6_LEN, &sk->sk_v6_daddr);
-
     } else {
         return -1;
     }
@@ -448,7 +447,6 @@ KPROBE(ksys_write, pt_regs)
     int fd;
     u32 tgid __maybe_unused = bpf_get_current_pid_tgid() >> INT_LEN;
     char *buf;
-    int err;
 
     fd = (int)PT_REGS_PARM1(ctx);
     buf = (char *)PT_REGS_PARM2(ctx);
