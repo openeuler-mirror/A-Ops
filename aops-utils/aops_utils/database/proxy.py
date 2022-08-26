@@ -476,6 +476,8 @@ class ElasticsearchProxy(DataBaseProxy):
         page = data.get('page')
         per_page = data.get('per_page')
         if page and per_page:
+            page = int(page)
+            per_page = int(per_page)
             total_page = math.ceil(count / per_page)
             start = (page - 1) * per_page
             body.update({"from": start, "size": per_page})

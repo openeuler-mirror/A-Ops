@@ -38,11 +38,28 @@ class QueryWorkflowSchema(Schema):
     workflow_id = fields.String(required=True, validate=lambda s: len(s) > 0)
 
 
+class WorkflowListFilterSchema(Schema):
+    """
+    filter schema of workflow list getting interface
+    """
+    domain = fields.List(fields.String, required=False, validate=lambda s: len(s) > 0)
+    app = fields.List(fields.String, required=False, validate=lambda s: len(s) > 0)
+    status = fields.List(fields.String(validate=validate.OneOf(["hold", "running", "recommending"])),
+                         required=False)
+
+
 class QueryWorkflowListSchema(Schema):
-    domain = fields.String(required=False, validate=lambda s: s > 0)
-    status = fields.String(required=False, validate=validate.OneOf(["hold", "running", "recommending"]))
+    filter = fields.Nested(WorkflowListFilterSchema, required=False)
     page = fields.Integer(required=False, validate=lambda s: s > 0)
     per_page = fields.Integer(required=False, validate=lambda s: 0 < s < 50)
+
+
+class ExecuteWorkflowSchema(Schema):
+    workflow_id = fields.String(required=True, validate=lambda s: len(s) > 0)
+
+
+class StopWorkflowSchema(Schema):
+    workflow_id = fields.String(required=True, validate=lambda s: len(s) > 0)
 
 
 class DeleteWorkflowSchema(Schema):

@@ -21,7 +21,7 @@ from flask import jsonify, request
 
 from aops_utils.database.helper import operate
 from aops_utils.restful.response import BaseResponse
-from aops_utils.restful.status import SUCCEED, WORKFLOW_ASSIGN_MODEL_FAIL
+from aops_utils.restful.status import SUCCEED, WORKFLOW_ASSIGN_MODEL_FAIL, DATABASE_CONNECT_ERROR
 from aops_utils.log.log import LOGGER
 
 from aops_check.conf import configuration
@@ -29,8 +29,10 @@ from aops_check.database import SESSION
 from aops_check.database.dao.workflow_dao import WorkflowDao
 from aops_check.core.rule.workflow import Workflow
 from aops_check.utils.schema.workflow import CreateWorkflowSchema, QueryWorkflowSchema, \
-    QueryWorkflowListSchema, DeleteWorkflowSchema, UpdateWorkflowSchema, IfHostInWorkflowSchema
+    QueryWorkflowListSchema, DeleteWorkflowSchema, UpdateWorkflowSchema, IfHostInWorkflowSchema, \
+    ExecuteWorkflowSchema, StopWorkflowSchema
 from aops_check.errors.workflow_error import WorkflowModelAssignError
+from aops_check.core.check.check_scheduler.check_scheduler import check_scheduler
 
 
 class CreateWorkflow(BaseResponse):
@@ -118,12 +120,12 @@ class QueryWorkflow(BaseResponse):
 
 class QueryWorkflowList(BaseResponse):
     """
-    Query workflow interface, it's a get request.
+    Query workflow interface, it's a post request.
     """
 
-    def get(self):
+    def post(self):
         """
-        It's get request, step:
+        It's post request, step:
             1.verify token
             2.verify args
             3.get workflow list from database
@@ -131,6 +133,97 @@ class QueryWorkflowList(BaseResponse):
         return jsonify(self.handle_request_db(QueryWorkflowListSchema,
                                               WorkflowDao(configuration),
                                               "get_workflow_list", SESSION))
+
+
+class ExecuteWorkflow(BaseResponse):
+    """
+    Execute workflow interface, it's a post request
+    """
+    @staticmethod
+    def _handle(args: dict) -> int:
+        """
+        Args:
+            args: dict of workflow id, e.g.
+                {
+                    "username": "admin",
+                    "workflow_id": "workflow_id1"
+                }
+        """
+        workflow_id = args["workflow_id"]
+        username = args["username"]
+        workflow_proxy = WorkflowDao(configuration)
+        if not workflow_proxy.connect(SESSION):
+            return DATABASE_CONNECT_ERROR
+
+        status_code, result = workflow_proxy.get_workflow(args)
+
+        if status_code != SUCCEED:
+            return status_code
+
+        workflow_info = result["result"]
+        if workflow_info["status"] != "hold":
+            LOGGER.info("Workflow '%s' cannot execute with status '%s'." %
+                        (workflow_id, workflow_info["status"]))
+            return SUCCEED
+
+        workflow_proxy.update_workflow_status(workflow_id, "running")
+        check_scheduler.start_workflow(workflow_id, username, workflow_info["step"])
+        return SUCCEED
+
+    def post(self):
+        """
+        It's a post request, step
+            1.verify token
+            2.verify args
+            3.check workflow exists or not, check status and change to running
+            4.execute workflow
+        """
+        return jsonify(self.handle_request(ExecuteWorkflowSchema, self))
+
+
+class StopWorkflow(BaseResponse):
+    """
+    Stop workflow interface, it's a post request
+    """
+    @staticmethod
+    def _handle(args: dict) -> int:
+        """
+        Args:
+            args: dict of workflow id, e.g.
+                {
+                    "username": "admin",
+                    "workflow_id": "workflow_id1"
+                }
+        """
+        workflow_id = args["workflow_id"]
+        workflow_proxy = WorkflowDao(configuration)
+        if not workflow_proxy.connect(SESSION):
+            return DATABASE_CONNECT_ERROR
+
+        status_code, result = workflow_proxy.get_workflow(args)
+
+        if status_code != SUCCEED:
+            return status_code
+
+        workflow_info = result["result"]
+        if workflow_info["status"] != "running":
+            LOGGER.info("Workflow '%s' cannot stop with status '%s'." %
+                        (workflow_id, workflow_info["status"]))
+            return SUCCEED
+
+        workflow_proxy.update_workflow_status(workflow_id, "hold")
+        check_scheduler.stop_workflow(workflow_id)
+        return SUCCEED
+
+    def post(self):
+        """
+        It's a post request, step
+            1.verify token
+            2.verify args
+            3.check workflow exists or not, check status and change to hold
+            4.stop workflow
+        """
+        return jsonify(self.handle_request(StopWorkflowSchema, self))
 
 
 class DeleteWorkflow(BaseResponse):
@@ -143,7 +236,8 @@ class DeleteWorkflow(BaseResponse):
         It's delete request, step:
             1.verify token
             2.verify args
-            3.delete workflow from database
+            3.check if workflow running
+            4.delete workflow from database
         """
         return jsonify(self.handle_request_db(DeleteWorkflowSchema,
                                               WorkflowDao(configuration),
