@@ -59,7 +59,7 @@ def arg_parser():
                         help="The prometheus server port", type=str, required=True)
     parser.add_argument("-m", "--model",
                         help="The machine learning model - random_forest, vae",
-                        type=str, default="random_forest", required=False)
+                        type=str, default="vae", required=False)
     parser.add_argument("-d", "--duration",
                         help="The time interval of scheduling anomaly detection task (minutes)",
                         type=int, default=1, required=False)
@@ -73,7 +73,7 @@ def arg_parser():
                         help="The model threshold (0, 1), the bigger value, the more strict of anomaly",
                         type=float, default=0.8, required=False)
     parser.add_argument("-sli", "--sli_time",
-                        help="The sli time threshold", type=int, default=600, required=False)
+                        help="The sli time threshold", type=int, default=400, required=False)
     arguments = vars(parser.parse_args())
 
     return arguments

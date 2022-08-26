@@ -15,7 +15,9 @@ Time:
 Author:
 Description: Some common functions are able to use in this project.
 """
+
 import os
+import re
 from datetime import datetime
 from typing import Dict, Any, List, Tuple
 
@@ -25,6 +27,8 @@ from anteater.utils.settings import ServiceSettings, MetricSettings, ModelSettin
 from anteater.utils.log import Log
 
 log = Log().get_logger()
+
+PUNCTUATION_PATTERN = re.compile(r"[^\w_\-:.@()+,=;$!*'%]")
 
 
 def get_file_path(file_name):
@@ -97,6 +101,7 @@ def get_kafka_message(utc_now: datetime, y_pred: List, machine_id: str, key_anom
             keys.append(metric_label[key])
 
     entity_id = f"{machine_id}_{table_name}_{'_'.join(keys)}"
+    entity_id = PUNCTUATION_PATTERN.sub(":", entity_id)
 
     sample_count = len(y_pred)
     if sample_count != 0:
@@ -108,11 +113,14 @@ def get_kafka_message(utc_now: datetime, y_pred: List, machine_id: str, key_anom
     for name, label, score in rec_anomalies:
         recommend_metrics[name] = {"label": label, "score": score}
 
+    timestamp = round(utc_now.timestamp() * 1000)
+
     message = {
-        "Timestamp": round(utc_now.timestamp()),
+        "Timestamp": timestamp,
         "Attributes": {
             "entity_id": entity_id,
-            "event_id": f"{entity_id}_{utc_now.strftime('%Y_%m_%d_%H_%M_%S')}"
+            "event_id": f"{timestamp}_{entity_id}",
+            "event_type": "app"
         },
         "Resource": {
             "anomaly_score": anomaly_score,
@@ -122,16 +130,12 @@ def get_kafka_message(utc_now: datetime, y_pred: List, machine_id: str, key_anom
             "anomaly_ratio": anomaly_score,
             "metric_label": filtered_metric_label,
             "recommend_metrics": recommend_metrics,
-            "metric_id": metric_id,
+            "metrics": metric_id,
         },
         "SeverityText": "WARN",
-        "SeverityNumber": 14,
-        "Body": "Abnormal: this unusual event may be impacting client-side sli performance.",
-        "client_ip": metric_label.get("client_ip", ""),
-        "server_ip": metric_label.get("server_ip", ""),
-        "server_port": metric_label.get("server_port", ""),
-        "abnormal_metric": metric_id,
-        "event_id": f"{entity_id}_{utc_now.strftime('%Y_%m_%d_%H_%M_%S')}"
+        "SeverityNumber": 13,
+        "Body": f"{utc_now.strftime('%c')}, WARN, APP may be impacting sli performance issues.",
+        "event_id": f"{timestamp}_{entity_id}"
     }
 
     return message
