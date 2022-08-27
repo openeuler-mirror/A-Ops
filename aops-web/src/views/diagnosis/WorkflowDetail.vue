@@ -22,9 +22,30 @@
             描述：{{ workflow.description }}
           </a-col>
           <div class="control-btns">
-            <a-button type="primary" @click="execute">执行</a-button>
-            <a-button @click="stop">暂停</a-button>
-            <a-button type="danger" ghost @click="deleteWorkflow">删除</a-button>
+            <a-button
+              type="primary"
+              @click="execute"
+              :loading="excuteLoading"
+              :disabled="workflow.status==='running'"
+            >
+              执行
+            </a-button>
+            <a-button
+              @click="stop"
+              :loading="stopLoading"
+              :disabled="workflow.status==='hold'"
+            >
+              暂停
+            </a-button>
+            <a-popconfirm
+                title="确定删除本工作流吗?"
+                placement="topRight"
+                ok-text="确认"
+                cancel-text="取消"
+                @confirm="deleteWorkflow"
+            >
+              <a-button type="danger" ghost>删除</a-button>
+            </a-popconfirm>
           </div>
         </a-row>
         <a-row class="tab-container">
@@ -97,9 +118,10 @@
 </template>
 
 <script>
+import router from '@/appCore/router'
 import MyPageHeaderWrapper from '@/views/utils/MyPageHeaderWrapper'
 import UpdateModel from './components/UpdateModel.vue';
-import { getWorkflowDatail, executeWorkflow, stopWorkflow } from '@/api/check'
+import { getWorkflowDatail, executeWorkflow, stopWorkflow, deleteWorkflow } from '@/api/check'
 import { dateFormat } from '@/views/utils/Utils'
 
 const hostcheckColums = [
@@ -164,7 +186,10 @@ export default {
       multicheck: [],
       diag: [],
       updateTarget: {},
-      visible: false
+      visible: false,
+      excuteLoading: false,
+      stopLoading: false,
+      deleteLoading: false
     }
   },
   computed: {
@@ -286,19 +311,8 @@ export default {
         this.singlecheckModel.splice(0, this.singlecheck[key].IndicatordNumber)
       }
     },
-    stop() {
-       stopWorkflow({
-           workflowId: this.workflow_id
-       }).then((res) => {
-           this.$message.success(res.msg);
-           this.getWorkflowDatails();
-       }).catch((err) => {
-           this.$message.error(err.response.data.msg);
-       })
-    },
-    deleteWorkflow() {
-    },
     execute() {
+        this.excuteLoading = true
         executeWorkflow({
             workflowId: this.workflow_id
         }).then((res) => {
@@ -306,6 +320,36 @@ export default {
             this.getWorkflowDatails();
         }).catch((err) => {
             this.$message.error(err.response.data.msg);
+        }).finally(() => {
+          this.excuteLoading = false
+        })
+    },
+    stop() {
+        this.stopLoading = true
+        stopWorkflow({
+            workflowId: this.workflow_id
+        }).then((res) => {
+            this.$message.success(res.msg);
+            this.getWorkflowDatails();
+        }).catch((err) => {
+            this.$message.error(err.response.data.msg);
+        }).finally(() => {
+          this.stopLoading = false
+        })
+    },
+    deleteWorkflow() {
+        this.deleteLoading = true
+        deleteWorkflow({
+            workflowId: this.workflow_id
+        }).then((res) => {
+            this.$message.success(res.msg);
+            setTimeout(function() {
+              router.push('/diagnosis/workflow')
+            }, 500)
+        }).catch((err) => {
+            this.$message.error(err.response.data.msg);
+        }).finally(() => {
+            this.deleteLoading = false
         })
     },
     callback(key) {
