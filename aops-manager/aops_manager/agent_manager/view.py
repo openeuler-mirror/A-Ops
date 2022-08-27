@@ -282,10 +282,7 @@ class GetHostScene(BaseResponse):
         plugin_datas = data.get("resp", [])
         for plugin_data in plugin_datas:
             plugin_name = plugin_data.get("plugin_name")
-            collect_item_list = []
-            for collect_item in plugin_data.get("collect_items"):
-                collect_item_list.append(collect_item.get("probe_name"))
-            host_scene_info["collect_items"][plugin_name] = collect_item_list
+            host_scene_info["collect_items"][plugin_name] = plugin_data.get("collect_items")
 
         return SUCCEED, host_scene_info
 
@@ -385,7 +382,7 @@ class SetAgentPluginStatus(BaseResponse):
             operate_url = SetAgentPluginStatus.status_url_map[plugin_status]
             params = {"plugin_name": plugin_name}
             operate_status = AgentUtil.make_agent_request(AgentUtil.make_agent_url(host_ip_port,
-                                                                                   operate_url), "get",
+                                                                                   operate_url), "post",
                                                           header, params)[0]
             if operate_status != SUCCEED:
                 ret["failed_list"].append(plugin_name)
