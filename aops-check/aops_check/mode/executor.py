@@ -17,6 +17,11 @@ Description:
 """
 from typing import NoReturn
 
+from aops_utils.log.log import LOGGER
+
+from aops_check.conf import configuration
+from aops_check.core.check.consumer import ConsumerManager
+from aops_check.core.check.consumer.workflow_consumer import WorkflowConsumer
 from aops_check.mode import mode, Mode
 
 
@@ -32,4 +37,11 @@ class Executor(Mode):
 
     @staticmethod
     def run() -> NoReturn:
-        print('executor')
+        consumer_list = [
+            WorkflowConsumer(configuration.consumer.get('TASK_NAME'),
+                             configuration.consumer.get('TASK_GROUP_ID'),
+                             configuration)
+        ]
+        manager = ConsumerManager(consumer_list)
+        manager.run()
+        LOGGER.info("check executor start succeed")

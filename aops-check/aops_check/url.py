@@ -26,6 +26,8 @@ from aops_check.conf.constant import (
     QUERY_WORKFLOW_LIST,
     UPDATE_WORKFLOW,
     IF_HOST_IN_WORKFLOW,
+    EXECUTE_WORKFLOW,
+    STOP_WORKFLOW,
     QUERY_MODEL_LIST,
     QUERY_ALGO_LIST,
     QUERY_ALGO,
@@ -62,7 +64,9 @@ SPECIFIC_URLS = {
         (workflow_controller.QueryWorkflow, QUERY_WORKFLOW),
         (workflow_controller.QueryWorkflowList, QUERY_WORKFLOW_LIST),
         (workflow_controller.UpdateWorkflow, UPDATE_WORKFLOW),
-        (workflow_controller.IfHostInWorkflow, IF_HOST_IN_WORKFLOW)
+        (workflow_controller.IfHostInWorkflow, IF_HOST_IN_WORKFLOW),
+        (workflow_controller.ExecuteWorkflow, EXECUTE_WORKFLOW),
+        (workflow_controller.StopWorkflow, STOP_WORKFLOW)
     ],
     'MODEL_URLS': [
         (model_controller.QueryModelList, QUERY_MODEL_LIST)

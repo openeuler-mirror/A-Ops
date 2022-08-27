@@ -15,7 +15,31 @@ Time:
 Author:
 Description:
 """
+from elasticsearch import ElasticsearchException
+
+from aops_utils.log.log import LOGGER
+from aops_utils.restful.status import DATA_EXIST, SUCCEED
+from aops_check.conf import configuration
+from aops_check.core.experiment.app.network_diagnose import NetworkDiagnoseApp
+from aops_check.database.dao.app_dao import AppDao
+
+default_app = [
+    NetworkDiagnoseApp
+]
 
 
 def init_app():
-    ...
+    dao = AppDao(configuration=configuration)
+    if not dao.connect():
+        raise ElasticsearchException("connect to elasticsearch fail")
+
+    for app in default_app:
+        info = app().info
+        status_code = dao.create_app(info)
+        if status_code == DATA_EXIST:
+            LOGGER.warning(
+                f"The app {info['app_name']} has existed, choose to ignore")
+        elif status_code != SUCCEED:
+            LOGGER.error(f"Import default app {info['app_name']} fail")
+
+    LOGGER.info("Import default app done")
