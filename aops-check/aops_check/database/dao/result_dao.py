@@ -19,7 +19,8 @@ from aops_check.database.factory.table import HostCheckResult, AlertHost, Domain
 from aops_utils.database.helper import sort_and_page
 from aops_utils.database.proxy import MysqlProxy
 from aops_utils.log.log import LOGGER
-from aops_utils.restful.status import DATABASE_QUERY_ERROR, SUCCEED, NO_DATA, DATABASE_UPDATE_ERROR
+from aops_utils.restful.status import DATABASE_QUERY_ERROR, SUCCEED, NO_DATA, DATABASE_UPDATE_ERROR,\
+    DATABASE_INSERT_ERROR, DATABASE_DELETE_ERROR
 
 
 class ResultDao(MysqlProxy):
@@ -121,7 +122,8 @@ class ResultDao(MysqlProxy):
                                                     HostCheckResult.metric_name,
                                                     HostCheckResult.metric_label
                                                     ). \
-            join(host_id_query, HostCheckResult.host_id == host_id_query.c.host_id).all()
+            join(host_id_query, HostCheckResult.host_id ==
+                 host_id_query.c.host_id).all()
         return check_result_info_list
 
     def query_result_list(self, data: Dict[str, str]) -> Tuple[int, dict]:
@@ -162,6 +164,20 @@ class ResultDao(MysqlProxy):
                         ...
                     ]
                 }
+
+                or
+
+                "result": {
+                    "alert_id": "alert_id",
+                    "alert_name": "alert_name",
+                    "confirmed": True or False,
+                    "domain": "domain_name",
+                    "host_num": int,
+                    "level": "level info",
+                    "time": xxxxxxxx,
+                    "workflow_id": "workflow_id",
+                    "workflow_name": "workflow_name"
+                }
         """
         page = data.get('page')
         per_page = data.get('per_page')
@@ -179,13 +195,20 @@ class ResultDao(MysqlProxy):
         if data.get('level'):
             filters.add(DomainCheckResult.level == data.get('level'))
 
+        if data.get("alert_id"):
+            filters.add(DomainCheckResult.alert_id == data.get("alert_id"))
+            domain_info = self.session.query(
+                DomainCheckResult).filter(*filters).first()
+            return SUCCEED, dict(result=domain_info.to_dict())
+
         res = {
             'total_count': 0,
             'total_page': 0,
             'result': []
         }
         try:
-            check_result_host_query = self._query_check_result_host_list(filters)
+            check_result_host_query = self._query_check_result_host_list(
+                filters)
             total_count = len(check_result_host_query.all())
             check_result_host_list, total_page = sort_and_page(
                 check_result_host_query, column, direction, per_page, page)
@@ -194,7 +217,8 @@ class ResultDao(MysqlProxy):
             LOGGER.error("Query check result list failed.")
             return DATABASE_QUERY_ERROR, res
 
-        res['result'] = self._check_result_host_rows_to_list(check_result_host_list)
+        res['result'] = self._check_result_host_rows_to_list(
+            check_result_host_list)
         res['total_page'] = total_page
         res['total_count'] = total_count
 
@@ -375,7 +399,8 @@ class ResultDao(MysqlProxy):
             LOGGER.error("Get domain check result failed.")
             return DATABASE_QUERY_ERROR, res
 
-        res['results'] = self._domain_check_result_count_rows_to_list(domain_check_result_list)
+        res['results'] = self._domain_check_result_count_rows_to_list(
+            domain_check_result_list)
         res['total_page'] = total_page
         res['total_count'] = total_count
 
@@ -389,7 +414,7 @@ class ResultDao(MysqlProxy):
         """
 
         return self.session.query(DomainCheckResult.domain,
-                                  func.count(DomainCheckResult.domain). \
+                                  func.count(DomainCheckResult.domain).
                                   label('count')).group_by(DomainCheckResult.domain)
 
     @staticmethod
@@ -417,3 +442,102 @@ class ResultDao(MysqlProxy):
             }
             res.append(domain_count_info)
         return res
+
+    def insert_domain(self, data: dict) -> int:
+        """
+        insert domain info into database
+        Args:
+            data: e.g. {
+                "alert_id": "1"
+                "domain": "",
+                "alert_name": "alertname",
+                "time": "1660471200",
+                "workflow_name": "",
+                "workflow_id": "1",
+                "username": "admin",
+                "level": None,
+                "confirmed": False
+            }
+
+        Returns:
+            int
+        """
+        try:
+            domain = DomainCheckResult(**data)
+            self.session.add(domain)
+            self.session.commit()
+            LOGGER.debug("Finished inserting domain's info.")
+            return SUCCEED
+        except (SQLAlchemyError, KeyError) as error:
+            LOGGER.error(error)
+            LOGGER.error("Insert domain info failed due to internal error.")
+            return DATABASE_INSERT_ERROR
+
+    def insert_alert_host(self, data: dict) -> int:
+        """
+        insert alert host info into database
+        Args:
+            data: e.g. {
+                "host_id": "1",
+                "alert_id": "1"
+                "host_ip": "",
+                "host_name": ""
+            }
+
+        Returns:
+            int
+        """
+        try:
+            alert_host = AlertHost(**data)
+            self.session.add(alert_host)
+            self.session.commit()
+            LOGGER.debug("Finished inserting alert's info.")
+            return SUCCEED
+        except (SQLAlchemyError, KeyError) as error:
+            LOGGER.error(error)
+            LOGGER.error(
+                "Insert alert host info failed due to internal error.")
+            return DATABASE_INSERT_ERROR
+
+    def insert_host_check(self, data: dict) -> int:
+        """
+        insert host check info into database
+        Args:
+            data: e.g. {
+                "host_id": "1",
+                "time": "1660471200"
+                "is_root": False,
+                "metric_name": "",
+                "metric_label": ""
+            }
+
+        Returns:
+            int
+        """
+        try:
+            host_check = HostCheckResult(**data)
+            self.session.add(host_check)
+            self.session.commit()
+            LOGGER.debug("Finished inserting host check info.")
+            return SUCCEED
+        except (SQLAlchemyError, KeyError) as error:
+            LOGGER.error(error)
+            LOGGER.error(
+                "Insert host check info failed due to internal error.")
+            return DATABASE_INSERT_ERROR
+
+    def delete_alert(self, alert_id: str) -> int:
+        """
+        Delete alert info
+        """
+        try:
+            self.session.query(DomainCheckResult).filter(
+                DomainCheckResult.alert_id == alert_id).delete()
+            self.session.commit()
+            LOGGER.debug("Finished delete alert info.")
+            return SUCCEED
+        except SQLAlchemyError as error:
+            LOGGER.error(error)
+            LOGGER.error(
+                "Delete alert info failed due to internal error.")
+            return DATABASE_DELETE_ERROR
