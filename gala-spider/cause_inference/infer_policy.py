@@ -12,7 +12,7 @@ from cause_inference.exceptions import InferenceException
 
 class InferPolicy(ABC):
     @abstractmethod
-    def infer(self, cause_graph: CausalGraph, top_k: int) -> List[Cause]:
+    def infer(self, causal_graph: CausalGraph, top_k: int) -> List[Cause]:
         pass
 
 
