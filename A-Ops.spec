@@ -1,6 +1,6 @@
 Name:		A-Ops
-Version:	v1.2.2
-Release:	2
+Version:	v1.2.3
+Release:	1
 Summary:	The intelligent ops toolkit for openEuler
 License:	MulanPSL2
 URL:		https://gitee.com/openeuler/A-Ops
@@ -75,7 +75,7 @@ Summary:    check module for A-Ops
 Requires:   aops-utils = %{version}-%{release}
 Requires:   python3-requests python3-flask python3-flask-restful python3-marshmallow >= 3.13.0
 Requires:   python3-numpy python3-pandas python3-prometheus-api-client
-Requires:   python3-sqlalchemy python3-PyMySQL
+Requires:   python3-sqlalchemy python3-PyMySQL python3-Flask-APScheduler >= 1.11.0
 
 %description -n aops-check
 check module for A-Ops
@@ -478,6 +478,9 @@ fi
 
 
 %changelog
+* Fri Aug 27 2022 zhuyuncheng<zhuyuncheng@huawei.com> - v1.2.3-1
+- Add requires of aops-check for new features.
+
 * Tue Aug 23 2022 zhaoyuxing<zhaoyuxing2@huawei.com> - v1.2.2-2
 - Set user modification of confs will not be overwrite for gala_spider.
 
