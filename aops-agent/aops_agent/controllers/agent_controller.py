@@ -16,8 +16,13 @@ from typing import List
 
 from flask import Response, jsonify
 
-from aops_agent.conf.constant import INSTALLABLE_PLUGIN, INFORMATION_ABOUT_RPM_SERVICE, SCANNED_APPLICATION, DATA_MODEL, \
+from aops_agent.conf.constant import (
+    INSTALLABLE_PLUGIN,
+    INFORMATION_ABOUT_RPM_SERVICE,
+    SCANNED_APPLICATION,
+    DATA_MODEL,
     PLUGIN_WITH_CLASS
+)
 from aops_agent.conf.status import StatusCode, PARAM_ERROR, SUCCESS
 from aops_agent.manages import plugin_manage
 from aops_agent.manages.command_manage import Command
@@ -33,7 +38,7 @@ def get_host_info() -> Response:
     Returns:
         a dict which contains os info,bios version and kernel version
     """
-    return jsonify(Command.get_host_info())
+    return jsonify(StatusCode.make_response_body(Command.get_host_info()))
 
 
 @Command.validate_token

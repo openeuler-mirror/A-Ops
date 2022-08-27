@@ -333,10 +333,7 @@ class GetHostInfo(BaseResponse):
                 incorrect_host_list.remove(query.host_id)
                 url = f"http://{query.public_ip}:{query.agent_port}{ROUTE_AGENT_HOST_INFO}"
                 ret = self.get_response("GET", url, {}, header=headers)
-                if ret.get('code') is None:
-                    host_info['host_info'] = ret
-                else:
-                    host_info['host_info'] = {}
+                host_info['host_info'] = ret.get('resp', {})
                 host_infos.append(host_info)
             host_infos.extend({"host_id": host_id, "host_info": {}} for host_id in incorrect_host_list)
             res = {"host_infos": host_infos}
