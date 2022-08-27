@@ -16,6 +16,7 @@ REQUIRES = [
     'marshmallow>=3.13.0',
     'Flask',
     'Flask-RESTful',
+    'Flask-APScheduler',
     'numpy',
     'pandas',
     'prometheus_api_client',

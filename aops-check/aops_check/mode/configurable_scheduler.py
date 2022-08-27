@@ -18,13 +18,13 @@ Description:
 from typing import NoReturn
 
 from flask import Flask
-
+from flask_apscheduler import APScheduler
 from aops_check import BLUE_POINT
 from aops_check.conf import configuration
 from aops_check.init import init
 from aops_check.mode import mode
 from aops_check.mode.scheduler import Scheduler
-
+from aops_check.core.check.check_scheduler.check_scheduler import check_scheduler
 
 @mode.register('configurable')
 class ConfigurableScheduler(Scheduler):
@@ -44,10 +44,15 @@ class ConfigurableScheduler(Scheduler):
         init()
 
         app = Flask(__name__)
+        apscheduler = APScheduler()
+        apscheduler.init_app(app)
+        apscheduler.start()
+
         for blue, api in BLUE_POINT:
             api.init_app(app)
             app.register_blueprint(blue)
 
+        check_scheduler.start_all_workflow(app)
         ip = configuration.check.get('IP')
         port = configuration.check.get('PORT')
         app.run(port=port, host=ip)
