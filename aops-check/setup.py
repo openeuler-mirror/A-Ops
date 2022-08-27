@@ -23,7 +23,8 @@ REQUIRES = [
     'setuptools',
     'requests',
     'SQLAlchemy',
-    'PyMySQL'
+    'PyMySQL',
+    'scipy'
 ]
 
 setup(

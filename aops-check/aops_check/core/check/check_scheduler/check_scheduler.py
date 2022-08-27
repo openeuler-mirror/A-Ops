@@ -40,7 +40,7 @@ class CheckScheduler:
         self.timing_check = True if configuration.check.get("TIMING_CHECK") == "on" else False
 
     @staticmethod
-    def _query_running_workflow()-> tuple:
+    def _query_running_workflow() -> tuple:
         """
         Query all running workflow from database
 
