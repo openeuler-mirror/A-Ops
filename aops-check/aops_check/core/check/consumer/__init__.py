@@ -68,16 +68,16 @@ class Consumer(threading.Thread):
         """
         stop consumer thread
         """
-        LOGGER.debug("Stop consumer topic:%s group:%s",
-                     self.topic, self.group_id)
+        LOGGER.info("Stop consumer topic:%s group:%s",
+                    self.topic, self.group_id)
         self.running_flag = False
 
     def run(self):
         """
         manually pull messages from broker, the number of messages is based on max_records.
         """
-        LOGGER.debug("start run topic: %s group: %s _consumer",
-                     self.topic, self.group_id)
+        LOGGER.info("start run topic: %s group: %s _consumer",
+                    self.topic, self.group_id)
         try:
             while self.running_flag:
                 data = self.consumer.poll()

@@ -16,7 +16,6 @@ Author:
 Description:
 """
 from typing import Optional
-import pandas as pd
 from scipy import stats
 from aops_check.core.experiment.algorithm import Algorithm
 
