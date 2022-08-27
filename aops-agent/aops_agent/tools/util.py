@@ -22,6 +22,7 @@ from subprocess import Popen, PIPE, STDOUT
 
 from libconf import load, ConfigParseError, AttrDict
 from jsonschema import validate, ValidationError
+
 from aops_agent.conf.constant import DATA_MODEL, INFORMATION_ABOUT_RPM_SERVICE
 from aops_agent.log.log import LOGGER
 from aops_agent.models.custom_exception import InputError
@@ -64,8 +65,8 @@ def validate_data(data: Any, schema: dict) -> bool:
         return False
 
 
-def get_shell_data(command_list: List[str],
-                   key: bool = True, stdin: Popen = None) -> Union[str, Popen]:
+def get_shell_data(command_list: List[str], key: bool = True, env=None,
+                   stdin: Popen = None) -> Union[str, Popen]:
     """
     execute shell commands
 
@@ -73,6 +74,7 @@ def get_shell_data(command_list: List[str],
         command_list( List[str] ): a list containing the command arguments.
         key (bool): Boolean value
         stdin (Popen): Popen object
+        env (Dict[str, str]): temporary environment variables
 
     Returns:
         get str result when execute shell command success and the key is True or
@@ -85,9 +87,10 @@ def get_shell_data(command_list: List[str],
     if validate_data(command_list, schema) is False:
         raise InputError('please check your command')
     try:
-        res = Popen(command_list, stdout=PIPE, stdin=stdin, stderr=STDOUT)
+        res = Popen(command_list, stdout=PIPE, stdin=stdin, stderr=STDOUT, env=env)
     except FileNotFoundError as e:
         raise InputError('linux has no command') from e
+
     if key:
         return res.stdout.read().decode()
     return res
@@ -131,12 +134,19 @@ def plugin_status_judge(plugin_name: str) -> str:
             return ""
     else:
         return ""
-    status_info = get_shell_data(["systemctl", "status", service_name], key=False)
-    res = get_shell_data(["grep", "Active"], stdin=status_info.stdout)
+
+    try:
+        status_info = get_shell_data(["systemctl", "status", service_name], key=False)
+        res = get_shell_data(["grep", "Active"], stdin=status_info.stdout)
+        status_info.stdout.close()
+    except InputError:
+        LOGGER.error(f'Get service {service_name} status error!')
+        return ""
     return res
 
 
-def change_probe_status(probes: Tuple[AttrDict], gopher_probes_status: dict, res: dict) -> Tuple[dict, dict]:
+def change_probe_status(probes: Tuple[AttrDict],
+                        gopher_probes_status: dict, res: dict) -> Tuple[dict, dict]:
     """
     to change gopher probe status
 
@@ -185,7 +195,8 @@ def judge_probe_can_change(probe: AttrDict, probe_status: Dict[str, str]) -> boo
     """
     if probe.get('name', "") in probe_status and probe_status[probe['name']] != 'auto':
         return True
-    elif probe.get('name', "") in probe_status and probe_status[probe['name']] == 'auto' and 'start_check' in probe:
+    elif probe.get('name', "") in probe_status and probe_status[
+        probe['name']] == 'auto' and 'start_check' in probe:
         return True
     return False
 
@@ -197,8 +208,13 @@ def get_uuid() -> str:
     Returns:
         uuid(str)
     """
-    fstab_info = get_shell_data(['dmidecode'], key=False)
-    uuid_info = get_shell_data(['grep', 'UUID'], stdin=fstab_info.stdout)
+    try:
+        fstab_info = get_shell_data(['dmidecode'], key=False)
+        uuid_info = get_shell_data(['grep', 'UUID'], stdin=fstab_info.stdout)
+        fstab_info.stdout.close()
+    except InputError:
+        LOGGER.error(f'Get system uuid error!')
+        return ""
     uuid = uuid_info.replace("-", "").split(':')[1].strip()
     return uuid
 
@@ -263,7 +279,8 @@ def register_info_to_dict(string: str) -> Dict:
     return res
 
 
-def save_data_to_file(data: str, file_path: str, mode: str = 'w', encoding: str = 'utf-8') -> NoReturn:
+def save_data_to_file(data: str,
+                      file_path: str, mode: str = 'w', encoding: str = 'utf-8') -> NoReturn:
     """
         save data to specified path,create it if it doesn't exist
 

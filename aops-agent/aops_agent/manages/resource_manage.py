@@ -15,6 +15,8 @@ import os
 from dataclasses import dataclass
 
 from aops_agent.conf.constant import BASE_SERVICE_PATH
+from aops_agent.log.log import LOGGER
+from aops_agent.models.custom_exception import InputError
 from aops_agent.tools.util import load_conf, get_shell_data
 
 
@@ -33,9 +35,15 @@ class Resourse:
         Returns:
             str:The memory value which has used
         """
-        memory_info = get_shell_data(["cat", f"/proc/{pid}/status"], key=False)
-        memory = get_shell_data(["grep", "VmRSS"],
-                                stdin=memory_info.stdout).split(":")[1].strip()
+        try:
+            memory_info = get_shell_data(["cat", f"/proc/{pid}/status"], key=False)
+            memory = get_shell_data(["grep", "VmRSS"],
+                                    stdin=memory_info.stdout).split(":")[1].strip()
+            memory_info.stdout.close()
+
+        except InputError:
+            LOGGER.error(f'Get process {pid} memory fail!')
+            return ''
         return memory
 
     @classmethod
@@ -75,12 +83,23 @@ class Resourse:
         Returns:
             str: cpu usage
         """
-        all_status_info = get_shell_data(["ps", "aux"], key=False)
-        plugin_process_info = get_shell_data(["grep", "-w", f"{rpm_name}"],
-                                             stdin=all_status_info.stdout, key=False)
-        plugin_main_pid_process_info = get_shell_data(["grep", f"{pid}"],
-                                                      stdin=plugin_process_info.stdout, key=False)
-        cpu_usage = get_shell_data(["awk", "{print $3}"], stdin=plugin_main_pid_process_info.stdout)
+        try:
+            all_status_info = get_shell_data(["ps", "aux"], key=False)
+            plugin_process_info = get_shell_data(["grep", "-w", f"{rpm_name}"],
+                                                 stdin=all_status_info.stdout, key=False)
+            all_status_info.stdout.close()
+
+            plugin_main_pid_process_info = get_shell_data(["grep", f"{pid}"],
+                                                          stdin=plugin_process_info.stdout,
+                                                          key=False)
+            cpu_usage = get_shell_data(["awk", "{print $3}"],
+                                       stdin=plugin_main_pid_process_info.stdout)
+            plugin_main_pid_process_info.stdout.close()
+
+        except InputError:
+            LOGGER.error(f'Get plugin {rpm_name} cpu info fail!')
+            return ''
+
         return f'{cpu_usage.strip()}%'
 
     @classmethod

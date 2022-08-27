@@ -14,6 +14,8 @@ import unittest
 import warnings
 
 import responses
+
+from aops_agent.conf.status import SUCCESS, PARAM_ERROR
 from aops_agent.manages.command_manage import Command
 
 
@@ -36,14 +38,14 @@ class TestRegister(unittest.TestCase):
         }
         responses.add(responses.POST,
                       'http://127.0.0.1:11111/manage/host/add',
-                      json={"token": "hdahdahiudahud", "code": 200},
-                      status=200,
+                      json={"token": "hdahdahiudahud", "code": SUCCESS},
+                      status=SUCCESS,
                       content_type='application/json'
                       )
         data = Command.register(input_data)
-        self.assertEqual(200, data)
+        self.assertEqual(SUCCESS, data)
 
-    def test_register_should_return_400_when_input_web_username_is_null(self):
+    def test_register_should_return_param_error_when_input_web_username_is_null(self):
         input_data = {
             "web_password": "changeme",
             "host_name": "host01",
@@ -53,9 +55,9 @@ class TestRegister(unittest.TestCase):
             "manager_port": "11111"
         }
         data = Command.register(input_data)
-        self.assertEqual(400, data)
+        self.assertEqual(PARAM_ERROR, data)
 
-    def test_register_should_return_400_when_input_web_username_is_not_string(self):
+    def test_register_should_return_param_error_when_input_web_username_is_not_string(self):
         input_data = {
             "web_username": 12345,
             "web_password": "changeme",
@@ -66,9 +68,9 @@ class TestRegister(unittest.TestCase):
             "manager_port": "11111"
         }
         data = Command.register(input_data)
-        self.assertEqual(400, data)
+        self.assertEqual(PARAM_ERROR, data)
 
-    def test_register_should_return_400_when_input_web_password_is_null(self):
+    def test_register_should_return_param_error_when_input_web_password_is_null(self):
         input_data = {
             "web_username": "admin",
             "host_name": "host01",
@@ -78,9 +80,9 @@ class TestRegister(unittest.TestCase):
             "manager_port": "11111"
         }
         data = Command.register(input_data)
-        self.assertEqual(400, data)
+        self.assertEqual(PARAM_ERROR, data)
 
-    def test_register_should_return_400_when_input_web_password_is_not_string(self):
+    def test_register_should_return_param_error_when_input_web_password_is_not_string(self):
         input_data = {
             "web_username": "admin",
             "web_password": 123456,
@@ -91,9 +93,9 @@ class TestRegister(unittest.TestCase):
             "manager_port": "11111"
         }
         data = Command.register(input_data)
-        self.assertEqual(400, data)
+        self.assertEqual(PARAM_ERROR, data)
 
-    def test_register_should_return_400_when_input_host_name_is_null(self):
+    def test_register_should_return_param_error_when_input_host_name_is_null(self):
         input_data = {
             "web_username": "admin",
             "web_password": "changeme",
@@ -103,9 +105,9 @@ class TestRegister(unittest.TestCase):
             "manager_port": "11111"
         }
         data = Command.register(input_data)
-        self.assertEqual(400, data)
+        self.assertEqual(PARAM_ERROR, data)
 
-    def test_register_should_return_400_when_input_host_name_is_not_string(self):
+    def test_register_should_return_param_error_when_input_host_name_is_not_string(self):
         input_data = {
             "web_username": "admin",
             "web_password": "changeme",
@@ -116,9 +118,9 @@ class TestRegister(unittest.TestCase):
             "manager_port": "11111"
         }
         data = Command.register(input_data)
-        self.assertEqual(400, data)
+        self.assertEqual(PARAM_ERROR, data)
 
-    def test_register_should_return_400_when_input_host_group_name_is_null(self):
+    def test_register_should_return_param_error_when_input_host_group_name_is_null(self):
         input_data = {
             "web_username": "admin",
             "web_password": "changeme",
@@ -128,9 +130,9 @@ class TestRegister(unittest.TestCase):
             "manager_port": "11111"
         }
         data = Command.register(input_data)
-        self.assertEqual(400, data)
+        self.assertEqual(PARAM_ERROR, data)
 
-    def test_register_should_return_400_when_input_host_group_name_is_not_string(self):
+    def test_register_should_return_param_error_when_input_host_group_name_is_not_string(self):
         input_data = {
             "web_username": "admin",
             "web_password": "changeme",
@@ -141,9 +143,9 @@ class TestRegister(unittest.TestCase):
             "manager_port": "11111"
         }
         data = Command.register(input_data)
-        self.assertEqual(400, data)
+        self.assertEqual(PARAM_ERROR, data)
 
-    def test_register_should_return_400_when_input_management_is_null(self):
+    def test_register_should_return_param_error_when_input_management_is_null(self):
         input_data = {
             "web_username": "admin",
             "web_password": "changeme",
@@ -153,9 +155,9 @@ class TestRegister(unittest.TestCase):
             "manager_port": "11111"
         }
         data = Command.register(input_data)
-        self.assertEqual(400, data)
+        self.assertEqual(PARAM_ERROR, data)
 
-    def test_register_should_return_400_when_input_management_is_not_boolean(self):
+    def test_register_should_return_param_error_when_input_management_is_not_boolean(self):
         input_data = {
             "web_username": "admin",
             "web_password": "changeme",
@@ -166,9 +168,9 @@ class TestRegister(unittest.TestCase):
             "manager_port": "11111"
         }
         data = Command.register(input_data)
-        self.assertEqual(400, data)
+        self.assertEqual(PARAM_ERROR, data)
 
-    def test_register_should_return_400_when_input_manager_ip_is_null(self):
+    def test_register_should_return_param_error_when_input_manager_ip_is_null(self):
         input_data = {
             "web_username": "admin",
             "web_password": "changeme",
@@ -178,9 +180,9 @@ class TestRegister(unittest.TestCase):
             "manager_port": "11111"
         }
         data = Command.register(input_data)
-        self.assertEqual(400, data)
+        self.assertEqual(PARAM_ERROR, data)
 
-    def test_register_should_return_400_when_input_manager_ip_is_not_string(self):
+    def test_register_should_return_param_error_when_input_manager_ip_is_not_string(self):
         input_data = {
             "web_username": "admin",
             "web_password": "changeme",
@@ -190,9 +192,9 @@ class TestRegister(unittest.TestCase):
             "manager_port": "11111"
         }
         data = Command.register(input_data)
-        self.assertEqual(400, data)
+        self.assertEqual(PARAM_ERROR, data)
 
-    def test_register_should_return_400_when_input_manager_port_is_null(self):
+    def test_register_should_return_param_error_when_input_manager_port_is_null(self):
         input_data = {
             "web_username": "admin",
             "web_password": "changeme",
@@ -202,9 +204,9 @@ class TestRegister(unittest.TestCase):
             "manager_ip": "127.0.0.1",
         }
         data = Command.register(input_data)
-        self.assertEqual(400, data)
+        self.assertEqual(PARAM_ERROR, data)
 
-    def test_register_should_return_400_when_input_manager_port_is_not_string(self):
+    def test_register_should_return_param_error_when_input_manager_port_is_not_string(self):
         input_data = {
             "web_username": "admin",
             "web_password": "changeme",
@@ -215,9 +217,9 @@ class TestRegister(unittest.TestCase):
             "manager_port": 80
         }
         data = Command.register(input_data)
-        self.assertEqual(400, data)
+        self.assertEqual(PARAM_ERROR, data)
 
-    def test_register_should_return_400_when_input_agent_port_is_not_string(self):
+    def test_register_should_return_param_error_when_input_agent_port_is_not_string(self):
         input_data = {
             "web_username": "admin",
             "web_password": "changeme",
@@ -229,14 +231,14 @@ class TestRegister(unittest.TestCase):
             "agent_port": 11000
         }
         data = Command.register(input_data)
-        self.assertEqual(data, 400)
+        self.assertEqual(data, PARAM_ERROR)
 
     @responses.activate
-    def test_register_should_return_200_when_input_with_no_agent_port(self):
+    def test_register_should_return_success_when_input_with_no_agent_port(self):
         responses.add(responses.POST,
                       'http://127.0.0.1:11111/manage/host/add',
-                      json={"token": "hdahdahiudahud", "code": 200},
-                      status=200,
+                      json={"token": "hdahdahiudahud", "code": SUCCESS},
+                      status=SUCCESS,
                       content_type='application/json'
                       )
         input_data = {
@@ -249,4 +251,4 @@ class TestRegister(unittest.TestCase):
             "manager_port": "11111",
         }
         data = Command.register(input_data)
-        self.assertEqual(200, data)
+        self.assertEqual(SUCCESS, data)
