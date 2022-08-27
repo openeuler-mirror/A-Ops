@@ -62,6 +62,7 @@
 </template>
 
 <script>
+// this component is abandoned
 import { getDiagTree, delDiagTree } from '@/api/diagnosis'
 
 import MyPageHeaderWrapper from '@/views/utils/MyPageHeaderWrapper'

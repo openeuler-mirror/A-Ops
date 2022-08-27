@@ -20,6 +20,7 @@
 </template>
 
 <script>
+// this component is abandoned
   import { getResultCount } from '@/api/check'
 
   export default {

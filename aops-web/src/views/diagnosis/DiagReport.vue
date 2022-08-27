@@ -39,6 +39,7 @@
 </template>
 
 <script>
+// this component is abandoned
 import MyPageHeaderWrapper from '@/views/utils/MyPageHeaderWrapper'
 import { getdiagreport } from '@/api/diagnosis'
 import { hostInfo } from '@/api/assest'

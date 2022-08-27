@@ -172,7 +172,7 @@
                         </div>
 
                         <div class="meg-row">
-                            <span class="xiangqing meg-row-left">详情</span>
+                            <span class="meg-row-left title bold">详情</span>
                         </div>
                         <div class="meg-row" v-for="data in memory.info" :key="data.size">
                             <a-row type="flex">

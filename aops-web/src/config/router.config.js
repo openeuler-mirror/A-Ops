@@ -40,49 +40,27 @@ const routeMap = {
         title: 'menu.diagnosis',
         path: '/diagnosis',
         children: {
-            AbnormalCheck: {
-                title: 'menu.diagnosis.abnormal-check',
-                path: '/diagnosis/abnormal-check/redirect',
+            DiagnosisWorkflow: {
+                title: 'menu.diagnosis.diagnosis-workflow',
+                path: '/diagnosis/workflow/redirect',
                 children: {
                     MainView: {
-                        title: 'menu.diagnosis.abnormal-check',
-                        path: '/diagnosis/abnormal-check'
+                        title: 'menu.diagnosis.diagnosis-workflow',
+                        path: '/diagnosis/workflow'
                     },
-                    RuleManagement: {
-                        title: 'menu.diagnosis.abnormal-check.rule-management',
-                        path: '/diagnosis/abnormal-check/rule-management'
+                    workflowDetail: {
+                        title: 'menu.diagnosis.diagnosis-workflow.detail',
+                        path: '/diagnosis/workflow/:workflowId'
+                    },
+                    appTemplate: {
+                        title: 'menu.diagonsis.app-template',
+                        path: '/diagnosis/app/:appId'
                     }
                 }
             },
-            FaultDiagnosis: {
-                title: 'menu.diagnosis.fault-diagnosis',
-                path: '/diagnosis/fault-diagnosis/redirect',
-                children: {
-                    MainView: {
-                        title: 'menu.diagnosis.fault-diagnosis',
-                        path: '/diagnosis/fault-diagnosis'
-                    },
-                    FaultTrees: {
-                        title: 'menu.diagnosis.fault-trees',
-                        path: '/diagnosis/fault-trees/:id'
-                    },
-                    DiagReport: {
-                        title: 'menu.diagnosis.diag-report',
-                        path: '/diagnosis/diag-report/:id'
-                    },
-                    NetworkTopoDiagram: {
-                        title: 'menu.diagnosis.network-topo-diagram',
-                        path: '/diagnosis/network-topo-diagram'
-                    }
-                }
-            },
-            FaultTrees: {
-                title: 'menu.diagnosis.fault-trees',
-                path: '/diagnosis/fault-trees'
-            },
-            NetworkTopoDiagram: {
-                title: 'menu.diagnosis.network-topo-diagram',
-                path: '/diagnosis/network-topo-diagram'
+            AbnormalAlert: {
+                title: 'menu.diagnosis.abnormal-alert',
+                path: '/diagnosis/alert'
             }
         }
     },
@@ -339,6 +317,7 @@ export const asyncRouterMap = [
                     }
                 ]
             },
+            /* 部署管理模块隐藏
             {
                 path: routeMap.task.path,
                 name: 'task',
@@ -361,6 +340,8 @@ export const asyncRouterMap = [
                     }
                 ]
             },
+            */
+            /*
             {
                 path: routeMap.leaks.path,
                 name: 'leaks',
@@ -710,10 +691,11 @@ export const asyncRouterMap = [
                     }
                 ]
             },
+            */
             {
                 path: routeMap.diagnosis.path,
                 name: 'diagnosis',
-                redirect: '/diagnosis/abnormal-check',
+                redirect: '/diagnosis/workflow',
                 component: RouteView,
                 meta: {
                     title: routeMap.diagnosis.title,
@@ -722,81 +704,15 @@ export const asyncRouterMap = [
                 },
                 children: [
                     {
-                        path: routeMap.diagnosis.children.AbnormalCheck.path,
-                        name: 'AbnormalCheck',
+                        path: routeMap.diagnosis.children.DiagnosisWorkflow.path,
+                        name: 'DiagnosisWorkflow',
                         component: RouteView,
                         redirect:
-                            routeMap.diagnosis.children.AbnormalCheck.children
+                            routeMap.diagnosis.children.DiagnosisWorkflow.children
                                 .MainView.path,
                         meta: {
                             title:
-                                routeMap.diagnosis.children.AbnormalCheck.title,
-                            permission: ['diagnosis']
-                        },
-                        hideChildrenInMenu: true,
-                        children: [
-                            {
-                                path:
-                                    routeMap.diagnosis.children.AbnormalCheck
-                                        .children.MainView.path,
-                                name: 'AbnormalCheckMainView',
-                                component: () =>
-                                    import('@/views/diagnosis/AbnormalCheck'),
-                                meta: {
-                                    title:
-                                        routeMap.diagnosis.children
-                                            .AbnormalCheck.children.MainView
-                                            .title,
-                                    permission: ['diagnosis'],
-                                    diyBreadcrumb: [
-                                        {
-                                            breadcrumbName:
-                                                routeMap.index.title,
-                                            path: routeMap.index.path
-                                        },
-                                        {
-                                            breadcrumbName:
-                                                routeMap.diagnosis.title,
-                                            path: routeMap.diagnosis.path
-                                        },
-                                        {
-                                            breadcrumbName:
-                                                routeMap.diagnosis.children
-                                                    .AbnormalCheck.title,
-                                            path:
-                                                routeMap.diagnosis.children
-                                                    .AbnormalCheck.path
-                                        }
-                                    ]
-                                }
-                            },
-                            {
-                                path:
-                                    routeMap.diagnosis.children.AbnormalCheck
-                                        .children.RuleManagement.path,
-                                name: 'RuleManagement',
-                                component: () =>
-                                    import('@/views/diagnosis/RuleManagement'),
-                                meta: {
-                                    title:
-                                        routeMap.diagnosis.children
-                                            .AbnormalCheck.children
-                                            .RuleManagement.title,
-                                    permission: ['diagnosis']
-                                }
-                            }
-                        ]
-                    },
-                    {
-                        path: routeMap.diagnosis.children.FaultDiagnosis.path,
-                        name: 'FaultDiagnosis',
-                        component: RouteView,
-                        redirect:
-                            routeMap.diagnosis.children.FaultDiagnosis.children
-                                .MainView.path,
-                        meta: {
-                            title:
-                                routeMap.diagnosis.children.FaultDiagnosis
+                                routeMap.diagnosis.children.DiagnosisWorkflow
                                     .title,
                             permission: ['diagnosis']
                         },
@@ -804,15 +720,15 @@ export const asyncRouterMap = [
                         children: [
                             {
                                 path:
-                                    routeMap.diagnosis.children.FaultDiagnosis
+                                    routeMap.diagnosis.children.DiagnosisWorkflow
                                         .children.MainView.path,
-                                name: 'FaultDiagnosisMainView',
+                                name: 'DiagnosisWorkflowMainView',
                                 component: () =>
-                                    import('@/views/diagnosis/FaultDiagnosis'),
+                                    import('@/views/diagnosis/Workflow'),
                                 meta: {
                                     title:
                                         routeMap.diagnosis.children
-                                            .FaultDiagnosis.children.MainView
+                                            .DiagnosisWorkflow.children.MainView
                                             .title,
                                     permission: ['diagnosis'],
                                     diyBreadcrumb: [
@@ -829,62 +745,124 @@ export const asyncRouterMap = [
                                         {
                                             breadcrumbName:
                                                 routeMap.diagnosis.children
-                                                    .FaultDiagnosis.title,
+                                                    .DiagnosisWorkflow.children
+                                                    .MainView.title,
                                             path:
                                                 routeMap.diagnosis.children
-                                                    .FaultDiagnosis.path
+                                                    .DiagnosisWorkflow.children
+                                                    .MainView.path
                                         }
                                     ]
                                 }
                             },
                             {
                                 path:
-                                    routeMap.diagnosis.children.FaultDiagnosis
-                                        .children.FaultTrees.path,
-                                name: 'FaultTrees',
+                                    routeMap.diagnosis.children.DiagnosisWorkflow
+                                        .children.workflowDetail.path,
+                                name: 'WorkflowDetail',
                                 component: () =>
-                                    import('@/views/diagnosis/FaultTrees'),
+                                    import('@/views/diagnosis/WorkflowDetail'),
                                 meta: {
                                     title:
                                         routeMap.diagnosis.children
-                                            .FaultDiagnosis.children.FaultTrees
+                                            .DiagnosisWorkflow.children.workflowDetail
                                             .title,
-                                    permission: ['diagnosis']
+                                    permission: ['diagnosis'],
+                                    diyBreadcrumb: [
+                                        {
+                                            breadcrumbName:
+                                                routeMap.index.title,
+                                            path: routeMap.index.path
+                                        },
+                                        {
+                                            breadcrumbName:
+                                                routeMap.diagnosis.title,
+                                            path: routeMap.diagnosis.path
+                                        },
+                                        {
+                                            breadcrumbName:
+                                                routeMap.diagnosis.children
+                                                    .DiagnosisWorkflow.children
+                                                    .MainView.title,
+                                            path:
+                                                routeMap.diagnosis.children
+                                                    .DiagnosisWorkflow.children
+                                                    .MainView.path
+                                        },
+                                        {
+                                            breadcrumbName:
+                                                routeMap.diagnosis.children
+                                                .DiagnosisWorkflow.children
+                                                    .workflowDetail.title,
+                                            path:
+                                                routeMap.diagnosis.children
+                                                .DiagnosisWorkflow.children
+                                                    .workflowDetail.path
+                                        }
+                                    ]
                                 }
                             },
                             {
                                 path:
-                                    routeMap.diagnosis.children.FaultDiagnosis
-                                        .children.DiagReport.path,
-                                name: 'DiagReport',
+                                    routeMap.diagnosis.children.DiagnosisWorkflow
+                                        .children.appTemplate.path,
+                                name: 'AppTemplateInfo',
                                 component: () =>
-                                    import('@/views/diagnosis/DiagReport'),
+                                    import('@/views/diagnosis/AppTemplateInfo'),
                                 meta: {
                                     title:
                                         routeMap.diagnosis.children
-                                            .FaultDiagnosis.children.DiagReport
+                                            .DiagnosisWorkflow.children.appTemplate
                                             .title,
-                                    permission: ['diagnosis']
-                                }
-                            },
-                            {
-                                path:
-                                    routeMap.diagnosis.children.FaultDiagnosis
-                                        .children.NetworkTopoDiagram.path,
-                                name: 'NetworkTopoDiagram',
-                                component: () =>
-                                    import(
-                                        '@/views/diagnosis/NetworkTopoDiagram'
-                                    ),
-                                meta: {
-                                    title:
-                                        routeMap.diagnosis.children
-                                            .FaultDiagnosis.children
-                                            .NetworkTopoDiagram.title,
-                                    permission: ['diagnosis']
+                                    permission: ['diagnosis'],
+                                    diyBreadcrumb: [
+                                        {
+                                            breadcrumbName:
+                                                routeMap.index.title,
+                                            path: routeMap.index.path
+                                        },
+                                        {
+                                            breadcrumbName:
+                                                routeMap.diagnosis.title,
+                                            path: routeMap.diagnosis.path
+                                        },
+                                        {
+                                            breadcrumbName:
+                                                routeMap.diagnosis.children
+                                                    .DiagnosisWorkflow.children
+                                                    .MainView.title,
+                                            path:
+                                                routeMap.diagnosis.children
+                                                    .DiagnosisWorkflow.children
+                                                    .MainView.path
+                                        },
+                                        {
+                                            breadcrumbName:
+                                                routeMap.diagnosis.children
+                                                    .DiagnosisWorkflow.children
+                                                    .appTemplate.title,
+                                            path:
+                                                routeMap.diagnosis.children
+                                                    .DiagnosisWorkflow.children
+                                                    .appTemplate.path
+                                        }
+                                    ]
                                 }
                             }
                         ]
+                    },
+                    {
+                        path: routeMap.diagnosis.children.AbnormalAlert.path,
+                        name: 'AbnormalAlert',
+                        component: () =>
+                                    import('@/views/diagnosis/AbnormalAlert'),
+                        meta: {
+                            title:
+                                routeMap.diagnosis.children.AbnormalAlert
+                                    .title,
+                            permission: ['diagnosis']
+                        },
+                        hideChildrenInMenu: true
                     }
                 ]
             },

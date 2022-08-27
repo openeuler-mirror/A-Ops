@@ -7,6 +7,7 @@
 </template>
 
 <script>
+// this component is abandoned
 import G6 from '@antv/g6'
 import { PageHeaderWrapper } from '@ant-design-vue/pro-layout'
 import { treeDataProcesser } from '../utils/treeDataProcesser'
