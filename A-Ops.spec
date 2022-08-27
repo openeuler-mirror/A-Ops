@@ -76,6 +76,7 @@ Requires:   aops-utils = %{version}-%{release}
 Requires:   python3-requests python3-flask python3-flask-restful python3-marshmallow >= 3.13.0
 Requires:   python3-numpy python3-pandas python3-prometheus-api-client
 Requires:   python3-sqlalchemy python3-PyMySQL
+Requires:   python3-Flask-APScheduler >= 1.11.0
 
 %description -n aops-check
 check module for A-Ops

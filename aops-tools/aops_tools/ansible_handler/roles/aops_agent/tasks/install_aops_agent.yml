@@ -6,5 +6,6 @@
     state: latest
     disable_gpg_check: yes
     name:
+      - python3-libselinux
       - aops-agent
 
