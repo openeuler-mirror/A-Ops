@@ -77,13 +77,22 @@ class PackageWeightIdentify:
     __slots__ = ["__application", "__support_collect_items", "__app_scene_map", "__scene_collect_map"]
     PluginsCollectItems = Dict[str, List[str]]
 
-    def __init__(self, applications: list, collect_items: PluginsCollectItems, app_scene_map: dict = None,
-                 scene_collect_map: Dict[str, PluginsCollectItems] = None):
+    def __init__(self, applications: list, collect_items: Dict[str, List[dict]],
+                 app_scene_map: dict = None, scene_collect_map: Dict[str, PluginsCollectItems] = None):
         """
         init class
         Args:
             applications: application result
-            collect_items: plugins' support collect items
+            collect_items: plugins' support collect items.  e.g.
+                {
+                    "gala-gopher": [
+                        {
+                            "probe_name": "probe1",
+                            "probe_status": "on",
+                            "support_auto": True
+                        }
+                    ]
+                }
             app_scene_map: app and scene's matching relationship
             scene_collect_map: scene and collect items' matching relationship
         """
@@ -119,7 +128,7 @@ class PackageWeightIdentify:
         return recommend_scene, recommend_collect_item
 
     @staticmethod
-    def __get_reco_collect_items(support_collect_item: PluginsCollectItems,
+    def __get_reco_collect_items(support_collect_item: Dict[str, List[dict]],
                                  scene_collect_item: PluginsCollectItems) -> PluginsCollectItems:
         """
         get recommended collect items of a host
@@ -128,7 +137,13 @@ class PackageWeightIdentify:
         for plugin in scene_collect_item:
             if plugin not in support_collect_item:
                 continue
-            collect_items = list(set(support_collect_item[plugin]) & set(scene_collect_item[plugin]))
+
+            scene_collect_item_set = set(scene_collect_item[plugin])
+            collect_items = []
+            for probe_info in support_collect_item[plugin]:
+                if probe_info["probe_name"] in scene_collect_item_set and probe_info["probe_status"] != "on":
+                    collect_items.append(probe_info["probe_name"])
+
             if collect_items:
                 reco_collect_items[plugin] = collect_items
         return reco_collect_items
