@@ -155,7 +155,7 @@ class DownloadAlertReport(BaseResponse):
         Confirmed: {domain.get('confirmed')}
         """
         for host_id, host in hosts.get("result", dict()).items():
-            host = f"""
+            _host = f"""
             Host ID: {host_id}
             Host Name: {host['host_name']}
             Is Root: {host['is_root']}
@@ -165,12 +165,12 @@ class DownloadAlertReport(BaseResponse):
             check_result = ""
             for host_check in host.get("host_check_result", list()):
                 check_result += f"""
-                Label: {host_check['label']}
+                Label: {host_check['metric_label']}
                 Metric Name: {host_check['metric_name']}
                 Time: {host_check['time']}
 
-                """ + os.linesep()
-            stream_content += host + check_result
+                """ + os.linesep
+            stream_content += _host + check_result
         return stream_content
 
     def get(self):
@@ -183,5 +183,5 @@ class DownloadAlertReport(BaseResponse):
 
         hosts = self.handle_request(None, result_dao, 'query_result_host')
         domain_info = self.handle_request(None, result_dao, 'query_result_list')
-        stream_content = self._beautify_stream_content(hosts=hosts["result"], domain=domain_info)
+        stream_content = self._beautify_stream_content(hosts=hosts, domain=domain_info.get("result"))
         return self._file_stream(content=stream_content, alert_id=request.args.get("alert_id",""))
