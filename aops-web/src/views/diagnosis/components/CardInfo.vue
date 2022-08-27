@@ -7,6 +7,7 @@
 </template>
 
 <script>
+// this component is abandoned
 export default {
   name: 'CardInfo',
   props: {

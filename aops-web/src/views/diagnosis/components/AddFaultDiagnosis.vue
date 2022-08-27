@@ -99,6 +99,7 @@
 </template>
 
 <script>
+// this component is abandoned
 import Vue from 'vue'
 import moment from 'moment'
 import { Transfer } from 'ant-design-vue'

@@ -35,7 +35,13 @@ class RecognizeScene(BaseResponse):
                 {
                     "applications": ["nginx"],
                     "collect_items": {
-                        "gala-gopher": ["prob1", "prob2"]
+                        "gala-gopher": [
+                            {
+                                "probe_name": "probe1",
+                                "probe_status": "on",
+                                "support_auto": True
+                            }
+                        ]
                     }
                 }
         """

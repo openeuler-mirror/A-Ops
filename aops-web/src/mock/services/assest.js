@@ -31,6 +31,44 @@ const hostMockData = [
   }
 ]
 
+const hostsInfo = [
+  {
+      host_id: '101',
+      host_name: 'host1',
+      public_ip: '192.1.1.1',
+      host_group_name: 'host1',
+      management: 'true',
+      scene: '大数据',
+      status: 'online'
+  },
+  {
+      host_id: '102',
+      host_name: 'host2',
+      public_ip: '192.1.1.2',
+      host_group_name: 'host2',
+      management: 'true',
+      scene: '大数据',
+      status: 'online'
+  },
+  {
+      host_id: '103',
+      host_name: 'host3',
+      public_ip: '192.1.1.3',
+      host_group_name: 'host2',
+      management: 'true',
+      scene: '大数据',
+      status: 'online'
+  },
+  {
+      host_id: '113',
+      host_name: 'host4',
+      public_ip: '192.1.1.4',
+      host_group_name: 'host1',
+      management: 'true',
+      scene: '大数据',
+      status: 'online'
+  }
+]
 const hostInfoList = [
   {
     'host_id': 'id1',
@@ -67,6 +105,41 @@ const hostGroupInfos = [
     status: 'OK'
   }
 ]
+// const hostGroupInfo = [
+//   {
+//       host_group_name: '主机组1',
+//       description: '华北-可用区',
+//       host_count: '21'
+//   },
+//   {
+//       host_group_name: 'g2',
+//       description: '无',
+//       host_count: '1'
+//   },
+//   {
+//       host_group_name: 'g1',
+//       description: '华南可用区G',
+//       host_count: '3'
+//   }
+// ]
+const filterByName = a => b => {
+  return b.host_group_name.indexOf(a) > -1
+}
+const getHostList = (options) => {
+  const body = getBody(options)
+  let hosts
+  if (body.host_group_list && body.host_group_list.length > 0) {
+    hosts = hostsInfo.filter(filterByName(body.host_group_list))
+  } else {
+      hosts = hostsInfo
+  }
+  return builder({
+    'msg': Mock.mock('success'),
+    'total_count': 3,
+    'total_page': options,
+    'host_infos': hosts
+  }, '查询成功', 200, { 'Custom-Header': Mock.mock('@guid') })
+}
 
 const hostInfos = [
     {
@@ -284,6 +357,15 @@ const deleteHostGroup = (options) => {
   }, '添加成功', 200, { 'Custom-Header': Mock.mock('@guid') })
 }
 
+// const getHostGroup = (options) => {
+//   return builder({
+//     'msg': Mock.mock('success'),
+//     'total_count': 3,
+//     'total_page': 1,
+//     'host_group_infos': hostGroupInfo
+//   }, '查询成功', 200, { 'Custom-Header': Mock.mock('@guid') })
+// }
+Mock.mock(/\/manage\/host\/get_host_group/, 'post', getHostGroupList)
 // host detail plugin control
 const sceneGet = (options) => {
   return builder({
@@ -331,9 +413,8 @@ Mock.mock(/\/manage\/host\/get/, 'post', getHosts)
 Mock.mock(/\/manage\/host\/add_host/, 'post', addHost)
 Mock.mock(/\/manage\/host\/delete_host/, 'delete', deleteHost)
 Mock.mock(/\/manage\/host\/info\/query/, 'post', getHostInfoQuery)
-
 // host detail plugin control
 Mock.mock(/\/manage\/host\/scene\/get/, 'get', sceneGet)
 Mock.mock(/\/manage\/agent\/plugin\/info/, 'get', pluginInfoGet)
-// Mock.mock(/\/manage\/agent\/plugin\/set/, 'post', pluginSet)
-// Mock.mock(/\/manage\/agent\/metric\/set/, 'post', metricSet)
+// 获取主机列表
+Mock.mock(/\/manage\/host\/get/, 'post', getHostList)

@@ -13,14 +13,14 @@
 import re
 from dataclasses import dataclass
 from typing import List, Dict
+
 import libconf
+
 from aops_agent.conf import configuration
 from aops_agent.conf.constant import INSTALLABLE_PLUGIN
-from aops_agent.conf.status import (
-    SUCCESS,
-    FILE_NOT_FOUND,
-    CONFLICT_ERROR
-)
+from aops_agent.conf.status import SUCCESS, FILE_NOT_FOUND
+from aops_agent.log.log import LOGGER
+from aops_agent.models.custom_exception import InputError
 from aops_agent.tools.util import (
     get_shell_data,
     load_gopher_config,
@@ -52,16 +52,22 @@ class Plugin:
         Returns:
             int: status code
         """
-        status_info = get_shell_data(["systemctl", "status", f"{self.rpm_name}"], key=False)
-        plugin_status = get_shell_data(["grep", "Active"], stdin=status_info.stdout)
-        if "running" in plugin_status:
+        try:
+            status_info = get_shell_data(["systemctl", "status", f"{self.rpm_name}"], key=False)
+            plugin_status = get_shell_data(["grep", "Active"], stdin=status_info.stdout)
+            status_info.stdout.close()
+            if "running" in plugin_status:
+                return SUCCESS
+
+            res = get_shell_data(["systemctl", "start", f"{self.rpm_name}"])
+            if "service not found" in res:
+                LOGGER.debug(f'linux has no service {self.rpm_name}!')
+                return FILE_NOT_FOUND
             return SUCCESS
-        res = get_shell_data(["systemctl", "start", f"{self.rpm_name}"])
-        if res == "":
-            return SUCCESS
-        if "service not found" in res:
+
+        except InputError:
+            LOGGER.error(f'Get service {self.rpm_name} status error!')
             return FILE_NOT_FOUND
-        return CONFLICT_ERROR
 
     def stop_service(self) -> int:
         """
@@ -70,14 +76,22 @@ class Plugin:
         Returns:
             int: status code
         """
-        status_info = get_shell_data(["systemctl", "status", f"{self.rpm_name}"], key=False)
-        plugin_status = get_shell_data(["grep", "Active"], stdin=status_info.stdout)
-        if "inactive" in plugin_status:
+        try:
+            status_info = get_shell_data(["systemctl", "status", f"{self.rpm_name}"], key=False)
+            plugin_status = get_shell_data(["grep", "Active"], stdin=status_info.stdout)
+            status_info.stdout.close()
+            if "inactive" in plugin_status:
+                return SUCCESS
+
+            res = get_shell_data(["systemctl", "stop", f"{self.rpm_name}"])
+            if "service not found" in res:
+                LOGGER.debug(f'linux has no service {self.rpm_name}!')
+                return FILE_NOT_FOUND
             return SUCCESS
-        res = get_shell_data(["systemctl", "stop", f"{self.rpm_name}"])
-        if res == "":
-            return SUCCESS
-        return FILE_NOT_FOUND
+
+        except InputError:
+            LOGGER.error(f'Get service {self.rpm_name} status error!')
+            return FILE_NOT_FOUND
 
     @classmethod
     def get_installed_plugin(cls) -> List[str]:
@@ -106,8 +120,14 @@ class Plugin:
             str: dead or running
 
         """
-        plugin_status = get_shell_data(["systemctl", "status", f"{self.rpm_name}"], key=False)
-        active_string = get_shell_data(["grep", "Active"], stdin=plugin_status.stdout)
+        try:
+            plugin_status = get_shell_data(["systemctl", "status", f"{self.rpm_name}"], key=False)
+            active_string = get_shell_data(["grep", "Active"], stdin=plugin_status.stdout)
+            plugin_status.stdout.close()
+        except InputError:
+            LOGGER.error(f'Get service {self.rpm_name} status error!')
+            return ""
+
         status = re.search(':.+\(', active_string).group()[1:-1].strip()
         return status
 
@@ -119,8 +139,12 @@ class Plugin:
         Returns:
             The str type of main process id
         """
-        res = get_shell_data(["systemctl", "status", f"{rpm_name}"], key=False)
-        main_pid_info = get_shell_data(["grep", "Main"], stdin=res.stdout)
+        try:
+            res = get_shell_data(["systemctl", "status", f"{rpm_name}"], key=False)
+            main_pid_info = get_shell_data(["grep", "Main"], stdin=res.stdout)
+        except InputError:
+            LOGGER.error(f"Get {rpm_name} pid fail ")
+            return ""
         main_pid = re.search("[0-9]+[0-9]", main_pid_info).group()
         return main_pid
 

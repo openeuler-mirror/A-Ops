@@ -15,6 +15,7 @@ Time:
 Author:
 Description:
 """
+import time
 from typing import Dict, Optional, Tuple
 from collections import defaultdict
 import sqlalchemy
@@ -636,6 +637,7 @@ class WorkflowDao(MysqlProxy, ElasticsearchProxy):
 
         self._update_workflow_basic_info(data)
         status_code = self._update_workflow_detail_info(data)
+        time.sleep(1)
         return status_code
 
     def _update_workflow_basic_info(self, data):

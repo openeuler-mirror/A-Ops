@@ -9,6 +9,7 @@
 </template>
 
 <script>
+// this component is abandoned
 export default {
   name: 'AopsRangePicker',
   data () {

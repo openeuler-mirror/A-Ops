@@ -2596,10 +2596,10 @@ ant-design-vue@^1.6.2:
     vue-ref "^2.0.0"
     warning "^4.0.0"
 
-ant-design-vue@^1.7.6:
-  version "1.7.6"
-  resolved "https://registry.npmjs.org/ant-design-vue/-/ant-design-vue-1.7.6.tgz#976a84ff037c2e5f0586dcd697eafb8cf7983b1e"
-  integrity sha512-EOS6g/deT53xHxZDMOxedyBehXSNMGnxdOeQtDksmiRvCBrZs+yoFYoVOe9pmQ8EJ7XQLn8TMReiYbXi78kppA==
+ant-design-vue@^1.7.8:
+  version "1.7.8"
+  resolved "https://registry.yarnpkg.com/ant-design-vue/-/ant-design-vue-1.7.8.tgz#1abbf86b68a4f5b1000bea0487b8031dc0001661"
+  integrity sha512-F1hmiS9vwbyfuFvlamdW5l9bHKqRlj9wHaGDIE41NZMWXyWy8qL0UFa/+I0Wl8gQWZCqODW5pN6Yfoyn85At3A==
   dependencies:
     "@ant-design/icons" "^2.1.1"
     "@ant-design/icons-vue" "^2.0.0"

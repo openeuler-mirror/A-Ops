@@ -8,7 +8,7 @@
         场景识别
       </a-button>
       <div class="recommend-list">
-        <div>当前场景：{{ sceneData.scene }}</div>
+        <div>当前场景：{{ scene }}</div>
         <div style="display: flex; width: 100%;">
           建议开启：
           <a-collapse v-if="scenePropertys.length">
@@ -49,6 +49,17 @@
       :scroll="{ y: 400 }"
       :loading="tableLoading"
       :pagination="false">
+      <span slot="plugin_name" slot-scope="plugin_name">
+        <CutText :text="plugin_name"></CutText>
+      </span>
+      <span v-if="record.info.is_installed" slot="status" slot-scope="status, record">
+        <a-switch
+          checked-children="on"
+          un-checked-children="off"
+          :checked="status"
+          @change="PluginStatuChange(record)">
+        </a-switch>
+      </span>
       <span slot="resourceTitle">
         插件资源
         <a-tooltip placement="top">
@@ -58,24 +69,13 @@
           <a-icon type="question-circle" />
         </a-tooltip>
       </span>
-      <span slot="plugin_name" slot-scope="plugin_name">
-        <CutText :text="plugin_name"></CutText>
-      </span>
-      <span slot="status" slot-scope="status, record">
-        <a-switch
-          checked-children="on"
-          un-checked-children="off"
-          :checked="status"
-          @change="PluginStatuChange(record)">
-        </a-switch>
-      </span>
-      <span v-if="record.info.status === true" slot="resource" slot-scope="resource, record">
+      <span v-if="record.info.status && record.info.is_installed" slot="resource" slot-scope="resource, record">
         <div v-for="(item, index) in resource" :key="index">
           <span>{{ `${item.name}：` }}</span><br/>
           <span>{{ `${item.current_value} / ${item.limit_value}` }}</span>
         </div>
       </span>
-      <span v-if="record.info.status === true" slot="collect_items" slot-scope="collect_items, record" class="probe">
+      <span v-if="record.info.status && record.info.is_installed" slot="collect_items" slot-scope="collect_items, record" class="probe">
         <div v-for="(item, index) in collect_items" :key="index" class="probe-item">
           <span>
             <CutText :text="item.probe_name"></CutText>
@@ -100,8 +100,11 @@
         </div>
       </span>
       <!-- 插件关闭时隐藏probe和resource -->
-      <span v-else-if="record.info.status === false" slot="collect_items" slot-scope="record" class="probe">
-        <span>插件已关闭，暂无服务信息</span>
+      <span v-else-if="!record.info.is_installed">
+        插件未安装，暂无数据
+      </span>
+      <span v-else-if="!record.info.status">
+        插件已关闭，暂无服务信息
       </span>
     </a-table>
   </div>
@@ -116,7 +119,7 @@ const columns = [
     dataIndex: 'info.plugin_name',
     key: 'info.plugin_name',
     scopedSlots: { customRender: 'plugin_name' },
-    width: 100
+    width: 120
   },
   {
     title: '状态',
@@ -130,7 +133,7 @@ const columns = [
     key: 'info.resource',
     slots: { title: 'resourceTitle' },
     scopedSlots: { customRender: 'resource' },
-    width: 130
+    width: 150
   },
   {
     title: '探针',
@@ -234,17 +237,14 @@ export default {
     sceneIdentify() {
       const _this = this
       _this.sceneLoading = true
+      _this.$emit('reFetchHostInfo')
       sceneGet({
         hostId: _this.hostId
       })
         .then(function (res) {
-          if (res.scene === '') {
-            _this.sceneData.scene = '暂无'
-          } else {
-            _this.$set(_this.sceneData, 'collect_items', res.collect_items)
-            // 创建数组scenePropertys存储sceneData.collect_items的属性，即推荐开启的插件列表
-            _this.scenePropertys = Object.keys(_this.sceneData.collect_items)
-          }
+          _this.$set(_this.sceneData, 'collect_items', res.collect_items)
+          // 创建数组scenePropertys存储sceneData.collect_items的属性，即推荐开启的插件列表
+          _this.scenePropertys = Object.keys(_this.sceneData.collect_items)
           if (_this.scenePropertys.length === 0) {
             _this.isEmpty = true
           } else {
@@ -395,9 +395,6 @@ export default {
   // 初始化请求插件信息
   mounted: function () {
     this.$options.methods.pluginDataGet(this)
-  },
-  beforeUpdate: function() {
-    this.$set(this.sceneData, 'scene', this.scene)
   }
 }
 </script>
