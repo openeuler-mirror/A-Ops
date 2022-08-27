@@ -29,6 +29,7 @@
 </template>
 
 <script>
+// this component is abandoned
   import { importRule } from '@/api/check'
   import Uploader from '@/components/Uploader'
   // import {importDiagTree} from "@/api/diagnosis";

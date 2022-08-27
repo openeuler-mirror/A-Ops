@@ -1,4 +1,4 @@
-import request from '@/appCore/utils/request'
+import request from '@/appCore/utils/request';
 
 const api = {
   // 获取诊断任务列表
@@ -29,11 +29,11 @@ const api = {
   importcheckrule: '/check/rule/importcheckrule',
   // 获取异常检测的结果
   getcheckresult: '/check/result/getcheckresult'
-}
+};
 
-export default api
+export default api;
 // 获取诊断任务列表
-export function getTaskList (data) {
+export function getTaskList(data) {
   return request({
     url: api.getTaskList,
     method: 'post',
@@ -45,20 +45,20 @@ export function getTaskList (data) {
       per_page: data.pagination.pageSize,
       time_range: data.time_range
     }
-  })
-}
+  });
+};
 // 获取诊断任务进度
-export function getProgress (taskList) {
+export function getProgress(taskList) {
   return request({
     url: api.getProgress,
     method: 'post',
     data: {
       task_list: taskList
     }
-  })
-}
+  });
+};
 // 获取故障诊断报告列表
-export function getReportList (parameter) {
+export function getReportList(parameter) {
   return request({
     url: api.reportlist,
     method: 'post',
@@ -67,19 +67,19 @@ export function getReportList (parameter) {
       page: parameter.pagination.current,
       per_page: parameter.pagination.pageSize
     }
-  })
-}
+  });
+};
 // 获取故障诊断报告
-export function getdiagreport (reportList) {
+export function getdiagreport(reportList) {
   return request({
     url: api.getdiagreport,
     method: 'post',
     data: {
       report_list: reportList
     }
-  })
-}
-export function getDiagTree ({ treeList }) {
+  });
+};
+export function getDiagTree({treeList}) {
   return request({
     url: api.getdiagtree,
     method: 'post',
@@ -92,27 +92,27 @@ export function getDiagTree ({ treeList }) {
     //   per_page: tableInfo.pagination.pageSize,
     //   access_token: ''
     // }
-  })
-}
-export function delDiagReport (reportList) {
+  });
+};
+export function delDiagReport(reportList) {
   return request({
     url: api.deletediagreport,
     method: 'delete',
     data: {
       report_list: reportList
     }
-  })
-}
-export function delDiagTree ({ treeList }) {
+  });
+};
+export function delDiagTree({treeList}) {
   return request({
     url: api.deletediagtree,
     method: 'delete',
     data: {
       tree_list: treeList
     }
-  })
-}
-export function executeDiag (data) {
+  });
+};
+export function executeDiag(data) {
   return request({
     url: api.execute_diag,
     method: 'post',
@@ -122,20 +122,20 @@ export function executeDiag (data) {
       tree_list: data.tree_list,
       interval: data.interval
     }
-  })
-}
+  });
+};
 // 导⼊故障树
-export function importDiagTree (data) {
+export function importDiagTree(data) {
   return request({
     url: api.import_diagtree,
     method: 'post',
     data: {
       trees: [data]
     }
-  })
-}
+  });
+};
 // 获取故障诊断报告
-export function importCheckRule (checkItems) {
+export function importCheckRule(checkItems) {
   return request({
     url: api.importcheckrule,
     method: 'post',
@@ -143,10 +143,10 @@ export function importCheckRule (checkItems) {
       check_items: checkItems,
       access_token: ''
     }
-  })
-}
+  });
+};
 // 获取异常检测的结果
-export function getcheckresult ({ tableInfo, ...parameter }) {
+export function getcheckresult({tableInfo, ...parameter}) {
   return request({
     url: api.getcheckresult,
     method: 'get',
@@ -161,5 +161,5 @@ export function getcheckresult ({ tableInfo, ...parameter }) {
       per_page: tableInfo.pagination.pageSize,
       access_token: ''
     }
-  })
-}
+  });
+};

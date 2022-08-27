@@ -146,6 +146,7 @@
 </template>
 
 <script>
+// this component is abandoned
   import MyPageHeaderWrapper from '@/views/utils/MyPageHeaderWrapper'
   import { getTaskList, getProgress, getReportList, getDiagTree, delDiagReport, delDiagTree } from '@/api/diagnosis'
   import { hostInfo } from '@/api/assest'

@@ -60,6 +60,7 @@
 </template>
 
 <script>
+// this component is abandoned
 /* eslint-disable */
 import { importDiagTree } from '@/api/diagnosis'
 import Uploader from '@/components/Uploader'

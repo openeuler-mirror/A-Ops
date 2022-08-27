@@ -1,5 +1,5 @@
 import Mock from 'mockjs2'
-import { builder, getBody } from '../util'
+import { builder, getBody, getQueryParameters } from '../util'
 // 故障诊断列表
 const faultDiagnosisMockData = [
   {
@@ -118,26 +118,26 @@ const diagTreeData = [
 ]
 // 故障诊断的进度
 const diagProgressData = [
-    {
-      task_id: 'task1',
-      progress: 20
-    },
-    {
-      task_id: 'task2',
-      progress: 55
-    },
-    {
-      task_id: 'task3',
-      progress: 40
-    },
-    {
-      task_id: 'task4',
-      progress: 60
-    },
-    {
-      task_id: 'task5',
-      progress: 85
-    }
+  {
+    task_id: 'task1',
+    progress: 20
+  },
+  {
+    task_id: 'task2',
+    progress: 55
+  },
+  {
+    task_id: 'task3',
+    progress: 40
+  },
+  {
+    task_id: 'task4',
+    progress: 60
+  },
+  {
+    task_id: 'task5',
+    progress: 85
+  }
 ]
 const checkResultData = {
   'code': '',
@@ -156,6 +156,28 @@ const checkResultData = {
     }
   ]
 }
+
+// app信息
+const workflowAppExtraInfo = {
+    'code': 0,
+    'msg': 'string',
+    'result': {
+      'version': 'string',
+      'app_name': 'string',
+      'description': 'string',
+      'api': {
+        'type': 'string',
+        'address': 'string'
+      },
+      'app_id': 'string'
+    }
+}
+
+const moduleList = []
+const appInfo = {}
+const workFlowList = []
+const workFlowDetail = {}
+
 const getFaultDiagnosis = (options) => {
   const body = getBody(options)
   console.log('mock: body', body)
@@ -274,6 +296,114 @@ const getcheckresult = (options) => {
   }, '查询成功', 200, { 'Custom-Header': Mock.mock('@guid') })
 }
 
+// 获取工作流列表
+const getWorkFlowList = (options) => {
+  return builder({
+    'msg': Mock.mock('success'),
+    'total_count': 61,
+    'result': workFlowList
+  }, '查询成功', 200, { 'Custom-Header': Mock.mock('@guid') })
+}
+
+const getWorkflowDatails = (options) => {
+  const body = getBody(options)
+  console.log('------workflowdatails-->mock:body', body);
+  return builder({
+    'msg': Mock.mock('success'),
+     'result': workFlowDetail
+  }, '查询成功', 200, { 'Custom-Header': Mock.mock('@guid') })
+}
+
+const createWorkflow = (options) => {
+  const body = getBody(options)
+  console.log('------create-->mock:body', body);
+}
+
+const updateWorkflow = (options) => {
+  const body = getBody(options)
+  console.log('------updateWorkflow-->mock:body', body);
+  return builder({
+    'msg': Mock.mock('success')
+  }, '查询成功', 200, { 'Custom-Header': Mock.mock('@guid') })
+}
+const executeWorkflow = (options) => {
+  const body = getBody(options)
+  console.log('------executeWorkflow-->mock:body', body);
+  return builder({
+    'msg': Mock.mock('success')
+  }, '查询成功', 200, { 'Custom-Header': Mock.mock('@guid') })
+}
+const stopWorkflow = (options) => {
+  const body = getBody(options)
+  console.log('------stopWorkflow-->mock:body', body);
+  return builder({
+    'msg': Mock.mock('success')
+  }, '查询成功', 200, { 'Custom-Header': Mock.mock('@guid') })
+}
+const deleteWorkflow = (options) => {
+  const body = getBody(options)
+  console.log('------deleteWorkflow-->mock:body', body);
+  return builder({
+    'msg': Mock.mock('success')
+  }, '查询成功', 200, { 'Custom-Header': Mock.mock('@guid') })
+}
+// 获取应用列表
+const getAppList = (options) => {
+  const body = getQueryParameters(options)
+  const {page, per_page: perPage} = body;
+  const appListStart = []
+  let appList = []
+  appInfo.app_list.forEach((item, index) => {
+    if ((index) % perPage === 0) {
+      appListStart.push(index);
+    }
+  })
+  console.log(appListStart);
+  const startIndex = appListStart[page - 1];
+  const endIndex = appListStart[page - 1] + perPage - 1;
+  appList = appInfo.app_list.reduce((arr, item, index) => {
+    if (index >= startIndex && index <= endIndex) {
+      arr.push(item)
+    }
+    return arr
+  }, [])
+  const appMsg = Object.assign({}, appInfo)
+  appMsg.app_list = appList
+  appMsg.total_count = appInfo.app_list.length
+  appMsg.total_page = Math.ceil(appList.length / perPage)
+  return builder({
+    'msg': Mock.mock('success'),
+    'appInfo': appMsg
+  }, '查询成功', 200, { 'Custom-Header': Mock.mock('@guid') })
+}
+const getWorkflowAppExtraInfo = (options) => {
+  const body = getBody(options)
+  console.log('------app-->mock:body', body);
+  return builder({
+    'msg': Mock.mock('success'),
+    'result': workflowAppExtraInfo.result
+  }, '查询成功', 200, { 'Custom-Header': Mock.mock('@guid') })
+}
+// 新增应用（暂未开发）
+const addApp = (options) => {
+  const body = getBody(options)
+  console.log('mock: body', body)
+  return builder({
+    'msg': Mock.mock('success')
+  }, '新增成功', 200, { 'Custom-Header': Mock.mock('@guid') })
+}
+
+const getModuleList = (options) => {
+  const body = getBody(options)
+  console.log('------moduleList-->mock:body', body);
+  return builder({
+    'msg': Mock.mock('success'),
+    'total_page': 5,
+    'total_count': 3,
+     'result': moduleList
+  }, '查询成功', 200, { 'Custom-Header': Mock.mock('@guid') })
+}
+
 Mock.mock(/\/diag\/report\/getreportlist/, 'get', getFaultDiagnosis)
 Mock.mock(/\/diag\/tree\/getdiagtree/, 'get', getDiagTree)
 Mock.mock(/\/diag\/getdiagprogress/, 'get', getDiagProgress)
@@ -283,3 +413,16 @@ Mock.mock(/\/diag\/execute_diag/, 'post', executeDiag)
 Mock.mock(/\/diag\/tree\/importdiagtree/, 'post', importDiagTree)
 Mock.mock(/\/check\/rule\/importcheckrule/, 'post', importCheckRule)
 Mock.mock(/\/check\/result\/getcheckresult/, 'get', getcheckresult)
+
+// 工作流
+Mock.mock(/\/check\/workflow\/list/, 'get', getWorkFlowList)
+Mock.mock(/\/check\/workflow/, 'get', getWorkflowDatails)
+Mock.mock(/\/check\/workflow\/update/, 'post', updateWorkflow)
+Mock.mock(/\/check\/workflow\/create/, 'post', createWorkflow)
+Mock.mock(/\/check\/workflow\/execute/, 'post', executeWorkflow)
+Mock.mock(/\/check\/workflow\/stop/, 'post', stopWorkflow)
+Mock.mock(/\/check\/workflow/, 'delete', deleteWorkflow)
+Mock.mock(/\/check\/app\/list/, 'get', getAppList)
+Mock.mock(/\/check\/app/, 'get', getWorkflowAppExtraInfo)
+Mock.mock(/\/check\/app\/create/, 'post', addApp)
+Mock.mock(/\/check\/algo\/model\/list/, 'post', getModuleList)

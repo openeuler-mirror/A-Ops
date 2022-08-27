@@ -50,7 +50,8 @@ import {
     Space,
     message,
     notification,
-    Collapse
+    Collapse,
+    Pagination
 } from 'ant-design-vue';
 import Viser from 'viser-vue';
 
@@ -103,6 +104,7 @@ Vue.use(Descriptions);
 Vue.use(Space);
 Vue.use(Viser);
 Vue.use(Collapse);
+Vue.use(Pagination);
 
 Vue.prototype.$confirm = Modal.confirm;
 Vue.prototype.$message = message;

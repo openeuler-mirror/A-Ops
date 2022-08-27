@@ -122,6 +122,7 @@
 </template>
 
 <script>
+// this component is abandoned
 import MyPageHeaderWrapper from '@/views/utils/MyPageHeaderWrapper'
 import DrawerView from '@/views/utils/DrawerView'
 import GetCheckResultDrawer from '@/views/diagnosis/components/GetCheckResultDrawer'

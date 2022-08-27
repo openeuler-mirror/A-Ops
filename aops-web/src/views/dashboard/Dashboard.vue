@@ -34,12 +34,12 @@
                     </router-link>
                   </a-col>
                   <a-col>
-                    <span class="small-title short-length">异常检测规则数量</span>
+                    <span class="small-title short-length">告警数量</span>
                   </a-col>
                 </a-row>
               </a-col>
               <a-col>
-                <span class="data-number">{{ ruleCount.toString().replace(/(\d)(?=(?:\d{3})+$)/g, '$1,') }}</span>
+                <span class="data-number">{{ alertCount.toString().replace(/(\d)(?=(?:\d{3})+$)/g, '$1,') }}</span>
               </a-col>
             </a-row>
           </div>
@@ -103,62 +103,19 @@
           </div>
         </a-card>
       </a-col>
-      <a-col :xs="24" :xl="24">
-        <a-card :bordered="false" class="aops-theme special check-result-card">
-          <h3>异常检测结果统计</h3>
-          <div>
-            <a-row type="flex" :gutter="12">
-              <a-table
-                class="check-result-table"
-                row-key="hostName"
-                :columns="columnsReulst"
-                :data-source="resultCountList.slice(0, 5)"
-                :bordered="false"
-                :pagination="false"
-                :loading="countTopLoading"
-              />
-            </a-row>
-          </div>
-          <drawer-view title="异常检测结果统计">
-            <template slot="click">
-              <div class="showAllResult">查看全部结果 ></div>
-            </template>
-            <template slot="drawerView">
-              <get-check-result-drawer></get-check-result-drawer>
-            </template>
-          </drawer-view>
-        </a-card>
-      </a-col>
     </a-row>
-    <a-card :bordered="false" class="aops-theme">
-      <div style="font-weight: bold;font-size: 18px;margin-top: -12px;margin-bottom: 10px">异常检测记录</div>
-      <a-table
-        :columns="columns"
-        :data-source="resultList"
-        :pagination="false"
-        :loading="tableIsLoading"
-        :expandIconAsCell="false"
-        :expandIconColumnIndex="3">
-        <div slot="expandedRowRender" slot-scope="result" style="width: 100%;margin: 1px;padding-left: 50px;">
-          <check-result-expanded :dataSource="result.data_list"></check-result-expanded>
-        </div>
-      </a-table>
-      <div style="margin-top: 10px;text-align: right;">
-        <router-link :to="{ path: '/diagnosis/abnormal-check' }">
-          <a style="cursor: pointer;border-bottom: 1px solid;padding: 0 3px 1px">查看更多异常检测记录<a-icon type="right" style="line-height: 30px;padding-left: 3px"/></a>
-        </router-link>
-      </div>
-    </a-card>
+    <alert-header-board onlyInfo />
   </my-page-header-wrapper>
 </template>
 
 <script>
 import MyPageHeaderWrapper from '@/views/utils/MyPageHeaderWrapper'
+import AlertHeaderBoard from '@/views/diagnosis/components/AlertHeaderBoard'
 import DrawerView from '@/views/utils/DrawerView'
 import GetCheckResultDrawer from '@/views/diagnosis/components/GetCheckResultDrawer'
 import AddAbnormalCheckRuleDrawer from '@/views/diagnosis/components/AddAbnormalCheckRuleDrawer'
 import CheckResultExpanded from '@/views/diagnosis/components/CheckResultExpanded'
-import { getRuleCount, getResultCountTopTen, getResult } from '@/api/check'
+import { getResultCountTopTen, getResult, getAlertCount } from '@/api/check'
 import { getCveOverview } from '@/api/leaks'
 import { hostCount } from '@/api/assest'
 import { dateFormat } from '@/views/utils/Utils'
@@ -183,11 +140,12 @@ export default {
     DrawerView,
     AddAbnormalCheckRuleDrawer,
     GetCheckResultDrawer,
-    CheckResultExpanded
+    CheckResultExpanded,
+    AlertHeaderBoard
   },
   mounted: function () {
-    // this.getRuleCount()
-    // this.getHostCount()
+    this.getHostCount()
+    this.getAlertCount()
     // this.getResultCountTopTen()
     // this.getResultList()
     // this.getCveOverview()
@@ -195,7 +153,7 @@ export default {
   data () {
     return {
       hostCount: 0,
-      ruleCount: 0,
+      alertCount: 0,
       filters: null,
       sorter: null,
       tableIsLoading: false,
@@ -255,10 +213,10 @@ export default {
         that.$message.error(err.response.data.msg)
       })
     },
-    getRuleCount () {
+    getAlertCount () {
       var that = this
-      getRuleCount().then(function (data) {
-        that.ruleCount = data.rule_count
+      getAlertCount().then(function (data) {
+        that.alertCount = data.count
       }).catch(function (err) {
         that.$message.error(err.response.data.msg)
       })
