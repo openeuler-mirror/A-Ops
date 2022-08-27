@@ -72,8 +72,8 @@ class CreateWorkflow(BaseResponse):
 
         model_info = Workflow.get_model_info(detail)
 
-        args['step'] = args.get('step', 5)
-        args["period"] = args.get("period", 15)
+        args['step'] = args.get('step', 60)
+        args["period"] = args.get("period", 60)
         args["alert"] = args.get("alert", {})
         args["status"] = "hold"
         workflow_id = str(uuid.uuid1()).replace('-', '')

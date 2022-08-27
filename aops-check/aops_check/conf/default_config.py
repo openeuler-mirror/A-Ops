@@ -43,7 +43,7 @@ prometheus = {
 }
 
 agent = {
-    "DEFAULT_INSTANCE_PORT": 9100
+    "DEFAULT_INSTANCE_PORT": 8888
 }
 
 manager = {

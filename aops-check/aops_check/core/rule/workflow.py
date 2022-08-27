@@ -45,10 +45,11 @@ class Workflow:
     Workflow manager
     """
 
-    def __init__(self, app_id, hosts):
-        self.__workflow_id = ""
-        self.__app_id = app_id
-        self.__hosts = hosts
+    def __init__(self, username, workflow_id):
+        self.__workflow_id = workflow_id
+        self.__username = username
+        self.__app_id = ""
+        self.__hosts = []
         self.__status = "hold"
         self.__detail = {}
         self.__model_info = {}
