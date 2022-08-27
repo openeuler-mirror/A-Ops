@@ -227,6 +227,8 @@ export default {
         })
     },
     onSelectedChange(value) {
+        // reset selected host when change host group
+        this.targetKeys = []
         const _this = this
         hostList({
           tableInfo: {
@@ -244,12 +246,13 @@ export default {
                 key: host.host_id
               }
             }) || []
-            console.log(_this.hostList)
             _this.pagination.total = res.total_count
             // 设置默认全选
+            const tempArr = []
             _this.hostList.forEach(item => {
-              _this.transferSelectedKeys.push(item.key)
+              tempArr.push(item.key)
             });
+            _this.transferSelectedKeys = tempArr
         }).catch(function (err) {
           _this.$message.error(err.response.data.msg)
         }).finally(function () {

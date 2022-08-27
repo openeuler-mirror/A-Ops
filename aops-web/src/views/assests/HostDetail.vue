@@ -4,11 +4,11 @@
             <HostBasicInfo
                 :basicHostInfo="basicHostInfo"
                 :basicInfo="basicInfo"
-                :isLoading="basicHostInfoIsLoading || basicInfoIsLoading"
-            ></HostBasicInfo>
+                :isLoading="basicHostInfoIsLoading || basicInfoIsLoading">
+            </HostBasicInfo>
         </a-card>
         <a-card :bordered="false" class="aops-theme">
-            <HostPluginInfo :scene="scene"></HostPluginInfo>
+            <HostPluginInfo :scene="scene" @reFetchHostInfo="reFetchHostInfo"></HostPluginInfo>
         </a-card>
     </page-header-wrapper>
 </template>
@@ -26,7 +26,7 @@ export default {
         HostPluginInfo,
         HostBasicInfo
     },
-    data () {
+    data() {
         return {
             hostId: this.$route.params.hostId,
             basicHostInfo: {},
@@ -37,31 +37,35 @@ export default {
         }
     },
     methods: {
-
+        fetchHostInfo(This) {
+            const _this = This
+            This.basicHostInfoIsLoading = true
+            getHostDetail(This.hostId, true).then((res) => {
+                _this.basicHostInfo = res.host_infos[0]
+                _this.scene = This.basicHostInfo.scene
+            }).catch(err => {
+                _this.$message.error(err.response.data.msg)
+            }).finally(() => {
+                _this.basicHostInfoIsLoading = false
+            })
+            This.basicInfoIsLoading = true
+            getHostDetail(This.hostId, false).then((res) => {
+                _this.basicInfo = res.host_infos[0]
+            }).catch(err => {
+                _this.$message.error(err.response.data.msg)
+            }).finally(() => {
+                _this.basicInfoIsLoading = false
+            })
+        },
+        reFetchHostInfo() {
+            this.$options.methods.fetchHostInfo(this)
+        }
     },
     mounted: function () {
-        const _this = this
-        this.basicHostInfoIsLoading = true
-        getHostDetail(this.hostId, true).then((res) => {
-            _this.basicHostInfo = res.host_infos[0]
-            _this.scene = this.basicHostInfo.scene
-        }).catch(err => {
-            _this.$message.error(err.response.data.msg)
-        }).finally(() => {
-            _this.basicHostInfoIsLoading = false
-        })
-        this.basicInfoIsLoading = true
-        getHostDetail(this.hostId, false).then((res) => {
-            _this.basicInfo = res.host_infos[0]
-        }).catch(err => {
-            _this.$message.error(err.response.data.msg)
-        }).finally(() => {
-            _this.basicInfoIsLoading = false
-        })
+        this.$options.methods.fetchHostInfo(this)
     }
 }
 </script>
 
 <style lang="less" scoped>
-
 </style>
