@@ -199,6 +199,8 @@ class ResultDao(MysqlProxy):
             filters.add(DomainCheckResult.alert_id == data.get("alert_id"))
             domain_info = self.session.query(
                 DomainCheckResult).filter(*filters).first()
+            if not domain_info:
+                return  NO_DATA, dict()
             return SUCCEED, dict(result=domain_info.to_dict())
 
         res = {

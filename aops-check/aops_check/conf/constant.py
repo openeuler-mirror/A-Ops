@@ -50,7 +50,7 @@ DELETE_WORKFLOW = "/check/workflow"
 UPDATE_WORKFLOW = "/check/workflow/update"
 IF_HOST_IN_WORKFLOW = "/check/workflow/host/exist"
 QUERY_MODEL_LIST = "/check/algo/model/list"
-
+DOWNLOAD_HOST_CHECK_RESULT = '/check/report/download'
 QUERY_HOST_DETAIL = "/manage/host/info/query"
 
 # a user for built-in algorithm and model
