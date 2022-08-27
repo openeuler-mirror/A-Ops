@@ -21,7 +21,8 @@ from typing import Dict, Tuple
 import sqlalchemy
 from aops_utils.kafka.kafka_exception import ProducerInitError
 from aops_utils.kafka.producer import BaseProducer
-from aops_utils.restful.status import SUCCEED, DATABASE_INSERT_ERROR, TASK_EXECUTION_FAIL, DATABASE_QUERY_ERROR, DATABASE_CONNECT_ERROR
+from aops_utils.restful.status import SUCCEED, DATABASE_INSERT_ERROR, TASK_EXECUTION_FAIL,\
+    DATABASE_QUERY_ERROR, DATABASE_CONNECT_ERROR
 from aops_utils.log.log import LOGGER
 from aops_utils.restful.response import MyResponse
 from aops_utils.conf.constant import URL_FORMAT, QUERY_HOST_DETAIL
@@ -34,6 +35,9 @@ from aops_check.database.dao.data_dao import DataDao
 from aops_check.database.dao.app_dao import AppDao
 from aops_check.database.dao.model_dao import ModelDao
 from aops_check.core.rule.model_assign import ModelAssign
+from aops_check.database.dao.workflow_dao import WorkflowDao
+from aops_check.database.dao.result_dao import ResultDao
+from aops_check.core.experiment.app.network_diagnose import NetworkDiagnoseApp
 
 
 class Workflow:
@@ -53,14 +57,204 @@ class Workflow:
     def detail(self):
         return self.__detail
 
-    def load(self):
-        pass
+    def _insert_domain(self, result_dao, alert_id, domain, insert_time, network_monitor_data, workflow_name):
+        insert_status = result_dao.insert_domain(data=dict(alert_id=alert_id, domain=domain,
+                                                           alert_name=network_monitor_data["alert_name"],
+                                                           time=insert_time, workflow_name=workflow_name,
+                                                           workflow_id=self.__workflow_id,
+                                                           username=self.__username,
+                                                           level=None, confirmed=False
+                                                           ))
+        if insert_status != SUCCEED:
+            LOGGER.debug("Failed to insert domain workflow data.")
+            raise WorkflowExecuteError
 
-    def execute(self):
-        pass
+    @staticmethod
+    def _insert_alert_host(result_dao, workflow, alert_id):
+        hosts = workflow["input"]["hosts"]
+        for host_id, host in hosts.items():
+            if result_dao.insert_alert_host(data=dict(host_id=host_id,
+                                                      alert_id=alert_id,
+                                                      host_ip=host.get(
+                                                          "host_ip"),
+                                                      host_name=host.get("host_name"))) != SUCCEED:
+                LOGGER.debug("Failed to insert alert host workflow data.")
+                raise WorkflowExecuteError
 
-    def stop(self):
-        pass
+    @staticmethod
+    def _insert_host_check(result_dao, network_monitor_data, insert_time):
+        for host_id, metrics in network_monitor_data.get("host_result", dict()).items():
+            if not isinstance(metrics, list):
+                continue
+            for metric_item in metrics:
+                if result_dao.insert_host_check(data=dict(host_id=host_id,
+                                                          time=insert_time,
+                                                          is_root=metric_item.get(
+                                                              "is_root", False),
+                                                          metric_name=metric_item.get(
+                                                              "metric_name"),
+                                                          metric_label=metric_item.get(
+                                                              "metric_label"))) != SUCCEED:
+                    LOGGER.debug("Failed to insert host check workflow data.")
+                    raise WorkflowExecuteError
+
+    def add_workflow_alert(self, network_monitor_data: dict, workflow: dict, domain: str) -> int:
+        result_dao = ResultDao()
+        if not result_dao.connect(SESSION):
+            LOGGER.error("Connect mysql fail when insert built-in algorithm.")
+            raise sqlalchemy.exc.SQLAlchemyError("Connect mysql failed.")
+        _time = str(int(time.time()))
+        alert_id = _time + "-" + domain
+        try:
+            self._insert_domain(result_dao, alert_id, domain,
+                                _time, network_monitor_data, workflow["workflow_name"])
+
+            self._insert_alert_host(result_dao, workflow, alert_id)
+
+            self._insert_host_check(
+                result_dao, network_monitor_data, _time)
+
+            LOGGER.debug("Insert the success, workflow name: %s workflow id: %s" % (
+                workflow["workflow_name"], self.__workflow_id))
+            return SUCCEED
+        except WorkflowExecuteError:
+            if result_dao.delete_alert(alert_id=alert_id) != SUCCEED:
+                LOGGER.error(
+                    "Failed to delete the domain info, alert_id: %s." % alert_id)
+            return DATABASE_INSERT_ERROR
+
+    @staticmethod
+    def _kafka_alert_host_msg(workflow) -> dict:
+        hosts = workflow["input"]["hosts"]
+        alert_hosts = dict()
+        for host_id, host in hosts.items():
+            alert_hosts[host_id] = dict(host_ip=host.get("host_ip"),
+                                        host_name=host.get("host_name"))
+        return alert_hosts
+
+    @staticmethod
+    def _kafka_host_check_msg(network_monitor_data):
+        host_check = dict()
+        for host_id, metrics in network_monitor_data.get("host_result", dict()).items():
+            if not isinstance(metrics, list):
+                continue
+            for metric_item in metrics:
+                host_check[host_id] = dict(is_root=metric_item.get(
+                    "is_root", False),
+                    metric_name=metric_item.get(
+                    "metric_name"),
+                    metric_label=metric_item.get(
+                    "metric_label"))
+        return host_check
+
+    def _send_kafka(self, network_monitor_data, workflow, domain):
+        workflow_msg = {
+            "domain": domain,
+            "alert_name": network_monitor_data["alert_name"],
+            "time": str(int(time.time())),
+            "workflow_name": workflow["workflow_name"],
+            "workflow_id": self.__workflow_id,
+            "username": self.__username,
+            "level": None,
+            "confirmed": False,
+            "alert_host": self._kafka_alert_host_msg(workflow),
+            "host_check": self._kafka_host_check_msg(network_monitor_data)
+        }
+        try:
+            producer = BaseProducer(configuration)
+            LOGGER.debug("Send workflow msg %s" % workflow_msg)
+            producer.send_msg(configuration.consumer.get(
+                'WORKFLOW_NAME'), workflow_msg)
+            return SUCCEED
+        except ProducerInitError as error:
+            LOGGER.error("Produce workflow msg failed. %s" % error)
+            return TASK_EXECUTION_FAIL
+
+    def _get_workflow(self):
+        workflow_dao = WorkflowDao(configuration)
+        if not workflow_dao.connect(SESSION):
+            LOGGER.error("Connect mysql fail when insert built-in algorithm.")
+            return DATABASE_CONNECT_ERROR
+
+        status_code, workflow = workflow_dao.get_workflow(
+            data=dict(username=self.__username, workflow_id=self.__workflow_id))
+
+        if status_code != SUCCEED:
+            return DATABASE_QUERY_ERROR
+
+        workflow = workflow.get("result", dict())
+
+        hosts = []
+        try:
+            domain = workflow["input"]["domain"]
+            for host_id, host in workflow["input"]["hosts"].items():
+                hosts.append(
+                    dict(host_id=host_id, public_ip=host.get('host_ip')))
+        except KeyError:
+            LOGGER.error("No valid 'hosts' are queried in workflow")
+            return DATABASE_QUERY_ERROR
+        return dict(workflow=workflow, hosts=hosts, domain=domain)
+    
+    def _get_app_execute_result(self, time_range, hosts, workflow):
+        data_dao = DataDao(configuration)
+        if not data_dao.connect():
+            LOGGER.error("Promethus connection failed.")
+            return DATABASE_CONNECT_ERROR
+
+        data_status, monitor_data = data_dao.query_data(
+            time_range=time_range, host_list=hosts)
+
+        if data_status != SUCCEED:
+            LOGGER.error("Data query error")
+            return DATABASE_QUERY_ERROR
+
+        LOGGER.debug("Finish querying workflow '%s' data and original data, start executing app."
+                     % self.__workflow_id)
+
+        app = NetworkDiagnoseApp()
+        network_monitor_data = app.execute(model_info=workflow.get(
+            "model_info"), detail=workflow.get("detail"), data=monitor_data)
+        if not network_monitor_data:
+            LOGGER.debug("No error message,workflow id: %s." % self.__workflow_id)
+            return SUCCEED
+
+        return network_monitor_data
+
+    def execute(self, time_range: list, kafka=False, storage=True) -> int:
+        """
+        Workflow control
+        Args:
+            time_range: ["1660471200"]
+            kafka: True
+            storage: True
+        Returns:
+            int
+        """
+        workflow = self._get_workflow()
+        if isinstance(workflow,int):
+            return workflow
+
+        network_monitor_data = self._get_app_execute_result(time_range, workflow["hosts"], workflow["workflow"])
+
+        if isinstance(network_monitor_data,int):
+            return network_monitor_data
+
+        storage_status, kafka_status = DATABASE_INSERT_ERROR, DATABASE_INSERT_ERROR
+        if storage:
+            try:
+                storage_status = self.add_workflow_alert(
+                    network_monitor_data, workflow["workflow"], workflow["domain"])
+                LOGGER.debug("Insert workflow '%s' execute result into database successful."
+                             % self.__workflow_id)
+            except sqlalchemy.exc.SQLAlchemyError:
+                storage_status = DATABASE_CONNECT_ERROR
+        if kafka:
+            kafka_status = self._send_kafka(
+                network_monitor_data, workflow["workflow"], workflow["domain"])
+            LOGGER.debug(
+                "Insert workflow '%s' execute result into kafka successful." % self.__workflow_id)
+
+        return storage_status == SUCCEED or kafka_status == SUCCEED
 
     @staticmethod
     def assign_model(username: str, token: str, app_id: str, host_list: list,
