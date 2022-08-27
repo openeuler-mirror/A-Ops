@@ -755,6 +755,11 @@ static int IMDB_BuildPrometheusLabel(const IMDB_DataBaseMgr *mgr,
             continue;
         }
 
+        if (!strcmp(record->metrics[i]->val, INVALID_METRIC_VALUE)) {
+            // ignore label whose value is (null)
+            continue;
+        }
+
         if (first_flag) {
             ret = __snprintf(&p, size, &size, "%s=\"%s\"",
                             record->metrics[i]->name, record->metrics[i]->val);
@@ -852,6 +857,11 @@ static int IMDB_Rec2Prometheus(IMDB_DataBaseMgr *mgr, IMDB_Record *record, char 
     for (int i = 0; i < record->metricsNum; i++) {
         ret = MetricTypeSatisfyPrometheus(record->metrics[i]);
         if (ret != 0) {
+            continue;
+        }
+
+        if (!strcmp(record->metrics[i]->val, INVALID_METRIC_VALUE)) {
+            // Do not report metric whose value is (null)
             continue;
         }
 

@@ -243,15 +243,38 @@ static int que_get_next_file(struct files_queue_s *files_que)
     return 0;
 }
 
-static char que_current_is_invalid(struct files_queue_s *files_que, int max_logs_len)
+static char que_current_is_invalid(struct log_mgr_s *mgr, int is_metrics, int max_logs_len)
 {
+    struct files_queue_s *files_que = NULL;
+    char invalid = 0;
+
+    if (is_metrics) {
+        files_que = mgr->metrics_files;
+    } else {
+        files_que = mgr->event_files;
+    }
+
     (void)pthread_rwlock_wrlock(&(files_que->rwlock));
 
-    char invalid = ((int)files_que->current.len >= max_logs_len);
-    invalid |= (files_que->current.len == 0);
+    if ((files_que->current.len >= max_logs_len) || (files_que->current.len == 0)) {
+        invalid = 1;
+        goto out;
+    }
 
+    char full_path[PATH_LEN];
+    if (get_file_name(mgr, is_metrics, files_que->current.file_id, full_path, PATH_LEN)) {
+        (void)fprintf(stderr, "is current invalid fail(get file name).\n");
+        invalid = 1;
+        goto out;
+    }
+
+    if (access(full_path, F_OK) == -1) {
+        invalid = 1;
+        goto out;
+    }
+
+out:
     (void)pthread_rwlock_unlock(&(files_que->rwlock));
-
     return invalid;
 }
 
@@ -283,9 +306,10 @@ static void init_all_logger(void)
 }
 
 #define __FULL_PATH_LEN (PATH_LEN * 2)
+
+static char g_meta_abs_path[__FULL_PATH_LEN];
 static int append_meta_logger(struct log_mgr_s * mgr)
 {
-    char full_path[__FULL_PATH_LEN];
     const char *fmt = "%s/%s", *fmt2 = "%s%s";
 
     size_t path_len = strlen(mgr->meta_path);
@@ -294,16 +318,16 @@ static int append_meta_logger(struct log_mgr_s * mgr)
         return -1;
     }
 
-    full_path[0] = 0;
+    g_meta_abs_path[0] = 0;
     if (mgr->meta_path[path_len - 1] == '/') {
-        (void)snprintf(full_path, __FULL_PATH_LEN, fmt2, mgr->meta_path, META_LOGS_FILE_NAME);
+        (void)snprintf(g_meta_abs_path, __FULL_PATH_LEN, fmt2, mgr->meta_path, META_LOGS_FILE_NAME);
     } else {
-        (void)snprintf(full_path, __FULL_PATH_LEN, fmt, mgr->meta_path, META_LOGS_FILE_NAME);
+        (void)snprintf(g_meta_abs_path, __FULL_PATH_LEN, fmt, mgr->meta_path, META_LOGS_FILE_NAME);
     }
 
     g_meta_logger.removeAllAppenders();
 
-    SharedAppenderPtr append(new RollingFileAppender(full_path, META_LOGS_FILESIZE, 1, true, true));
+    SharedAppenderPtr append(new RollingFileAppender(g_meta_abs_path, META_LOGS_FILESIZE, 1, true, true));
 
     log4cplus::tstring pattern = LOG4CPLUS_TEXT("%m%n");
     append->setLayout(std::unique_ptr<log4cplus::Layout>(new log4cplus::PatternLayout(pattern)));
@@ -330,9 +354,9 @@ static int append_raw_logger(struct log_mgr_s * mgr)
     return 0;
 }
 
+static char g_debug_abs_path[__FULL_PATH_LEN];
 static int append_debug_logger(struct log_mgr_s * mgr)
 {
-    char full_path[__FULL_PATH_LEN];
     const char *app_name;
     const char *fmt = "%s/%s", *fmt2 = "%s%s";
 
@@ -348,16 +372,16 @@ static int append_debug_logger(struct log_mgr_s * mgr)
         app_name = mgr->app_name;
     }
 
-    full_path[0] = 0;
+    g_debug_abs_path[0] = 0;
     if (mgr->debug_path[path_len - 1] == '/') {
-        (void)snprintf(full_path, __FULL_PATH_LEN, fmt2, mgr->debug_path, app_name);
+        (void)snprintf(g_debug_abs_path, __FULL_PATH_LEN, fmt2, mgr->debug_path, app_name);
     } else {
-        (void)snprintf(full_path, __FULL_PATH_LEN, fmt, mgr->debug_path, app_name);
+        (void)snprintf(g_debug_abs_path, __FULL_PATH_LEN, fmt, mgr->debug_path, app_name);
     }
 
     g_debug_logger.removeAllAppenders();
 
-    SharedAppenderPtr append(new RollingFileAppender(full_path, DEBUG_LOGS_FILESIZE, 1, true, true));
+    SharedAppenderPtr append(new RollingFileAppender(g_debug_abs_path, DEBUG_LOGS_FILESIZE, 1, true, true));
 
     log4cplus::tstring pattern = LOG4CPLUS_TEXT("%d{%m/%d/%y %H:%M:%S}  - %m");
     append->setLayout(std::unique_ptr<log4cplus::Layout>(new log4cplus::PatternLayout(pattern)));
@@ -531,7 +555,7 @@ int wr_metrics_logs(const char* logs, size_t logs_len)
         return -1;
     }
 
-    if (que_current_is_invalid(mgr->metrics_files, METRICS_LOGS_FILESIZE)) {
+    if (que_current_is_invalid(mgr, 1, METRICS_LOGS_FILESIZE)) {
         if (append_metrics_logger(mgr)) {
             return -1;
         }
@@ -570,7 +594,7 @@ int wr_event_logs(const char* logs, size_t logs_len)
         return -1;
     }
 
-    if (que_current_is_invalid(mgr->event_files, EVENT_LOGS_FILESIZE)) {
+    if (que_current_is_invalid(mgr, 0, EVENT_LOGS_FILESIZE)) {
         if (append_event_logger(mgr)) {
             return -1;
         }
@@ -604,7 +628,17 @@ int read_event_logs(char logs_file_name[], size_t size)
 
 void wr_meta_logs(const char* logs)
 {
+    if (access(g_meta_abs_path, F_OK) == -1) {
+        (void)append_meta_logger(local);
+    }
     LOG4CPLUS_DEBUG_FMT(g_meta_logger, logs);
+}
+
+static void reappend_debug_logger(struct log_mgr_s *mgr)
+{
+    if (access(g_debug_abs_path, F_OK) == -1) {
+        (void)append_debug_logger(mgr);
+    }
 }
 
 void debug_logs(const char* format, ...)
@@ -615,6 +649,7 @@ void debug_logs(const char* format, ...)
     if (!local) {
         printf("DEBUG: %s", buf);
     } else {
+        reappend_debug_logger(local);
         LOG4CPLUS_DEBUG(g_debug_logger, buf);
     }
 }
@@ -627,6 +662,7 @@ void info_logs(const char* format, ...)
     if (!local) {
         printf("INFO: %s", buf);
     } else {
+        reappend_debug_logger(local);
         LOG4CPLUS_INFO(g_debug_logger, buf);
     }
 }
@@ -639,6 +675,7 @@ void warn_logs(const char* format, ...)
     if (!local) {
         printf("WARN: %s", buf);
     } else {
+        reappend_debug_logger(local);
         LOG4CPLUS_WARN(g_debug_logger, buf);
     }
 }
@@ -651,6 +688,7 @@ void error_logs(const char* format, ...)
     if (!local) {
         printf("ERROR: %s", buf);
     } else {
+        reappend_debug_logger(local);
         LOG4CPLUS_ERROR(g_debug_logger, buf);
     }
 }
