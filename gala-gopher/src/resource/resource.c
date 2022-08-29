@@ -280,7 +280,6 @@ static int MeasurementMgrInit(ResourceMgr *resourceMgr)
     }
     INFO("[RESOURCE] load meta directory success.\n");
 
-    mmMgr->meta_kafkaMgr = resourceMgr->meta_kafkaMgr;
     mmMgr->meta_out_channel = resourceMgr->configMgr->metaOutConfig->outChnl;
 
     resourceMgr->mmMgr = mmMgr;
@@ -343,6 +342,9 @@ static int KafkaMgrInit(ResourceMgr *resourceMgr)
             return -1;
         }
         resourceMgr->meta_kafkaMgr = kafkaMgr;
+        if (resourceMgr->mmMgr) {
+            resourceMgr->mmMgr->meta_kafkaMgr = resourceMgr->meta_kafkaMgr;
+        }
         INFO("[RESOURCE] create kafkaMgr of meta success.\n");
     } else {
         INFO("[RESOURCE] meta out_channel isn't kafka, ship create kafkaMgr.\n");
