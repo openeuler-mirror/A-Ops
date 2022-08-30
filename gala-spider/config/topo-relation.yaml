@@ -219,3 +219,32 @@ topo_relations:
               -
                 from: machine_id
                 to: machine_id
+  -
+    type: file_system
+    dependingitems:
+      -
+        id: belongs_to
+        layer: direct
+        toTypes:
+          -
+            type: host
+            matches:
+              -
+                from: machine_id
+                to: machine_id
+  -
+    type: qdisc
+    dependingitems:
+      -
+        id: belongs_to
+        layer: direct
+        toTypes:
+          -
+            type: nic
+            matches:
+              -
+                from: dev_name
+                to: dev_name
+              -
+                from: machine_id
+                to: machine_id
