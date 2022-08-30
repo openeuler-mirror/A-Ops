@@ -67,7 +67,7 @@ def complete_key_info_of_metric(metric_labels, observe_entity):
 
 
 def query_abnormal_topo_subgraph(abnormal_event: AbnormalEvent):
-    abn_ts = int(float(abnormal_event.timestamp))
+    abn_ts = int(float(abnormal_event.timestamp)) // 1000
     abn_metric_id = abnormal_event.abnormal_metric_id
     abn_metric_labels = abnormal_event.metric_labels
 
@@ -123,9 +123,11 @@ def parse_abn_evt(data) -> AbnormalEvent:
     resource = data.get('Resource')
     if not resource:
         raise DataParseException('Atribute "Resource" required in abnormal event')
+    if not resource.get('metrics'):
+        raise DataParseException('Atribute "Resource.metrics" required in abnormal event')
     abn_evt = AbnormalEvent(
         data.get('Timestamp'),
-        resource.get('metric_id'),
+        resource.get('metrics'),
         1.0,
         resource.get('metric_label')
     )
