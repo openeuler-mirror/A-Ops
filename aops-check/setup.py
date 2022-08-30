@@ -34,7 +34,7 @@ setup(
     install_requires=REQUIRES,
     packages=find_packages(),
     data_files=[
-        ('/etc/aops', ['conf/check.ini']),
+        ('/etc/aops', ['conf/check.ini', 'conf/check_default.json']),
         ('/usr/lib/systemd/system', ['aops-check.service'])
     ],
     entry_points={

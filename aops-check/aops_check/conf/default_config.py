@@ -22,6 +22,11 @@ check = {
     "TIMING_CHECK": "on"
 }
 
+default_mode = {
+    "period": 30,
+    "step": 30
+}
+
 mysql = {
     "IP": "127.0.0.1",
     "PORT": 3306,
