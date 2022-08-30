@@ -88,7 +88,7 @@ def get_kafka_message(utc_now: datetime, y_pred: List, machine_id: str, key_anom
     """Generates the Kafka message based the parameters"""
     variable = EntityVariable.variable.copy()
 
-    table_name = variable["meta_name"]
+    entity_name = variable["entity_name"]
     filtered_metric_label = {}
     keys = []
 
@@ -100,7 +100,7 @@ def get_kafka_message(utc_now: datetime, y_pred: List, machine_id: str, key_anom
         if key != "machine_id":
             keys.append(metric_label[key])
 
-    entity_id = f"{machine_id}_{table_name}_{'_'.join(keys)}"
+    entity_id = f"{machine_id}_{entity_name}_{'_'.join(keys)}"
     entity_id = PUNCTUATION_PATTERN.sub(":", entity_id)
 
     sample_count = len(y_pred)
