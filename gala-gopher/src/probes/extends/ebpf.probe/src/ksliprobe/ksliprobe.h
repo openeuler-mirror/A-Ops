@@ -18,7 +18,7 @@
 #define TC_PROG "tc_tstamp.bpf.o"
 
 #define MAX_COMMAND_REQ_SIZE (32 - 1)
-#define MAX_REDIS_PROC_NAME_SIZE 6 // must <= MAX_PROC_NAME_LEN
+#define MAX_REDIS_PROC_NAME_SIZE 8
 
 #define FIND0_MSG_START 0
 #define FIND1_PARM_NUM 1
