@@ -18,7 +18,7 @@
           </a-col>
         </a-row>
         <a-row :gutter="[0, 20]">
-          <a-col :span="15">
+          <a-col :span="15" class="workflow-desc">
             描述：{{ workflow.description }}
           </a-col>
           <div class="control-btns">
@@ -118,7 +118,7 @@
 </template>
 
 <script>
-import router from '@/appCore/router'
+import router from '@/vendor/ant-design-pro/router'
 import MyPageHeaderWrapper from '@/views/utils/MyPageHeaderWrapper'
 import UpdateModel from './components/UpdateModel.vue';
 import { getWorkflowDatail, executeWorkflow, stopWorkflow, deleteWorkflow } from '@/api/check'
@@ -385,5 +385,8 @@ export default {
   .tab-container {
     position: absolute;
     bottom: -16px;
+  }
+  .workflow-desc {
+    word-break: break-word;
   }
 </style>

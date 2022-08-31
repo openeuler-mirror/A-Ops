@@ -157,7 +157,6 @@
   import { dateFormat } from '@/views/utils/Utils'
 
   import defaultSettings from '@/config/defaultSettings'
-  // import CardInfo from './components/CardInfo'
   const columns = [
     {
       dataIndex: 'task_id',

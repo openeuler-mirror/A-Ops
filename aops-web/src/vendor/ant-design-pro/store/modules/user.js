@@ -5,7 +5,7 @@
 import storage from 'store';
 import cookie from 'js-cookie';
 import {login, logout} from '@/api/login';
-import {ACCESS_TOKEN} from '@/appCore/store/mutation-types';
+import {ACCESS_TOKEN} from '@/vendor/ant-design-pro/store/mutation-types';
 
 const user = {
     state: {

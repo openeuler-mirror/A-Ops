@@ -30,7 +30,7 @@
 </template>
 
 <script>
-import router from '@/appCore/router'
+import router from '@/vendor/ant-design-pro/router'
 import { domainList } from '@/api/configuration'
 // 弹窗添加主机组
 export default {

@@ -7,23 +7,23 @@ import 'core-js/stable';
 import 'regenerator-runtime/runtime';
 
 import Vue from 'vue';
-import App from '@/appCore/App.vue';
-import router from '@/appCore/router';
+import App from '@/vendor/ant-design-pro/App.vue';
+import router from '@/vendor/ant-design-pro/router';
 import store from './store/';
-import i18n from '@/appCore/locales';
-import {VueAxios} from '@/appCore/utils/request';
+import i18n from '@/vendor/ant-design-pro/locales';
+import {VueAxios} from '@/vendor/ant-design-pro/utils/request';
 import ProLayout, {PageHeaderWrapper} from '@ant-design-vue/pro-layout';
-import themePluginConfig from '../config/themePluginConfig';
+import themePluginConfig from '@/vendor/ant-design-pro/config/themePluginConfig';
 
 // mock
 // WARNING: `mockjs` NOT SUPPORT `IE` PLEASE DO NOT USE IN `production` ENV.
 import './mock';
 
-import bootstrap from '@/appCore/core/bootstrap';
-import '@/appCore/core/lazy_use'; // use lazy load components
-import '@/appCore/permission'; // permission control
-import '@/appCore/utils/filter'; // global filter
-import '@/appCore/global.less'; // global style
+import bootstrap from '@/vendor/ant-design-pro/core/bootstrap';
+import '@/vendor/ant-design-pro/core/lazy_use'; // use lazy load components
+import '@/vendor/ant-design-pro/permission'; // permission control
+import '@/vendor/ant-design-pro/utils/filter'; // global filter
+import '@/vendor/ant-design-pro/global.less'; // global style
 
 Vue.config.productionTip = false;
 

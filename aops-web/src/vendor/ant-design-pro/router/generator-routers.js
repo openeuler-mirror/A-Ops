@@ -1,7 +1,7 @@
 // eslint-disable-next-line
 import * as loginService from '@/api/login'
 // eslint-disable-next-line
-import { BasicLayout, BlankLayout, PageView, RouteView } from '@/layouts'
+import { BasicLayout, BlankLayout, PageView, RouteView } from '@/vendor/ant-design-pro/layouts'
 
 // 前端路由表
 const constantRouterComponents = {

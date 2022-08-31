@@ -1,4 +1,4 @@
-import request from '@/appCore/utils/request';
+import request from '@/vendor/ant-design-pro/utils/request';
 
 const api = {
   // 获取诊断任务列表

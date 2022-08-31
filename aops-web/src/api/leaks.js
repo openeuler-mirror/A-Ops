@@ -2,8 +2,8 @@
  * @file 缺陷管理模块-api请求对象.缺陷模块的所有请求通过本文件中的各个封装函数进行调用，函数运行后返回promise对象
  */
 
-import request from '@/appCore/utils/request';
-import {getNotEmptyObjectOrNull} from '@/appCore/utils/util';
+import request from '@/vendor/ant-design-pro/utils/request';
+import {getNotEmptyObjectOrNull} from '@/vendor/ant-design-pro/utils/util';
 
 const api = {
     getCveOverview: '/vulnerability/cve/overview',

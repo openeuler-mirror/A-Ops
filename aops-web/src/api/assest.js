@@ -1,4 +1,4 @@
-import request from '@/appCore/utils/request';
+import request from '@/vendor/ant-design-pro/utils/request';
 
 const api = {
   hostList: '/manage/host/get', // 全量接口待确认

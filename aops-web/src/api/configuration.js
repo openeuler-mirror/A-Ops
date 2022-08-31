@@ -1,4 +1,4 @@
-import request from '@/appCore/utils/request'
+import request from '@/vendor/ant-design-pro/utils/request'
 import qs from 'qs'
 
 const api = {

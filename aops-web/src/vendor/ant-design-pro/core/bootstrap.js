@@ -8,8 +8,8 @@ import {
   TOGGLE_FIXED_SIDEBAR, TOGGLE_HIDE_HEADER,
   TOGGLE_LAYOUT, TOGGLE_NAV_THEME, TOGGLE_WEAK,
   TOGGLE_COLOR, TOGGLE_MULTI_TAB
-} from '@/appCore/store/mutation-types'
-import defaultSettings from '@/appCore/config/defaultSettings'
+} from '@/vendor/ant-design-pro/store/mutation-types'
+import defaultSettings from '@/vendor/ant-design-pro/config/defaultSettings'
 
 export default function Initializer () {
   store.commit(TOGGLE_LAYOUT, storage.get(TOGGLE_LAYOUT, defaultSettings.layout))

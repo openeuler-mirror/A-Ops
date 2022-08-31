@@ -10,8 +10,8 @@
 </template>
 
 <script>
-import { domTitle, setDocumentTitle } from '@/appCore/utils/domUtil'
-import { i18nRender } from '@/appCore/locales'
+import { domTitle, setDocumentTitle } from '@/vendor/ant-design-pro/utils/domUtil'
+import { i18nRender } from '@/vendor/ant-design-pro/locales'
 
 export default {
   data () {
