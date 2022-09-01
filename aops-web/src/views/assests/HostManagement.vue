@@ -75,7 +75,7 @@
 
 <script>
 import store from '@/store'
-import router from '@/appCore/router'
+import router from '@/vendor/ant-design-pro/router'
 
 import MyPageHeaderWrapper from '@/views/utils/MyPageHeaderWrapper'
 import HostDetailDrawer from './components/HostDetailDrawer'

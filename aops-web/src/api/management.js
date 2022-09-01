@@ -1,4 +1,4 @@
-import request from '@/appCore/utils/request'
+import request from '@/vendor/ant-design-pro/utils/request'
 
 const api = {
   addManagementConf: '/management/addManagementConf', // 新增业务域配置

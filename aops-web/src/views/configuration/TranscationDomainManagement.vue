@@ -58,7 +58,7 @@
 
 <script>
 import { PageHeaderWrapper } from '@ant-design-vue/pro-layout'
-import { i18nRender } from '@/appCore/locales'
+import { i18nRender } from '@/vendor/ant-design-pro/locales'
 
 import DrawerView from '@/views/utils/DrawerView'
 import AddHostDrawer from './components/AddHostDrawer'

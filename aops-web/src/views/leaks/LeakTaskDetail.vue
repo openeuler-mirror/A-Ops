@@ -115,7 +115,7 @@
 
 import { PageHeaderWrapper } from '@ant-design-vue/pro-layout'
 import HostStatusInTaskDrawer from './components/HostStatusInTaskDrawer'
-import { i18nRender } from '@/appCore/locales'
+import { i18nRender } from '@/vendor/ant-design-pro/locales'
 import { dateFormat } from '@/views/utils/Utils'
 import { downloadBlobFile } from '@/views/utils/downloadBlobFile'
 import { getSelectedRow } from '../utils/getSelectedRow'

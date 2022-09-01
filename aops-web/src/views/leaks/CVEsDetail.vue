@@ -93,7 +93,7 @@
 /* cve 详情页
 ****************/
 
-import { i18nRender } from '@/appCore/locales'
+import { i18nRender } from '@/vendor/ant-design-pro/locales'
 import { PageHeaderWrapper } from '@ant-design-vue/pro-layout'
 import HostTable from './components/HostTable'
 

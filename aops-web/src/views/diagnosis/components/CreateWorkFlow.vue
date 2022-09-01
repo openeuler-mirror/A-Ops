@@ -17,8 +17,9 @@
                 <a-form-item class="a-form-item">
                     工作流名称：
                     <a-input
+                        placeholder="请输入工作流名称，50个字符以内"
                         v-decorator="['workflow_name',
-                            { rules: [{ required: true, message: '请输入工作流名称' }]}
+                            { rules: [{ required: true, message: '请输入工作流名称' }, { validator: checkWorkflowName }]}
                         ]"
                     />
                 </a-form-item>
@@ -28,10 +29,12 @@
             <a-col :span="26">
                 <a-form-item>
                     工作流描述：
-                    <a-input
+                    <a-textarea
+                        placeholder="请输入工作流描述，100个字符以内"
+                        :rows="2"
                         v-decorator="[
                             'description',
-                            { rules: [{ required: true, message: '请输入工作流描述' }]}
+                            { rules: [{ required: true, message: '请输入工作流描述' }, { validator: checkWorkflowDesc }]}
                         ]"
                     />
                 </a-form-item>
@@ -108,7 +111,7 @@
 </template>
 <script>
 import Vue from 'vue'
-import router from '@/appCore/router'
+import router from '@/vendor/ant-design-pro/router'
 import { Transfer } from 'ant-design-vue'
 import { hostGroupList, hostList } from '@/api/assest'
 import { createWorkFlow } from '@/api/check'
@@ -297,6 +300,24 @@ export default {
         .getElementsByClassName('ant-transfer-list-search').forEach(item => {
         item.setAttribute('placeholder', '搜索主机名')
       })
+    },
+    checkWorkflowName (rule, value, cb) {
+        if (value && value.length > 50) {
+            /* eslint-disable */
+            cb('长度不超过50个字符')
+            /* eslint-enable */
+            return
+        }
+        cb()
+    },
+    checkWorkflowDesc (rule, value, cb) {
+        if (value && value.length > 100) {
+            /* eslint-disable */
+            cb('长度不超过100个字符')
+            /* eslint-enable */
+            return
+        }
+        cb()
     }
   }
 };
@@ -311,7 +332,7 @@ export default {
 .selectHostGroup {
   width: 87%;
 }
-.a-form-item {
-    margin-top: 20px;
+.ant-form-item {
+    margin: 8px 0;
 }
 </style>

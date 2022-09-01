@@ -57,7 +57,7 @@ import Viser from 'viser-vue';
 
 // ext library
 import VueCropper from 'vue-cropper';
-import PermissionHelper from '@/appCore/core/permission/permission';
+import PermissionHelper from '@/vendor/ant-design-pro/core/permission/permission';
 import './directives/action';
 
 Vue.use(ConfigProvider);

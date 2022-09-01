@@ -1,4 +1,4 @@
-import config from '@/appCore/config/defaultSettings'
+import config from '@/vendor/ant-design-pro/config/defaultSettings'
 
 export const setDocumentTitle = function (title) {
   document.title = title

@@ -37,7 +37,7 @@
 </template>
 
 <script>
-import { deviceMixin } from '@/appCore/store/device-mixin'
+import { deviceMixin } from '@/vendor/ant-design-pro/store/device-mixin'
 
 export default {
   name: 'UserLayout',

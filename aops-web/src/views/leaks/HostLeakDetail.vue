@@ -54,7 +54,7 @@
 import { PageHeaderWrapper } from '@ant-design-vue/pro-layout'
 import CvesTable from './components/CvesTable'
 
-import { i18nRender } from '@/appCore/locales'
+import { i18nRender } from '@/vendor/ant-design-pro/locales'
 import { dateFormat } from '@/views/utils/Utils'
 import { getHostInfo, getCveUnderHost, scanHost, getHostScanStatus } from '@/api/leaks'
 import configs from '@/config/defaultSettings'

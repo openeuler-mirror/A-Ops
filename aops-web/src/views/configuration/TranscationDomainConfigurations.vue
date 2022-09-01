@@ -146,8 +146,8 @@
 </template>
 
 <script>
-  import router from '@/appCore/router'
-  import { i18nRender } from '@/appCore/locales'
+  import router from '@/vendor/ant-design-pro/router'
+  import { i18nRender } from '@/vendor/ant-design-pro/locales'
   import { PageHeaderWrapper } from '@ant-design-vue/pro-layout'
   import DomainSelectionModal from './components/DomainSelectionModal'
   import AddConfigurationDrawer from './components/AddConfigurationDrawer'

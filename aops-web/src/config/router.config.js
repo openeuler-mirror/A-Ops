@@ -1,5 +1,5 @@
 // eslint-disable-next-line
-import {UserLayout, BasicLayout} from '@/appCore/layouts';
+import {UserLayout, BasicLayout} from '@/vendor/ant-design-pro/layouts';
 // import { bxAnaalyse } from '@/core/icons'
 
 const RouteView = {
@@ -1108,6 +1108,6 @@ export const constantRouterMap = [
     {
         path: '/404',
         component: () =>
-            import(/* webpackChunkName: "fail" */ '@/views/exception/404')
+            import(/* webpackChunkName: "fail" */ '@/vendor/ant-design-pro/views/exception/404')
     }
 ];

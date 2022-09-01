@@ -83,7 +83,7 @@
 /* 任务结果报告页面
 ****************/
 
-import { i18nRender } from '@/appCore/locales'
+import { i18nRender } from '@/vendor/ant-design-pro/locales'
 import { getCveTaskResult, getRepoTaskResult } from '@/api/leaks'
 
 import { dateFormat } from '@/views/utils/Utils'

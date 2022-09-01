@@ -1,4 +1,4 @@
-import { isIE } from '@/appCore/utils/util'
+import { isIE } from '@/vendor/ant-design-pro/utils/util'
 
 if (process.env.NODE_ENV !== 'production' || process.env.VUE_APP_PREVIEW === 'true') {
   if (isIE()) {
