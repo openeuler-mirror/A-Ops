@@ -190,7 +190,7 @@ class NetworkDiagnoseApp(App):
                 })
         return result
 
-    def execute(self, model_info: Dict[str, Dict[str, str]], detail: dict, data: dict) -> dict:
+    def execute(self, model_info: Dict[str, Dict[str, str]], detail: dict, data: dict, default_mode: bool = False) -> dict:
         """
         Args:
             model_info: it's information about model and algorithm. e.g.
@@ -240,7 +240,7 @@ class NetworkDiagnoseApp(App):
                 "alert_name": ""
             }
         """
-        if not self.load_models(model_info):
+        if not self.load_models(model_info, default_mode):
             return {}
 
         signle_check_result = self.do_single_check(detail['singlecheck'], data)
