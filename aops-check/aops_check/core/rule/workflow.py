@@ -165,7 +165,7 @@ class Workflow:
             producer = BaseProducer(configuration)
             LOGGER.debug("Send workflow msg %s" % workflow_msg)
             producer.send_msg(configuration.consumer.get(
-                'WORKFLOW_NAME'), workflow_msg)
+                'RESULT_NAME'), workflow_msg)
             return SUCCEED
         except ProducerInitError as error:
             LOGGER.error("Produce workflow msg failed. %s" % error)
