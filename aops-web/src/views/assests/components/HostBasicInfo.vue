@@ -170,8 +170,8 @@
                                 </a-col>
                             </a-row>
                         </div>
-                        <a-collapse :v-model="1">
-                            <a-collapse-panel key="1" :header="'详情'">
+                        <a-collapse>
+                            <a-collapse-panel :header="'详情'">
                                 <div class="meg-row" v-for="(data, idx) in memory.info" :key="idx">
                                     <a-row type="flex">
                                         <a-col :span="6" :order="1">
