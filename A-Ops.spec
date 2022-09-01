@@ -393,6 +393,7 @@ fi
 
 %files -n aops-check
 %attr(0644,root,root) %{_sysconfdir}/aops/check.ini
+%attr(0644,root,root) %{_sysconfdir}/aops/check_default.json
 %attr(0755,root,root) %{_bindir}/aops-check
 %attr(0755,root,root) %{_unitdir}/aops-check.service
 %{python3_sitelib}/aops_check*.egg-info

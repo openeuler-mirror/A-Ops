@@ -22,6 +22,7 @@ BASE_CONFIG_PATH = '/etc/aops'
 # check config
 CHECK_CONFIG_PATH = os.path.join(BASE_CONFIG_PATH, 'check.ini')
 MODEL_FOLDER_PATH = "/opt/aops/models"
+HOST_IP_INFO_LIST = os.path.join(BASE_CONFIG_PATH, 'check_default.json')
 
 APP_INDEX = "app"
 WORKFLOW_INDEX = "workflow"
@@ -55,3 +56,72 @@ QUERY_HOST_DETAIL = "/manage/host/info/query"
 
 # a user for built-in algorithm and model
 SYSTEM_USER = "system"
+
+ALGO_LIST = [
+    {
+        "algo_module": "aops_check.core.experiment.algorithm.single_item_check.ewma.EWMA",
+        "models": [{
+            "username": SYSTEM_USER,
+            "model_id": "Ewma-1",
+            "model_name": "Ewma",
+            "algo_id": "",
+            "create_time": 1660471200,
+            "tag": "",
+            "file_path": None,
+            "precision": None
+        }]
+    },
+    {
+        "algo_module": "aops_check.core.experiment.algorithm.single_item_check.mae.Mae",
+        "models": [{
+            "username": SYSTEM_USER,
+            "model_id": "Mae-1",
+            "model_name": "Mae",
+            "algo_id": "",
+            "create_time": 1660471200,
+            "tag": "",
+            "file_path": None,
+            "precision": None
+        }]
+    },
+    {
+        "algo_module": "aops_check.core.experiment.algorithm.single_item_check.nsigma.NSigma",
+        "models": [{
+            "username": SYSTEM_USER,
+            "model_id": "NSigma-1",
+            "model_name": "NSigma",
+            "algo_id": "",
+            "create_time": 1660471200,
+            "tag": "",
+            "file_path": None,
+            "precision": None
+        }]
+    },
+    {
+        "algo_module": "aops_check.core.experiment.algorithm.multi_item_check.statistical_multi_item_check."
+                       "StatisticalCheck",
+        "models": [{
+            "username": SYSTEM_USER,
+            "model_id": "StatisticalCheck-1",
+            "model_name": "StatisticalCheck",
+            "algo_id": "",
+            "create_time": 1660471200,
+            "tag": "",
+            "file_path": None,
+            "precision": None
+        }]
+    },
+    {
+        "algo_module": "aops_check.core.experiment.algorithm.diag.statistic_diag.StatisticDiag",
+        "models": [{
+            "username": SYSTEM_USER,
+            "model_id": "StatisticDiag-1",
+            "model_name": "StatisticDiag",
+            "algo_id": "",
+            "create_time": 1660471200,
+            "tag": "",
+            "file_path": None,
+            "precision": None
+        }]
+    }
+]

@@ -22,80 +22,10 @@ from importlib import import_module
 
 from aops_utils.log.log import LOGGER
 from aops_utils.restful.status import DATABASE_INSERT_ERROR
-from aops_check.conf.constant import SYSTEM_USER
+from aops_check.conf.constant import SYSTEM_USER, ALGO_LIST
 from aops_check.database import SESSION
 from aops_check.database.dao.algo_dao import AlgorithmDao
 from aops_check.database.dao.model_dao import ModelDao
-
-
-algo_list = [
-    {
-        "algo_module": "aops_check.core.experiment.algorithm.single_item_check.ewma.EWMA",
-        "models": [{
-            "username": SYSTEM_USER,
-            "model_id": "Ewma-1",
-            "model_name": "Ewma",
-            "algo_id": "",
-            "create_time": 1660471200,
-            "tag": "",
-            "file_path": None,
-            "precision": None
-        }]
-    },
-    {
-        "algo_module": "aops_check.core.experiment.algorithm.single_item_check.mae.Mae",
-        "models": [{
-            "username": SYSTEM_USER,
-            "model_id": "Mae-1",
-            "model_name": "Mae",
-            "algo_id": "",
-            "create_time": 1660471200,
-            "tag": "",
-            "file_path": None,
-            "precision": None
-        }]
-    },
-    {
-        "algo_module": "aops_check.core.experiment.algorithm.single_item_check.nsigma.NSigma",
-        "models": [{
-            "username": SYSTEM_USER,
-            "model_id": "NSigma-1",
-            "model_name": "NSigma",
-            "algo_id": "",
-            "create_time": 1660471200,
-            "tag": "",
-            "file_path": None,
-            "precision": None
-        }]
-    },
-    {
-        "algo_module": "aops_check.core.experiment.algorithm.multi_item_check.statistical_multi_item_check."
-                       "StatisticalCheck",
-        "models": [{
-            "username": SYSTEM_USER,
-            "model_id": "StatisticalCheck-1",
-            "model_name": "StatisticalCheck",
-            "algo_id": "",
-            "create_time": 1660471200,
-            "tag": "",
-            "file_path": None,
-            "precision": None
-        }]
-    },
-    {
-        "algo_module": "aops_check.core.experiment.algorithm.diag.statistic_diag.StatisticDiag",
-        "models": [{
-            "username": SYSTEM_USER,
-            "model_id": "StatisticDiag-1",
-            "model_name": "StatisticDiag",
-            "algo_id": "",
-            "create_time": 1660471200,
-            "tag": "",
-            "file_path": None,
-            "precision": None
-        }]
-    }
-]
 
 
 def init_algo_and_model():
@@ -112,7 +42,7 @@ def init_algo_and_model():
         LOGGER.error("Connect mysql fail when insert built-in model.")
         raise sqlalchemy.exc.SQLAlchemyError("Connect mysql failed.")
 
-    for algo in algo_list:
+    for algo in ALGO_LIST:
         module_path, class_name = algo["algo_module"].rsplit('.', 1)
         algo_module = import_module('.', module_path)
         class_ = getattr(algo_module, class_name)
