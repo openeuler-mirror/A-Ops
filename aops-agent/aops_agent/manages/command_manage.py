@@ -11,7 +11,7 @@
 # See the Mulan PSL v2 for more details.
 # ******************************************************************************/
 import re
-from typing import Any, Tuple
+from typing import Any, Tuple, Dict, Union, List
 import json
 
 import connexion
@@ -67,7 +67,20 @@ class Command:
                                 "l1i_cache": string,
                                 "l2_cache": string,
                                 "l3_cache": string
+                                },
+                            'memory':{
+                            "size": "xx GB",
+                            "total": int,
+                            "info": [
+                                {
+                                    "size": "xx GB",
+                                    "type": "DDR4",
+                                    "speed": "xxxx MT/s",
+                                    "manufacturer": "string"
                                 }
+                                ...
+                                ]
+                            }
                         }
                 }
         """
@@ -103,6 +116,9 @@ class Command:
                 continue
             cpu_info[tmp[0]] = tmp[1].strip()
 
+        memory_info = cls.__get_memory_info()
+        memory_info['size'] = cls.__get_total_online_memory()
+
         host_info = {
             'resp': {
                 'os': {
@@ -119,10 +135,90 @@ class Command:
                     "l1i_cache": cpu_info.get('L1i cache'),
                     "l2_cache": cpu_info.get('L2 cache'),
                     "l3_cache": cpu_info.get('L3 cache')
-                }
+                },
+                'memory': memory_info
             }
         }
         return SUCCESS, host_info
+
+    @staticmethod
+    def __get_total_online_memory() -> str:
+        """
+        get memory size by lsmem
+
+        Returns:
+            str: memory size
+        """
+        try:
+            lsmem_data = get_shell_data(['lsmem'])
+        except InputError:
+            LOGGER.error('Get host memory info error, Linux has no command dmidecode')
+            return ''
+
+        res = re.search("(?=Total online memory:).+", lsmem_data)
+        if res:
+            return res.group()[20:].strip()
+        LOGGER.warning('Get Total online memory fail, please check lsmem and try it again')
+        return ''
+
+    @staticmethod
+    def __get_memory_info() -> Dict[str, Union[int, List[Dict[str, Any]]]]:
+        """
+        get memory detail info and memory stick count
+
+        Returns:
+            dict: e.g
+                {
+                    "total": int,
+                    "info": [
+                        {
+                            "size": "xx GB",
+                            "type": "DDR4",
+                            "speed": "xxxx MT/s",
+                            "manufacturer": "string"
+                        }
+                        ...
+                        ]
+                }
+
+        """
+        res = {}
+
+        try:
+            memory_data = get_shell_data(['dmidecode', '-t', 'memory']).split('Memory Device')
+        except InputError:
+            LOGGER.error('Get host memory info error, Linux has no command dmidecode')
+            return res
+
+        if len(memory_data) == 1:
+            LOGGER.warning('Failed to read memory info by dmidecode')
+            return res
+
+        info = []
+        for module in memory_data:
+            module_info_list = re.findall('.+:.+', module)
+
+            module_info_dict = {}
+            for module_info in module_info_list:
+                part_info = module_info.split(':')
+                module_info_dict[part_info[0].strip()] = part_info[1].strip()
+
+            if module_info_dict.get('Size') is None or \
+                    module_info_dict.get('Size') == 'No Module Installed':
+                continue
+
+            memory_info = {
+                "size": module_info_dict.get('Size'),
+                "type": module_info_dict.get('Type'),
+                "speed": module_info_dict.get('Speed'),
+                "manufacturer": module_info_dict.get('Manufacturer')
+            }
+            info.append(memory_info)
+
+        res['total'] = len(info)
+        res['info'] = info
+
+        return res
 
     @classmethod
     def validate_token(cls, func) -> Any:
