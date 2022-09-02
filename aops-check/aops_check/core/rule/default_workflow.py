@@ -94,11 +94,11 @@ class DefaultWorkflow:
 
     @staticmethod
     def _generate_hosts(hosts):
-        hosts = list()
+        host_list = list()
         for host_ip in hosts:
-            hosts.append(
+            host_list.append(
                 {"host_id": host_ip["ip"], "public_ip": host_ip["ip"], "instance_port": host_ip["port"]})
-        return hosts
+        return host_list
 
     def _get_app_execute_result(self, time_range):
         data_dao = DataDao(configuration)
