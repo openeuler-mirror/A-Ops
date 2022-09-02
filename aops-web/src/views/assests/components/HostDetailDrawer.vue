@@ -68,6 +68,7 @@
 </template>
 
 <script>
+// this component is abendoned
 import { hostInfo } from '@/api/assest'
 
 export default {

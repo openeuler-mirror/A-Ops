@@ -170,42 +170,42 @@
                                 </a-col>
                             </a-row>
                         </div>
-
-                        <div class="meg-row">
-                            <span class="meg-row-left title bold">详情</span>
-                        </div>
-                        <div class="meg-row" v-for="data in memory.info" :key="data.size">
-                            <a-row type="flex">
-                                <a-col :span="6" :order="1">
-                                    <span class="bold">大小：
-                                        <span>
-                                            <CutText :text="data.size"></CutText>
-                                     </span>
-                                 </span>
-                             </a-col>
-                             <a-col :span="6" :order="2">
-                                 <span class="bold">类型：
-                                    <span>
-                                        <CutText :text="data.type"></CutText>
-                                    </span>
-                                </span>
-                                </a-col>
-                                <a-col :span="6" :order="3">
-                                    <span class="bold">速度：
-                                        <span>
-                                            <CutText :text="data.speed"></CutText>
+                        <a-collapse>
+                            <a-collapse-panel :header="'详情'">
+                                <div class="meg-row" v-for="(data, idx) in memory.info" :key="idx">
+                                    <a-row type="flex">
+                                        <a-col :span="6" :order="1">
+                                            <span class="bold">大小：
+                                                <span>
+                                                    <CutText :text="data.size"></CutText>
+                                             </span>
+                                         </span>
+                                     </a-col>
+                                     <a-col :span="6" :order="2">
+                                         <span class="bold">类型：
+                                            <span>
+                                                <CutText :text="data.type"></CutText>
+                                            </span>
                                         </span>
-                                    </span>
-                                </a-col>
-                                <a-col :span="6" :order="4">
-                                    <span class="bold">厂商：
-                                        <span>
-                                            <CutText :text="data.manufacturer"></CutText>
-                                        </span>
-                                    </span>
-                                </a-col>
-                            </a-row>
-                        </div>
+                                        </a-col>
+                                        <a-col :span="6" :order="3">
+                                            <span class="bold">速度：
+                                                <span>
+                                                    <CutText :text="data.speed"></CutText>
+                                                </span>
+                                            </span>
+                                        </a-col>
+                                        <a-col :span="6" :order="4">
+                                            <span class="bold">厂商：
+                                                <span>
+                                                    <CutText :text="data.manufacturer"></CutText>
+                                                </span>
+                                            </span>
+                                        </a-col>
+                                    </a-row>
+                                </div>
+                            </a-collapse-panel>
+                        </a-collapse>
                     </div>
                 </div>
             </div>
@@ -423,7 +423,7 @@ export default {
   font-weight: 400;
 }
 
-.meg-row {
+.meg-row:not(:first-child) {
   display: block;
   position: relative;
   width: 100%;
@@ -448,5 +448,26 @@ export default {
     right:0;
     z-index: 1;
     cursor: pointer;
+}
+/deep/ .ant-collapse {
+    background: #fff;
+    border: 0;
+    & > .ant-collapse-item {
+        border-bottom: 0;
+        & > .ant-collapse-header {
+            padding-left: 0;
+            font-size: 14px;
+            color: rgba(0,0,0,0.65);
+            .ant-collapse-arrow {
+                left: 40px;
+            }
+        }
+    }
+}
+/deep/ .ant-collapse-content {
+    border-top: 0;
+    .ant-collapse-content-box {
+        padding-top: 8px;
+    }
 }
 </style>
