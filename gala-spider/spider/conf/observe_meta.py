@@ -610,6 +610,33 @@ class ObserveMetaMgt(metaclass=Singleton):
 
         return res
 
+    def get_entity_type_of_metric(self, metric_id: str) -> str:
+        agent = self.data_agent
+        if not metric_id.startswith(agent + "_"):
+            raise MetadataException('Can not identify data agent of the metric {}.'.format(metric_id))
+
+        left = metric_id[len(agent) + 1:]
+        entity_types = self.get_observe_types()
+        for entity_type in entity_types:
+            if left.startswith(entity_type + "_"):
+                return entity_type
+
+        raise MetadataException('Can not identify entity type of the metric {}.'.format(metric_id))
+
+    def get_entity_keys_of_metric(self, metric_id: str, metric_labels: dict) -> dict:
+        entity_type = self.get_entity_type_of_metric(metric_id)
+        observe_meta = self.get_observe_meta(entity_type)
+        if observe_meta is None:
+            raise MetadataException('Can not find observe meta info, observe type={}'.format(entity_type))
+
+        key_labels = {}
+        for entity_key in observe_meta.keys:
+            if entity_key not in metric_labels:
+                raise MetadataException('Observe entity key[{}] miss of metric[{}].'.format(entity_key, metric_id))
+            key_labels[entity_key] = metric_labels[entity_key]
+
+        return key_labels
+
 
 def init_observe_meta_config(data_agent, ext_observe_meta_path=None, topo_relation_path=None) -> bool:
     observe_meta_mgt = ObserveMetaMgt()

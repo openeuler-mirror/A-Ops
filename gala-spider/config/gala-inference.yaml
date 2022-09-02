@@ -20,7 +20,7 @@ kafka:
     topic_id: "gala_anteater_hybrid_model"
     group_id: "abn-kpi-inference"
   abnormal_metric_topic:
-    topic_id: "gala_anteater_metric"
+    topic_id: "gala_gopher_event"
     group_id: "abn-metric-inference"
     consumer_to: 1
   inference_topic:

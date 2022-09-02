@@ -7,6 +7,7 @@ from pyArango.document import Document
 from pyArango.theExceptions import UpdateError
 
 from spider.util import logger
+from spider.util.entity import escape_entity_id
 from spider.dao import BaseDao
 from spider.dao import ObserveEntityDao
 from spider.dao import RelationDao
@@ -28,8 +29,7 @@ def _get_doc_id(collection_name, doc_key):
 
 # arangodb 对文档的 _key 有命名约束，需要对 key 中出现的特殊字符进行替换
 def _transfer_doc_key(key: str):
-    doc_key = key.replace('/', ':')
-    return doc_key
+    return escape_entity_id(key)
 
 
 def transfer_observe_entity_to_document_dict(observe_entity: ObserveEntity) -> dict:

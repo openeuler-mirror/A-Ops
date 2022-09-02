@@ -4,9 +4,7 @@ from scipy.special import expit
 
 from cause_inference.model import Cause
 from cause_inference.model import CausalGraph
-from cause_inference.model import get_metric_obj_type
 from cause_inference.model import AbnormalEvent
-from cause_inference.model import get_entity_keys_of_metric
 from spider.util import logger
 from spider.conf.observe_meta import RelationType
 from spider.conf.observe_meta import ObserveMetaMgt
@@ -14,7 +12,6 @@ from spider.collector.data_collector import DataCollector
 from spider.collector.prometheus_collector import PrometheusCollector
 from cause_inference.exceptions import InferenceException
 from cause_inference.exceptions import DBException
-from cause_inference.exceptions import MetadataException
 from cause_inference.exceptions import DataParseException
 from cause_inference.config import infer_config
 from cause_inference.rule_parser import rule_engine
@@ -41,35 +38,8 @@ class CauseInferring:
         return causes
 
 
-def get_entity_labels_of_metric(metric_id, metric_labels):
-    metric_entity_type = get_metric_obj_type(metric_id)
-    observe_meta = ObserveMetaMgt().get_observe_meta(metric_entity_type)
-    if observe_meta is None:
-        raise MetadataException('Can not find observe meta info, observe type={}'.format(metric_entity_type))
-
-    labels = {'type': metric_entity_type}
-    for entity_key in observe_meta.keys:
-        if entity_key in metric_labels:
-            labels[entity_key] = metric_labels[entity_key]
-    for entity_label in observe_meta.labels:
-        if entity_label in metric_labels:
-            labels[entity_label] = metric_labels[entity_label]
-
-    return labels
-
-
-def complete_key_info_of_metric(metric_labels, observe_entity):
-    observe_meta = ObserveMetaMgt().get_observe_meta(observe_entity.get('type'))
-    if not observe_meta:
-        raise MetadataException('Can not find observe meta info, observe type={}'.format(observe_entity.get('type')))
-    for entity_key in observe_meta.keys:
-        metric_labels[entity_key] = observe_entity.get(entity_key)
-
-
 def query_abnormal_topo_subgraph(abnormal_event: AbnormalEvent):
     abn_ts = int(float(abnormal_event.timestamp)) // 1000
-    abn_metric_id = abnormal_event.abnormal_metric_id
-    abn_metric_labels = abnormal_event.metric_labels
 
     # 1. 连接 arangodb 图数据库
     db = connect_to_arangodb(infer_config.arango_conf.get('url'), infer_config.arango_conf.get('db_name'))
@@ -80,12 +50,11 @@ def query_abnormal_topo_subgraph(abnormal_event: AbnormalEvent):
         raise DBException('The queried topological graph is too old.')
 
     # 3. 获取异常KPI对应的观测对象实例
-    labels = get_entity_labels_of_metric(abn_metric_id, abn_metric_labels)
+    labels = {'_key': abnormal_event.abnormal_entity_id}
     abn_entities = query_topo_entities(db, recent_ts, query_options=labels)
     if len(abn_entities) > 1:
         raise InferenceException('Multiple observe entities of abnormal metric found, please check.')
     abn_entity = abn_entities[0]
-    complete_key_info_of_metric(abn_metric_labels, abn_entity)
 
     # 4. 获取拓扑子图
     edge_collection = [
@@ -99,37 +68,19 @@ def query_abnormal_topo_subgraph(abnormal_event: AbnormalEvent):
     return subgraph
 
 
-def clear_aging_evts(all_metric_evts: List[AbnormalEvent], latest_ts) -> List[AbnormalEvent]:
-    res = []
-    for metric_evt in all_metric_evts:
-        if metric_evt.timestamp + infer_config.infer_conf.get('evt_aging_duration') < latest_ts:
-            continue
-        res.append(metric_evt)
-    return res
-
-
-def filter_valid_evts(all_metric_evts: List[AbnormalEvent], latest_ts) -> List[AbnormalEvent]:
-    res = []
-    for metric_evt in all_metric_evts:
-        if metric_evt.timestamp + infer_config.infer_conf.get('evt_valid_duration') < latest_ts:
-            continue
-        if metric_evt.timestamp > latest_ts:
-            continue
-        res.append(metric_evt)
-    return res
-
-
 def parse_abn_evt(data) -> AbnormalEvent:
-    resource = data.get('Resource')
-    if not resource:
-        raise DataParseException('Atribute "Resource" required in abnormal event')
+    resource = data.get('Resource', {})
+    attrs = data.get('Attributes', {})
     if not resource.get('metrics'):
         raise DataParseException('Atribute "Resource.metrics" required in abnormal event')
+    if not attrs.get('entity_id') and not resource.get('metric_label'):
+        raise DataParseException('metric_label or entity_id info need in abnormal event')
     abn_evt = AbnormalEvent(
-        data.get('Timestamp'),
-        resource.get('metrics'),
-        1.0,
-        resource.get('metric_label')
+        timestamp=data.get('Timestamp'),
+        abnormal_metric_id=resource.get('metrics'),
+        abnormal_score=1.0,
+        metric_labels=resource.get('metric_label'),
+        abnormal_entity_id=attrs.get('entity_id'),
     )
     return abn_evt
 
@@ -144,20 +95,18 @@ def query_hist_data_of_abn_metric(causal_graph):
                                                    range_api=infer_config.prometheus_conf.get('range_api'),
                                                    step=infer_config.prometheus_conf.get('step'))
     abn_ts = causal_graph.abnormal_kpi.timestamp
+    obsv_meta_mgt = ObserveMetaMgt()
     for node_id in causal_graph.causal_graph.nodes:
         for abn_metric in causal_graph.get_abnormal_metrics_of_node(node_id):
-            orig_abn_metric = abn_metric
-            if (abn_metric.abnormal_metric_id == causal_graph.abnormal_kpi.abnormal_metric_id and
-                    causal_graph.orig_abn_kpi is not None):
-                orig_abn_metric = causal_graph.orig_abn_kpi
             end_ts = abn_ts
             start_ts = end_ts - infer_config.infer_conf.get('sample_duration')
-            query_options = get_entity_keys_of_metric(orig_abn_metric.abnormal_metric_id, orig_abn_metric.metric_labels)
-            data_records = collector.get_range_data(orig_abn_metric.abnormal_metric_id, start_ts, end_ts,
+            query_options = obsv_meta_mgt.get_entity_keys_of_metric(abn_metric.abnormal_metric_id,
+                                                                    abn_metric.metric_labels)
+            data_records = collector.get_range_data(abn_metric.abnormal_metric_id, start_ts, end_ts,
                                                     query_options=query_options)
             if len(data_records) == 0:
                 raise InferenceException(
-                    'No history data of the abnormal metric {}'.format(orig_abn_metric.abnormal_metric_id)
+                    'No history data of the abnormal metric {}'.format(abn_metric.abnormal_metric_id)
                 )
             hist_data = [float(record.metric_value) for record in data_records]
             abn_metric.set_hist_data(hist_data)
@@ -167,7 +116,7 @@ def format_infer_result(causes, causal_graph):
     abnormal_kpi = causal_graph.abnormal_kpi
     abn_kpi = {
         'metric_id': abnormal_kpi.abnormal_metric_id,
-        'entity_id': parse_entity_id(causal_graph.entity_id_of_abn_kpi),
+        'entity_id': abnormal_kpi.abnormal_entity_id,
         'timestamp': abnormal_kpi.timestamp,
         'metric_labels': abnormal_kpi.metric_labels
     }
@@ -199,14 +148,13 @@ def format_infer_result(causes, causal_graph):
     return res
 
 
-def cause_locating(abnormal_kpi: AbnormalEvent, abnormal_metrics: List[AbnormalEvent],
-                   orig_abn_kpi: AbnormalEvent = None):
+def cause_locating(abnormal_kpi: AbnormalEvent, abnormal_metrics: List[AbnormalEvent]):
     # 1. 根据异常事件获取异常KPI对应的观测对象
     # 2. 以异常观测对象为中心，查询图数据库，获取拓扑子图
     abn_topo_subgraph = query_abnormal_topo_subgraph(abnormal_kpi)
 
     # 3. 基于专家规则，补全拓扑子图的隐式因果关系
-    causal_graph = CausalGraph(abn_topo_subgraph, abnormal_kpi, abnormal_metrics, orig_abn_kpi)
+    causal_graph = CausalGraph(abn_topo_subgraph, abnormal_kpi, abnormal_metrics)
     rule_engine.rule_parsing(causal_graph)
     # 4. 根据异常观测对象（存在异常指标的观测对象）对拓扑子图进行剪枝，构建故障传播图
     causal_graph.prune_by_abnormal_node()
