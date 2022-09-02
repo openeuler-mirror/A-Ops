@@ -256,7 +256,7 @@ static char que_current_is_invalid(struct log_mgr_s *mgr, int is_metrics, int ma
 
     (void)pthread_rwlock_wrlock(&(files_que->rwlock));
 
-    if ((files_que->current.len >= max_logs_len) || (files_que->current.len == 0)) {
+    if (((int)files_que->current.len >= max_logs_len) || (files_que->current.len == 0)) {
         invalid = 1;
         goto out;
     }

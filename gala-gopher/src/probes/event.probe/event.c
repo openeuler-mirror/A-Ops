@@ -52,7 +52,7 @@ static int GetFileLineNum(const char * filename)
     }
 
     if (!feof(f)) {
-        fgets(count, LEN_BUF, f);
+        (void)fgets(count, LEN_BUF, f);
     }
 
     ret = atoi(count);
@@ -104,7 +104,7 @@ static int FilterLogEvent(void)
     }
 
     while (!feof(f)) {
-        fgets(line, LEN_LINE, f);
+        (void)fgets(line, LEN_LINE, f);
         if (strlen(line) > 0) {
             if (line[strlen(line)-1] == '\n') {
                 line[strlen(line)-1] = '\0'; 
