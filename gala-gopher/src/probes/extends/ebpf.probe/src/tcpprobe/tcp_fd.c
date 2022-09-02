@@ -122,24 +122,33 @@ static int add_estab_tcp_fd(const struct estab_tcp_key *k,
 
 #if 1
 
-static int get_netns_fd(void)
+static int get_netns_fd(pid_t pid)
 {
     const char *fmt = "/proc/%u/ns/net";
     char path[PATH_LEN];
 
     path[0] = 0;
-    (void)snprintf(path, PATH_LEN, fmt, getpid());
+    (void)snprintf(path, PATH_LEN, fmt, pid);
     return open(path, O_RDONLY);
 }
 
-static int pidfd_open(pid_t pid, unsigned int flags)
+static __maybe_unused int pidfd_open(pid_t pid, unsigned int flags)
 {
     return syscall(__NR_pidfd_open, pid, flags);
 }
 
 static int set_netns_by_pid(pid_t pid)
 {
-    int fd = pidfd_open(pid, 0);
+    int fd = -1;
+#if (CURRENT_KERNEL_VERSION < KERNEL_VERSION(5, 3, 0))
+    fd = get_netns_fd(pid);
+#else
+    fd = pidfd_open(pid, 0);
+#endif
+    if (fd == -1) {
+        ERROR("[TCPPROBE] Get tgid(%d)'s pidfd failed.\n", pid);
+        return -1;
+    }
     return setns(fd, CLONE_NEWNET);
 }
 
@@ -233,7 +242,7 @@ void lkup_established_tcp(void)
     int i;
     int netns_fd = 0;
 
-    netns_fd = get_netns_fd();
+    netns_fd = get_netns_fd(getpid());
     if (netns_fd <= 0) {
         ERROR("[TCPPROBE]: Get netns fd failed.\n");
         return;
@@ -267,7 +276,8 @@ static int is_need_load_established_tcp(struct probe_params *args, struct estab_
     }
     return 1;
 }
-
+
+
 static char is_invalid_established_tcp(struct estab_tcp_hash_t *item)
 {
     return (item->v.try_load_cnt >= MAX_TRY_LOAD);

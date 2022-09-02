@@ -1117,7 +1117,7 @@ static int IMDB_Evt2Json(const IMDB_DataBaseMgr *mgr,
     const char *secNum = IMDB_GetEvtVal(record, __EVT_TBL_SECNUM);
     const char *body = IMDB_GetEvtVal(record, __EVT_TBL_BODY);
 
-    transfer_entityID(entityID);
+    transfer_entityID((char *)entityID);
 
     ret = __snprintf(&p, len, &len, "%s", "{");
     if (ret < 0) {

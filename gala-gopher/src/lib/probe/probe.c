@@ -329,7 +329,7 @@ int nprobe_fprintf(FILE *stream, const char *format, ...)
         /* get field width */
         field_width = -1;
         if (__isdigit(*curFormat)) {
-            field_width = __skip_atoi(&curFormat);
+            field_width = __skip_atoi((const char **)&curFormat);
         } else if (*curFormat == '*') {
             ++curFormat;
             field_width = va_arg(args, int);
@@ -343,7 +343,7 @@ int nprobe_fprintf(FILE *stream, const char *format, ...)
         if (*curFormat == '.') {
             ++curFormat;
             if (__isdigit(*curFormat)) {
-                precision = __skip_atoi(&curFormat);
+                precision = __skip_atoi((const char **)&curFormat);
             } else if (*curFormat == '*') {
                 ++curFormat;
                 precision = va_arg(args, int);
