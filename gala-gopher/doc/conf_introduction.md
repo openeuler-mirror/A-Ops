@@ -16,9 +16,39 @@ gala-gopher启动必须的外部参数通过配置文件定义；主要的配置
 ```shell
 global =									# gala-gopher引擎配置
 {
-    log_directory = "/var/log/gala-gopher";	   # gala-gopher引擎日志路径
+    log_directory = "gopher.log";	   # gala-gopher引擎日志路径
     log_level = "debug";	# gala-gopher日志级别，可配置 "debug|info|error|warnning|fatal"
     pin_path = "/sys/fs/bpf/probe";	   # 共享map存放路径，建议维持默认配置
+};
+```
+
+### metric
+
+```shell
+metric =									# 用于配置metrics指标数据输出方式
+{
+    out_channel = "web_server";  # metric输出通道，支持web_server|kafka，配置为空或者其他字符串不输出
+    kafka_topic = "gala_gopher"; # 若输出通道为kafka，此为topic配置信息
+};
+```
+
+### event
+
+```shell
+event =										# 用于配置异常事件数据输出方式
+{
+    out_channel = "kafka";       # event输出通道，支持logs|kafka，配置为空或者其他字符串则不输出
+    kafka_topic = "gala_gopher_event";      # 若输出通道为kafka，此为topic配置信息
+};
+```
+
+### meta
+
+```shell
+meta =										# 用于配置元数据输出方式
+{
+    out_channel = "kafka";       # metadata输出通道，支持logs|kafka，配置为空或者其他字符串则不输出
+    kafka_topic = "gala_gopher_metadata";   # 若输出通道为kafka，此为topic配置信息
 };
 ```
 
@@ -61,7 +91,6 @@ gala-gopher可以启动一个webServer，对外提供查询metric指标的接口
 web_server =
 {
     port = 8888;		# 监听端口
-    switch = "on";		# 开关，支持配置on | off
 };
 ```
 
@@ -73,17 +102,25 @@ gala-gopher支持配置为kafka客户端，作为生产者将采集的数据上�
 kafka =
 {
     kafka_broker = "localhost:9092";
-    kafka_topic = "gala_gopher";
     batch_num_messages = 10000;	    # 在一个MessageSet中批处理的最大消息数
     compression_codec = "none";	    # 用于压缩消息集的压缩编解码器：none、gzip 或 snappy
     queue_buffering_max_messages = 100000;	# 生产者队列上允许的最大消息数
     queue_buffering_max_kbytes = 1048576;	# 生产者队列上允许的最大byte数(kB)
     queue_buffering_max_ms = 5;	    # 生产者队列上缓冲数据的最长时间(毫秒)
-    switch = "off";	                # 开关，支持配置on | off
 };
 ```
 
+### logs配置
 
+```shell
+logs =
+{
+    metric_dir = "/var/log/gala-gopher/metrics";    # metrics指标数据日志路径
+    event_dir = "/var/log/gala-gopher/event";       # 异常事件数据日志路径
+    meta_dir = "/var/log/gala-gopher/meta";         # metadata元数据日志路径
+    debug_dir = "/var/log/gala-gopher/debug";       #gala-gopher运行日志路径
+};
+```
 
 ### probes 
 
