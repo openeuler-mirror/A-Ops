@@ -2,58 +2,53 @@ from typing import List
 
 import networkx as nx
 
-from cause_inference.config import infer_config
-from cause_inference.exceptions import MetadataException
+from spider.exceptions import MetadataException
 from spider.conf.observe_meta import ObserveMetaMgt
 from spider.util import logger
-
-
-def get_metric_obj_type(metric_id: str):
-    if not metric_id.startswith(infer_config.data_agent + "_"):
-        raise MetadataException('Data source of the metric {} can not be identified.'.format(metric_id))
-
-    left = metric_id[len(infer_config.data_agent) + 1:]
-    obsv_types = ObserveMetaMgt().get_observe_types()
-    for obj_type in obsv_types:
-        if left.startswith(obj_type + "_"):
-            return obj_type
-
-    raise MetadataException('Entity type of the metric {} can not be supported.'.format(metric_id))
-
-
-def get_entity_keys_of_metric(metric_id, metric_labels):
-    metric_entity_type = get_metric_obj_type(metric_id)
-    observe_meta = ObserveMetaMgt().get_observe_meta(metric_entity_type)
-    if observe_meta is None:
-        raise MetadataException('Can not find observe meta info, observe type={}'.format(metric_entity_type))
-
-    key_labels = {}
-    for entity_key in observe_meta.keys:
-        if entity_key not in metric_labels:
-            raise MetadataException('Observe entity key[{}] miss of metric[{}].'.format(entity_key, metric_id))
-        key_labels[entity_key] = metric_labels[entity_key]
-
-    return key_labels
+from spider.util.entity import concate_entity_id
+from spider.util.entity import escape_entity_id
 
 
 class AbnormalEvent:
-    def __init__(self, timestamp, abnormal_metric_id, abnormal_score, metric_labels):
+    def __init__(self, timestamp, abnormal_metric_id, abnormal_score=0.0, metric_labels=None, abnormal_entity_id=None):
         self.timestamp = timestamp
         self.abnormal_metric_id = abnormal_metric_id
         self.abnormal_score = abnormal_score
-        self.metric_labels = metric_labels
+        self.metric_labels = metric_labels or {}
+        self.abnormal_entity_id = abnormal_entity_id or ''
         self.hist_data = []
 
     def __repr__(self):
-        return 'AbnormalEvent(timestamp={}, abnormal_metric_id="{}", abnormal_score={}, metric_labels={})'.format(
+        return ('AbnormalEvent(timestamp={}, abnormal_metric_id="{}", abnormal_score={}, metric_labels={},'
+                ' abnormal_entity_id={})').format(
             self.timestamp,
             self.abnormal_metric_id,
             self.abnormal_score,
             self.metric_labels,
+            self.abnormal_entity_id,
         )
 
     def set_hist_data(self, hist_data):
         self.hist_data = hist_data[:]
+
+    def update_entity_id(self, obsv_meta_mgt: ObserveMetaMgt) -> bool:
+        if self.abnormal_entity_id:
+            return True
+
+        try:
+            entity_type = obsv_meta_mgt.get_entity_type_of_metric(self.abnormal_metric_id)
+        except MetadataException as ex:
+            logger.logger.debug(ex)
+            return False
+
+        obsv_meta = obsv_meta_mgt.get_observe_meta(entity_type)
+        if not obsv_meta:
+            return False
+        self.abnormal_entity_id = escape_entity_id(concate_entity_id(entity_type, self.metric_labels, obsv_meta.keys))
+        if not self.abnormal_entity_id:
+            return False
+
+        return True
 
     def to_dict(self):
         res = {
@@ -61,18 +56,17 @@ class AbnormalEvent:
             'timestamp': self.timestamp,
             'abnormal_score': self.abnormal_score,
             'metric_labels': self.metric_labels,
+            'entity_id': self.abnormal_entity_id,
         }
         return res
 
 
 class CausalGraph:
-    def __init__(self, raw_topo_graph, abnormal_kpi: AbnormalEvent, abnormal_metrics: List[AbnormalEvent],
-                 orig_abn_kpi: AbnormalEvent = None):
+    def __init__(self, raw_topo_graph, abnormal_kpi: AbnormalEvent, abnormal_metrics: List[AbnormalEvent]):
         self.topo_nodes = raw_topo_graph.get('vertices', {})
         self.topo_edges = raw_topo_graph.get('edges', {})
         self.abnormal_kpi: AbnormalEvent = abnormal_kpi
         self.abnormal_metrics: List[AbnormalEvent] = abnormal_metrics
-        self.orig_abn_kpi: AbnormalEvent = orig_abn_kpi
 
         self.entity_id_of_abn_kpi = None
         self.entity_cause_graph = nx.DiGraph()
@@ -88,27 +82,14 @@ class CausalGraph:
         abnormal_metrics = [self.abnormal_kpi]
         abnormal_metrics.extend(self.abnormal_metrics)
         for abn_metric in abnormal_metrics:
-            try:
-                entity_keys_of_metric = get_entity_keys_of_metric(abn_metric.abnormal_metric_id,
-                                                                  abn_metric.metric_labels)
-            except MetadataException as ex:
-                logger.logger.error(ex)
-                continue
-            for node_id in self.entity_cause_graph.nodes:
-                if not self.is_metric_matched_to_node(node_id, entity_keys_of_metric):
+            for node_id, node_attrs in self.entity_cause_graph.nodes.items():
+                if node_attrs.get('_key') != abn_metric.abnormal_entity_id:
                     continue
                 if abn_metric.abnormal_metric_id == self.abnormal_kpi.abnormal_metric_id:
                     self.entity_id_of_abn_kpi = node_id
                 self.set_abnormal_status_of_node(node_id, True)
                 self.append_abnormal_metric_to_node(node_id, abn_metric)
                 break
-
-    def is_metric_matched_to_node(self, node_id, entity_keys_of_metric):
-        node_attrs = self.entity_cause_graph.nodes[node_id]
-        for key in entity_keys_of_metric:
-            if node_attrs.get(key) != entity_keys_of_metric[key]:
-                return False
-        return True
 
     def prune_by_abnormal_node(self):
         node_ids = list(self.entity_cause_graph.nodes)

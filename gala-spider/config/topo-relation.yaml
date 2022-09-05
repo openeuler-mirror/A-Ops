@@ -66,8 +66,8 @@ topo_relations:
             type: container
             matches:
               -
-                from: tgid
-                to: proc_id
+                from: container_id
+                to: container_id
               -
                 from: machine_id
                 to: machine_id
