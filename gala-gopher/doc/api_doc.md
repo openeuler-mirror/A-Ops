@@ -154,9 +154,12 @@ gala_gopher_event
 
 ```json
 {
-	"Timestamp": "1234567890",
+	"Timestamp": 1661088145000,
+    "event_id": "<timestamp>_<entity_id>",
 	"Attributes": {
-		"Entity ID": "<machine_id>_<entity_name>_<key1>_<key2>_..."
+		"entity_id": "<machine_id>_<entity_name>_<key1>_<key2>_...",
+		"event_id": "<timestamp>_<entity_id>",
+		"event_type": "sys"
 	},
 	"Resource": {
 		"metrics": "<metric_name>"
@@ -169,12 +172,35 @@ gala_gopher_event
 
 输出数据解释：
 
-| 输出参数                    | 参数含义 | 描述                                                   |
-| --------------------------- | -------- | ------------------------------------------------------ |
-| Entity ID                   | 实体ID   | 命名规则：<machine_id>_<entity_name>_<key1>_<key2>_... |
-| metrics                     | 指标名   | 命名规则：gala_gopher_<entity_name>_<metric_name>      |
-| SeverityText/SeverityNumber | 异常事件 | INFO/9   WARN/13   ERROR/17   FATAL/21                 |
-| Body                        | 事件信息 | 字符串，描述了当前时间、异常事件等级以及具体时间信息   |
+1、数据要满足JSON格式，可以通过在线JSON校验格式化工具校验；
+
+2、entity_id和event_id字符串长度要在1~254bytes之间，支持a-z、A-Z、0-9字符，支持如下标点符号： `_` `-` `:` `.` `@` `(` `)` `+` `,` `=` `;` `$` `!` `*` `'` `%`，其他标点符号全部用 `:` 代替； 
+
+示例如下：
+
+原本的输出数据：
+
+```json
+{"Attributes": { "entity_id": "xxxxx_system_disk_/honme"}}
+```
+
+可见entity_id中有 `/` 这个特殊符号，则将 `/` 替换为 `:` 后的输出数据为：
+
+```json
+{"Attributes": { "entity_id": "xxxxx_system_disk_:honme"}}
+```
+
+3、Timestamp时间戳使用13位long型数字，不使用字符串；
+
+| 输出参数                    | 参数含义 | 描述                                                    |
+| --------------------------- | -------- | ------------------------------------------------------- |
+| Timestamp                   | 时间戳   | 时间戳，13位long型数据                                  |
+| entity_id                   | 实体ID   | 命名规则：`<machine_id>_<entity_name>_<key1>_<key2>_..` |
+| event_id                    | 事件ID   | 命名规则：`<timestamp>_<entity_id>`                     |
+| event_type                  | 事件类型 | sys / app                                               |
+| metrics                     | 指标名   | 命名规则：`gala_gopher_<entity_name>_<metric_name>`     |
+| SeverityText/SeverityNumber | 异常事件 | INFO/9 WARN/13 ERROR/17 FATAL/21                        |
+| Body                        | 事件信息 | 字符串，描述了当前时间、异常事件等级以及具体时间信息    |
 
 ##### 输入示例
 
@@ -185,6 +211,35 @@ gala_gopher_event
 ##### 输出示例
 
 ```json
-{"Timestamp": "1656123876000", "Attributes": { "Entity ID": "xxxxx_system_disk_/honme"}, "Resource": { "metrics": "gala_gopher_system_disk_block_userd_per"}, "SeverityText": "WARN","SeverityNumber": 13,"Body": "Sat Jun 25 10:24:36 2022 WARN Entity(/home) Too many Blocks used(82%)."}
+{
+	"Timestamp": 1661088145000,
+    "event_id": "1661088145000_1fd37xxxxx_thread_12302",
+	"Attributes": {
+		"entity_id": "1fd37xxxxx_thread_12302",
+		"event_id": "1661088145000_1fd37xxxxx_thread_12302",
+		"event_type": "sys"
+	},
+	"Resource": {
+		"metrics": "gala_gopher_thread_off_cpu_ns"
+	},
+	"SeverityText": "WARN",
+	"SeverityNumber": 13,
+	"Body": "Sun Aug 21 21:22:25 2022 WARN Entity(12302) Process(COMM:redis-server TID:12302) is preempted(COMM:migration/1 PID:16) and off-CPU 4556 ns."
+}
+{
+	"Timestamp": 1661418870000,
+	"event_id": "1661418870000_e473bxxxxx_system_df_:tmp",
+	"Attributes": {
+		"entity_id": "e473bxxxxx_system_df_:tmp",
+		"event_id": "1661418870000_e473bxxxxx_system_df_:tmp",
+		"event_type": "sys"
+	},
+	"Resource": {
+		"metrics": "gala_gopher_system_df_inode_userd_per"
+	},
+	"SeverityText": "WARN",
+	"SeverityNumber": 13,
+	"Body": "Thu Aug 25 17:14:30 2022 WARN Entity(/tmp) Too many Inodes consumed(95%)."
+}
 ```
 
