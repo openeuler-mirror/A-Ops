@@ -43,8 +43,15 @@
                 ok-text="确认"
                 cancel-text="取消"
                 @confirm="deleteWorkflow"
+                :disabled="workflow.status==='running'"
             >
-              <a-button type="danger" ghost>删除</a-button>
+              <a-button
+                type="danger"
+                :ghost="workflow.status!=='running'"
+                :disabled="workflow.status==='running'"
+              >
+                删除
+              </a-button>
             </a-popconfirm>
           </div>
         </a-row>

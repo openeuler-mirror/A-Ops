@@ -54,6 +54,7 @@
 </template>
 
 <script>
+import store from '@/store'
 import { PageHeaderWrapper } from '@ant-design-vue/pro-layout'
 import AlertHeaderBoard from './components/AlertHeaderBoard'
 import ExceptionDetailDrawer from '@/views/diagnosis/components/ExceptionDetailDrawer'
@@ -166,7 +167,8 @@ export default {
       }).then(res => {
         this.$message.success(res.msg)
         this.getAlertRecordResult()
-        this.getAlertCount()
+        // update alert count data in AlertHeaderBoard component
+        store.dispatch('updateCount')
       }).catch(err => {
         this.$message.error(err.error_msg)
       })

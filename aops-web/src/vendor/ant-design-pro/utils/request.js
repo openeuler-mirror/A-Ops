@@ -79,8 +79,8 @@ request.interceptors.request.use(config => {
 request.interceptors.response.use(response => {
     // 这对业务域相关接口返回体做特殊处理，后续需要统一
     const code = response.data.code || response.status;
-
-    if (code !== 200) {
+  // 不处理所有2xx的状态码
+  if (!code.toString().match(/^2[0-9]{2,2}$/)) {
         let err = null;
         switch (code) {
             case 1201:

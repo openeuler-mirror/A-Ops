@@ -26,11 +26,7 @@
             </drawer-view>
         </a-row>
       </a-card>
-      <a-card :bordered="false" :class="{ 'zoom': active }" class="aops-theme">
-        <a-row type="flex" justify="end">
-          <a-icon type="fullscreen" @click="spread()" class="largen"/>
-          <a-icon type="shrink" @click="shrink()" class="lessen"/>
-        </a-row>
+      <a-card :bordered="false" class="aops-theme">
         <div id="mountNode"></div>
       </a-card>
     </div>
@@ -117,11 +113,8 @@ export default {
       appInfo: '',
       singleItemCheckColum,
       multiItemCheckColum,
-      visible: false,
       label: '',
-      detail: [],
-      // 样式切换
-      active: false
+      detail: []
     }
   },
   created() {
@@ -132,9 +125,6 @@ export default {
     this.getAppInformation()
   },
   methods: {
-    onClose() {
-      this.visible = false;
-    },
     getAppInformation() {
       const _this = this
       getWorkflowAppExtraInfo(this.app_id)
@@ -177,33 +167,11 @@ export default {
       });
       graph.data(NodeData);
       graph.render();
-    },
-    spread() {
-      this.active = false
-    },
-    shrink() {
-      this.active = true
     }
   }
 }
 </script>
 <style lang="less" scoped>
-.zoom {
-    height: 100px;
-    overflow: hidden;
-}
-
-.anticon{
-  cursor:pointer;
-  width: 30px;
-  height: 30px;
-  font-size: 25px;
-}
-
- .largen {
-  margin-right: 10px;
-}
-
 #mountNode {
   width: 100%;
 }

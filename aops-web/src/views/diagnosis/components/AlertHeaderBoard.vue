@@ -71,10 +71,13 @@
 </template>
 
 <script>
+// 通过store更行异常告警count数据
+import store from '@/store'
+import { mapState } from 'vuex'
 import CountAlertInfoDrawer from '@/views/diagnosis/components/CountAlertInfoDrawer'
 import DrawerView from '@/views/utils/DrawerView'
 
-import { getAlertCount, getAlertInfoResult } from '@/api/check'
+import { getAlertInfoResult } from '@/api/check'
 
 export default {
     name: 'AlertHeaderBoard',
@@ -90,13 +93,15 @@ export default {
     },
     data () {
         return {
-            alertCount: 0,
             countIsLoading: false,
             alertInfoResult: [],
             alertInfoLoading: false
         }
     },
     computed: {
+        ...mapState({
+          alertCount: state => state.abnormalAlert.alertCount
+        }),
         alertInfoColumns() {
             return [
                 {
@@ -132,17 +137,6 @@ export default {
         }
     },
     methods: {
-        getAlertCount () {
-            const that = this
-            this.countIsLoading = true
-            getAlertCount().then(res => {
-                that.alertCount = res.count
-            }).catch(err => {
-                that.$message.error(err.msg)
-            }).finally(() => {
-                that.countIsLoading = false
-            })
-        },
         getAlertInfoResult({page, pageSize, direction} = {}) {
             const that = this
             this.alertInfoLoading = true
@@ -172,7 +166,8 @@ export default {
         }
     },
     mounted() {
-        this.getAlertCount()
+        // not loading count data if count part is hide.
+        !this.onlyInfo && store.dispatch('updateCount')
         this.getAlertInfoResult()
     }
 }

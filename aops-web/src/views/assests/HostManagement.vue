@@ -261,7 +261,7 @@ export default {
                     hostList
                 })
                 .then((res) => {
-                    _this.$message.success(res.msg)
+                    this.noticeDeleteResult(res)
                     _this.getHostList()
                     if (isBash) _this.selectedRowKeys = []
                     resolve()
@@ -271,6 +271,23 @@ export default {
                     reject(err)
                 })
             })
+        },
+        noticeDeleteResult(res) {
+            if (res.succeed_list && res.succeed_list.length > 0) {
+                if (res.fail_list && res.fail_list.length > 0) {
+                    this.$notification['warning']({
+                        message: '部分主机删除失败',
+                        description: (<div>
+                            <p>{`失败主机如下：${res.fail_list.join('、')}`}</p>
+                        </div>),
+                        duration: 5
+                    });
+                } else {
+                    this.$message.success('删除成功')
+                }
+                return
+            }
+            this.$message.error('删除失败')
         },
         handleReset () {
             this.pagination = defaultPagination

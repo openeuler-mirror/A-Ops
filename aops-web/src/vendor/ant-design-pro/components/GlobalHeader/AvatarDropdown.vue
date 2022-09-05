@@ -12,12 +12,6 @@
             <span slot="button">修改密码</span>
           </change-password-modal>
         </a-menu-item>
-        <a-menu-item v-if="menu" key="certificate" @click="showCertificate">
-          <a-icon type="safety" />
-          <decode-key :visible="certificateVisible" @close="closeCertificate">
-            <span slot="button">解密密钥</span>
-          </decode-key>
-        </a-menu-item>
         <a-menu-divider v-if="menu" />
         <a-menu-item key="logout" @click="handleLogout">
           <a-icon type="logout" />
@@ -33,12 +27,11 @@
 
 <script>
 import { Modal } from 'ant-design-vue'
-import ChangePasswordModal from './ChangePasswordModal'
-import DecodeKey from './DecodeKey'
+import ChangePasswordModal from '@/components/GlobalHeader/ChangePasswordModal'
 
 export default {
   name: 'AvatarDropdown',
-  components: { ChangePasswordModal, DecodeKey },
+  components: { ChangePasswordModal },
   data () {
     return {
       changePWVisible: false,
