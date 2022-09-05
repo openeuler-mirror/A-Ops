@@ -18,8 +18,15 @@ Description: Restful APIs for host
 from typing import Dict, Tuple
 
 from flask import jsonify, request
+
 from aops_manager.conf.constant import ROUTE_AGENT_HOST_INFO, CHECK_WORKFLOW_HOST_EXIST
-from aops_utils.restful.status import SUCCEED, DATABASE_CONNECT_ERROR, NO_DATA, TOKEN_ERROR
+from aops_utils.restful.status import (
+    SUCCEED,
+    DATABASE_CONNECT_ERROR,
+    NO_DATA,
+    TOKEN_ERROR,
+    DATABASE_DELETE_ERROR
+)
 from aops_utils.restful.response import BaseResponse
 from aops_utils.database.helper import operate
 from aops_utils.database.table import User, Host
@@ -137,14 +144,16 @@ class DeleteHost(BaseResponse):
             {'content-type': 'application/json', 'access_token': request.headers.get('access_token')}
         )
 
+        res = {
+            'succeed_list': [],
+            'fail_list': []
+        }
+
         if resp.get('code') != SUCCEED:
             LOGGER.error('No valid information can be obtained when query'
                          'whether the host is running in the workflow')
-            result = {
-                'succeed_list': [],
-                'fail_list': args['host_list']
-            }
-            return resp.get('code'), result
+            res['fail_list'] = args['host_list']
+            return DATABASE_DELETE_ERROR, res
 
         host_id_in_workflow = []
         host_id_not_in_workflow = []
@@ -153,6 +162,10 @@ class DeleteHost(BaseResponse):
                 host_id_in_workflow.append(host_id)
             else:
                 host_id_not_in_workflow.append(host_id)
+
+        if len(host_id_not_in_workflow) == 0:
+            res['fail_list'] = host_id_in_workflow
+            return DATABASE_DELETE_ERROR, res
 
         args['host_list'] = host_id_not_in_workflow
         status_code, result = proxy.delete_host(args)
