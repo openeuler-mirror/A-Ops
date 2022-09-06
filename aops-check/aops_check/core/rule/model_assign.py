@@ -43,11 +43,10 @@ class ModelAssign:
     """
 
     @staticmethod
-    def assign_kpi_model_by_name(metrics: List[str], metric_model_map: dict = None) -> Dict[str, str]:
+    def assign_kpi_model_by_name(metric_model_map: dict = None) -> Dict[str, str]:
         """
         assign single item check model by metrics' name
         Args:
-            metrics: metric name
             metric_model_map: metric and model matching relationship
                 e.g.
                 {
@@ -70,10 +69,7 @@ class ModelAssign:
         model_info = metric_model_map.get("model_info", {})
 
         assign_model = {}
-        for metric in metrics:
-            # if a metric not in app's details, no need to check
-            if metric not in model_info:
-                continue
+        for metric in model_info.keys():
             if model_info[metric]:
                 assign_model[metric] = model_info[metric]
             else:
