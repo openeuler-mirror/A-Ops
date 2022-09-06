@@ -169,6 +169,7 @@ export default {
         this.getAlertRecordResult()
         // update alert count data in AlertHeaderBoard component
         store.dispatch('updateCount')
+        store.dispatch('getAlertInfoResult')
       }).catch(err => {
         this.$message.error(err.error_msg)
       })
