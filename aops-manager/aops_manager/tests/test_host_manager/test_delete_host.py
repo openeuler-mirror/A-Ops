@@ -18,7 +18,6 @@ import responses
 
 from aops_manager import BLUE_POINT
 from aops_manager.database.proxy.host import HostProxy
-from aops_manager.deploy_manager.ansible_runner.inventory_builder import InventoryBuilder
 from aops_utils.restful.status import SUCCEED, TOKEN_ERROR, DATABASE_CONNECT_ERROR
 
 app = Flask("check")
@@ -73,7 +72,8 @@ class TestDeleteHost(unittest.TestCase):
         mock_mysql_connect.return_value = True
         mock_delete_host.return_value = SUCCEED, {
             'succeed_list': [],
-            'fail_list': []
+            'fail_list': [],
+            'host_info': {}
         }
         mock_check_json = {
             'code': 200,
