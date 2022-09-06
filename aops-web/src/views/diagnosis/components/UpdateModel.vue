@@ -5,11 +5,10 @@
             取消
           </a-button>
           <a-button key="submit" type="primary" @click="handleOk" :loading="updateIsLoading">
-          <!-- :loading="loading" -->
             应用
           </a-button>
         </template>
-        <p>已取得模型总条数：</p>
+        <p>已取得模型总条数：{{ pagination.total }}</p>
         <div><a href="javascript:;">{{ modelName?'已选择'+modelName+'模型':'未选择模型' }}</a></div>
             <a-select
               style="width: 100px"
@@ -37,7 +36,9 @@
             :pagination="pagination"
             :row-selection="{ selectedRowKeys: selectedRowKeys, onChange: onSelectChange, type: 'radio'}"
             :loading="tableIsLoading"
-            @change="handleTableChange">
+            @change="handleTableChange"
+            :scroll="{ y: 280 }"
+          >
           </a-table>
     </a-modal>
 </template>
@@ -46,8 +47,8 @@ import { moduleList, updateWorkflow } from '@/api/check'
 import { dateFormat } from '@/views/utils/Utils'
 const defaultPagination = {
     current: 1,
-    pageSize: 5,
-    total: 20,
+    pageSize: 10,
+    total: 0,
     size: 'small',
     showSizeChanger: true,
     showQuickJumper: true
@@ -102,7 +103,8 @@ export default {
         {
           title: '模型',
           dataIndex: 'model_name',
-          key: 'model_name'
+          key: 'model_name',
+          width: 140
         },
         {
           title: '算法',
@@ -112,6 +114,7 @@ export default {
         {
           title: '精确度',
           dataIndex: 'precision',
+          width: 100,
           key: 'precision',
           sorter: true,
           sortOrder: sorter.columnKey === 'precision' && sorter.order
@@ -123,6 +126,7 @@ export default {
         },
         {
           title: '创建时间',
+          width: 200,
           dataIndex: 'create_time',
           key: 'create_time',
           customRender: (time) => time && dateFormat('YYYY-mm-dd HH:MM:SS', time * 1000)

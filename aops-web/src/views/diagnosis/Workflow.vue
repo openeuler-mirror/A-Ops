@@ -88,8 +88,9 @@
                                         ok-text="确认"
                                         cancel-text="取消"
                                         @confirm="deleteWorkFlow(operation, record)"
+                                        :disabled="record.status==='running'"
                                     >
-                                        <a class="operation">删除</a>
+                                        <a class="operation" :disabled="record.status === 'running'">删除</a>
                                     </a-popconfirm>
                                     <a-divider type="vertical" />
                                     <span style="color: #999999">推荐</span>

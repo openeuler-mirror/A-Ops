@@ -109,13 +109,15 @@
 </template>
 
 <script>
+import store from '@/store'
+import { mapState } from 'vuex'
 import MyPageHeaderWrapper from '@/views/utils/MyPageHeaderWrapper'
 import AlertHeaderBoard from '@/views/diagnosis/components/AlertHeaderBoard'
 import DrawerView from '@/views/utils/DrawerView'
 import GetCheckResultDrawer from '@/views/diagnosis/components/GetCheckResultDrawer'
 import AddAbnormalCheckRuleDrawer from '@/views/diagnosis/components/AddAbnormalCheckRuleDrawer'
 import CheckResultExpanded from '@/views/diagnosis/components/CheckResultExpanded'
-import { getResultCountTopTen, getResult, getAlertCount } from '@/api/check'
+import { getResultCountTopTen, getResult } from '@/api/check'
 import { getCveOverview } from '@/api/leaks'
 import { hostCount } from '@/api/assest'
 import { dateFormat } from '@/views/utils/Utils'
@@ -145,7 +147,7 @@ export default {
   },
   mounted: function () {
     this.getHostCount()
-    this.getAlertCount()
+    store.dispatch('updateCount')
     // this.getResultCountTopTen()
     // this.getResultList()
     // this.getCveOverview()
@@ -153,7 +155,6 @@ export default {
   data () {
     return {
       hostCount: 0,
-      alertCount: 0,
       filters: null,
       sorter: null,
       tableIsLoading: false,
@@ -171,6 +172,9 @@ export default {
     }
   },
   computed: {
+    ...mapState({
+          alertCount: state => state.abnormalAlert.alertCount
+        }),
     columnsReulst () {
       return [
         {
@@ -209,14 +213,6 @@ export default {
       var that = this
       hostCount().then(function (data) {
         that.hostCount = data.host_count
-      }).catch(function (err) {
-        that.$message.error(err.response.data.msg)
-      })
-    },
-    getAlertCount () {
-      var that = this
-      getAlertCount().then(function (data) {
-        that.alertCount = data.count
       }).catch(function (err) {
         that.$message.error(err.response.data.msg)
       })
