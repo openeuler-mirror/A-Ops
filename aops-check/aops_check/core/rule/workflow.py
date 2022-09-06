@@ -404,11 +404,7 @@ class Workflow:
         result = {}
         try:
             if "singlecheck" in step_detail:
-                failed_list, result["singlecheck"] = Workflow.__assign_single_item_model(hosts_info,
-                                                                                         step_detail["singlecheck"])
-                if failed_list:
-                    LOGGER.debug("Query metric list of host '%s' failed when assign "
-                                 "model of workflow %s." % (failed_list, workflow_id))
+                result["singlecheck"] = Workflow.__assign_single_item_model(hosts_info, step_detail["singlecheck"])
             if "multicheck" in step_detail:
                 result["multicheck"] = Workflow.__assign_multi_item_model(hosts_info, step_detail["multicheck"])
             if "diag" in step_detail:
@@ -418,7 +414,7 @@ class Workflow:
         return result
 
     @staticmethod
-    def __assign_single_item_model(hosts_info: dict, config: dict = None) -> Tuple[list, Dict[str, Dict[str, str]]]:
+    def __assign_single_item_model(hosts_info: dict, config: dict = None) -> Dict[str, Dict[str, str]]:
         """
         assign single item check model
         Args:
@@ -426,47 +422,16 @@ class Workflow:
                 {"host1": {"host_ip": "127.0.0.1", "scene": "big_data", "host_name": "host1"}}
             config: single item check config
         Returns:
-            list, dict
+            dict
         Raises:
             ValueError
         """
-        data_proxy = DataDao(configuration)
-        if not data_proxy.connect():
-            raise WorkflowModelAssignError("Connect to prometheus failed.")
+        host_model = {}
 
-        host_algo = {}
-        failed_list = []
-
+        kpi_model = ModelAssign.assign_kpi_model_by_name(config)
         for host_id, value in hosts_info.items():
-            # query host's metric list
-            status_code, metric_label_list = data_proxy.query_metric_list_of_host(
-                value["host_ip"])
-            if status_code != SUCCEED:
-                failed_list.append(host_id)
-                continue
-
-            metric_list = Workflow.__get_metric_names(metric_label_list)
-            host_algo[host_id] = ModelAssign.assign_kpi_model_by_name(
-                metric_list, config)
-        return failed_list, host_algo
-
-    @staticmethod
-    def __get_metric_names(metric_label_list: list):
-        """
-        split metric name and label, get metric name list
-        Args:
-            metric_label_list: metric name and label string list
-
-        Returns:
-            list: list of metric name
-        """
-        metric_set = set()
-        for metric_label in metric_label_list:
-            index = metric_label.find('{')
-            metric_name = metric_label[:index]
-            metric_set.add(metric_name)
-
-        return list(metric_set)
+            host_model[host_id] = kpi_model
+        return host_model
 
     @staticmethod
     def __assign_multi_item_model(hosts_info: dict, config: dict = None) -> Dict[str, str]:
