@@ -305,7 +305,8 @@ class ResultDao(MysqlProxy):
         try:
             fliters = {
                 DomainCheckResult.username == data['username'],
-                DomainCheckResult.alert_id == AlertHost.alert_id
+                DomainCheckResult.alert_id == AlertHost.alert_id,
+                DomainCheckResult.confirmed == 0
             }
             alert_count_query = self.session.query(
                 func.count(AlertHost.alert_id)).filter(*fliters).scalar()
@@ -416,8 +417,9 @@ class ResultDao(MysqlProxy):
         """
 
         return self.session.query(DomainCheckResult.domain,
-                                  func.count(DomainCheckResult.domain).
-                                  label('count')).group_by(DomainCheckResult.domain)
+                                  func.count(DomainCheckResult.domain).label('count')) \
+            .group_by(DomainCheckResult.domain) \
+            .filter(DomainCheckResult.confirmed == 0)
 
     @staticmethod
     def _domain_check_result_count_rows_to_list(rows):
