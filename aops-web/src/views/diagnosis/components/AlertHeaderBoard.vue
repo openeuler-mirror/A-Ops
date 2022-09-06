@@ -77,8 +77,6 @@ import { mapState } from 'vuex'
 import CountAlertInfoDrawer from '@/views/diagnosis/components/CountAlertInfoDrawer'
 import DrawerView from '@/views/utils/DrawerView'
 
-import { getAlertInfoResult } from '@/api/check'
-
 export default {
     name: 'AlertHeaderBoard',
     components: {
@@ -91,16 +89,12 @@ export default {
             default: false
         }
     },
-    data () {
-        return {
-            countIsLoading: false,
-            alertInfoResult: [],
-            alertInfoLoading: false
-        }
-    },
     computed: {
         ...mapState({
-          alertCount: state => state.abnormalAlert.alertCount
+          alertCount: state => state.abnormalAlert.alertCount,
+          countIsLoading: state => state.abnormalAlert.alertCountLoading,
+          alertInfoResult: state => state.abnormalAlert.alertInfoResult,
+          alertInfoLoading: state => state.abnormalAlert.alertInfoResultLoading
         }),
         alertInfoColumns() {
             return [
@@ -137,26 +131,6 @@ export default {
         }
     },
     methods: {
-        getAlertInfoResult({page, pageSize, direction} = {}) {
-            const that = this
-            this.alertInfoLoading = true
-            getAlertInfoResult({
-              page: page,
-              per_page: pageSize,
-              direction: direction
-            }).then(res => {
-              // 返回数据没提供key
-              that.alertInfoResult = res.results.map((item, idx) => {
-                item.key = idx
-                item.order = idx
-                return item
-              });
-            }).catch(err => {
-              that.$message.error(err.error_msg)
-            }).finally(() => {
-              that.alertInfoLoading = false
-            })
-        },
         getRightTableClass() {
             if (this.onlyInfo) {
                 return this.alertInfoResult.slice(2, 5).length > 2 ? 'long-content' : ''
@@ -168,7 +142,7 @@ export default {
     mounted() {
         // not loading count data if count part is hide.
         !this.onlyInfo && store.dispatch('updateCount')
-        this.getAlertInfoResult()
+        store.dispatch('getAlertInfoResult')
     }
 }
 </script>
