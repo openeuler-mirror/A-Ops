@@ -44,6 +44,7 @@ class Workflow(Base, MyBase):
     workflow_id = Column(String(32), primary_key=True, nullable=False)
     workflow_name = Column(String(50), nullable=False)
     description = Column(String(100), nullable=False)
+    create_time = Column(Integer, nullable=False)
     status = Column(String(20), nullable=False)
     app_name = Column(String(20), nullable=False)
     app_id = Column(String(32), nullable=False)

@@ -16,6 +16,7 @@ Author:
 Description:
 """
 import uuid
+import time
 from typing import Dict, Tuple
 from flask import jsonify, request
 
@@ -75,6 +76,7 @@ class CreateWorkflow(BaseResponse):
         args['step'] = args.get('step', 60)
         args["period"] = args.get("period", 60)
         args["alert"] = args.get("alert", {})
+        args["create_time"] = int(time.time())
         args["status"] = "hold"
         workflow_id = str(uuid.uuid1()).replace('-', '')
         args['workflow_id'] = workflow_id
