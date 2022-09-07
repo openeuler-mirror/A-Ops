@@ -3,7 +3,7 @@
     <div class="diagnosis-workflow-detail">
       <a-card :bordered="false" class="aops-theme detail-card">
         <h3>{{ workflow.workflow_name }}</h3>
-        <a-row>
+        <a-row :gutter="8">
           <a-col :span="6">
             主机组：<span v-if="workflow.input">{{ workflow.input.domain }}</span>
           </a-col>
@@ -17,43 +17,48 @@
             状态：<span :style="activation()">{{ statusMap[workflow.status] }}</span>
           </a-col>
         </a-row>
-        <a-row :gutter="[0, 20]">
-          <a-col :span="15" class="workflow-desc">
+        <a-row :gutter="8">
+          <a-col :span="18" class="workflow-desc">
             描述：{{ workflow.description }}
           </a-col>
-          <div class="control-btns">
-            <a-button
-              type="primary"
-              @click="execute"
-              :loading="excuteLoading"
-              :disabled="workflow.status==='running'"
-            >
-              执行
-            </a-button>
-            <a-button
-              @click="stop"
-              :loading="stopLoading"
-              :disabled="workflow.status==='hold'"
-            >
-              暂停
-            </a-button>
-            <a-popconfirm
-                title="确定删除本工作流吗?"
-                placement="topRight"
-                ok-text="确认"
-                cancel-text="取消"
-                @confirm="deleteWorkflow"
-                :disabled="workflow.status==='running'"
-            >
+          <a-col :span="6" class="workflow-time">
+            <div>
+            创建时间：{{ dateFormat('YYYY-mm-dd HH:MM:SS', workflow.create_time * 1000) }}
+            </div>
+            <div class="control-btns">
               <a-button
-                type="danger"
-                :ghost="workflow.status!=='running'"
+                type="primary"
+                @click="execute"
+                :loading="excuteLoading"
                 :disabled="workflow.status==='running'"
               >
-                删除
+                执行
               </a-button>
-            </a-popconfirm>
-          </div>
+              <a-button
+                @click="stop"
+                :loading="stopLoading"
+                :disabled="workflow.status==='hold'"
+              >
+                暂停
+              </a-button>
+              <a-popconfirm
+                  title="确定删除本工作流吗?"
+                  placement="topRight"
+                  ok-text="确认"
+                  cancel-text="取消"
+                  @confirm="deleteWorkflow"
+                  :disabled="workflow.status==='running'"
+              >
+                <a-button
+                  type="danger"
+                  :ghost="workflow.status!=='running'"
+                  :disabled="workflow.status==='running'"
+                >
+                  删除
+                </a-button>
+              </a-popconfirm>
+            </div>
+          </a-col>
         </a-row>
         <a-row class="tab-container">
           <a-tabs default-active-key="1" @change="callback">
@@ -250,6 +255,7 @@ export default {
     }
   },
   methods: {
+    dateFormat,
     getWorkflowDatails() {
       const _this = this
       this.tableIsLoading = true
@@ -381,19 +387,24 @@ export default {
   .detail-card {
     padding-bottom: 20px;
   }
-  .control-btns {
-    position: absolute;
-    right: 0;
-    bottom: 0;
-    button {
-      margin-left:10px;
-    }
-  }
   .tab-container {
     position: absolute;
     bottom: -16px;
   }
-  .workflow-desc {
-    word-break: break-word;
+
+  .detail-card {
+    .ant-row:not(:last-child) {
+      margin-bottom: 10px;
+    }
+    .workflow-desc {
+      word-break: break-word;
+    }
+    .control-btns {
+      margin-top: 10px;
+      button:not(:last-child) {
+        margin-bottom: 8px;
+        margin-right:10px;
+      }
+    }
   }
 </style>

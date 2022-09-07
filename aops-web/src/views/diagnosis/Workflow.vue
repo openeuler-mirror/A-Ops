@@ -206,6 +206,7 @@
 <script>
 import MyPageHeaderWrapper from '@/views/utils/MyPageHeaderWrapper';
 import CutText from '@/components/CutText';
+import { dateFormat } from '@/views/utils/Utils'
 
 import { hostGroupList } from '@/api/assest';
 import {
@@ -248,6 +249,11 @@ export default {
         return {
             pagination: defaultPagination,
             filters: null,
+            sorter: {
+                field: 'create_time',
+                columnKey: 'create_time',
+                order: 'descend'
+            },
             tableIsLoading: false,
             appIsLoading: false,
             workFlowList: [],
@@ -270,9 +276,10 @@ export default {
     },
     methods: {
         // 处理表格分页器
-        handleWorkFlowTableChange(pagination, filters) {
+        handleWorkFlowTableChange(pagination, filters, sorter) {
             this.pagination = pagination
             this.filters = filters
+            this.sorter = sorter
             this.getWorkFlowList();
         },
         // 处理执行
@@ -322,13 +329,18 @@ export default {
             this.tableIsLoading = true;
             const pagination = this.pagination || {}
             const filters = this.filters || {}
+            const sorter = this.sorter || {}
             getWorkFlowList({
                 tableInfo: {
                     pagination: {
                         current: pagination.current,
                         pageSize: pagination.pageSize
                     },
-                    filters: filters
+                    filters: filters,
+                    sorter: {
+                        field: sorter.field,
+                        order: sorter.order
+                    }
                 }
             }).then((res) => {
                 this.workFlowList = res.result || [];
@@ -410,15 +422,16 @@ export default {
     },
     computed: {
         columns() {
-            let { filters } = this
+            let { filters, sorter } = this
             filters = filters || {}
+            sorter = sorter || {}
             const baseColumns = [
                 {
                     dataIndex: 'workflow_name',
                     key: 'workflow_name',
                     title: '名称',
                     align: 'left',
-                    width: 150,
+                    width: 120,
                     scopedSlots: {
                         customRender: 'workflow_name'
                     }
@@ -427,10 +440,18 @@ export default {
                     dataIndex: 'description',
                     key: 'description',
                     title: '描述',
-                    width: 250,
+                    width: 120,
                     scopedSlots: {
                         customRender: 'description'
                     }
+                },
+                {
+                    dataIndex: 'create_time',
+                    key: 'create_time',
+                    title: '创建时间',
+                    sorter: true,
+                    sortOrder: sorter.columnKey === 'create_time' && sorter.order,
+                    customRender: (text, record, index) => dateFormat('YYYY-mm-dd HH:MM:SS', text * 1000)
                 },
                 {
                     dataIndex: 'domain',
