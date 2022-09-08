@@ -40,6 +40,8 @@ class ObjectParse(object):
     
     def get_conf_type_by_conf_path(self, conf_path):
         yang_model = self._yang_modules.getModuleByFilePath(conf_path)
+        if not yang_model:
+            return ""
         _conf_type = self._yang_modules.getTypeInModdule([yang_model])
         conf_type = _conf_type[yang_model.name()]
         return conf_type
@@ -62,6 +64,8 @@ class ObjectParse(object):
         desc: parse the conf contents to the json accroding the yang file.
         """
         conf_type = self.get_conf_type_by_conf_path(conf_path)
+        if not conf_type:
+            return ""
 
         # create conf model
         conf_model = self.create_conf_model_by_type(conf_type)

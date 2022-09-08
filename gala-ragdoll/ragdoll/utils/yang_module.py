@@ -315,7 +315,7 @@ class YangModule(object):
         input: /etc/yum.repos.d/openEuler.repo
         output: openEuler-logos-openEuler.repo
         """
-        res = ""
+        res = None
         if len(self._module_list) == 0:
             return None
         for d_module in self._module_list:
