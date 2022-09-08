@@ -303,8 +303,13 @@ class WorkflowDao(MysqlProxy, ElasticsearchProxy):
         if not total_count:
             return result
 
-        page, per_page = data.get('page'), data.get('per_page')
-        processed_query, total_page = sort_and_page(workflow_query, None, None, per_page, page)
+        direction, page, per_page = data.get('direction'), data.get('page'), data.get('per_page')
+        if data.get("sort"):
+            sort_column = getattr(Workflow, data["sort"])
+        else:
+            sort_column = None
+        processed_query, total_page = sort_and_page(workflow_query, sort_column, direction,
+                                                    per_page, page)
 
         workflow_id_list = [row.workflow_id for row in processed_query]
         workflow_host = self._get_workflow_hosts(workflow_id_list)
@@ -339,7 +344,7 @@ class WorkflowDao(MysqlProxy, ElasticsearchProxy):
                 filters.add(Workflow.app_name.in_(filter_dict["app"]))
 
         workflow_query = self.session.query(Workflow.workflow_name, Workflow.workflow_id,
-                                            Workflow.description, Workflow.status,
+                                            Workflow.description, Workflow.create_time, Workflow.status,
                                             Workflow.app_name, Workflow.app_id, Workflow.domain) \
             .filter(*filters)
         return workflow_query
@@ -386,6 +391,7 @@ class WorkflowDao(MysqlProxy, ElasticsearchProxy):
             workflow_info = {
                 "workflow_name": row.workflow_name,
                 "description": row.description,
+                "create_time": row.create_time,
                 "status": row.status,
                 "app_name": row.app_name,
                 "app_id": row.app_id,
@@ -458,6 +464,7 @@ class WorkflowDao(MysqlProxy, ElasticsearchProxy):
                         "workflow_id": "workflow_id1",
                         "workflow_name": "workflow_name1",
                         "description": "a long description",
+                        "create_time": 1662533585,
                         "status": "running/hold/recommending",
                         "app_name": "app1",
                         "app_id": "app_id1",
@@ -538,7 +545,7 @@ class WorkflowDao(MysqlProxy, ElasticsearchProxy):
         filters.add(Workflow.workflow_id == workflow_id)
 
         workflow_query = self.session.query(Workflow.workflow_name, Workflow.workflow_id,
-                                            Workflow.description, Workflow.status,
+                                            Workflow.description, Workflow.create_time, Workflow.status,
                                             Workflow.app_name, Workflow.app_id, Workflow.domain,
                                             Workflow.step, Workflow.period) \
             .filter(*filters).one()
@@ -548,6 +555,7 @@ class WorkflowDao(MysqlProxy, ElasticsearchProxy):
         workflow_info = {
             "workflow_name": workflow_query.workflow_name,
             "description": workflow_query.description,
+            "create_time": workflow_query.create_time,
             "status": workflow_query.status,
             "app_name": workflow_query.app_name,
             "app_id": workflow_query.app_id,

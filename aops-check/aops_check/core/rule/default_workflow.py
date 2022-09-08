@@ -45,11 +45,8 @@ class DefaultWorkflow:
         step_detail = self.__app.info["detail"]
         try:
             if "singlecheck" in step_detail:
-                failed_list, workflow_detail["singlecheck"] = DefaultWorkflow.__assign_single_item_model(hosts,
-                                                                                                         step_detail["singlecheck"])
-                if failed_list:
-                    LOGGER.debug(
-                        "Query metric list of host '%s' failed when assign " % failed_list)
+                workflow_detail["singlecheck"] = DefaultWorkflow.__assign_single_item_model(hosts,
+                                                                                            step_detail["singlecheck"])
             if "multicheck" in step_detail:
                 workflow_detail["multicheck"] = DefaultWorkflow.__assign_multi_item_model(
                     hosts)
@@ -170,7 +167,7 @@ class DefaultWorkflow:
         return send_result
 
     @staticmethod
-    def __assign_single_item_model(hosts_info: list, config: dict = None) -> Tuple[list, Dict[str, Dict[str, str]]]:
+    def __assign_single_item_model(hosts_info: list, config: dict = None) -> Dict[str, Dict[str, str]]:
         """
         assign single item check model
         Args:
@@ -182,25 +179,12 @@ class DefaultWorkflow:
         Raises:
             ValueError
         """
-        data_proxy = DataDao(configuration)
-        if not data_proxy.connect():
-            raise WorkflowModelAssignError("Connect to prometheus failed.")
+        host_model = {}
 
-        host_algo = {}
-        failed_list = []
-
+        kpi_model = ModelAssign.assign_kpi_model_by_name(config)
         for host_ip in hosts_info:
-            # query host's metric list
-            status_code, metric_label_list = data_proxy.query_metric_list_of_host(
-                host_ip)
-            if status_code != SUCCEED:
-                failed_list.append(host_ip)
-                continue
-
-            metric_list = DefaultWorkflow.__get_metric_names(metric_label_list)
-            host_algo[host_ip] = ModelAssign.assign_kpi_model_by_name(
-                metric_list, config)
-        return failed_list, host_algo
+            host_model[host_ip] = kpi_model
+        return host_model
 
     @staticmethod
     def __get_metric_names(metric_label_list: list) -> list:

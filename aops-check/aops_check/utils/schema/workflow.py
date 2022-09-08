@@ -52,6 +52,8 @@ class QueryWorkflowListSchema(Schema):
     filter = fields.Nested(WorkflowListFilterSchema, required=False)
     page = fields.Integer(required=False, validate=lambda s: s > 0)
     per_page = fields.Integer(required=False, validate=lambda s: 0 < s < 50)
+    sort = fields.String(required=False, validate=validate.OneOf(["create_time"]))
+    direction = fields.String(required=False, validate=validate.OneOf(["asc", "desc"]))
 
 
 class ExecuteWorkflowSchema(Schema):
