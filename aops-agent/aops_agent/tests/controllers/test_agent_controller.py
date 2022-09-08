@@ -35,7 +35,7 @@ class TestAgentController(BaseTestCase):
         mock_token.return_value = 'hdahdahiudahud'
         url = "v1/agent/basic/info"
         response = self.client.get(url, headers=self.headers_with_token)
-        self.assertEqual(SUCCESS, response.json.get('code'), response.text)
+        self.assertIn('resp', response.json.keys(), response.text)
 
     @mock.patch.object(TokenManage, 'get_value')
     def test_get_host_info_should_return_400_when_with_no_token(self, mock_token):
