@@ -115,12 +115,4 @@ def query_domain():  # noqa: E501
             domain = Domain(domain_name = d_ll)
             domain_list.append(domain)
 
-    if len(domain_list) > 0:
-        codeNum = 200
-    else:
-        codeNum = 400
-        codeString = "The current configuration domain is empty. Add a configuration domain first"
-        base_rsp = BaseResponse(codeNum, codeString)
-        return base_rsp, codeNum
-
-    return domain_list, codeNum
+    return domain_list, 200

@@ -95,7 +95,7 @@ def add_management_confs_in_domain(body=None):  # noqa: E501
                                                  "please check the input parameters.")
                 return base_rsp, codeNum
             content_string = object_parse.parse_conf_to_json(d_conf.file_path, d_conf.contents)
-            if not json.loads(content_string):
+            if not content_string or not json.loads(content_string):
                 codeNum = 400
                 base_rsp = BaseResponse(codeNum, "Input configuration content verification failed, " +
                                                  "please check the config.")
@@ -163,7 +163,7 @@ def add_management_confs_in_domain(body=None):  # noqa: E501
                 content = d_file.get("content")
                 content_string = object_parse.parse_conf_to_json(file_path, content)
                 # create the file and expected value in domain
-                if not json.loads(content_string):
+                if not content_string or not json.loads(content_string):
                     codeNum = 400
                     base_rsp = BaseResponse(codeNum, "Input configuration content verification failed," + 
                                                      "please check the config in the host.")
