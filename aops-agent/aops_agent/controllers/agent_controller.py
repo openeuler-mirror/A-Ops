@@ -36,9 +36,43 @@ def get_host_info() -> Response:
     get basic info about machine
 
     Returns:
-        a dict which contains os info,bios version and kernel version
+        Response: e.g
+            {
+                "code": int,
+                "msg" : "xxx",
+                "resp":{
+                    "os":{
+                        'os_version': os_version,
+                        'bios_version': bios_version,
+                        'kernel': kernel_version
+                        },
+                    "cpu":{
+                        "architecture": string,
+                        "core_count": string,
+                        "model_name": string,
+                        "vendor_id": string,
+                        "l1d_cache": string,
+                        "l1i_cache": string,
+                        "l2_cache": string,
+                        "l3_cache": string
+                        },
+                    "memory":{
+                        "size": "xx GB",
+                        "total": int,
+                        "info": [
+                            {
+                                "size": "xx GB",
+                                "type": "DDR4",
+                                "speed": "xxxx MT/s",
+                                "manufacturer": "string"
+                            }
+                            ...
+                            ]
+                        }
+                }
+            }
     """
-    return jsonify(StatusCode.make_response_body(Command.get_host_info()))
+    return jsonify(StatusCode.make_response_body((SUCCESS, Command.get_host_info())))
 
 
 @Command.validate_token

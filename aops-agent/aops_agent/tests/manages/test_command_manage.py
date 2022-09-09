@@ -21,7 +21,7 @@ from aops_agent.manages.command_manage import Command
 from aops_agent.models.custom_exception import InputError
 
 
-class TestRegister(unittest.TestCase):
+class TestCommandManage(unittest.TestCase):
 
     def setUp(self) -> None:
         warnings.simplefilter('ignore', ResourceWarning)
@@ -367,4 +367,136 @@ class TestRegister(unittest.TestCase):
     def test_get_memory_size_should_return_empty_str_when_get_shell_data_error(self, mock_shell_data):
         mock_shell_data.side_effect = InputError('')
         res = Command._Command__get_total_online_memory()
+        self.assertEqual('', res)
+
+    @mock.patch('aops_agent.manages.command_manage.get_shell_data')
+    def test_get_cpu_info_should_return_correct_info_when_execute_command_successful(
+            self, mock_shell_data):
+        mock_shell_data.return_value = 'Architecture:                    x86_64\n' \
+                                       'CPU(s):                          1\n' \
+                                       'Model name:                      AMD Test\n' \
+                                       'Vendor ID:                       AuthenticAMD\n' \
+                                       'L1d cache:                       32 KiB\n' \
+                                       'L1i cache:                       32 KiB\n' \
+                                       'L2 cache:                        512 KiB\n' \
+                                       'L3 cache:                        8 MiB\n'
+        expect_res = {
+            "architecture": "x86_64",
+            "core_count": "1",
+            "model_name": "AMD Test",
+            "vendor_id": "AuthenticAMD",
+            "l1d_cache": "32 KiB",
+            "l1i_cache": "32 KiB",
+            "l2_cache": "512 KiB",
+            "l3_cache": "8 MiB"
+        }
+        res = Command._Command__get_cpu_info()
+        self.assertEqual(expect_res, res)
+
+    @mock.patch('aops_agent.manages.command_manage.get_shell_data')
+    def test_get_cpu_info_should_return_null_when_execute_command_successful_but_not_get_expected_information(
+            self, mock_shell_data):
+        mock_shell_data.return_value = ''
+        expect_res = {
+            "architecture": None,
+            "core_count": None,
+            "model_name": None,
+            "vendor_id": None,
+            "l1d_cache": None,
+            "l1i_cache": None,
+            "l2_cache": None,
+            "l3_cache": None
+        }
+        res = Command._Command__get_cpu_info()
+        self.assertEqual(expect_res, res)
+
+    @mock.patch('aops_agent.manages.command_manage.get_shell_data')
+    def test_get_cpu_info_should_return_empty_dict_when_host_has_no_command_lscpu(
+            self, mock_shell_data):
+        mock_shell_data.side_effect = InputError('')
+        res = Command._Command__get_cpu_info()
+        self.assertEqual({}, res)
+
+    @mock.patch('aops_agent.manages.command_manage.get_shell_data')
+    def test_get_kernel_version_should_return_cpu_info_when_execute_command_successfully(
+            self, mock_shell_data):
+        mock_shell_data.return_value = '5.10.0-5.10.0.24.oe1.x86_64'
+        expect_res = '5.10.0-5.10.0.24'
+        res = Command._Command__get_kernel_version()
+        self.assertEqual(expect_res, res)
+
+    @mock.patch('aops_agent.manages.command_manage.get_shell_data')
+    def test_get_kernel_version_should_return_empty_string_when_execute_command_successfully_but_not_get_expected_information(
+            self, mock_shell_data):
+        mock_shell_data.return_value = 'test_info'
+        res = Command._Command__get_kernel_version()
+        self.assertEqual('', res)
+
+    @mock.patch('aops_agent.manages.command_manage.get_shell_data')
+    def test_get_kernel_version_should_return_cpu_info_when_host_has_no_command_uname(self, mock_shell_data):
+        mock_shell_data.side_effect = InputError('')
+        res = Command._Command__get_kernel_version()
+        self.assertEqual('', res)
+
+    @mock.patch('aops_agent.manages.command_manage.get_shell_data')
+    def test_get_bios_version_should_return_cpu_info_when_execute_command_successfully(self, mock_shell_data):
+        mock_shell_data.return_value = """
+                BIOS Information
+                Vendor: innotek GmbH
+                Version: VirtualBox
+                Release Date: 12/01/2006
+                Address: 0xE0000
+                Runtime Size: 128 kB
+                ROM Size: 128 kB
+                Characteristics:
+                        ISA is supported
+                        PCI is supported
+                        Boot from CD is supported
+                        Selectable boot is supported
+                        8042 keyboard services are supported (int 9h)
+                        CGA/mono video services are supported (int 10h)
+                        ACPI is supported
+        """
+        expect_res = 'VirtualBox'
+        res = Command._Command__get_bios_version()
+        self.assertEqual(expect_res, res)
+
+    @mock.patch('aops_agent.manages.command_manage.get_shell_data')
+    def test_get_bios_version_should_return_empty_string_when_execute_command_successfully_but_not_get_expected_information(
+            self, mock_shell_data):
+        mock_shell_data.return_value = 'test_info'
+        res = Command._Command__get_bios_version()
+        self.assertEqual('', res)
+
+    @mock.patch('aops_agent.manages.command_manage.get_shell_data')
+    def test_get_bios_version_should_return_cpu_info_when_host_has_no_command_dmidecode(self, mock_shell_data):
+        mock_shell_data.side_effect = InputError('')
+        res = Command._Command__get_bios_version()
+        self.assertEqual('', res)
+
+    @mock.patch('aops_agent.manages.command_manage.get_shell_data')
+    def test_get_system_info_should_return_cpu_info_when_execute_command_successfully(self, mock_shell_data):
+        mock_shell_data.return_value = """
+                    NAME="openEuler"
+                    VERSION="21.09"
+                    ID="openEuler"
+                    VERSION_ID="21.09"
+                    PRETTY_NAME="openEuler 21.09"
+                    ANSI_COLOR="0;31"
+        """
+        expect_res = 'openEuler 21.09'
+        res = Command._Command__get_system_info()
+        self.assertEqual(expect_res, res)
+
+    @mock.patch('aops_agent.manages.command_manage.get_shell_data')
+    def test_get_system_info_should_return_empty_string_when_execute_command_successfully_but_not_get_expected_information(
+            self, mock_shell_data):
+        mock_shell_data.return_value = 'test_info'
+        res = Command._Command__get_system_info()
+        self.assertEqual('', res)
+
+    @mock.patch('aops_agent.manages.command_manage.get_shell_data')
+    def test_get_system_info_should_return_cpu_info_when_host_has_no_command_cat(self, mock_shell_data):
+        mock_shell_data.side_effect = InputError('')
+        res = Command._Command__get_system_info()
         self.assertEqual('', res)

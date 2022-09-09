@@ -13,7 +13,7 @@ paths:
   /agent/basic/info:
     get:
       tags:
-      - "aops_agent"
+      - "agent"
       description: "获取主机基础信息"
       operationId: "get_host_info"
       parameters:
@@ -197,23 +197,64 @@ definitions:
   get_host_info_rsp:
     description: "获取主机基本信息"
     properties:
-      os:
-        type: "object"
-        description: "操作系统信息"
+      code:
+        type: integer
+      msg:
+        type: string
+      resp:
         properties:
-          os_version:
-            type: "string"
-            description: "操作系统版本"
-          kernel:
-            type: "string"
-            description: "kernel版本"
-          bios_version:
-            type: "string"
-            description: "bios版本"
-        required:
-        - "kernel"
-        - "os_version"
-        - "bios_version"
+          os:
+            type: "object"
+            description: "操作系统信息"
+            properties:
+              os_version:
+                type: "string"
+                description: "操作系统版本"
+              kernel:
+                type: "string"
+                description: "kernel版本"
+              bios_version:
+                type: "string"
+                description: "bios版本"
+          cpu:
+            description: cpu信息
+            properties:
+              architecture:
+                type: string
+              core_count:
+                type: string
+              model_name:
+                type: string
+              vendor_id:
+                type: string
+              l13_cache:
+                type: string
+              l1i_cache:
+                type: string
+              l2_cache:
+                type: string
+              l3_cache:
+                type: string
+          memory:
+            description: 内存信息
+            properties:
+              size :
+                type: string
+              total:
+                type: integer
+              info:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    size:
+                      type: string
+                    type:
+                      type: string
+                    speed:
+                      type: string
+                    manufacturer:
+                      type: string
   resp_collect_items_change:
     description: 采集状态修改结果
     properties:

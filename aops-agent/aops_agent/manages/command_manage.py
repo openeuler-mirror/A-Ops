@@ -11,7 +11,7 @@
 # See the Mulan PSL v2 for more details.
 # ******************************************************************************/
 import re
-from typing import Any, Tuple, Dict, Union, List
+from typing import Any, Dict, Union, List
 import json
 
 import connexion
@@ -26,8 +26,7 @@ from aops_agent.conf.status import (
     HTTP_CONNECT_ERROR,
     SUCCESS,
     StatusCode,
-    TOKEN_ERROR,
-    SERVER_ERROR
+    TOKEN_ERROR
 )
 from aops_agent.log.log import LOGGER
 from aops_agent.manages.token_manage import TokenManage as TOKEN
@@ -43,7 +42,7 @@ from aops_agent.tools.util import (
 class Command:
 
     @classmethod
-    def get_host_info(cls) -> Tuple[int, dict]:
+    def get_host_info(cls) -> dict:
         """
         get basic info about machine
 
@@ -84,62 +83,124 @@ class Command:
                         }
                 }
         """
-        try:
-            os_data = get_shell_data(['cat', '/etc/os-release'], key=False)
-            os_version_info = get_shell_data(['grep', 'PRETTY_NAME'], stdin=os_data.stdout)
-            os_data.stdout.close()
-
-            bios_data = get_shell_data(['dmidecode', '-t', '-0'], key=False)
-            bios_version_info = get_shell_data(['grep', 'Version'], stdin=bios_data.stdout)
-            bios_data.stdout.close()
-
-            kernel_data = get_shell_data(['uname', '-r'])
-
-            lscpu_data = get_shell_data(['lscpu'], key=False, env={"LANG": "en_US.utf-8"})
-            cpu_data = get_shell_data(['grep',
-                                       'Architecture\|CPU(s)\|Model name\|Vendor ID\|L1d cache\|L1i cache\|L2 cache\|L3 cache'],
-                                      stdin=lscpu_data.stdout)
-            lscpu_data.stdout.close()
-
-        except InputError:
-            LOGGER.error('Get host info error,linux has no command!')
-            return SERVER_ERROR, {}
-
-        os_version = os_version_info.split("=")[1].replace('\n', '').replace('"', '')
-        bios_version = bios_version_info.split(':')[1].replace('\n', '').replace(' ', '')
-        kernel_version = kernel_data[:re.search('[a-zA-Z]+', kernel_data).span()[0] - 1]
-
-        cpu_info = {}
-        for line in cpu_data.split('\n')[:-1]:
-            tmp = line.split(":")
-            if len(tmp) != 2:
-                continue
-            cpu_info[tmp[0]] = tmp[1].strip()
-
-        memory_info = cls.__get_memory_info()
-        memory_info['size'] = cls.__get_total_online_memory()
-
         host_info = {
             'resp': {
                 'os': {
-                    'os_version': os_version,
-                    'bios_version': bios_version,
-                    'kernel': kernel_version
+                    'os_version': cls.__get_system_info(),
+                    'bios_version': cls.__get_bios_version(),
+                    'kernel': cls.__get_kernel_version()
                 },
-                'cpu': {
-                    "architecture": cpu_info.get('Architecture'),
-                    "core_count": cpu_info.get('CPU(s)'),
-                    "model_name": cpu_info.get('Model name'),
-                    "vendor_id": cpu_info.get('Vendor ID'),
-                    "l1d_cache": cpu_info.get('L1d cache'),
-                    "l1i_cache": cpu_info.get('L1i cache'),
-                    "l2_cache": cpu_info.get('L2 cache'),
-                    "l3_cache": cpu_info.get('L3 cache')
-                },
-                'memory': memory_info
+                'cpu': cls.__get_cpu_info(),
+                'memory': cls.__get_memory_info()
             }
         }
-        return SUCCESS, host_info
+        return host_info
+
+    @staticmethod
+    def __get_system_info() -> str:
+        """
+            get system name and its version
+
+        Returns:
+            str: e.g openEuler 21.09
+        """
+        try:
+            os_data = get_shell_data(['cat', '/etc/os-release'])
+        except InputError:
+            LOGGER.error('Get system info error,linux has no command!')
+            return ''
+
+        res = re.search('(?=PRETTY_NAME=).+', os_data)
+        if res:
+            return res.group()[12:].strip('"')
+        LOGGER.warning('Get os version fail, please check file /etc/os-release and try it again')
+        return ''
+
+    @staticmethod
+    def __get_bios_version() -> str:
+        """
+            get bios version number
+
+        Returns:
+            str
+        """
+        try:
+            bios_data = get_shell_data(['dmidecode', '-t', 'bios'])
+        except InputError:
+            LOGGER.error('Get system info error,linux has no command dmidecode!')
+            return ''
+
+        res = re.search('(?=Version:).+', bios_data)
+
+        if res:
+            return res.group()[8:].strip()
+        LOGGER.warning('Get bios version fail, please check dmidecode and try it again')
+        return ''
+
+    @staticmethod
+    def __get_kernel_version() -> str:
+        """
+            get kernel version number
+
+        Returns:
+            str
+        """
+        try:
+            kernel_data = get_shell_data(['uname', '-r'])
+        except InputError:
+            LOGGER.error('Get system info error,linux has no command!')
+            return ''
+        res = re.search('[\d\.]+-[\d\.]+[\d]', kernel_data)
+        if res:
+            return res.group()
+        LOGGER.warning('Get kernel version fail, please check dmidecode and try it again')
+        return ''
+
+    @staticmethod
+    def __get_cpu_info() -> Dict[str, str]:
+        """
+        get cpu info by command lscpu
+
+        Returns:
+            dict: e.g
+                {
+                    "architecture": string,
+                    "core_count": string,
+                    "model_name": string,
+                    "vendor_id": string,
+                    "l1d_cache": string,
+                    "l1i_cache": string,
+                    "l2_cache": string,
+                    "l3_cache": string
+                }
+        """
+        try:
+            lscpu_data = get_shell_data(['lscpu'], env={"LANG": "en_US.utf-8"})
+        except InputError:
+            LOGGER.error('Get cpu info error,linux has no command lscpu or grep.')
+            return {}
+
+        info_list = re.findall('.+:.+', lscpu_data)
+        if not info_list:
+            LOGGER.warning('Failed to read cpu info by lscpu, please check it and try again.')
+
+        cpu_info = {}
+        for info in info_list:
+            tmp = info.split(":")
+            cpu_info[tmp[0]] = tmp[1].strip()
+
+        res = {
+            "architecture": cpu_info.get('Architecture'),
+            "core_count": cpu_info.get('CPU(s)'),
+            "model_name": cpu_info.get('Model name'),
+            "vendor_id": cpu_info.get('Vendor ID'),
+            "l1d_cache": cpu_info.get('L1d cache'),
+            "l1i_cache": cpu_info.get('L1i cache'),
+            "l2_cache": cpu_info.get('L2 cache'),
+            "l3_cache": cpu_info.get('L3 cache')
+        }
+
+        return res
 
     @staticmethod
     def __get_total_online_memory() -> str:
@@ -169,6 +230,7 @@ class Command:
         Returns:
             dict: e.g
                 {
+                    "size": "xx GB",
                     "total": int,
                     "info": [
                         {
@@ -183,6 +245,8 @@ class Command:
 
         """
         res = {}
+        if Command.__get_total_online_memory():
+            res['size'] = Command.__get_total_online_memory()
 
         try:
             memory_data = get_shell_data(['dmidecode', '-t', 'memory']).split('Memory Device')
@@ -234,6 +298,7 @@ class Command:
             token = TOKEN.get_value()
             access_token = connexion.request.headers.get('access_token')
             if token == '' or access_token != token:
+                LOGGER.warning("token is incorrect when request %s" % connexion.request.path)
                 return jsonify(StatusCode.make_response_body(TOKEN_ERROR))
             return func(*arg, **kwargs)
 
