@@ -51,7 +51,7 @@
                             <div class="meg-row">
                                 <a-row type="flex">
                                     <a-col :span="12" :order="1">
-                                        <span class="bold">系统名：
+                                        <span class="bold">操作系统版本：
                                             <span>
                                                 <CutText :text="os.os_version" :length="25"></CutText>
                                             </span>
@@ -92,21 +92,21 @@
                                     </span>
                                 </a-col>
                                 <a-col :span="6" :order="2">
-                                    <span class="bold">内核数：
+                                    <span class="bold">核数：
                                         <span>
                                             <CutText :text="cpu.core_count" :length="14"></CutText>
                                         </span>
                                     </span>
                                 </a-col>
                                 <a-col :span="6" :order="3">
-                                    <span class="bold">verdorld：
+                                    <span class="bold">厂商：
                                         <span>
                                             <CutText :text="cpu.vendor_id" :length="14"></CutText>
                                         </span>
                                     </span>
                                 </a-col>
                                 <a-col :span="6" :order="4">
-                                    <span class="bold">model名称：
+                                    <span class="bold">处理器：
                                         <span>
                                             <CutText :text="cpu.model_name" :length="14"></CutText>
                                         </span>
@@ -118,28 +118,28 @@
                         <div class="meg-row">
                             <a-row type="flex">
                                 <a-col :span="6" :order="1">
-                                    <span class="bold">L1d_cache：
+                                    <span class="bold">L1d cache：
                                         <span>
                                             <CutText :text="cpu.l1d_cache"></CutText>
                                         </span>
                                     </span>
                                 </a-col>
                                 <a-col :span="6" :order="2">
-                                    <span class="bold">L1i_cache：
+                                    <span class="bold">L1i cache：
                                         <span>
                                             <CutText :text="cpu.l1i_cache"></CutText>
                                         </span>
                                     </span>
                                 </a-col>
                                 <a-col :span="6" :order="3">
-                                    <span class="bold">L2_cache：
+                                    <span class="bold">L2 cache：
                                         <span>
                                             <CutText :text="cpu.l2_cache"></CutText>
                                         </span>
                                     </span>
                                 </a-col>
                                 <a-col :span="6" :order="4">
-                                    <span class="bold">L3_cache：
+                                    <span class="bold">L3 cache：
                                         <span>
                                             <CutText :text="cpu.l3_cache"></CutText>
                                         </span>

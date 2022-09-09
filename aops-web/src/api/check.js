@@ -187,6 +187,8 @@ export function getWorkFlowList({tableInfo}) {
   const domain = (tableInfo.filters.domain && tableInfo.filters.domain[0]) ? tableInfo.filters.domain : undefined;
   const app = (tableInfo.filters.app_name && tableInfo.filters.app_name[0]) ? tableInfo.filters.app_name : undefined;
   const status = (tableInfo.filters.status && tableInfo.filters.status[0]) ? tableInfo.filters.status : undefined;
+  const sort = tableInfo.sorter.order && tableInfo.sorter.field;
+  const direction = directionMap[tableInfo.sorter.order];
   return request({
     url: api.getWorkflowList,
     method: 'post',
@@ -196,6 +198,8 @@ export function getWorkFlowList({tableInfo}) {
         app,
         status
       },
+      sort,
+      direction,
       page: tableInfo.pagination.current,
       per_page: tableInfo.pagination.pageSize
     }
