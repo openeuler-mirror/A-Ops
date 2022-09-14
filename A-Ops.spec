@@ -1,5 +1,5 @@
 Name:		A-Ops
-Version:	v1.2.3
+Version:	v1.2.6
 Release:	1
 Summary:	The intelligent ops toolkit for openEuler
 License:	MulanPSL2
@@ -14,6 +14,10 @@ patch0001: 0001-modify-to-adapt-to-oe2209-x86.patch
 patch0001: 0001-modify-to-adapt-to-oe2209-arm.patch
 %endif
 
+patch0002: 0002-add-create-time-attribute-for-workflow.patch 
+patch0003: 0003-fix-ragdoll-add-return-validation-of-config-analysis.patch
+patch0004: 0004-update-get-host-info.patch
+patch0005: 0005-web-fine-tuning.patch
 
 # build for web
 BuildRequires: nodejs node-gyp nodejs-yarn
@@ -53,7 +57,7 @@ Summary:    utils for A-Ops
 Requires:   python3-concurrent-log-handler python3-xmltodict python3-pyyaml python3-marshmallow >= 3.13.0
 Requires:   python3-requests python3-xlrd python3-prettytable python3-pygments python3-sqlalchemy
 Requires:   python3-elasticsearch >= 7 python3-prometheus-api-client python3-urllib3 python3-werkzeug
-Requires:   python3-flask python3-flask-restful python3-PyMySQL
+Requires:   python3-flask python3-flask-restful python3-PyMySQL python3-kafka-python
 
 %description -n aops-utils
 utils for A-Ops
@@ -91,7 +95,8 @@ Intelligent ops toolkit for openEuler
 
 
 %package -n gala-ragdoll
-Summary:	Configuration traceability
+Summary:    Configuration traceability
+Requires:   python3-gala-ragdoll = %{version}-%{release}
 
 %description -n gala-ragdoll
 Configuration traceability
@@ -99,11 +104,12 @@ Configuration traceability
 
 %package -n python3-gala-ragdoll
 Summary: python3 pakcage of gala-ragdoll
-Requires: gala-ragdoll = %{version}-%{release} python3-flask-testing python3-libyang git
+Requires: python3-flask-testing python3-libyang git
 Requires: python3-werkzeug python3-connexion python3-swagger-ui-bundle
 
 %description -n python3-gala-ragdoll
 python3 pakcage of gala-ragdoll
+
 
 %package -n gala-spider
 Summary:    Configuration traceability
@@ -173,6 +179,10 @@ tools for aops, it's about agent deploy
 %setup
 %setup -T -D -a 1
 %patch0001 -p1
+%patch0002 -p1
+%patch0003 -p1
+%patch0004 -p1
+%patch0005 -p1
 cp -rf A-Ops-web-node-modules/node_modules aops-web/
 
 
@@ -306,18 +316,18 @@ popd
 %systemd_postun_with_restart gala-gopher.service
 
 
-%pre -n python3-gala-ragdoll
+%pre -n gala-ragdoll
 if [ -f "%{systemd_dir}/gala-ragdoll.service" ] ; then
         systemctl enable gala-ragdoll.service || :
 fi
 
-%post -n python3-gala-ragdoll
+%post -n gala-ragdoll
 %systemd_post gala-ragdoll.service
 
-%preun -n python3-gala-ragdoll
+%preun -n gala-ragdoll
 %systemd_preun gala-ragdoll.service
 
-%postun -n python3-gala-ragdoll
+%postun -n gala-ragdoll
 %systemd_postun gala-ragdoll.service
 
 %pre -n gala-spider
@@ -385,7 +395,6 @@ fi
 %attr(0644,root,root) %{_sysconfdir}/aops/manager.ini
 %attr(0644,root,root) %{_sysconfdir}/aops/default.json
 %attr(0755,root,root) %{_bindir}/aops-manager
-%attr(0755,root,root) %{_bindir}/aops-basedatabase
 %attr(0755,root,root) %{_unitdir}/aops-manager.service
 %{python3_sitelib}/aops_manager*.egg-info
 %{python3_sitelib}/aops_manager/*
@@ -480,7 +489,35 @@ fi
 
 
 %changelog
-* Fri Aug 27 2022 zhuyuncheng<zhuyuncheng@huawei.com> - v1.2.3-1
+* Wed Sep 14 2022 zhuyuncheng<zhuyuncheng@huawei.com> - v1.2.6-1
+- move aops-basedatabase to aops-tools
+- rename default scene from 'unknown' to 'normal'
+
+* Tue Sep 13 2022 zhaoyuxing<zhaoyuxing2@huawei.com> - v1.2.5-4
+- bug fix: start gala-ragdoll.service when install gala-ragdoll.
+
+* Fri Sep 9 2022 zhuyuncheng<zhuyuncheng@huawei.com> - v1.2.5-3
+- bug fix: add create time attribute of workflow, fix assign model bug of aops-check default mode
+- update agent get host info interface and some test cases
+- fix gala-ragdoll return code issue
+- web fine-tuning for workflow and agent info.
+
+* Wed Sep 7 2022 zhaoyuxing<zhaoyuxing2@huawei.com> - v1.2.5-2
+- bug fix: adjust dependent packages for gala-ragdoll.
+
+* Tue Sep 6 2022 zhuyuncheng<zhuyuncheng@huawei.com> - v1.2.5-1
+- bug fix: bugfix of aops-web and aops-check's interaction
+
+* Fri Sep 2 2022 zhuyuncheng<zhuyuncheng@huawei.com> - v1.2.4-1
+- add default mode of aops-check, which can run independently.
+
+* Mon Aug 29 2022 zhaoyuxing<zhaoyuxing2@huawei.com> - v1.2.3-3
+- bug fix: gala-spider adapt to abnormal event format change.
+
+* Mon Aug 29 2022 zhaoyuxing<zhaoyuxing2@huawei.com> - v1.2.3-2
+- bug fix: bugfix for gopher report metadata to kafka.
+
+* Sat Aug 27 2022 zhuyuncheng<zhuyuncheng@huawei.com> - v1.2.3-1
 - Add requires of aops-check for new features.
 
 * Tue Aug 23 2022 zhaoyuxing<zhaoyuxing2@huawei.com> - v1.2.2-2

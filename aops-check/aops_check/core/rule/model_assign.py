@@ -15,7 +15,7 @@ Time:
 Author:
 Description:
 """
-from typing import Dict, List
+from typing import Dict
 
 
 METRIC_MODEL_MAP = {

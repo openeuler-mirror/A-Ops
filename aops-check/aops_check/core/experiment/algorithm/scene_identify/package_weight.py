@@ -64,7 +64,7 @@ SCENE_COLLECT_MAP = {
     "cloud": {
         "gala-gopher": ["system_infos"]
     },
-    "unknown": {
+    "normal": {
         "gala-gopher": ["system_infos"]
     }
 }
@@ -101,8 +101,8 @@ class PackageWeightIdentify:
         self.__app_scene_map = app_scene_map or APP_SCENE_MAP
         self.__scene_collect_map = scene_collect_map or SCENE_COLLECT_MAP
 
-        if "unknown" not in self.__scene_collect_map:
-            raise ValueError("An 'unknown' scene should be given in case of no scene matches.")
+        if "normal" not in self.__scene_collect_map:
+            raise ValueError("An 'normal' scene should be given in case of no scene matches.")
 
     def get_scene(self) -> Tuple[str, PluginsCollectItems]:
         """
@@ -116,7 +116,7 @@ class PackageWeightIdentify:
                 scene_score[scene] += self.__app_scene_map[app][scene]
 
         if not scene_score:
-            recommend_scene = "unknown"
+            recommend_scene = "normal"
         else:
             # for now, if two scene have same value, choose the first one
             sorted_scene = sorted(scene_score, key=lambda x: x[1])

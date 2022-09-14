@@ -25,6 +25,6 @@ setup(
         ('/etc/aops', ['conf/manager.ini', 'conf/default.json']),
         ('/usr/lib/systemd/system', ['aops-manager.service']),
     ],
-    scripts=['aops-manager', 'aops-basedatabase'],
+    scripts=['aops-manager'],
     zip_safe=False
 )
