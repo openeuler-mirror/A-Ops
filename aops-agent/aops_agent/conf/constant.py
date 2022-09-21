@@ -58,6 +58,7 @@ SCANNED_APPLICATION = ["mysql", "kubernetes", "hadoop", "nginx", "docker", "gala
 PLUGIN_WITH_CLASS = {
     'gala-gopher': "GalaGopher"
 }
+HOST_COLLECT_INFO_SUPPORT = ["cpu", "disk", "memory", "os"]
 REGISTER_HELP_INFO = """
     you can choose start or register in manager,
     if you choose register,you need to provide the following information.

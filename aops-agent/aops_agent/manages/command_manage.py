@@ -41,10 +41,12 @@ from aops_agent.tools.util import (
 
 class Command:
 
-    @classmethod
-    def get_host_info(cls) -> dict:
+    def get_host_info(self, info_type: List[str]) -> dict:
         """
         get basic info about machine
+
+        Args:
+            info_type(list): e.g [memory, os, cpu, disk]
 
         Returns:
             int: status code
@@ -80,20 +82,21 @@ class Command:
                                 ...
                                 ]
                             }
+                            'disk':[
+                                {
+                                  "capacity": xx GB,
+                                  "model": "string",
+                                }
+                            ]
                         }
                 }
         """
-        host_info = {
-            'resp': {
-                'os': {
-                    'os_version': cls.__get_system_info(),
-                    'bios_version': cls.__get_bios_version(),
-                    'kernel': cls.__get_kernel_version()
-                },
-                'cpu': cls.__get_cpu_info(),
-                'memory': cls.__get_memory_info()
-            }
-        }
+        host_info = {"resp": {}}
+
+        for info_name in info_type:
+            func_name = getattr(self, f"_get_{info_name}_info")
+            host_info["resp"][info_name] = func_name()
+
         return host_info
 
     @staticmethod
@@ -115,6 +118,24 @@ class Command:
             return res.group()[12:].strip('"')
         LOGGER.warning('Get os version fail, please check file /etc/os-release and try it again')
         return ''
+
+    def _get_os_info(self) -> Dict[str, str]:
+        """
+            get os info
+
+        Returns:
+                {
+                    'os_version': string,
+                    'bios_version': string,
+                    'kernel': string
+                }
+        """
+        res = {
+            'os_version': self.__get_system_info(),
+            'bios_version': self.__get_bios_version(),
+            'kernel': self.__get_kernel_version()
+        }
+        return res
 
     @staticmethod
     def __get_bios_version() -> str:
@@ -150,14 +171,14 @@ class Command:
         except InputError:
             LOGGER.error('Get system info error,linux has no command!')
             return ''
-        res = re.search('[\d\.]+-[\d\.]+[\d]', kernel_data)
+        res = re.search(r'[\d\.]+-[\d\.]+[\d]', kernel_data)
         if res:
             return res.group()
         LOGGER.warning('Get kernel version fail, please check dmidecode and try it again')
         return ''
 
     @staticmethod
-    def __get_cpu_info() -> Dict[str, str]:
+    def _get_cpu_info() -> Dict[str, str]:
         """
         get cpu info by command lscpu
 
@@ -223,7 +244,7 @@ class Command:
         return ''
 
     @staticmethod
-    def __get_memory_info() -> Dict[str, Union[int, List[Dict[str, Any]]]]:
+    def _get_memory_info() -> Dict[str, Union[int, List[Dict[str, Any]]]]:
         """
         get memory detail info and memory stick count
 
@@ -352,6 +373,47 @@ class Command:
             save_data_to_file(json.dumps({"access_token": ret_data.get('token')}),
                               DEFAULT_TOKEN_PATH)
             return SUCCESS
-        else:
-            LOGGER.error(ret_data)
-            return int(ret_data.get('code'))
+        LOGGER.error(ret_data)
+        return int(ret_data.get('code'))
+
+    @staticmethod
+    def _get_disk_info() -> List[Dict]:
+        """
+            get disk capacity and model
+
+        Returns:
+            list: e.g
+                [
+                    {
+                      "capacity": string,
+                      "model": "string",
+                    }
+                ]
+        """
+        try:
+            lshw_data = get_shell_data(['lshw', '-json', '-c', 'disk'])
+        except InputError:
+            LOGGER.error('Failed to get hard disk info, Linux has no command lshw')
+            return []
+
+        # Convert the command result to a json string
+        # lshw_data e.g  "{...},{...},{...}"
+        lshw_data = f"[{lshw_data}]"
+
+        try:
+            disk_info_list = json.loads(lshw_data)
+        except json.decoder.JSONDecodeError:
+            LOGGER.warning("unexpected execution result, "
+                           "please check command 'lshw -json -c disk'")
+            disk_info_list = []
+
+        res = []
+        if disk_info_list:
+            for disk_info in disk_info_list:
+                tmp = {
+                    "model": disk_info.get('product'),
+                    "capacity": f"{disk_info.get('size', 0) // 10 ** 9}GB"
+                }
+                res.append(tmp)
+
+        return res

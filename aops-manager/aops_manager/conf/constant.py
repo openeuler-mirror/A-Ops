@@ -26,7 +26,7 @@ TASK_INDEX = "ansible_task"
 HOST_INFO_INDEX = 'host_information'
 
 ROUTE_AGENT_PLUGIN_INFO = '/v1/agent/plugin/info'
-ROUTE_AGENT_HOST_INFO = '/v1/agent/basic/info'
+ROUTE_AGENT_HOST_INFO = '/v1/agent/host/info'
 
 # agent
 AGENT_PLUGIN_START = "/v1/agent/plugin/start"

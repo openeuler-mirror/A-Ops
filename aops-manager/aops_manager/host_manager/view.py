@@ -15,8 +15,10 @@ Time:
 Author:
 Description: Restful APIs for host
 """
+import json
 from typing import Dict, Tuple
 
+import requests
 from flask import jsonify, request
 
 from aops_manager.conf.constant import ROUTE_AGENT_HOST_INFO, CHECK_WORKFLOW_HOST_EXIST
@@ -345,8 +347,12 @@ class GetHostInfo(BaseResponse):
                 host_info = {'host_id': query.host_id}
                 incorrect_host_list.remove(query.host_id)
                 url = f"http://{query.public_ip}:{query.agent_port}{ROUTE_AGENT_HOST_INFO}"
-                ret = self.get_response("GET", url, {}, header=headers)
-                host_info['host_info'] = ret.get('resp', {})
+                ret = requests.post(url,
+                                    json.dumps(["cpu", "os", "memory"]),
+                                    headers=headers,
+                                    timeout=10)
+
+                host_info['host_info'] = ret.json().get('resp', {})
                 host_infos.append(host_info)
             host_infos.extend({"host_id": host_id, "host_info": {}} for host_id in incorrect_host_list)
             res = {"host_infos": host_infos}

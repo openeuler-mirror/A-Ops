@@ -172,7 +172,8 @@ def judge_probe_can_change(probe: AttrDict, probe_status: Dict[str, str]) -> boo
         Determine which probe can be changed.
         It must meet the following conditions
         1. probe name in gopher config file, the status is on or off.
-        2. probe name in gopher config file, the status is auto and it has an option named 'start_check'.
+        2. probe name in gopher config file, the status is auto and
+           it has an option named 'start_check'.
 
     Args:
         probe(AttrDict):

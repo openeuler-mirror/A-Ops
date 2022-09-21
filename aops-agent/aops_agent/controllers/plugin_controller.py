@@ -11,7 +11,12 @@
 # ******************************************************************************/
 from flask import Response, jsonify
 
-from aops_agent.conf.constant import INFORMATION_ABOUT_RPM_SERVICE, INSTALLABLE_PLUGIN, DATA_MODEL, PLUGIN_WITH_CLASS
+from aops_agent.conf.constant import (
+    INFORMATION_ABOUT_RPM_SERVICE,
+    INSTALLABLE_PLUGIN,
+    DATA_MODEL,
+    PLUGIN_WITH_CLASS
+)
 from aops_agent.conf.status import StatusCode, PARAM_ERROR, SERVER_ERROR, SUCCESS
 from aops_agent.log.log import LOGGER
 from aops_agent.manages.command_manage import Command
@@ -96,7 +101,8 @@ def change_collect_items(collect_items_status) -> Response:
         if hasattr(plugin_manage, plugin_class_name):
             plugin = getattr(plugin_manage, plugin_class_name)
             if hasattr(plugin, 'change_items_status'):
-                res['resp'][plugin_name] = plugin.change_items_status(collect_items_status[plugin_name])
+                res['resp'][plugin_name] = plugin.change_items_status(
+                    collect_items_status[plugin_name])
         else:
             LOGGER.warning(f'{plugin_name} is not supported by collect items')
             unsupported_plugin_list.append(plugin_name)
