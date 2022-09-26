@@ -1065,7 +1065,8 @@ export const asyncRouterMap = [
                         ]
                     }
                 ]
-            },
+            }
+            /* 暂时先隐去架构感知模块
             {
                 path: routeMap.networkTopo.path,
                 name: 'networkTopo',
@@ -1076,6 +1077,7 @@ export const asyncRouterMap = [
                     permission: ['networkTopo']
                 }
             }
+            */
         ]
     },
     {

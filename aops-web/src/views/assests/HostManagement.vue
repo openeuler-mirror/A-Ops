@@ -10,7 +10,7 @@
                 <a-alert type="info" show-icon>
                   <div slot="message">
                     <span>{{ `已选择`+ selectedRowKeys.length +`项` }}</span>
-                    <a v-if="selectedRowKeys.length > 0" @click="deleteHostBash(selectedRowKeys, selectedRows)">批量删除</a>
+                    <a v-if="selectedRowKeys.length > 0" @click="deleteHostBash(selectedRowKeys, selectedRowsAll)">批量删除</a>
                   </div>
                 </a-alert>
               </a-col>
@@ -78,6 +78,7 @@ import store from '@/store'
 import router from '@/vendor/ant-design-pro/router'
 
 import MyPageHeaderWrapper from '@/views/utils/MyPageHeaderWrapper'
+import { getSelectedRow } from '@/views/utils/getSelectedRow'
 import HostDetailDrawer from './components/HostDetailDrawer'
 
 import { hostList, deleteHost, hostGroupList } from '@/api/assest'
@@ -105,7 +106,7 @@ export default {
             tableData: [],
             groupData: [],
             selectedRowKeys: [],
-            selectedRows: [],
+            selectedRowsAll: [],
             tableIsLoading: false,
             detailId: undefined,
             detailVisisble: false,
@@ -195,7 +196,7 @@ export default {
         },
         onSelectChange (selectedRowKeys, selectedRows) {
             this.selectedRowKeys = selectedRowKeys
-            this.selectedRows = selectedRows
+            this.selectedRowsAll = getSelectedRow(selectedRowKeys, this.selectedRowsAll, this.tableData, 'host_id')
         },
         // 获取列表数据
         getHostList () {
@@ -242,11 +243,11 @@ export default {
                 onCancel () {}
             })
         },
-        deleteHostBash (selectedRowKeys, selectedRows) {
+        deleteHostBash (selectedRowKeys, selectedRowsAll) {
             const _this = this
             this.$confirm({
                 title: (<div><p>删除后无法恢复</p><p>请确认删除以下主机:</p></div>),
-                content: () => selectedRows.map(row => (<p><span>{ row.host_name }</span></p>)),
+                content: () => selectedRowsAll.map(row => (<p><span>{ row.host_name }</span></p>)),
                 icon: () => <a-icon type="exclamation-circle" />,
                 okType: 'danger',
                 okText: '删除',
@@ -261,33 +262,52 @@ export default {
                     hostList
                 })
                 .then((res) => {
-                    this.noticeDeleteResult(res)
+                    if (res.fail_list && Object.keys(res.fail_list).length > 0) {
+                        _this.deleteErrorHandler(res);
+                    } else {
+                        this.$message.success('删除成功')
+                    }
                     _this.getHostList()
                     if (isBash) _this.selectedRowKeys = []
                     resolve()
                 })
                 .catch((err) => {
-                    _this.$message.error(err.response.data.msg)
+                    if (err.data.code === 1103) {
+                        _this.deleteErrorHandler(err.data, true);
+                    } else {
+                        _this.$message.error(err.response.data.msg)
+                    }
                     reject(err)
                 })
             })
         },
-        noticeDeleteResult(res) {
-            if (res.succeed_list && res.succeed_list.length > 0) {
-                if (res.fail_list && res.fail_list.length > 0) {
-                    this.$notification['warning']({
-                        message: '部分主机删除失败',
-                        description: (<div>
-                            <p>{`失败主机如下：${res.fail_list.join('、')}`}</p>
-                        </div>),
-                        duration: 5
-                    });
-                } else {
-                    this.$message.success('删除成功')
-                }
-                return
-            }
-            this.$message.error('删除失败')
+        deleteErrorHandler (data, allFailed = false) {
+            const deleteErrorList = Object.keys(data.fail_list || {})
+                .map(hostId => {
+                    return {
+                        hostId,
+                        errorInfo: data.fail_list && data.fail_list[hostId]
+                    }
+                });
+            this.$notification['error']({
+                message: `${ allFailed ? '删除失败' : '部分主机删除失败'}`,
+                description: (<div>
+                    <p>{`${ allFailed ? '全部' : ''}${deleteErrorList.length}个主机删除失败：`}</p>
+                    {
+                        deleteErrorList.slice(0, 3).map((errorInfo, idx) => {
+                            return (<p>{`${idx + 1}、`}
+                                <span>{`${errorInfo.hostId}: `}</span>
+                                <span>{ errorInfo.errorInfo }</span>
+                            </p>)
+                        })
+                    }
+                    {
+                        deleteErrorList.length > 3 &&
+                            <p>更多错误信息请查看返回信息...</p>
+                    }
+                </div>),
+                duration: 5
+            });
         },
         handleReset () {
             this.pagination = defaultPagination
