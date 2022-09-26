@@ -60,7 +60,7 @@
                 <span>编辑</span>
                 ----------------
                 <a-divider type="vertical" /> -->
-                <a @click="deleteHost(record)">{{ getHostId(record.host_id, record.host_name) }}删除</a>
+                <a @click="deleteHost(record)">删除</a>
             </span>
         </a-table>
       </div>
@@ -110,7 +110,7 @@ export default {
             tableIsLoading: false,
             detailId: undefined,
             detailVisisble: false,
-            hostId: []
+            deleteHostTempInfo: {}
         }
     },
     computed: {
@@ -233,6 +233,12 @@ export default {
         },
         deleteHost (record) {
             const _this = this
+            // 保存单独删除时的主机信息，错误提示时需要展示主机名
+            this.deleteHostTempInfo = {
+                host_id: record.host_id,
+                host_name: record.host_name
+            }
+
             this.$confirm({
                 title: (<div><p>删除后无法恢复</p><p>请确认删除以下主机:</p></div>),
                 content: (<span>{ record.host_name }</span>),
@@ -268,7 +274,10 @@ export default {
                         this.$message.success('删除成功')
                     }
                     _this.getHostList()
-                    if (isBash) _this.selectedRowKeys = []
+                    if (isBash) {
+                        _this.selectedRowKeys = []
+                        _this.selectedRowsAll = []
+                    }
                     resolve()
                 })
                 .catch((err) => {
@@ -277,15 +286,22 @@ export default {
                     } else {
                         _this.$message.error(err.response.data.msg)
                     }
-                    reject(err)
+                    // 业务逻辑，报错时依然关闭弹窗。因此触发resolve()
+                    resolve()
                 })
             })
         },
         deleteErrorHandler (data, allFailed = false) {
             const deleteErrorList = Object.keys(data.fail_list || {})
                 .map(hostId => {
+                    let matchedHost = this.selectedRowsAll.filter(item => item.host_id === hostId)[0];
+                    // 正常情况下，未匹配到说明selectedRowsAll和返回的错误主机id不匹配。则说明用户是直接点击表格的删除按钮提交的
+                    if (!matchedHost) {
+                        matchedHost = this.deleteHostTempInfo
+                    }
                     return {
                         hostId,
+                        hostName: matchedHost && matchedHost.host_name,
                         errorInfo: data.fail_list && data.fail_list[hostId]
                     }
                 });
@@ -296,7 +312,7 @@ export default {
                     {
                         deleteErrorList.slice(0, 3).map((errorInfo, idx) => {
                             return (<p>{`${idx + 1}、`}
-                                <span>{`${errorInfo.hostId}: `}</span>
+                                <span>{`${errorInfo.hostName}: `}</span>
                                 <span>{ errorInfo.errorInfo }</span>
                             </p>)
                         })
@@ -342,9 +358,6 @@ export default {
             }).catch(function (err) {
                 _this.$message.error(err.response.data.msg)
             }).finally(function () {})
-        },
-        getHostId(hostId, hostName) {
-            this.hostId[hostName] = hostId
         }
     },
     mounted: function () {
