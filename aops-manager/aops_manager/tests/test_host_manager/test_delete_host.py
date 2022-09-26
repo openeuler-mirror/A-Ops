@@ -46,7 +46,7 @@ class TestDeleteHost(unittest.TestCase):
         mock_mysql_connect.return_value = True
         mock_delete_host.return_value = SUCCEED, {
             'succeed_list': ['test_host_id_1', 'test_host_id_2', 'test_host_id_3'],
-            'fail_list': [],
+            'fail_list': {},
             'host_info': {'test_host_id_1': '', 'test_host_id_2': '', 'test_host_id_3': ''}
         }
         mock_check_json = {
@@ -72,7 +72,7 @@ class TestDeleteHost(unittest.TestCase):
         mock_mysql_connect.return_value = True
         mock_delete_host.return_value = SUCCEED, {
             'succeed_list': [],
-            'fail_list': [],
+            'fail_list': {},
             'host_info': {}
         }
         mock_check_json = {
@@ -87,7 +87,9 @@ class TestDeleteHost(unittest.TestCase):
                       content_type='application/json'
                       )
         resp = client.delete('/manage/host/delete', json=input_data, headers=header_with_token)
-        self.assertEqual(input_data['host_list'], resp.json['fail_list'])
+        expect_res = dict(zip(input_data['host_list'],
+                              len(input_data['host_list']) * ("There are workflow in check",)))
+        self.assertEqual(expect_res, resp.json['fail_list'])
 
     @responses.activate
     @mock.patch.object(HostProxy, 'delete_host')
@@ -98,7 +100,7 @@ class TestDeleteHost(unittest.TestCase):
         mock_mysql_connect.return_value = True
         mock_delete_host.return_value = SUCCEED, {
             'succeed_list': ['test_host_id_2'],
-            'fail_list': [],
+            'fail_list': {},
             'host_info': {'test_host_id_2': ''}
         }
         mock_check_json = {
@@ -113,7 +115,10 @@ class TestDeleteHost(unittest.TestCase):
                       content_type='application/json'
                       )
         resp = client.delete('/manage/host/delete', json=input_data, headers=header_with_token)
-        expect_fail_list = ['test_host_id_1', 'test_host_id_3']
+        expect_fail_list = {
+            'test_host_id_1':"There are workflow in check",
+            'test_host_id_3':"There are workflow in check"
+        }
         self.assertEqual(expect_fail_list, resp.json.get('fail_list'), resp.json)
 
     def test_delete_host_should_return_token_error_when_part_of_input_with_no_token(self):
@@ -138,8 +143,9 @@ class TestDeleteHost(unittest.TestCase):
                       status=500,
                       content_type='application/json'
                       )
+        expect_res = dict(zip(input_data['host_list'],len(input_data['host_list'])*("query workflow fail",)))
         resp = client.delete('/manage/host/delete', json=input_data, headers=header_with_token)
-        self.assertEqual(input_data['host_list'], resp.json.get('fail_list'), resp.json)
+        self.assertEqual(expect_res, resp.json.get('fail_list'), resp.json)
 
     @mock.patch.object(HostProxy, 'connect')
     def test_delete_host_should_return_database_error_when_database_cannot_connect(
