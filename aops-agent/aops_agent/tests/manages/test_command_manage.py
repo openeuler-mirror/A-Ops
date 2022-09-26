@@ -256,7 +256,8 @@ class TestCommandManage(unittest.TestCase):
         self.assertEqual(SUCCESS, data)
 
     @mock.patch('aops_agent.manages.command_manage.get_shell_data')
-    def test_get_memory_info_should_return_memory_info_when_get_shell_data_is_correct(self, mock_shell_data):
+    def test_get_memory_info_should_return_memory_info_when_get_shell_data_is_correct(
+            self, mock_shell_data):
         mock_shell_data.return_value = """
             Memory Device
                     Array Handle: 0x0006
@@ -302,12 +303,12 @@ class TestCommandManage(unittest.TestCase):
             ]
         }
 
-        res = Command()._Command__get_memory_info()
+        res = Command()._get_memory_info()
         self.assertEqual(expect_res, res)
 
     @mock.patch('aops_agent.manages.command_manage.get_shell_data')
-    def test_get_memory_info_should_return_empty_list_when_memory_info_is_not_showed(self, mock_shell_data):
-
+    def test_get_memory_info_should_return_empty_list_when_memory_info_is_not_showed(
+            self, mock_shell_data):
         mock_shell_data.return_value = """
                     Memory Device
                     Array Handle: 0x0006
@@ -325,28 +326,31 @@ class TestCommandManage(unittest.TestCase):
         """
         expect_res = {'info': [], 'total': 0}
 
-        res = Command()._Command__get_memory_info()
+        res = Command()._get_memory_info()
         self.assertEqual(expect_res, res)
 
     @mock.patch('aops_agent.manages.command_manage.get_shell_data')
-    def test_get_memory_info_should_return_empty_dict_when_get_shell_data_is_incorrect_data(self, mock_shell_data):
+    def test_get_memory_info_should_return_empty_dict_when_get_shell_data_is_incorrect_data(
+            self, mock_shell_data):
         """
             This situation exists in the virtual machine
         """
         mock_shell_data.return_value = """
                 test text 
         """
-        res = Command()._Command__get_memory_info()
+        res = Command()._get_memory_info()
         self.assertEqual({}, res)
 
     @mock.patch('aops_agent.manages.command_manage.get_shell_data')
-    def test_get_memory_info_should_return_empty_dict_when_get_shell_data_error(self, mock_shell_data):
+    def test_get_memory_info_should_return_empty_dict_when_get_shell_data_error(
+            self, mock_shell_data):
         mock_shell_data.side_effect = InputError('')
-        res = Command()._Command__get_memory_info()
+        res = Command()._get_memory_info()
         self.assertEqual({}, res)
 
     @mock.patch('aops_agent.manages.command_manage.get_shell_data')
-    def test_get_memory_size_should_return_memory_size_when_get_shell_data_is_correct_data(self, mock_shell_data):
+    def test_get_memory_size_should_return_memory_size_when_get_shell_data_is_correct_data(
+            self, mock_shell_data):
         mock_shell_data.return_value = '''
             Memory block size:       128M
             Total online memory:     2.5G
@@ -356,7 +360,8 @@ class TestCommandManage(unittest.TestCase):
         self.assertEqual('2.5G', res)
 
     @mock.patch('aops_agent.manages.command_manage.get_shell_data')
-    def test_get_memory_size_should_return_empty_str_when_get_shell_data_is_incorrect_data(self, mock_shell_data):
+    def test_get_memory_size_should_return_empty_str_when_get_shell_data_is_incorrect_data(
+            self, mock_shell_data):
         mock_shell_data.return_value = '''
             Memory block size:       128M
         '''
@@ -364,7 +369,8 @@ class TestCommandManage(unittest.TestCase):
         self.assertEqual('', res)
 
     @mock.patch('aops_agent.manages.command_manage.get_shell_data')
-    def test_get_memory_size_should_return_empty_str_when_get_shell_data_error(self, mock_shell_data):
+    def test_get_memory_size_should_return_empty_str_when_get_shell_data_error(
+            self, mock_shell_data):
         mock_shell_data.side_effect = InputError('')
         res = Command._Command__get_total_online_memory()
         self.assertEqual('', res)
@@ -390,7 +396,7 @@ class TestCommandManage(unittest.TestCase):
             "l2_cache": "512 KiB",
             "l3_cache": "8 MiB"
         }
-        res = Command._Command__get_cpu_info()
+        res = Command._get_cpu_info()
         self.assertEqual(expect_res, res)
 
     @mock.patch('aops_agent.manages.command_manage.get_shell_data')
@@ -407,14 +413,14 @@ class TestCommandManage(unittest.TestCase):
             "l2_cache": None,
             "l3_cache": None
         }
-        res = Command._Command__get_cpu_info()
+        res = Command._get_cpu_info()
         self.assertEqual(expect_res, res)
 
     @mock.patch('aops_agent.manages.command_manage.get_shell_data')
     def test_get_cpu_info_should_return_empty_dict_when_host_has_no_command_lscpu(
             self, mock_shell_data):
         mock_shell_data.side_effect = InputError('')
-        res = Command._Command__get_cpu_info()
+        res = Command._get_cpu_info()
         self.assertEqual({}, res)
 
     @mock.patch('aops_agent.manages.command_manage.get_shell_data')
@@ -433,13 +439,15 @@ class TestCommandManage(unittest.TestCase):
         self.assertEqual('', res)
 
     @mock.patch('aops_agent.manages.command_manage.get_shell_data')
-    def test_get_kernel_version_should_return_cpu_info_when_host_has_no_command_uname(self, mock_shell_data):
+    def test_get_kernel_version_should_return_cpu_info_when_host_has_no_command_uname(
+            self, mock_shell_data):
         mock_shell_data.side_effect = InputError('')
         res = Command._Command__get_kernel_version()
         self.assertEqual('', res)
 
     @mock.patch('aops_agent.manages.command_manage.get_shell_data')
-    def test_get_bios_version_should_return_cpu_info_when_execute_command_successfully(self, mock_shell_data):
+    def test_get_bios_version_should_return_cpu_info_when_execute_command_successfully(
+            self, mock_shell_data):
         mock_shell_data.return_value = """
                 BIOS Information
                 Vendor: innotek GmbH
@@ -469,13 +477,15 @@ class TestCommandManage(unittest.TestCase):
         self.assertEqual('', res)
 
     @mock.patch('aops_agent.manages.command_manage.get_shell_data')
-    def test_get_bios_version_should_return_cpu_info_when_host_has_no_command_dmidecode(self, mock_shell_data):
+    def test_get_bios_version_should_return_cpu_info_when_host_has_no_command_dmidecode(
+            self, mock_shell_data):
         mock_shell_data.side_effect = InputError('')
         res = Command._Command__get_bios_version()
         self.assertEqual('', res)
 
     @mock.patch('aops_agent.manages.command_manage.get_shell_data')
-    def test_get_system_info_should_return_cpu_info_when_execute_command_successfully(self, mock_shell_data):
+    def test_get_system_info_should_return_cpu_info_when_execute_command_successfully(
+            self, mock_shell_data):
         mock_shell_data.return_value = """
                     NAME="openEuler"
                     VERSION="21.09"
@@ -496,7 +506,35 @@ class TestCommandManage(unittest.TestCase):
         self.assertEqual('', res)
 
     @mock.patch('aops_agent.manages.command_manage.get_shell_data')
-    def test_get_system_info_should_return_cpu_info_when_host_has_no_command_cat(self, mock_shell_data):
+    def test_get_system_info_should_return_cpu_info_when_host_has_no_command_cat(
+            self, mock_shell_data):
         mock_shell_data.side_effect = InputError('')
         res = Command._Command__get_system_info()
         self.assertEqual('', res)
+
+    @mock.patch('aops_agent.manages.command_manage.get_shell_data')
+    def test_get_disk_info_should_return_disk_info_when_all_software_is_running_fine(
+            self, mock_shell_data):
+        mock_shell_data.return_value = """
+            {
+                "product": "test-model", 
+                "size": 20000000000
+            }
+        """
+        expected_res = [{'model': 'test-model', 'capacity': 20}]
+        res = Command()._get_disk_info()
+        self.assertEqual(expected_res, res)
+
+    @mock.patch('aops_agent.manages.command_manage.get_shell_data')
+    def test_get_disk_info_should_return_empty_list_when_command_excute_is_failed(
+            self, mock_shell_data):
+        mock_shell_data.side_effect = InputError('')
+        res = Command()._get_disk_info()
+        self.assertEqual([], res)
+
+    @mock.patch('aops_agent.manages.command_manage.get_shell_data')
+    def test_get_disk_info_should_return_empty_list_when_when_command_excute_is_succeed_but_cannot_get_correct_info(
+            self, mock_shell_data):
+        mock_shell_data.return_value = ""
+        res = Command()._get_disk_info()
+        self.assertEqual([], res)

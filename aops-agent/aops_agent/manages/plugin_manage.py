@@ -128,7 +128,7 @@ class Plugin:
             LOGGER.error(f'Get service {self.rpm_name} status error!')
             return ""
 
-        status = re.search(':.+\(', active_string).group()[1:-1].strip()
+        status = re.search(r':.+\(', active_string).group()[1:-1].strip()
         return status
 
     @classmethod

@@ -21,7 +21,8 @@ from aops_agent.conf.constant import (
     INFORMATION_ABOUT_RPM_SERVICE,
     SCANNED_APPLICATION,
     DATA_MODEL,
-    PLUGIN_WITH_CLASS
+    PLUGIN_WITH_CLASS,
+    HOST_COLLECT_INFO_SUPPORT
 )
 from aops_agent.conf.status import StatusCode, PARAM_ERROR, SUCCESS
 from aops_agent.manages import plugin_manage
@@ -31,10 +32,12 @@ from aops_agent.tools.util import plugin_status_judge, validate_data, get_file_i
 
 
 @Command.validate_token
-def get_host_info() -> Response:
+def get_host_info(info_type: List[str]) -> Response:
     """
     get basic info about machine
 
+    Args:
+        info_type(list): e.g [mem,os,cpu,disk]
     Returns:
         Response: e.g
             {
@@ -69,10 +72,23 @@ def get_host_info() -> Response:
                             ...
                             ]
                         }
-                }
+                    "disk":[
+                                {
+                                    "capacity": xx GB
+                                    "model": "string",
+                            }
+                        ]
+                    }
             }
     """
-    return jsonify(StatusCode.make_response_body((SUCCESS, Command.get_host_info())))
+
+    if len(info_type) == 0:
+        return jsonify(StatusCode.make_response_body(
+            (SUCCESS, Command().get_host_info(HOST_COLLECT_INFO_SUPPORT))))
+    count = len(set(info_type).union(set(HOST_COLLECT_INFO_SUPPORT)))
+    if count > len(HOST_COLLECT_INFO_SUPPORT):
+        return jsonify(StatusCode.make_response_body(PARAM_ERROR))
+    return jsonify(StatusCode.make_response_body((SUCCESS, Command().get_host_info(info_type))))
 
 
 @Command.validate_token
@@ -117,8 +133,7 @@ def agent_plugin_info() -> Response:
             plugin_running_info['is_installed'] = False
             res.append(plugin_running_info)
             continue
-        else:
-            plugin_running_info['is_installed'] = True
+        plugin_running_info['is_installed'] = True
 
         service_name = INFORMATION_ABOUT_RPM_SERVICE.get(plugin_name).get('service_name')
         plugin = plugin_manage.Plugin(service_name)

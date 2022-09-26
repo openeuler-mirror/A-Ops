@@ -10,17 +10,26 @@ tags:
 schemes:
 - "https"
 paths:
-  /agent/basic/info:
-    get:
+  /agent/host/info:
+    post:
       tags:
       - "agent"
-      description: "获取主机基础信息"
+      description: "获取主机信息"
       operationId: "get_host_info"
       parameters:
         - name: access_token
           in: header
           description: 授权码
           type: string
+          required: true
+        - name: info_type
+          description: 需要获取的信息类型
+          in: body
+          schema:
+            type: array
+            uniqueItems: true
+            items:
+              type: string
           required: true
       responses:
         "200":
@@ -255,6 +264,14 @@ definitions:
                       type: string
                     manufacturer:
                       type: string
+          disk:
+            properties:
+              capacity:
+                type: string
+                description: 硬盘容量
+              model:
+                type: string
+                description: 硬盘型号
   resp_collect_items_change:
     description: 采集状态修改结果
     properties:

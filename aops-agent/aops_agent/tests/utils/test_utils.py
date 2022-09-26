@@ -76,7 +76,8 @@ class TestGetFileInfo(unittest.TestCase):
         self.assertEqual('123456', info.get('content'))
 
     @mock.patch.object(os, 'access')
-    def test_get_file_info_should_return_empty_dict_when_target_file_can_execute(self, mock_os_access):
+    def test_get_file_info_should_return_empty_dict_when_target_file_can_execute(
+            self, mock_os_access):
         file_path = mock.Mock(return_value='test')
         mock_os_access.return_value = True
         info = get_file_info(file_path)
@@ -84,8 +85,8 @@ class TestGetFileInfo(unittest.TestCase):
 
     @mock.patch.object(os.path, 'getsize')
     @mock.patch.object(os, 'access')
-    def test_get_file_info_should_return_empty_dict_when_target_file_is_larger_than_1M(self, mock_os_access,
-                                                                                       mock_getsize):
+    def test_get_file_info_should_return_empty_dict_when_target_file_is_larger_than_1M(
+            self, mock_os_access, mock_getsize):
         file_path = mock.Mock(return_value='test')
         mock_os_access.return_value = False
         mock_getsize.return_value = 1024 * 1024 * 2
@@ -94,9 +95,8 @@ class TestGetFileInfo(unittest.TestCase):
 
     @mock.patch.object(os.path, 'getsize')
     @mock.patch.object(os, 'access')
-    def test_get_file_info_should_return_empty_dict_when_target_file_is_not_encoded_by_utf8(self,
-                                                                                            mock_os_access,
-                                                                                            mock_getsize):
+    def test_get_file_info_should_return_empty_dict_when_target_file_is_not_encoded_by_utf8(
+            self, mock_os_access, mock_getsize):
         file_path = mock.Mock(return_value='test')
         mock_os_access.return_value = False
         mock_getsize.return_value = 1024 * 1024
@@ -107,7 +107,8 @@ class TestGetFileInfo(unittest.TestCase):
 
 
 class TestChangeProbeStatus(unittest.TestCase):
-    def test_change_probe_status_should_return_success_list_and_empty_failure_list_when_input_all_right(self):
+    def test_change_probe_status_should_return_success_list_and_empty_failure_list_when_input_all_right(
+            self):
         probe_status = {
             'test_no_check_1': 'off',
             "test_no_check_2": "on",
@@ -131,7 +132,8 @@ class TestChangeProbeStatus(unittest.TestCase):
             "test_with_check_5": "off"
         }
         res, fail_list = change_probe_status(target_probes, probe_status, {'success': []})
-        expect_success_res = ['test_no_check_1', 'test_with_check_1', 'test_with_check_2', 'test_with_check_3']
+        expect_success_res = ['test_no_check_1', 'test_with_check_1', 'test_with_check_2',
+                              'test_with_check_3']
         expect_fail_res = {"test_no_check_3": "on", "test_with_check_5": "off"}
         self.assertEqual((expect_success_res, expect_fail_res), (res['success'], fail_list))
 
@@ -143,4 +145,4 @@ class TestChangeProbeStatus(unittest.TestCase):
         }
         res, fail_list = change_probe_status(target_probes, probe_status, {'success': []})
         expect_fail_res = {"test_no_check_1": "auto", "test_no_check_2": "auto"}
-        self.assertEqual(expect_fail_res,fail_list)
+        self.assertEqual(expect_fail_res, fail_list)
