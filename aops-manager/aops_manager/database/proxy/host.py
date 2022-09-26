@@ -105,7 +105,7 @@ class HostProxy(MysqlProxy):
         host_list = data['host_list']
         result = {
             "succeed_list": [],
-            "fail_list": []
+            "fail_list": {}
         }
         host_info = {}
         try:
@@ -117,8 +117,9 @@ class HostProxy(MysqlProxy):
                 result['succeed_list'].append(host.host_id)
                 host_info[host.host_id] = host.host_name
             self.session.commit()
-            result['fail_list'] = list(
-                set(host_list) - set(result['succeed_list']))
+            fail_list = list(set(host_list) - set(result['succeed_list']))
+            result['fail_list'].update(zip(fail_list,
+                                           len(fail_list) * ("Can't find the data in database",)))
             status_code = judge_return_code(result, DATABASE_DELETE_ERROR)
             result['host_info'] = host_info
             return status_code, result
@@ -126,8 +127,7 @@ class HostProxy(MysqlProxy):
             LOGGER.error(error)
             LOGGER.error("delete host %s fail", host_list)
             self.session.rollback()
-            result['fail_list'] = host_list
-            result['succeed_list'] = []
+            result['fail_list'].update(zip(host_list, len(host_list)*("Connect database fail",)))
             return DATABASE_DELETE_ERROR, result
 
     def get_host(self, data):

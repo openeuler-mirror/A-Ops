@@ -148,13 +148,14 @@ class DeleteHost(BaseResponse):
 
         res = {
             'succeed_list': [],
-            'fail_list': []
+            'fail_list': {}
         }
 
         if resp.get('code') != SUCCEED:
             LOGGER.error('No valid information can be obtained when query'
                          'whether the host is running in the workflow')
-            res['fail_list'] = args['host_list']
+            res['fail_list'].update(zip(args['host_list'],
+                                        len(args['host_list'])*("query workflow fail",)))
             return DATABASE_DELETE_ERROR, res
 
         host_id_in_workflow = []
@@ -165,13 +166,15 @@ class DeleteHost(BaseResponse):
             else:
                 host_id_not_in_workflow.append(host_id)
 
+        res['fail_list'].update(zip(host_id_in_workflow,
+                                    len(host_id_in_workflow) * ("There are workflow in check",)))
+
         if len(host_id_not_in_workflow) == 0:
-            res['fail_list'] = host_id_in_workflow
             return DATABASE_DELETE_ERROR, res
 
         args['host_list'] = host_id_not_in_workflow
         status_code, result = proxy.delete_host(args)
-        result['fail_list'].extend(host_id_in_workflow)
+        result['fail_list'].update(res['fail_list'])
         result.pop('host_info')
         return status_code, result
 
