@@ -54,7 +54,13 @@ def create_domain(body=None):  # noqa: E501
         codeString = Format.spliceAllSuccString("domain", "created", successDomain)
     else:
         codeNum = 400
-        codeString = Format.splicErrorString("domain", "created", successDomain, failedDomain)
+        if len(body) == 1:
+            if isExist:
+                codeString = "domain {} create failed because it has been existed.".format(failedDomain[0])
+            elif not checkRes:
+                codeString = "domain {} create failed because format is incorrect.".format(failedDomain[0])
+        else:
+            codeString = Format.splicErrorString("domain", "created", successDomain, failedDomain)
 
     base_rsp = BaseResponse(codeNum, codeString)
 
