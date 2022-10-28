@@ -1,9 +1,0 @@
-APScheduler
-kafka-python>=2.0.2
-joblib
-numpy
-pandas
-requests
-scikit_learn
-scipy
-torch

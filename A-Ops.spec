@@ -1,18 +1,11 @@
 Name:		A-Ops
 Version:	v1.2.6
-Release:	1
+Release:	2
 Summary:	The intelligent ops toolkit for openEuler
 License:	MulanPSL2
 URL:		https://gitee.com/openeuler/A-Ops
 Source0:	%{name}-%{version}.tar.gz
 Source1:	A-Ops-web-node-modules.tar.gz
-
-%ifarch x86_64
-patch0001: 0001-modify-to-adapt-to-oe2209-x86.patch
-%endif
-%ifarch aarch64
-patch0001: 0001-modify-to-adapt-to-oe2209-arm.patch
-%endif
 
 patch0002: 0002-add-create-time-attribute-for-workflow.patch 
 patch0003: 0003-fix-ragdoll-add-return-validation-of-config-analysis.patch
@@ -22,21 +15,12 @@ patch0005: 0005-web-fine-tuning.patch
 # build for web
 BuildRequires: nodejs node-gyp nodejs-yarn
 
-# build for gopher
-BuildRequires:	cmake gcc-c++ yum elfutils-devel clang >= 10.0.1 llvm libconfig-devel
-BuildRequires:	librdkafka-devel libmicrohttpd-devel uthash-devel libbpf libbpf-devel
-BuildRequires:  log4cplus-devel
-
 # build for ragdoll & aops basic module
 BuildRequires:  python3-setuptools python3-connexion python3-werkzeug python3-libyang
 BuildRequires:	git python3-devel systemd
 
 # build for aops basic module
 BuildRequires:  python3-setuptools python3-kafka-python python3-connexion
-
-# build for spider & anteater
-BuildRequires:  python3-setuptools
-
 
 %description
 The intelligent ops toolkit for openEuler
@@ -86,14 +70,6 @@ Requires:   python3-scipy
 check module for A-Ops
 
 
-%package -n gala-gopher
-Summary:	Intelligent ops toolkit for openEuler
-Requires:	bash glibc elfutils zlib elfutils-devel
-
-%description -n gala-gopher
-Intelligent ops toolkit for openEuler
-
-
 %package -n gala-ragdoll
 Summary:    Configuration traceability
 Requires:   python3-gala-ragdoll = %{version}-%{release}
@@ -109,56 +85,6 @@ Requires: python3-werkzeug python3-connexion python3-swagger-ui-bundle
 
 %description -n python3-gala-ragdoll
 python3 pakcage of gala-ragdoll
-
-
-%package -n gala-spider
-Summary:    Configuration traceability
-Requires:   python3-gala-spider = %{version}-%{release}
-
-%description -n gala-spider
-Configuration traceability
-
-
-%package -n python3-gala-spider
-Summary:    Python3 package of gala-spider
-Requires:   python3-kafka-python python3-pyyaml python3-pyarango python3-requests
-
-%description -n python3-gala-spider
-Python3 package of gala-spider
-
-
-%package -n gala-inference
-Summary:    Cause inference module for A-Ops project
-Requires:   python3-gala-inference = %{version}-%{release}
-
-%description -n gala-inference
-Cause inference module for A-Ops project
-
-
-%package -n python3-gala-inference
-Summary:    Python3 package of gala-inference
-Requires:   python3-gala-spider python3-kafka-python python3-pyyaml python3-pyarango
-Requires:   python3-requests python3-networkx python3-scipy
-
-%description -n python3-gala-inference
-Python3 package of gala-inference
-
-
-%package -n gala-anteater
-Summary:    abnormal detection
-Requires:   python3-gala-anteater = %{version}-%{release}
-
-%description -n gala-anteater
-Abnormal detection module for A-Ops project
-
-
-%package -n python3-gala-anteater
-Summary:    abnormal detection
-Requires:   python3-APScheduler python3-kafka-python python3-joblib python3-numpy
-Requires:   python3-pandas python3-requests python3-scikit-learn python3-pytorch
-
-%description -n python3-gala-anteater
-Python3 package of python3-gala-anteater
 
 
 %package -n aops-web
@@ -178,7 +104,6 @@ tools for aops, it's about agent deploy
 %prep
 %setup
 %setup -T -D -a 1
-%patch0001 -p1
 %patch0002 -p1
 %patch0003 -p1
 %patch0004 -p1
@@ -207,23 +132,8 @@ pushd aops-check
 %py3_build
 popd
 
-#build for gala-gopher
-pushd gala-gopher/build
-sh build.sh --release
-popd
-
 #build for gala-ragdoll
 pushd gala-ragdoll
-%py3_build
-popd
-
-#build for gala-spider
-pushd gala-spider
-%py3_build
-popd
-
-#build for gala-anteater
-pushd gala-anteater
 %py3_build
 popd
 
@@ -258,15 +168,6 @@ pushd aops-check
 %py3_install
 popd
 
-#install for gala-gopher
-pushd gala-gopher/build
-install -d %{buildroot}/opt/gala-gopher
-install -d %{buildroot}%{_bindir}
-mkdir -p  %{buildroot}/usr/lib/systemd/system
-install -m 0600 ../service/gala-gopher.service %{buildroot}/usr/lib/systemd/system/gala-gopher.service
-sh install.sh %{buildroot}%{_bindir} %{buildroot}/opt/gala-gopher
-popd
-
 #install for gala-ragdoll
 pushd gala-ragdoll
 %py3_install
@@ -277,16 +178,6 @@ mkdir %{buildroot}/%{python3_sitelib}/ragdoll/config
 install config/*.conf %{buildroot}/%{python3_sitelib}/ragdoll/config
 mkdir -p %{buildroot}/%{_prefix}/lib/systemd/system
 install service/gala-ragdoll.service %{buildroot}/%{_prefix}/lib/systemd/system
-popd
-
-#install for gala-spider
-pushd gala-spider
-%py3_install
-popd
-
-#install for gala-anteater
-pushd gala-anteater
-%py3_install
 popd
 
 # install for web
@@ -306,16 +197,6 @@ cp -r aops_tools %{buildroot}/opt/aops/
 popd
 
 
-%post -n gala-gopher
-%systemd_post gala-gopher.service
-
-%preun -n gala-gopher
-%systemd_preun gala-gopher.service
-
-%postun -n gala-gopher
-%systemd_postun_with_restart gala-gopher.service
-
-
 %pre -n gala-ragdoll
 if [ -f "%{systemd_dir}/gala-ragdoll.service" ] ; then
         systemctl enable gala-ragdoll.service || :
@@ -329,50 +210,6 @@ fi
 
 %postun -n gala-ragdoll
 %systemd_postun gala-ragdoll.service
-
-%pre -n gala-spider
-if [ -f "%{_unitdir}/gala-spider.service" ] ; then
-        systemctl enable gala-spider.service || :
-fi
-
-%post -n gala-spider
-%systemd_post gala-spider.service
-
-%preun -n gala-spider
-%systemd_preun gala-spider.service
-
-%postun -n gala-spider
-%systemd_postun gala-spider.service
-
-
-%pre -n gala-inference
-if [ -f "%{_unitdir}/gala-inference.service" ] ; then
-        systemctl enable gala-inference.service || :
-fi
-
-%post -n gala-inference
-%systemd_post gala-inference.service
-
-%preun -n gala-inference
-%systemd_preun gala-inference.service
-
-%postun -n gala-inference
-%systemd_postun gala-inference.service
-
-
-%pre -n gala-anteater
-if [ -f "%{_unitdir}/gala-anteater.service" ] ; then
-        systemctl enable gala-anteater.service || :
-fi
-
-%post -n gala-anteater
-%systemd_post gala-anteater.service
-
-%preun -n gala-anteater
-%systemd_preun gala-anteater.service
-
-%postun -n gala-anteater
-%systemd_postun gala-anteater.service
 
 
 %files -n aops-agent
@@ -409,21 +246,6 @@ fi
 %{python3_sitelib}/aops_check/*
 
 
-%files -n gala-gopher
-%defattr(-,root,root)
-%dir /opt/gala-gopher
-%dir /opt/gala-gopher/extend_probes
-%dir /opt/gala-gopher/meta
-%dir /opt/gala-gopher/lib
-%{_bindir}/*
-%config(noreplace) /opt/gala-gopher/gala-gopher.conf
-%config(noreplace) /opt/gala-gopher/task_whitelist.conf
-/opt/gala-gopher/extend_probes/*
-/opt/gala-gopher/meta/*
-/opt/gala-gopher/lib/*
-%{_unitdir}/gala-gopher.service
-
-
 %files -n gala-ragdoll
 %doc gala-ragdoll/doc/*
 %license gala-ragdoll/LICENSE
@@ -438,47 +260,6 @@ fi
 %{python3_sitelib}/ragdoll-*.egg-info
 
 
-%files -n gala-spider
-%doc gala-spider/README.md gala-spider/docs/*
-%license gala-spider/LICENSE
-%config(noreplace) %{_sysconfdir}/gala-spider/gala-spider.yaml
-%config(noreplace) %{_sysconfdir}/gala-spider/topo-relation.yaml
-%config(noreplace) %{_sysconfdir}/gala-spider/ext-observe-meta.yaml
-%{_bindir}/spider-storage
-%{_unitdir}/gala-spider.service
-
-
-%files -n python3-gala-spider
-%{python3_sitelib}/spider/*
-%{python3_sitelib}/gala_spider-*.egg-info
-
-
-%files -n gala-inference
-%doc gala-spider/README.md gala-spider/docs/*
-%license LICENSE
-%config(noreplace) %{_sysconfdir}/gala-inference/gala-inference.yaml
-%config(noreplace) %{_sysconfdir}/gala-inference/ext-observe-meta.yaml
-%{_bindir}/gala-inference
-%{_unitdir}/gala-inference.service
-
-
-%files -n python3-gala-inference
-%{python3_sitelib}/cause_inference/*
-%{python3_sitelib}/gala_spider-*.egg-info
-
-
-%files -n gala-anteater
-%doc gala-anteater/README.md
-%license gala-anteater/LICENSE
-%{_bindir}/gala-anteater
-%{_unitdir}/gala-anteater.service
-
-
-%files -n python3-gala-anteater
-%{python3_sitelib}/anteater/*
-%{python3_sitelib}/gala_anteater-*.egg-info
-
-
 %files -n aops-web
 %attr(0755, root, root) /opt/aops_web/dist/*
 %attr(0755, root, root) %{_sysconfdir}/nginx/aops-nginx.conf
@@ -489,6 +270,9 @@ fi
 
 
 %changelog
+* Fri Oct 28 2022 zhaoyuxing<zhaoyuxing2@huawei.com> - v1.2.6-2
+- delete gala-anteater&gala-gopher&gala-spider.
+
 * Wed Sep 14 2022 zhuyuncheng<zhuyuncheng@huawei.com> - v1.2.6-1
 - move aops-basedatabase to aops-tools
 - rename default scene from 'unknown' to 'normal'
