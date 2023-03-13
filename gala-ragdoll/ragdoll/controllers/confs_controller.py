@@ -346,9 +346,9 @@ def query_real_confs(body=None):  # noqa: E501
     url = conf_tools.load_url_by_conf().get("collect_url")
     headers = {"Content-Type": "application/json"}
     response = requests.post(url, data=json.dumps(get_real_conf_body), headers=headers)  # post request
-    resp = json.loads(response.text).get("resp")
+    resp = json.loads(response.text).get("data")
     resp_code = json.loads(response.text).get("code")
-    if (resp_code != 200) and (resp_code != 206):
+    if (resp_code != "200") and (resp_code != "206"):
         code_num = 404
         code_string = "Failed to obtain the actual configuration, please check the file exists."
         base_rsp = BaseResponse(code_num, code_string)
