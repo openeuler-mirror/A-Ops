@@ -385,7 +385,7 @@ definitions:
     - "hostId"
     properties:
       hostId:
-        type: "string"
+        type: "integer"
         description: "the id of host"
       ip:
         type: "string"
@@ -459,7 +459,7 @@ definitions:
         type: "string"
         description: "the contents of the configuration file"
       hostId:
-        type: "string"
+        type: "integer"
         description: "the id of host"
   ConfHost:
     type: "object"
@@ -473,7 +473,7 @@ definitions:
           type: "object"
           properties:
             hostId:
-              type: "string"
+              type: "integer"
               description: "the id of host"
   RealConfInfo:
     type: "object"
@@ -481,7 +481,7 @@ definitions:
       domainName:
         type: "string"
       hostID:
-        type: "string"
+        type: "integer"
       confBaseInfos:
         type: "array"
         items:
@@ -684,7 +684,7 @@ definitions:
     type: "object"
     properties:
       hostId:
-        type: "string"
+        type: "integer"
         description: "the id of host"
       syncStatus:
         type: "array"
@@ -715,7 +715,7 @@ definitions:
     type: "object"
     properties:
       hostId:
-        type: "string"
+        type: "integer"
         description: "the id of host"
       syncStatus:
         type: "string"

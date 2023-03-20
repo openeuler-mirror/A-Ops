@@ -33,7 +33,7 @@ class HostTools(object):
         if os.path.isfile(hostPath) and os.stat(hostPath).st_size > 0:
             with open(hostPath) as h_file:
                 for line in h_file.readlines():
-                    if hostId in line:
+                    if str(hostId) in line:
                         isHostIdExist = True
                         break
 
@@ -49,7 +49,7 @@ class HostTools(object):
             output existHost:['551d02da-7d8c-4357-b88d-15dc55ee22cc']
         """
         if len(hostList) == 0:
-            return null,null
+            return None, None
         domainPath = os.path.join(self._target_dir, domain)
         hostPath = os.path.join(domainPath, self._host_file)
         existHost = []
@@ -74,7 +74,7 @@ class HostTools(object):
         """
         res = []
         for d_host in domainHost:
-            hostId = d_host.get('hostId')
+            hostId = int(d_host.get('hostId'))
             print("the host Id is : {}".format(hostId))
             d_host = {}
             d_host["hostId"] = hostId

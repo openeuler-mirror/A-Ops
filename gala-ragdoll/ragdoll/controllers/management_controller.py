@@ -121,7 +121,7 @@ def add_management_confs_in_domain(body=None):  # noqa: E501
         for d_conf in contents_list_null:
             confs_list = []
             confs = {}
-            confs["host_id"] = d_conf.host_id
+            confs["host_id"] = int(d_conf.host_id)
             confs_list.append(d_conf.file_path)
             confs["config_list"] = confs_list
             get_real_conf_body_info.append(confs)
@@ -138,13 +138,13 @@ def add_management_confs_in_domain(body=None):  # noqa: E501
             base_rsp = BaseResponse(codeNum, codeString)
             return base_rsp, codeNum
 
-        if (response_code != 200) and (response_code != 206):
+        if (response_code != "200") and (response_code != "206"):
             codeNum = 500
             codeString = "Failed to obtain the actual configuration, please check the file exists."
             base_rsp = BaseResponse(codeNum, codeString)
             return base_rsp, codeNum
 
-        reps = json.loads(response.text).get("resp")
+        reps = json.loads(response.text).get("data")
         if not reps or len(reps) == 0:
             codeNum = 500
             codeString = "Failed to obtain the actual configuration, please check the host info for conf/collect."
