@@ -58,17 +58,16 @@ def add_host_in_domain(body=None):  # noqa: E501
     for host in host_infos:
         hostPath = os.path.join(domainPath, "hostRecord.txt")
         if os.path.isfile(hostPath):
-            isContained = Format.isContainedInfile(hostPath, host.host_id)
-
+            isContained = Format.isContainedInfile(hostPath, host.ip)
             if isContained:
                 print("##########isContained###############")
-                failedHost.append(host.host_id)
+                failedHost.append(host.ip)
             else:
                 Format.addHostToFile(hostPath, host)
-                successHost.append(host.host_id)
+                successHost.append(host.ip)
         else:
             Format.addHostToFile(hostPath, host)
-            successHost.append(host.host_id)
+            successHost.append(host.ip)
 
     if len(failedHost) == len(host_infos):
         codeNum = 400
@@ -154,14 +153,14 @@ def delete_host_in_domain(body=None):  # noqa: E501
     notContainedInHost = []
     os.umask(0o077)
     for hostInfo in hostInfos:
-        hostId = hostInfo.host_id
+        ip = hostInfo.ip
         isContained = False
         try:
             with open(hostPath, 'r') as d_file:
                 lines = d_file.readlines()
                 with open(hostPath, 'w') as w_file:
                     for line in lines:
-                        if hostId not in line:
+                        if ip not in line:
                             w_file.write(line)
                         else:
                             isContained = True
@@ -172,9 +171,9 @@ def delete_host_in_domain(body=None):  # noqa: E501
             return base_rsp, codeNum
 
         if isContained:
-            containedInHost.append(hostId)
+            containedInHost.append(ip)
         else:
-            notContainedInHost.append(hostId)
+            notContainedInHost.append(ip)
 
     # All hosts do not belong to the domain
     if len(notContainedInHost) == len(hostInfos):

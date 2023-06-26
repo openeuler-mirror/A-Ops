@@ -15,7 +15,7 @@ class Host(Model):
     Do not edit the class manually.
     """
 
-    def __init__(self, host_id: str=None, ip: str=None, ipv6: str=None):  # noqa: E501
+    def __init__(self, host_id: int=None, ip: str=None, ipv6: str=None):  # noqa: E501
         """Host - a model defined in Swagger
 
         :param host_id: The host_id of this Host.  # noqa: E501
@@ -26,7 +26,7 @@ class Host(Model):
         :type ipv6: str
         """
         self.swagger_types = {
-            'host_id': str,
+            'host_id': int,
             'ip': str,
             'ipv6': str
         }
@@ -53,24 +53,24 @@ class Host(Model):
         return util.deserialize_model(dikt, cls)
 
     @property
-    def host_id(self) -> str:
+    def host_id(self) -> int:
         """Gets the host_id of this Host.
 
         the id of host  # noqa: E501
 
         :return: The host_id of this Host.
-        :rtype: str
+        :rtype: int
         """
         return self._host_id
 
     @host_id.setter
-    def host_id(self, host_id: str):
+    def host_id(self, host_id: int):
         """Sets the host_id of this Host.
 
         the id of host  # noqa: E501
 
         :param host_id: The host_id of this Host.
-        :type host_id: str
+        :type host_id: int
         """
         if host_id is None:
             raise ValueError("Invalid value for `host_id`, must not be `None`")  # noqa: E501
