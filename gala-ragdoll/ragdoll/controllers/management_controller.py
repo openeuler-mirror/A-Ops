@@ -268,6 +268,8 @@ def delete_management_confs_in_domain(body=None):  # noqa: E501
             print("it's a normal file")
             try:
                 os.remove(domain_path)
+                # restore domain_path
+                domain_path = os.path.join(TARGETDIR, domain)
             except OSError as ex:
                 #logging.error("the path remove failed")
                 break
