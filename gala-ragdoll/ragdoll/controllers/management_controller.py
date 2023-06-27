@@ -96,17 +96,15 @@ def add_management_confs_in_domain(body=None):  # noqa: E501
                 return base_rsp, codeNum
             content_string = object_parse.parse_conf_to_json(d_conf.file_path, d_conf.contents)
             if not content_string or not json.loads(content_string):
-                codeNum = 400
-                base_rsp = BaseResponse(codeNum, "Input configuration content verification failed, " +
-                                                 "please check the config.")
-                return base_rsp, codeNum
-            # create the file and expected value in domain
-            feature_path = yang_module.get_feature_by_real_path(domain, d_conf.file_path)
-            result = conf_tools.wirteFileInPath(feature_path, content_string + '\n')
-            if result:
-                successConf.append(d_conf.file_path)
-            else:
                 failedConf.append(d_conf.file_path)
+            else:
+                # create the file and expected value in domain
+                feature_path = yang_module.get_feature_by_real_path(domain, d_conf.file_path)
+                result = conf_tools.wirteFileInPath(feature_path, content_string + '\n')
+                if result:
+                    successConf.append(d_conf.file_path)
+                else:
+                    failedConf.append(d_conf.file_path)
 
     # content is empty
     if len(contents_list_null) > 0:
@@ -164,16 +162,14 @@ def add_management_confs_in_domain(body=None):  # noqa: E501
                 content_string = object_parse.parse_conf_to_json(file_path, content)
                 # create the file and expected value in domain
                 if not content_string or not json.loads(content_string):
-                    codeNum = 400
-                    base_rsp = BaseResponse(codeNum, "Input configuration content verification failed," + 
-                                                     "please check the config in the host.")
-                    return base_rsp, codeNum
-                feature_path = yang_module.get_feature_by_real_path(domain, file_path)
-                result = conf_tools.wirteFileInPath(feature_path, content_string)
-                if result:
-                    successConf.append(file_path)
-                else:
                     failedConf.append(file_path)
+                else:
+                    feature_path = yang_module.get_feature_by_real_path(domain, file_path)
+                    result = conf_tools.wirteFileInPath(feature_path, content_string + '\n')
+                    if result:
+                        successConf.append(file_path)
+                    else:
+                        failedConf.append(file_path)
 
     # git commit message
     if len(successConf) > 0:
