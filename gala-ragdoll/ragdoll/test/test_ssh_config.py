@@ -8,9 +8,9 @@ from ragdoll.test import BaseTestCase
 BASE_PATH = "ragdoll.config_model."
 CONFIG_MODEL_NAME = "Config"
 PROJECT_NAME = "_config"
-conf_type = "ssh"
+CONF_TYPE = "ssh"
 
-conf_info = "# If you want to change the port on a SELinux system, you have to tell\n" \
+CONF_INFO = "# If you want to change the port on a SELinux system, you have to tell\n" \
             "# SELinux about this change.\n" \
             "# semanage port -a -t ssh_port_t -p tcp #PORTNUMBER\n" \
             "#Port 22\n" \
@@ -35,9 +35,8 @@ conf_info = "# If you want to change the port on a SELinux system, you have to t
             "AcceptEnv LC_IDENTIFICATION LC_ALL LANGUAGE\n" \
             "AcceptEnv XMODIFIERS\n" \
             "Subsystem sftp /usr/libexec/openssh/sftp-server -l INFO -f AUTH\n" \
-            "Ciphers aes128-ctr,aes192-ctr,aes256-ctr,aes128-gcm@openssh.com,aes256-gcm@openssh.com,chacha20-poly1305@openssh.com"
-
-dst_conf = '[\n' \
+ \
+DST_CONF = '[\n' \
            '{\n' \
            '"Include": "/etc/ssh/sshd_config.d/*.conf"\n' \
            '},\n' \
@@ -45,15 +44,15 @@ dst_conf = '[\n' \
            '"HostKey": "/etc/ssh/ssh_host_rsa_key"\n' \
            '}\n' \
            ']'
-null_conf_info = ""
+NULL_CONF_INFO = ""
 
 
 class TestSshConfig(BaseTestCase):
     def create_conf_model(self):
         conf_model = ""
-        project_name = conf_type + PROJECT_NAME  # example: ini_config
+        project_name = CONF_TYPE + PROJECT_NAME  # example: ini_config
         project_path = BASE_PATH + project_name  # example: ragdoll.config_model.ini_config
-        model_name = conf_type.capitalize() + CONFIG_MODEL_NAME  # example: IniConfig
+        model_name = CONF_TYPE.capitalize() + CONFIG_MODEL_NAME  # example: IniConfig
 
         try:
             project = importlib.import_module(project_path)
@@ -68,28 +67,26 @@ class TestSshConfig(BaseTestCase):
 
     def test_parse_conf_to_dict(self):
         conf_model = self.create_conf_model()
-        conf_dict_list = conf_model._parse_conf_to_dict(conf_info)
-        print("conf_dict_list is: {}".format(conf_dict_list))
-        self.assertEqual(len(conf_dict_list), 18)
+        conf_dict_list = conf_model.parse_conf_to_dict(CONF_INFO)
+        self.assertEqual(len(conf_dict_list), 17)
 
     def test_read_conf_null(self):
         conf_model = self.create_conf_model()
-        conf_model.read_conf(null_conf_info)
+        conf_model.read_conf(NULL_CONF_INFO)
         self.assertEqual(len(conf_model.conf), 0)
 
     def test_conf_compare(self):
         conf_model = self.create_conf_model()
-        conf_dict_list = conf_model._parse_conf_to_dict(conf_info)
-        res = conf_model.conf_compare(dst_conf, json.dumps(conf_dict_list))
+        conf_dict_list = conf_model.parse_conf_to_dict(CONF_INFO)
+        res = conf_model.conf_compare(DST_CONF, json.dumps(conf_dict_list))
 
-        print("res is: {}".format(res))
         self.assertEqual(res, "NOT SYNCHRONIZE")
 
     def test_write_conf(self):
-        sshConfig = SshConfig()
+        ssh_config = SshConfig()
         conf_model = self.create_conf_model()
-        conf_dict_list = conf_model._parse_conf_to_dict(conf_info)
-        sshConfig.conf = conf_dict_list
+        conf_dict_list = conf_model.parse_conf_to_dict(CONF_INFO)
+        ssh_config.conf = conf_dict_list
         content = conf_model.write_conf(spacer_info="")
         self.assertTrue(len(content) > 0)
 

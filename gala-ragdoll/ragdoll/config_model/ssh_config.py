@@ -11,7 +11,8 @@ class SshConfig():
         self.conf = list()
         self.yang = list()
 
-    def _parse_conf_to_dict(self, conf_info):
+    @staticmethod
+    def parse_conf_to_dict(conf_info):
         """
         将配置信息conf_info转为list，但是并未校验配置项是否合法
         """
@@ -46,12 +47,9 @@ class SshConfig():
                 self.yang.append(option)
 
     def read_conf(self, conf_info):
-        conf_dict_list = self._parse_conf_to_dict(conf_info)
-        if not conf_dict_list:
-            return False
-
-        self.conf = conf_dict_list
-        print("self.conf is {}".format(self.conf))
+        conf_dict_list = self.parse_conf_to_dict(conf_info)
+        if conf_dict_list:
+            self.conf = conf_dict_list
 
     def write_conf(self, spacer_info=None):
         content = ""
@@ -73,7 +71,8 @@ class SshConfig():
         conf_list = json.loads(conf_json)
         self.conf = conf_list
 
-    def conf_compare(self, dst_conf, src_conf):
+    @staticmethod
+    def conf_compare(dst_conf, src_conf):
         """
         desc: 比较dst_conf和src_conf是否相同，dst_conf和src_conf均为序列化后的配置信息。
         return：dst_conf和src_conf相同返回SYNCHRONIZED
