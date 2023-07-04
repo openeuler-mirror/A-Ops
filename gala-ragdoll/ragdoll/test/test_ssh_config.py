@@ -34,8 +34,8 @@ CONF_INFO = "# If you want to change the port on a SELinux system, you have to t
             "AcceptEnv LC_PAPER LC_NAME LC_ADDRESS LC_TELEPHONE LC_MEASUREMENT\n" \
             "AcceptEnv LC_IDENTIFICATION LC_ALL LANGUAGE\n" \
             "AcceptEnv XMODIFIERS\n" \
-            "Subsystem sftp /usr/libexec/openssh/sftp-server -l INFO -f AUTH\n" \
- \
+            "Subsystem sftp /usr/libexec/openssh/sftp-server -l INFO -f AUTH\n"
+
 DST_CONF = '[\n' \
            '{\n' \
            '"Include": "/etc/ssh/sshd_config.d/*.conf"\n' \
