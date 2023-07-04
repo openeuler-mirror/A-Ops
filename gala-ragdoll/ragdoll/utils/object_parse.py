@@ -1,9 +1,7 @@
-import os
 import json
 import importlib
 
 from ragdoll.utils.yang_module import YangModule
-
 
 BASE_PATH = "ragdoll.config_model."
 CONFIG_MODEL_NAME = "Config"
@@ -18,26 +16,26 @@ class ObjectParse(object):
         """
         desc: Create a structured model corresponding to the configuration type.
 
-        example: 
+        example:
             param: conf_type: ini
             return: IniConfig()
         """
         conf_model = ""
-        project_name = conf_type + PROJECT_NAME    # example: ini_config
-        project_path = BASE_PATH + project_name    # example: ragdoll.config_model.ini_config
-        model_name = conf_type.capitalize() + CONFIG_MODEL_NAME     # example: IniConfig
+        project_name = conf_type + PROJECT_NAME  # example: ini_config
+        project_path = BASE_PATH + project_name  # example: ragdoll.config_model.ini_config
+        model_name = conf_type.capitalize() + CONFIG_MODEL_NAME  # example: IniConfig
 
         try:
             project = importlib.import_module(project_path)
         except ImportError:
             conf_model = ""
         else:
-            _conf_model_class = getattr(project, model_name, None)    # example: IniConfig
+            _conf_model_class = getattr(project, model_name, None)  # example: IniConfig
             if _conf_model_class:
-                conf_model = _conf_model_class()     # example: IniConfig()
+                conf_model = _conf_model_class()  # example: IniConfig()
 
         return conf_model
-    
+
     def get_conf_type_by_conf_path(self, conf_path):
         yang_model = self._yang_modules.getModuleByFilePath(conf_path)
         if not yang_model:
@@ -45,7 +43,7 @@ class ObjectParse(object):
         _conf_type = self._yang_modules.getTypeInModdule([yang_model])
         conf_type = _conf_type[yang_model.name()]
         return conf_type
-    
+
     def parse_model_to_json(self, d_model):
         """
         desc: convert object to json.
@@ -53,11 +51,9 @@ class ObjectParse(object):
         conf_json = ""
 
         conf_dict = d_model.conf
-        conf_json = json.dumps(conf_dict, indent = 4, ensure_ascii= False)
-        
+        conf_json = json.dumps(conf_dict, indent=4, ensure_ascii=False)
+
         return conf_json
-
-
 
     def parse_conf_to_json(self, conf_path, conf_info):
         """
@@ -70,7 +66,12 @@ class ObjectParse(object):
         # create conf model
         conf_model = self.create_conf_model_by_type(conf_type)
 
-        # load yang model info 
+        # parse config file whose key-type is ip address
+        if conf_type == "hosts":
+            conf_json = conf_model.parse_res_to_json(conf_info)
+            return conf_json
+
+        # load yang model info
         yang_info = self._yang_modules.getModuleByFilePath(conf_path)
         conf_model.load_yang_model(yang_info)
 
@@ -91,11 +92,21 @@ class ObjectParse(object):
 
         # create conf model
         conf_model = self.create_conf_model_by_type(conf_type)
+        if conf_type == "hosts":
+            conf_dict = conf_model.read_conf(json_list)
+            conf_info = conf_model.write_conf(conf_dict)
+            return conf_info
+
+        # load yang model info
+        yang_info = self._yang_modules.getModuleByFilePath(conf_path)
+        spacer_info = self._yang_modules.getSpacerInModdule([yang_info])
 
         # load conf info(json) to model
         conf_model.read_json(json_list)
-
-        # to content
-        conf_info = conf_model.write_conf()
+        if conf_type == "ssh":
+            conf_info = conf_model.write_conf(spacer_info)
+        else:
+            # to content
+            conf_info = conf_model.write_conf()
 
         return conf_info
