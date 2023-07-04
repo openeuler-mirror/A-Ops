@@ -1,6 +1,3 @@
-# Author: Lay
-# Description: default
-# Date: 2023/6/8 13:44
 import re
 import json
 
@@ -18,16 +15,20 @@ ipv6 = re.compile('^((([0-9A-Fa-f]{1,4}:){7}[0-9A-Fa-f]{1,4})|'
                   '(([0-9A-Fa-f]{1,4}:){2}(:[0-9A-Fa-f]{1,4}){1,5})|'
                   '([0-9A-Fa-f]{1,4}:(:[0-9A-Fa-f]{1,4}){1,6})|'
                   '(:(:[0-9A-Fa-f]{1,4}){1,7})|'
-                  '(([0-9A-Fa-f]{1,4}:){6}(\\d|[1-9]\\d|1\\d{2}|2[0-4]\\d|25[0-5])(\\.(\\d|[1-9]\\d|1\\d{2}|2[0-4]\\d|25[0-5])){3})|'
-                  '(([0-9A-Fa-f]{1,4}:){5}:(\\d|[1-9]\\d|1\\d{2}|2[0-4]\\d|25[0-5])(\\.(\\d|[1-9]\\d|1\\d{2}|2[0-4]\\d|25[0-5])){3})|'
-                  '(([0-9A-Fa-f]{1,4}:){4}(:[0-9A-Fa-f]{1,4}){0,1}:(\\d|[1-9]\\d|1\\d{2}|2[0-4]\\d|25[0-5])(\\.(\\d|[1-9]\\d|1\\d{2}|'
-                  '2[0-4]\\d|25[0-5])){3})|'
+                  '(([0-9A-Fa-f]{1,4}:){6}(\\d|[1-9]\\d|1\\d{2}|2[0-4]\\d|25[0-5])'
+                  '(\\.(\\d|[1-9]\\d|1\\d{2}|2[0-4]\\d|25[0-5])){3})|'
+                  '(([0-9A-Fa-f]{1,4}:){5}:(\\d|[1-9]\\d|1\\d{2}|2[0-4]\\d|25[0-5])'
+                  '(\\.(\\d|[1-9]\\d|1\\d{2}|2[0-4]\\d|25[0-5])){3})|'
+                  '(([0-9A-Fa-f]{1,4}:){4}(:[0-9A-Fa-f]{1,4})'
+                  '{0,1}:(\\d|[1-9]\\d|1\\d{2}|2[0-4]\\d|25[0-5])(\\.(\\d|[1-9]\\d|1\\d{2}|2[0-4]\\d|25[0-5])){3})|'
                   '(([0-9A-Fa-f]{1,4}:){3}(:[0-9A-Fa-f]{1,4}){0,2}:(\\d|[1-9]\\d|1\\d{2}|'
                   '2[0-4]\\d|25[0-5])(\\.(\\d|[1-9]\\d|1\\d{2}|2[0-4]\\d|25[0-5])){3})|'
                   '(([0-9A-Fa-f]{1,4}:){2}(:[0-9A-Fa-f]{1,4}){0,3}:(\\d|[1-9]\\d|1\\d{2}|'
                   '2[0-4]\\d|25[0-5])(\\.(\\d|[1-9]\\d|1\\d{2}|2[0-4]\\d|25[0-5])){3})|'
-                  '([0-9A-Fa-f]{1,4}:(:[0-9A-Fa-f]{1,4}){0,4}:(\\d|[1-9]\\d|1\\d{2}|2[0-4]\\d|25[0-5])(\\.(\\d|[1-9]\\d|1\\d{2}|2[0-4]\\d|25[0-5])){3})|'
-                  '(:(:[0-9A-Fa-f]{1,4}){0,5}:(\\d|[1-9]\\d|1\\d{2}|2[0-4]\\d|25[0-5])(\\.(\\d|[1-9]\\d|1\\d{2}|2[0-4]\\d|25[0-5])){3}))$')
+                  '([0-9A-Fa-f]{1,4}:(:[0-9A-Fa-f]{1,4}){0,4}:(\\d|[1-9]\\d|1\\d{2}|2[0-4]\\d|25[0-5])'
+                  '(\\.(\\d|[1-9]\\d|1\\d{2}|2[0-4]\\d|25[0-5])){3})|'
+                  '(:(:[0-9A-Fa-f]{1,4}){0,5}:(\\d|[1-9]\\d|1\\d{2}|2[0-4]\\d|25[0-5])'
+                  '(\\.(\\d|[1-9]\\d|1\\d{2}|2[0-4]\\d|25[0-5])){3}))$')
 
 
 class HostsConfig:
@@ -35,7 +36,8 @@ class HostsConfig:
     def __int__(self):
         pass
 
-    def _parse_network_conf_to_dict(self, conf_info):
+    @staticmethod
+    def _parse_network_conf_to_dict(conf_info):
 
         res = dict()
         error_conf = False
@@ -68,12 +70,13 @@ class HostsConfig:
 
         return conf_json
 
-    def conf_compare(self, dst_conf, src_conf):
+    @staticmethod
+    def conf_compare(dst_conf, src_conf):
         """
-                desc: 比较dst_conf和src_conf是否相同，dst_conf和src_conf均为序列化后的配置信息。
-                return：dst_conf和src_conf相同返回SYNCHRONIZED
+        desc: 比较dst_conf和src_conf是否相同，dst_conf和src_conf均为序列化后的配置信息。
+        return：dst_conf和src_conf相同返回SYNCHRONIZED
                         dst_conf和src_conf不同返回NOT_SYNCHRONIZE
-                """
+        """
         res = SYNCHRONIZED
         dst_conf_dict = json.loads(dst_conf)
         src_conf_dict = json.loads(src_conf)
@@ -90,14 +93,16 @@ class HostsConfig:
                 break
         return res
 
-    def read_conf(self, conf_json):
+    @staticmethod
+    def read_conf(conf_json):
         """
         desc: 将json格式的配置文件内容结构化。
         """
         conf_dict = json.loads(conf_json)
         return conf_dict
 
-    def write_conf(self, conf_dict):
+    @staticmethod
+    def write_conf(conf_dict):
         content = ""
         conf_dict_keys = conf_dict.keys()
         for key in conf_dict_keys:

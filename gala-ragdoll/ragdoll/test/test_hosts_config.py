@@ -4,7 +4,7 @@
 import importlib
 import json
 
-config_text = "   # Loopback entries; do not change.\n" \
+CONFIG_TEXT = "   # Loopback entries; do not change.\n" \
               " # For historical reasons, localhost precedes localhost.localdomain:\n" \
               "127.0.0.1   localhost         localhost.localdomain localhost4              localhost4.localdomain4\n" \
               "::1         localhost localhost.localdomain localhost6 localhost6.localdomain6\n" \
@@ -12,7 +12,7 @@ config_text = "   # Loopback entries; do not change.\n" \
               "# 192.168.1.10 foo.mydomain.org foo\n" \
               " # 192.168.1.13 bar.mydomain.org bar   "
 
-dst_conf = '{\n' \
+DST_CONF = '{\n' \
            '"127.0.0.1": "localhost localhost.localdomain localhost4 localhost4.localdomain4",\n' \
            '"::1": "localhost localhost.localdomain localhost6 localhost6.localdomain6"\n' \
            '}'
@@ -45,7 +45,7 @@ class TestNetworkConfig(BaseTestCase):
 
     def test_parse_res_to_json(self):
         conf_model = self.import_network_config_model()
-        conf_json_str = conf_model.parse_res_to_json(config_text)
+        conf_json_str = conf_model.parse_res_to_json(CONFIG_TEXT)
         print("conf_json_str : {}".format(conf_json_str))
 
         conf_json = json.loads(conf_json_str)
@@ -53,14 +53,14 @@ class TestNetworkConfig(BaseTestCase):
 
     def test_conf_compare(self):
         conf_model = self.import_network_config_model()
-        src_conf = conf_model.parse_res_to_json(config_text)
-        res = conf_model.conf_compare(dst_conf, src_conf)
+        src_conf = conf_model.parse_res_to_json(CONFIG_TEXT)
+        res = conf_model.conf_compare(DST_CONF, src_conf)
         print("res : {}".format(res))
         self.assertTrue(res == "SYNCHRONIZED")
 
     def test_write_conf(self):
         conf_model = self.import_network_config_model()
-        conf_dict = conf_model.read_conf(dst_conf)
+        conf_dict = conf_model.read_conf(DST_CONF)
         print("read_conf : {}".format(conf_dict))
         content = conf_model.write_conf(conf_dict)
         print("content : {}".format(content))
