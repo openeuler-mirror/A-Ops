@@ -54,7 +54,7 @@ class SshConfig():
     def write_conf(self, spacer_info=None):
         content = ""
         for conf_dict in self.conf:
-            for key in conf_dict.keys:
+            for key in conf_dict.keys():
                 if conf_dict[key] is not None:
                     if spacer_info == "":
                         conf_item = " ".join((key, str(conf_dict[key]))).replace('\n', '\n\t')
