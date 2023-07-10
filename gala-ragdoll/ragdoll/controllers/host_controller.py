@@ -58,16 +58,16 @@ def add_host_in_domain(body=None):  # noqa: E501
     for host in host_infos:
         hostPath = os.path.join(domainPath, "hostRecord.txt")
         if os.path.isfile(hostPath):
-            isContained = Format.isContainedInfile(hostPath, host.ip)
+            isContained = Format.isContainedInfile(hostPath, host.host_id)
             if isContained:
                 print("##########isContained###############")
-                failedHost.append(host.ip)
+                failedHost.append(host.host_id)
             else:
                 Format.addHostToFile(hostPath, host)
-                successHost.append(host.ip)
+                successHost.append(host.host_id)
         else:
             Format.addHostToFile(hostPath, host)
-            successHost.append(host.ip)
+            successHost.append(host.host_id)
 
     if len(failedHost) == len(host_infos):
         codeNum = 400
@@ -128,7 +128,7 @@ def delete_host_in_domain(body=None):  # noqa: E501
     hostPath = os.path.join(domainPath, "hostRecord.txt")
     if not os.path.isfile(hostPath) or (os.path.isfile(hostPath) and os.stat(hostPath).st_size == 0):
         codeNum = 400
-        base_rsp = BaseResponse(codeNum, "The host information is not set in the current domain." +  
+        base_rsp = BaseResponse(codeNum, "The host information is not set in the current domain." +
                                           "Please add the host information first")
         return base_rsp, codeNum
 
@@ -147,20 +147,21 @@ def delete_host_in_domain(body=None):  # noqa: E501
             return base_rsp, codeNum
 
     # If the domain exists, check whether the current input parameter host belongs to the corresponding
-    # domain. If the host is in the domain, the host is deleted. If the host is no longer in the domain, 
+    # domain. If the host is in the domain, the host is deleted. If the host is no longer in the domain,
     # the host is added to the failure range
     containedInHost = []
     notContainedInHost = []
     os.umask(0o077)
     for hostInfo in hostInfos:
-        ip = hostInfo.ip
+        hostId = hostInfo.host_id
         isContained = False
         try:
             with open(hostPath, 'r') as d_file:
                 lines = d_file.readlines()
                 with open(hostPath, 'w') as w_file:
                     for line in lines:
-                        if ip not in line:
+                        line_host_id = json.loads(str(ast.literal_eval(line)).replace("'", "\""))['host_id']
+                        if hostId != line_host_id:
                             w_file.write(line)
                         else:
                             isContained = True
@@ -171,14 +172,14 @@ def delete_host_in_domain(body=None):  # noqa: E501
             return base_rsp, codeNum
 
         if isContained:
-            containedInHost.append(ip)
+            containedInHost.append(hostId)
         else:
-            notContainedInHost.append(ip)
+            notContainedInHost.append(hostId)
 
     # All hosts do not belong to the domain
     if len(notContainedInHost) == len(hostInfos):
         codeNum = 400
-        base_rsp = BaseResponse(codeNum, "All the host does not belong to the domain control, " + 
+        base_rsp = BaseResponse(codeNum, "All the host does not belong to the domain control, " +
                                          "please enter the host again")
         return base_rsp, codeNum
 
@@ -235,7 +236,7 @@ def get_host_by_domain_name(body=None):  # noqa: E501
     hostPath = os.path.join(domainPath, "hostRecord.txt")
     if not os.path.isfile(hostPath) or (os.path.isfile(hostPath) and os.stat(hostPath).st_size == 0):
         codeNum = 400
-        base_rsp = BaseResponse(codeNum, "The host information is not set in the current domain." +  
+        base_rsp = BaseResponse(codeNum, "The host information is not set in the current domain." +
                                           "Please add the host information first.")
         return base_rsp, codeNum
 
