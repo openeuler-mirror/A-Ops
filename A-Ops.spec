@@ -1,19 +1,11 @@
 Name:		A-Ops
-Version:	v1.2.6
-Release:	2
+Version:	v1.3.0
+Release:	3
 Summary:	The intelligent ops toolkit for openEuler
 License:	MulanPSL2
 URL:		https://gitee.com/openeuler/A-Ops
 Source0:	%{name}-%{version}.tar.gz
-Source1:	A-Ops-web-node-modules.tar.gz
-
-patch0002: 0002-add-create-time-attribute-for-workflow.patch 
-patch0003: 0003-fix-ragdoll-add-return-validation-of-config-analysis.patch
-patch0004: 0004-update-get-host-info.patch
-patch0005: 0005-web-fine-tuning.patch
-
-# build for web
-BuildRequires: nodejs node-gyp nodejs-yarn
+%global debug_package %{nil}
 
 # build for ragdoll & aops basic module
 BuildRequires:  python3-setuptools python3-connexion python3-werkzeug python3-libyang
@@ -22,52 +14,9 @@ BuildRequires:	git python3-devel systemd
 # build for aops basic module
 BuildRequires:  python3-setuptools python3-kafka-python python3-connexion
 
+
 %description
 The intelligent ops toolkit for openEuler
-
-
-%package -n aops-agent
-Summary:    agent for A-Ops
-Requires:   python3-requests python3-flask python3-connexion python3-configparser python3-jsonschema
-Requires:   python3-flask-testing python3-libconf python3-swagger-ui-bundle
-Requires:   python3-concurrent-log-handler dmidecode python3-responses
-
-%description -n aops-agent
-agent for A-Ops
-
-
-%package -n aops-utils
-Summary:    utils for A-Ops
-Requires:   python3-concurrent-log-handler python3-xmltodict python3-pyyaml python3-marshmallow >= 3.13.0
-Requires:   python3-requests python3-xlrd python3-prettytable python3-pygments python3-sqlalchemy
-Requires:   python3-elasticsearch >= 7 python3-prometheus-api-client python3-urllib3 python3-werkzeug
-Requires:   python3-flask python3-flask-restful python3-PyMySQL python3-kafka-python
-
-%description -n aops-utils
-utils for A-Ops
-
-
-%package -n aops-manager
-Summary:    manager of A-ops
-Requires:   aops-utils = %{version}-%{release} ansible >= 2.9.0
-Requires:   python3-pyyaml python3-marshmallow >= 3.13.0 python3-flask python3-flask-restful
-Requires:   python3-requests sshpass python3-uWSGI python3-sqlalchemy python3-werkzeug python3-PyMySQL
-
-%description -n aops-manager
-manager of A-ops, support software deployment and installation, account management, host management,
-host group management, task and template management of ansible.
-
-
-%package -n aops-check
-Summary:    check module for A-Ops
-Requires:   aops-utils = %{version}-%{release}
-Requires:   python3-requests python3-flask python3-flask-restful python3-marshmallow >= 3.13.0
-Requires:   python3-numpy python3-pandas python3-prometheus-api-client
-Requires:   python3-sqlalchemy python3-PyMySQL python3-Flask-APScheduler >= 1.11.0
-Requires:   python3-scipy
-
-%description -n aops-check
-check module for A-Ops
 
 
 %package -n gala-ragdoll
@@ -87,87 +36,18 @@ Requires: python3-werkzeug python3-connexion python3-swagger-ui-bundle
 python3 pakcage of gala-ragdoll
 
 
-%package -n aops-web
-Summary:    website for A-Ops
-Requires:   nginx
-
-%description -n aops-web
-website for A-Ops, deployed by Nginx
-
-%package -n aops-tools
-Summary:  aops tools
-
-%description -n aops-tools
-tools for aops, it's about agent deploy
-
-
 %prep
-%setup
-%setup -T -D -a 1
-%patch0002 -p1
-%patch0003 -p1
-%patch0004 -p1
-%patch0005 -p1
-cp -rf A-Ops-web-node-modules/node_modules aops-web/
+%autosetup -n %{name}-%{version}
 
 
 %build
-# build for aops-agent
-pushd aops-agent
-%py3_build
-popd
-
-# build for aops-utils
-pushd aops-utils
-%py3_build
-popd
-
-#build for aops-manager
-pushd aops-manager
-%py3_build
-popd
-
-# build for aops-check
-pushd aops-check
-%py3_build
-popd
-
 #build for gala-ragdoll
 pushd gala-ragdoll
 %py3_build
 popd
 
-#build for aops-web
-pushd aops-web
-yarn build
-popd
-
 
 %install
-# install for agent
-pushd aops-agent
-%py3_install
-popd
-
-# install for utils
-pushd aops-utils
-%py3_install
-popd
-
-# install for manager
-pushd aops-manager
-%py3_install
-mkdir -p %{buildroot}/%{python3_sitelib}/aops_manager/deploy_manager/ansible_handler
-cp -r aops_manager/deploy_manager/ansible_handler/* %{buildroot}/%{python3_sitelib}/aops_manager/deploy_manager/ansible_handler
-mkdir -p %{buildroot}/%{python3_sitelib}/aops_manager/deploy_manager/tasks
-cp -r aops_manager/deploy_manager/tasks/* %{buildroot}/%{python3_sitelib}/aops_manager/deploy_manager/tasks
-popd
-
-# install for check
-pushd aops-check
-%py3_install
-popd
-
 #install for gala-ragdoll
 pushd gala-ragdoll
 %py3_install
@@ -178,22 +58,6 @@ mkdir %{buildroot}/%{python3_sitelib}/ragdoll/config
 install config/*.conf %{buildroot}/%{python3_sitelib}/ragdoll/config
 mkdir -p %{buildroot}/%{_prefix}/lib/systemd/system
 install service/gala-ragdoll.service %{buildroot}/%{_prefix}/lib/systemd/system
-popd
-
-# install for web
-pushd aops-web
-mkdir -p %{buildroot}/opt/aops_web
-cp -r dist %{buildroot}/opt/aops_web/
-mkdir -p %{buildroot}/%{_sysconfdir}/nginx
-cp -r deploy/aops-nginx.conf %{buildroot}/%{_sysconfdir}/nginx/
-mkdir -p %{buildroot}/usr/lib/systemd/system
-cp -r deploy/aops-web.service %{buildroot}/usr/lib/systemd/system/
-popd
-
-# install for aops tools
-pushd aops-tools
-mkdir -p %{buildroot}/opt/aops/
-cp -r aops_tools %{buildroot}/opt/aops/
 popd
 
 
@@ -212,40 +76,6 @@ fi
 %systemd_postun gala-ragdoll.service
 
 
-%files -n aops-agent
-%attr(0644,root,root) %{_sysconfdir}/aops/agent.conf
-%attr(0755,root,root) %{_unitdir}/aops-agent.service
-%{python3_sitelib}/aops_agent*.egg-info
-%{python3_sitelib}/aops_agent/*
-%{_bindir}/aops_agent
-
-
-%files -n aops-utils
-%doc README.*
-%attr(0644,root,root) %{_sysconfdir}/aops/system.ini
-%{python3_sitelib}/aops_utils*.egg-info
-%{python3_sitelib}/aops_utils/*
-%attr(0755,root,root) %{_bindir}/aops-utils
-
-
-%files -n aops-manager
-%attr(0644,root,root) %{_sysconfdir}/aops/manager.ini
-%attr(0644,root,root) %{_sysconfdir}/aops/default.json
-%attr(0755,root,root) %{_bindir}/aops-manager
-%attr(0755,root,root) %{_unitdir}/aops-manager.service
-%{python3_sitelib}/aops_manager*.egg-info
-%{python3_sitelib}/aops_manager/*
-
-
-%files -n aops-check
-%attr(0644,root,root) %{_sysconfdir}/aops/check.ini
-%attr(0644,root,root) %{_sysconfdir}/aops/check_default.json
-%attr(0755,root,root) %{_bindir}/aops-check
-%attr(0755,root,root) %{_unitdir}/aops-check.service
-%{python3_sitelib}/aops_check*.egg-info
-%{python3_sitelib}/aops_check/*
-
-
 %files -n gala-ragdoll
 %doc gala-ragdoll/doc/*
 %license gala-ragdoll/LICENSE
@@ -260,18 +90,16 @@ fi
 %{python3_sitelib}/ragdoll-*.egg-info
 
 
-%files -n aops-web
-%attr(0755, root, root) /opt/aops_web/dist/*
-%attr(0755, root, root) %{_sysconfdir}/nginx/aops-nginx.conf
-%attr(0755, root, root) %{_unitdir}/aops-web.service
-
-%files -n aops-tools
-%attr(0755, root, root) /opt/aops/aops_tools/*
-
-
 %changelog
-* Fri Oct 28 2022 zhaoyuxing<zhaoyuxing2@huawei.com> - v1.2.6-2
-- delete gala-anteater&gala-gopher&gala-spider.
+* Mon Apr 17 2023 wenxin<shusheng.wen@outlook.com> - v1.3.0-3
+- update the host id validate method for ragdoll
+
+* Tue Feb 28 2023 zhuyuncheng<zhuyuncheng@huawei.com> - v1.3.0-2
+- remove packages which have moved to new repositories.
+
+* Mon Sep 26 2022 zhuyuncheng<zhuyuncheng@huawei.com> - v1.3.0-1
+- update delete host return message
+- update add domain return message
 
 * Wed Sep 14 2022 zhuyuncheng<zhuyuncheng@huawei.com> - v1.2.6-1
 - move aops-basedatabase to aops-tools
