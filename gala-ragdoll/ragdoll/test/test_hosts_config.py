@@ -1,6 +1,5 @@
-# Author: Lay
-# Description: default
-# Date: 2023/6/16 17:42
+# coding: utf-8
+
 import importlib
 import json
 
