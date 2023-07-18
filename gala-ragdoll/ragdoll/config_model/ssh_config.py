@@ -69,11 +69,12 @@ class SshConfig():
 
     def write_conf(self, spacer_info=None):
         content = ""
-        for conf_dict in self.conf:
-            for key, value in conf_dict.items():
-                if value is not None and spacer_info["openEuler-sshd_config"] == "":
-                    conf_item = " ".join((key, value)).replace('\n', '\n\t')
-                    content = content + conf_item + "\n"
+        if spacer_info["openEuler-sshd_config"] == "":
+            for conf_dict in self.conf:
+                for key, value in conf_dict.items():
+                    if value is not None:
+                        conf_item = " ".join((key, value)).replace('\n', '\n\t')
+                        content = content + conf_item + "\n"
         content = content + '\n'
         return content
 
