@@ -1,6 +1,8 @@
 import re
 import json
 
+from ragdoll.utils.yang_module import YangModule
+
 NOT_SYNCHRONIZE = "NOT SYNCHRONIZE"
 SYNCHRONIZED = "SYNCHRONIZED"
 
@@ -33,11 +35,11 @@ ipv6 = re.compile('^((([0-9A-Fa-f]{1,4}:){7}[0-9A-Fa-f]{1,4})|'
 
 class HostsConfig:
 
-    def __int__(self):
-        pass
+    def __init__(self):
+        self.conf = dict()
+        self.yang = dict()
 
-    @staticmethod
-    def _parse_network_conf_to_dict(conf_info):
+    def _parse_network_conf_to_dict(self, conf_info):
 
         res = dict()
         error_conf = False
@@ -61,22 +63,26 @@ class HostsConfig:
 
         return error_conf, res
 
-    def parse_res_to_json(self, conf_info):
-        conf_json = ""
+    def load_yang_model(self, yang_info):
+        yang_module = YangModule()
+        xpath = yang_module.getXpathInModule(yang_info)  # get all xpath in yang_info
 
+        for d_xpath in xpath:
+            real_path = d_xpath.split('/')
+            option = real_path[2]
+            self.yang[option] = ''
+
+    def read_conf(self, conf_info):
         error_conf, dict_res = self._parse_network_conf_to_dict(conf_info.strip())
         if not error_conf:
-            conf_json = json.dumps(dict_res, indent=4, ensure_ascii=False)
+            self.conf = dict_res
 
-        return conf_json
-
-    @staticmethod
-    def conf_compare(dst_conf, src_conf):
+    def conf_compare(self, dst_conf, src_conf):
         """
-        desc: 比较dst_conf和src_conf是否相同，dst_conf和src_conf均为序列化后的配置信息。
-        return：dst_conf和src_conf相同返回SYNCHRONIZED
+                desc: 比较dst_conf和src_conf是否相同，dst_conf和src_conf均为序列化后的配置信息。
+                return：dst_conf和src_conf相同返回SYNCHRONIZED
                         dst_conf和src_conf不同返回NOT_SYNCHRONIZE
-        """
+                """
         res = SYNCHRONIZED
         dst_conf_dict = json.loads(dst_conf)
         src_conf_dict = json.loads(src_conf)
@@ -93,20 +99,17 @@ class HostsConfig:
                 break
         return res
 
-    @staticmethod
-    def read_conf(conf_json):
+    def read_json(self, conf_json):
         """
-        desc: 将json格式的配置文件内容结构化。
+        desc: 将json格式的配置文件内容结构化成Class conf成员。
         """
         conf_dict = json.loads(conf_json)
-        return conf_dict
+        self.conf = conf_dict
 
-    @staticmethod
-    def write_conf(conf_dict):
+    def write_conf(self):
         content = ""
-        conf_dict_keys = conf_dict.keys()
-        for key in conf_dict_keys:
-            if conf_dict[key] is not None:
-                conf_item = " ".join((key, str(conf_dict[key]))).replace('\n', '\n\t')
+        for key, value in self.conf:
+            if value is not None:
+                conf_item = " ".join((key, str(value))).replace('\n', '\n\t')
                 content = content + conf_item + "\n"
         return content

@@ -66,11 +66,6 @@ class ObjectParse(object):
         # create conf model
         conf_model = self.create_conf_model_by_type(conf_type)
 
-        # parse config file whose key-type is ip address
-        if conf_type == "hosts":
-            conf_json = conf_model.parse_res_to_json(conf_info)
-            return conf_json
-
         # load yang model info
         yang_info = self._yang_modules.getModuleByFilePath(conf_path)
         conf_model.load_yang_model(yang_info)
@@ -92,10 +87,6 @@ class ObjectParse(object):
 
         # create conf model
         conf_model = self.create_conf_model_by_type(conf_type)
-        if conf_type == "hosts":
-            conf_dict = conf_model.read_conf(json_list)
-            conf_info = conf_model.write_conf(conf_dict)
-            return conf_info
 
         # load yang model info
         yang_info = self._yang_modules.getModuleByFilePath(conf_path)
