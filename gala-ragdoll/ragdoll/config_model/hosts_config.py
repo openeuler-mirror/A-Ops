@@ -39,7 +39,8 @@ class HostsConfig:
         self.conf = dict()
         self.yang = dict()
 
-    def _parse_network_conf_to_dict(self, conf_info):
+    @staticmethod
+    def _parse_network_conf_to_dict(conf_info):
 
         res = dict()
         error_conf = False
@@ -77,12 +78,8 @@ class HostsConfig:
         if not error_conf:
             self.conf = dict_res
 
-    def conf_compare(self, dst_conf, src_conf):
-        """
-                desc: 比较dst_conf和src_conf是否相同，dst_conf和src_conf均为序列化后的配置信息。
-                return：dst_conf和src_conf相同返回SYNCHRONIZED
-                        dst_conf和src_conf不同返回NOT_SYNCHRONIZE
-                """
+    @staticmethod
+    def conf_compare(dst_conf, src_conf):
         res = SYNCHRONIZED
         dst_conf_dict = json.loads(dst_conf)
         src_conf_dict = json.loads(src_conf)
