@@ -2,13 +2,13 @@ from __future__ import absolute_import
 import importlib
 import json
 
-from ragdoll.config_model.ssh_config import SshdConfig
+from ragdoll.config_model.sshd_config import SshdConfig
 from ragdoll.test import BaseTestCase
 
 BASE_PATH = "ragdoll.config_model."
 CONFIG_MODEL_NAME = "Config"
 PROJECT_NAME = "_config"
-CONF_TYPE = "ssh"
+CONF_TYPE = "sshd"
 
 CONF_INFO = "# If you want to change the port on a SELinux system, you have to tell\n" \
             "# SELinux about this change.\n" \
@@ -47,7 +47,7 @@ DST_CONF = '[\n' \
 NULL_CONF_INFO = ""
 
 
-class TestSshConfig(BaseTestCase):
+class TestSshdConfig(BaseTestCase):
     def create_conf_model(self):
         conf_model = ""
         project_name = CONF_TYPE + PROJECT_NAME  # example: ini_config
@@ -87,7 +87,7 @@ class TestSshConfig(BaseTestCase):
         conf_model = self.create_conf_model()
         conf_dict_list = conf_model.parse_conf_to_dict(CONF_INFO)
         ssh_config.conf = conf_dict_list
-        content = conf_model.write_conf(spacer_info="")
+        content = conf_model.write_conf(spacer_info={"openEuler-sshd_config": ""})
         self.assertTrue(len(content) > 0)
 
 
