@@ -2,7 +2,7 @@ from __future__ import absolute_import
 import importlib
 import json
 
-from ragdoll.config_model.ssh_config import SshConfig
+from ragdoll.config_model.ssh_config import SshdConfig
 from ragdoll.test import BaseTestCase
 
 BASE_PATH = "ragdoll.config_model."
@@ -83,7 +83,7 @@ class TestSshConfig(BaseTestCase):
         self.assertEqual(res, "NOT SYNCHRONIZE")
 
     def test_write_conf(self):
-        ssh_config = SshConfig()
+        ssh_config = SshdConfig()
         conf_model = self.create_conf_model()
         conf_dict_list = conf_model.parse_conf_to_dict(CONF_INFO)
         ssh_config.conf = conf_dict_list

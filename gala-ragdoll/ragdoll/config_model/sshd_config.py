@@ -22,7 +22,7 @@ NOT_SYNCHRONIZE = "NOT SYNCHRONIZE"
 SYNCHRONIZED = "SYNCHRONIZED"
 
 
-class SshConfig():
+class SshdConfig():
     def __init__(self):
         self.conf = list()
         self.yang = list()

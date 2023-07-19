@@ -61,7 +61,7 @@ module openEuler-sshd_config {
       description "The file name is sshd_config";
 
       sshd:path "openEuler:/etc/ssh/sshd_config";
-      sshd:type "ssh";
+      sshd:type "sshd";
       sshd:spacer "";
     }
   }
