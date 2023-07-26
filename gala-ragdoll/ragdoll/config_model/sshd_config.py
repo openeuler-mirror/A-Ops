@@ -22,6 +22,7 @@ from ragdoll.const.synchronize_const import NOT_SYNCHRONIZE
 from ragdoll.const.synchronize_const import SYNCHRONIZED
 from vulcanus.log.log import LOGGER
 
+
 class SshdConfig():
     def __init__(self):
         self.conf = list()
