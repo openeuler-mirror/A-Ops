@@ -4,6 +4,8 @@ import json
 
 from ragdoll.config_model.sshd_config import SshdConfig
 from ragdoll.test import BaseTestCase
+from ragdoll.const.synchronize_const import NOT_SYNCHRONIZE
+from ragdoll.const.synchronize_const import SYNCHRONIZED
 
 BASE_PATH = "ragdoll.config_model."
 CONFIG_MODEL_NAME = "Config"
@@ -36,7 +38,7 @@ CONF_INFO = "# If you want to change the port on a SELinux system, you have to t
             "AcceptEnv XMODIFIERS\n" \
             "Subsystem sftp /usr/libexec/openssh/sftp-server -l INFO -f AUTH\n"
 
-DST_CONF = '[\n' \
+NOT_SYNCHRONIZE_CONF = '[\n' \
            '{\n' \
            '"Include": "/etc/ssh/sshd_config.d/*.conf"\n' \
            '},\n' \
@@ -44,6 +46,60 @@ DST_CONF = '[\n' \
            '"HostKey": "/etc/ssh/ssh_host_rsa_key"\n' \
            '}\n' \
            ']'
+SYNCHRONIZE_CONF = '[\n' \
+           '{\n' \
+           '"HostKey": "/etc/ssh/ssh_host_rsa_key"\n' \
+           '},\n' \
+           '{\n' \
+           '"HostKey": "/etc/ssh/ssh_host_ed25519_key"\n' \
+           '},\n' \
+           '{\n' \
+           '"SyslogFacility": "AUTH"\n' \
+           '},\n' \
+           '{\n' \
+           '"PermitRootLogin": "yes"\n' \
+           '},\n' \
+           '{\n' \
+           '"AuthorizedKeysFile": ".ssh/authorized_keys"\n' \
+           '},\n' \
+           '{\n' \
+           '"PasswordAuthentication": "yes"\n' \
+           '},\n' \
+           '{\n' \
+           '"KbdInteractiveAuthentication": "no"\n' \
+           '},\n' \
+           '{\n' \
+           '"GSSAPIAuthentication": "yes"\n' \
+           '},\n' \
+           '{\n' \
+           '"GSSAPICleanupCredentials": "no"\n' \
+           '},\n' \
+           '{\n' \
+           '"UsePAM": "yes"\n' \
+           '},\n' \
+           '{\n' \
+           '"X11Forwarding": "no"\n' \
+           '},\n' \
+           '{\n' \
+           '"PrintMotd": "no"\n' \
+           '},\n' \
+           '{\n' \
+           '"AcceptEnv": "LANG LC_CTYPE LC_NUMERIC LC_TIME LC_COLLATE LC_MONETARY LC_MESSAGES"\n' \
+           '},\n' \
+           '{\n' \
+           '"AcceptEnv": "LC_PAPER LC_NAME LC_ADDRESS LC_TELEPHONE LC_MEASUREMENT"\n' \
+           '},\n' \
+           '{\n' \
+           '"AcceptEnv": "LC_IDENTIFICATION LC_ALL LANGUAGE"\n' \
+           '},\n' \
+           '{\n' \
+           '"AcceptEnv": "XMODIFIERS"\n' \
+           '},\n' \
+           '{\n' \
+           '"Subsystem": "sftp /usr/libexec/openssh/sftp-server -l INFO -f AUTH"\n' \
+           '}\n' \
+           ']'
+
 NULL_CONF_INFO = ""
 
 
@@ -78,9 +134,11 @@ class TestSshdConfig(BaseTestCase):
     def test_conf_compare(self):
         conf_model = self.create_conf_model()
         conf_dict_list = conf_model.parse_conf_to_dict(CONF_INFO)
-        res = conf_model.conf_compare(DST_CONF, json.dumps(conf_dict_list))
+        res = conf_model.conf_compare(NOT_SYNCHRONIZE_CONF, json.dumps(conf_dict_list))
+        self.assertEqual(res, NOT_SYNCHRONIZE)
 
-        self.assertEqual(res, "NOT SYNCHRONIZE")
+        res = conf_model.conf_compare(SYNCHRONIZE_CONF, json.dumps(conf_dict_list))
+        self.assertEqual(res, SYNCHRONIZED)
 
     def test_write_conf(self):
         ssh_config = SshdConfig()

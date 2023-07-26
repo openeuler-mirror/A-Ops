@@ -58,7 +58,7 @@ def add_host_in_domain(body=None):  # noqa: E501
     for host in host_infos:
         hostPath = os.path.join(domainPath, "hostRecord.txt")
         if os.path.isfile(hostPath):
-            isContained = Format.isContainedInfile(hostPath, host.host_id)
+            isContained = Format.isContainedHostIdInfile(hostPath, host.host_id)
             if isContained:
                 print("##########isContained###############")
                 failedHost.append(host.host_id)

@@ -18,9 +18,9 @@ import json
 import re
 
 from ragdoll.utils.yang_module import YangModule
-NOT_SYNCHRONIZE = "NOT SYNCHRONIZE"
-SYNCHRONIZED = "SYNCHRONIZED"
-
+from ragdoll.const.synchronize_const import NOT_SYNCHRONIZE
+from ragdoll.const.synchronize_const import SYNCHRONIZED
+from vulcanus.log.log import LOGGER
 
 class SshdConfig():
     def __init__(self):
@@ -40,11 +40,11 @@ class SshdConfig():
                 continue
             ssh_domain = re.split("\s+", line)
             if len(ssh_domain) == 1:
-                return False
+                return conf_dict_list
 
             strip_line = str(line.strip()).replace("\t", " ")
-            sect_name = strip_line.split(" ", 1)[0].strip()
-            cur_sect = strip_line.split(" ", 1)[1].strip()
+            sect_name = re.split('\s', strip_line.strip(), 1)[0]
+            cur_sect = re.split('\s', strip_line.strip(), 1)[1]
 
             conf_dict = dict()
             conf_dict[sect_name] = cur_sect

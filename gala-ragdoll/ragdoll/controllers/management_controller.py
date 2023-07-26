@@ -260,16 +260,13 @@ def delete_management_confs_in_domain(body=None):  # noqa: E501
     for conf in conf_files:
         module = yang_modules.getModuleByFilePath(conf.file_path)
         features = yang_modules.getFeatureInModule(module)
-        for d_fea in features:
-            domain_path = os.path.join(domain_path, d_fea)
+        features_path = os.path.join(domain_path, "/".join(features))
         print("domain_path is : {}".format(domain_path))
 
-        if os.path.isfile(domain_path):
+        if os.path.isfile(features_path):
             print("it's a normal file")
             try:
-                os.remove(domain_path)
-                # restore domain_path
-                domain_path = os.path.join(TARGETDIR, domain)
+                os.remove(features_path)
             except OSError as ex:
                 #logging.error("the path remove failed")
                 break
