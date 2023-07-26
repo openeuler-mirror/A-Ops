@@ -20,7 +20,6 @@ import re
 from ragdoll.utils.yang_module import YangModule
 from ragdoll.const.synchronize_const import NOT_SYNCHRONIZE
 from ragdoll.const.synchronize_const import SYNCHRONIZED
-from vulcanus.log.log import LOGGER
 
 
 class SshdConfig():
