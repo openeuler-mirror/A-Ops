@@ -18,8 +18,8 @@ import json
 import re
 
 from ragdoll.utils.yang_module import YangModule
-from ragdoll.const.synchronize_const import NOT_SYNCHRONIZE
-from ragdoll.const.synchronize_const import SYNCHRONIZED
+from ragdoll.const.conf_handler_const import NOT_SYNCHRONIZE
+from ragdoll.const.conf_handler_const import SYNCHRONIZED
 
 
 class SshdConfig():

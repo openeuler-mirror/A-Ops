@@ -4,8 +4,8 @@ import json
 
 from ragdoll.config_model.sshd_config import SshdConfig
 from ragdoll.test import BaseTestCase
-from ragdoll.const.synchronize_const import NOT_SYNCHRONIZE
-from ragdoll.const.synchronize_const import SYNCHRONIZED
+from ragdoll.const.conf_handler_const import NOT_SYNCHRONIZE
+from ragdoll.const.conf_handler_const import SYNCHRONIZED
 
 BASE_PATH = "ragdoll.config_model."
 CONFIG_MODEL_NAME = "Config"

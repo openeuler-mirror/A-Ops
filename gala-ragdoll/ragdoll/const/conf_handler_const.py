@@ -11,7 +11,7 @@
 # See the Mulan PSL v2 for more details.
 # ******************************************************************************/
 """
-@FileName: synchronize_const.py
+@FileName: conf_handler_const.py
 @Time: 2023/7/26 15:24
 @Author: JiaoSiMao
 Description:
