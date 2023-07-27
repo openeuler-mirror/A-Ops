@@ -42,12 +42,9 @@ class SshdConfig():
             if len(ssh_domain) == 1:
                 return conf_dict_list
 
-            strip_line = str(line.strip()).replace("\t", " ")
-            sect_name = re.split('\s', strip_line.strip(), 1)[0]
-            cur_sect = re.split('\s', strip_line.strip(), 1)[1]
-
+            re_list = re.split('\s', line.strip(), 1)
             conf_dict = dict()
-            conf_dict[sect_name] = cur_sect
+            conf_dict[re_list[0]] = re_list[1]
             conf_dict_list.append(conf_dict)
         return conf_dict_list
 
