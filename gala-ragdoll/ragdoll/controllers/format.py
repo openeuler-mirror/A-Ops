@@ -77,11 +77,12 @@ class Format(object):
         return os.path.abspath(os.path.join(abs1, abs2))
 
     @staticmethod
-    def isContainedInfile(f_file, content):
+    def isContainedHostIdInfile(f_file, content):
         isContained = False
         with open(f_file, 'r') as d_file:
             for line in d_file.readlines():
-                if content in line:
+                line_dict = json.loads(str(ast.literal_eval(line)).replace("'", "\""))
+                if content == line_dict["host_id"]:
                     isContained = True
                     return isContained
 
