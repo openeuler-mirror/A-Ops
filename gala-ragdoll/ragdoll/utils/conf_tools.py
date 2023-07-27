@@ -45,19 +45,19 @@ WPERM = 2
 XPERM = 1
 SPERM = 0
 
-
 NOTFOUND = "NOT FOUND"
 NOTSYNCHRONIZE = "NOT SYNCHRONIZE"
 SYNCHRONIZED = "SYNCHRONIZED"
 
 CONFIG = "/etc/ragdoll/gala-ragdoll.conf"
 
+
 class SyncRes(Enum):
     SUCCESS = "SUCCESS"
     FAILED = "FAILED"
 
-class ConfTools(object):
 
+class ConfTools(object):
     """
     desc: convert the configuration items controlled in the domain into dict storage
     """
@@ -204,9 +204,9 @@ class ConfTools(object):
                         d_real_conf = RealConf(path=x_path, real_value=d_path_value)
                         real_conf.append(d_real_conf)
 
-            real_conf_path = RealConfPath(domain_name = domainName,
-                                          host_id = hostId,
-                                          real_conf = real_conf)
+            real_conf_path = RealConfPath(domain_name=domainName,
+                                          host_id=hostId,
+                                          real_conf=real_conf)
             res.append(real_conf_path)
         return res
 
@@ -358,11 +358,11 @@ class ConfTools(object):
         ll_res = gitTools.run_shell_return_output(cmd).decode()
         print("ll_res is : {}".format(ll_res))
         ll_res_list = ll_res.split(SPACE)
-        
+
         fileType = ll_res_list[0]
         permssions = "0"
         for perm in range(0, PERMISSION):
-            items = fileType[1 + perm * PERMISSION : (perm + 1) * PERMISSION + 1]
+            items = fileType[1 + perm * PERMISSION: (perm + 1) * PERMISSION + 1]
             value = 0
             for d_item in items:
                 d_item_value = self.switch_perm(d_item)
@@ -638,3 +638,23 @@ class ConfTools(object):
             cf.read(conf_path, encoding="utf-8")
         port = cf.get("ragdoll", "port")
         return port
+
+    @staticmethod
+    def load_log_conf():
+        """
+        desc: get the log configuration
+        """
+        cf = configparser.ConfigParser()
+        if os.path.exists(CONFIG):
+            cf.read(CONFIG, encoding="utf-8")
+        else:
+            parent = os.path.dirname(os.path.realpath(__file__))
+            conf_path = os.path.join(parent, "../../config/gala-ragdoll.conf")
+            cf.read(conf_path, encoding="utf-8")
+        log_level = cf.get("log", "log_level")
+        log_dir = cf.get("log", "log_dir")
+        max_bytes = cf.get("log", "max_bytes")
+        backup_count = cf.get("log", "backup_count")
+        log_conf = {"log_level": log_level, "log_dir": log_dir, "max_bytes": int(max_bytes),
+                    "backup_count": int(backup_count)}
+        return log_conf
