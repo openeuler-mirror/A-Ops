@@ -68,6 +68,7 @@ class HostsConfig:
             ip_domain = re.split("\s+", line)
             if len(ip_domain) == 1:
                 error_conf = True
+                print("ip_domain contains incorrect formatting")
                 break
             ip = ip_domain[0]
             if ipv4.match(ip) or ipv6.match(ip):
@@ -76,6 +77,7 @@ class HostsConfig:
                 res[ip] = str_value
             else:
                 error_conf = True
+                print("ip does not meet the ipv4 or ipv6 format")
                 break
 
         return error_conf, res

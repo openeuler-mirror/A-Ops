@@ -3,6 +3,8 @@
 import importlib
 import json
 
+from ragdoll.test import BaseTestCase
+
 CONFIG_TEXT = "   # Loopback entries; do not change.\n" \
               " # For historical reasons, localhost precedes localhost.localdomain:\n" \
               "127.0.0.1   localhost         localhost.localdomain localhost4              localhost4.localdomain4\n" \
@@ -18,10 +20,8 @@ DST_CONF = '{\n' \
 
 BASE_PATH = "ragdoll.config_model."
 CONFIG_MODEL_NAME = "Config"
-CONF_TYPE = "network"
+CONF_TYPE = "hosts"
 PROJECT_NAME = "_config"
-
-from ragdoll.test import BaseTestCase
 
 
 class TestNetworkConfig(BaseTestCase):
