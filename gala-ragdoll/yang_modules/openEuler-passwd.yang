@@ -1,0 +1,68 @@
+/******************************************************
+* Copyright (C) 2023 isoftstone Technologies Co., Ltd. All rights reserved.
+* Module description & tree structure
+******************************************************/
+module openEuler-passwd {
+  namespace "urn:huawei:yang:openEuler-passwd";
+  prefix "passwd";
+
+  organization
+    "isoftstone";
+
+  contact
+    "Huawei Industrial Base
+     Bantian, Longgang
+     Shenzhen 518129
+     People's Republic of China
+     Website: http://www.huawei.com
+     Email: support@huawei.com";
+
+  description
+    "This module contains a collection of YANG definitions for
+     passwd config.
+     The real path is : /etc/passwd";
+
+  revision 2023-07-14 {
+    description "Initial revision.";
+    reference "";
+  }
+
+  // extension statements
+  // feature statements
+  // identity statements
+  // typedef statements
+  // grouping statements
+  // data definition statements
+  // augment statements
+  // rpc statements
+  // notification statements
+
+  extension path{
+    argument "filePath";
+    description "The real path corresponding to the passwd file.";
+  }
+
+  extension type{
+     argument "type";
+     description "The type of this configuration file.";
+  }
+
+  extension spacer{
+    argument "spacer";
+    description "Spacer between configuration item and configuration value.";
+  }
+
+  container passwd {
+
+    description "the conf file in hostname modules.";
+
+    container passwd_config {
+
+      description "The file name is passwd";
+
+      passwd:path "openEuler:/etc/passwd";
+      passwd:type "text";
+      passwd:spacer "";
+    }
+  }
+}
