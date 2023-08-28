@@ -17,6 +17,8 @@ the intelligent  ops toolkit for openEuler
 
   gala-ragdoll是基于OS的配置托管服务，能够实现对OS配置的集群式管理，屏蔽不同OS类型的配置差异，实现统一的、可溯源的、预期配置可管理的可信的OS配置运维入口。
 
+  该仓库已迁移至新仓库，迁移地址为：https://gitee.com/openeuler/gala-ragdoll
+
 - aops-agent
 
   A-Ops智能运维工具的客户端，提供采集主机信息、响应服务端aops-zeus(原aops-manager)下发命令、管理aops插件等功能。
