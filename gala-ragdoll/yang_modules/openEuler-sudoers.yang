@@ -1,0 +1,68 @@
+/******************************************************
+* Copyright (C) 2023 isoftstone Technologies Co., Ltd. All rights reserved.
+* Module description & tree structure
+******************************************************/
+module openEuler-sudoers {
+  namespace "urn:huawei:yang:openEuler-sudoers";
+  prefix "sudoers";
+
+  organization
+    "isoftstone";
+
+  contact
+    "Huawei Industrial Base
+     Bantian, Longgang
+     Shenzhen 518129
+     People's Republic of China
+     Website: http://www.huawei.com
+     Email: support@huawei.com";
+
+  description
+    "This module contains a collection of YANG definitions for
+     sudoers config.
+     The real path is : /etc/sudoers";
+
+  revision 2023-08-28 {
+    description "Initial revision.";
+    reference "";
+  }
+
+  // extension statements
+  // feature statements
+  // identity statements
+  // typedef statements
+  // grouping statements
+  // data definition statements
+  // augment statements
+  // rpc statements
+  // notification statements
+
+  extension path{
+    argument "filePath";
+    description "The real path corresponding to the sudoers file.";
+  }
+
+  extension type{
+     argument "type";
+     description "The type of this configuration file.";
+  }
+
+  extension spacer{
+    argument "spacer";
+    description "Spacer between configuration item and configuration value.";
+  }
+
+  container sudoers {
+
+    description "the conf file in sudoers modules.";
+
+    container sudoers_config {
+
+      description "The file name is sudoers_config";
+
+      sudoers:path "openEuler:/etc/sudoers";
+      sudoers:type "text";
+      sudoers:spacer "";
+    }
+  }
+}

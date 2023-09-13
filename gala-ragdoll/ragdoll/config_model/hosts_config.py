@@ -19,9 +19,7 @@ import json
 
 from ragdoll.log.log import LOGGER
 from ragdoll.utils.yang_module import YangModule
-
-NOT_SYNCHRONIZE = "NOT SYNCHRONIZE"
-SYNCHRONIZED = "SYNCHRONIZED"
+from ragdoll.const.conf_handler_const import NOT_SYNCHRONIZE, SYNCHRONIZED
 
 ipv4 = re.compile('^((25[0-5]|2[0-4]\d|[01]?\d\d?)\.){3}(25[0-5]|2[0-4]\d|[01]?\d\d?)$')
 
@@ -50,11 +48,7 @@ ipv6 = re.compile('^((([0-9A-Fa-f]{1,4}:){7}[0-9A-Fa-f]{1,4})|'
                   '(\\.(\\d|[1-9]\\d|1\\d{2}|2[0-4]\\d|25[0-5])){3}))$')
 
 
-class HostsConfig:
-
-    def __init__(self):
-        self.conf = dict()
-        self.yang = dict()
+class HostsConfig(BaseHandlerConfig):
 
     @staticmethod
     def _parse_network_conf_to_dict(conf_info):
@@ -83,15 +77,6 @@ class HostsConfig:
 
         return error_conf, res
 
-    def load_yang_model(self, yang_info):
-        yang_module = YangModule()
-        xpath = yang_module.getXpathInModule(yang_info)  # get all xpath in yang_info
-
-        for d_xpath in xpath:
-            real_path = d_xpath.split('/')
-            option = real_path[2]
-            self.yang[option] = ''
-
     def read_conf(self, conf_info):
         error_conf, dict_res = self._parse_network_conf_to_dict(conf_info.strip())
         if not error_conf:
@@ -114,13 +99,6 @@ class HostsConfig:
                 res = NOT_SYNCHRONIZE
                 break
         return res
-
-    def read_json(self, conf_json):
-        """
-        desc: 将json格式的配置文件内容结构化成Class conf成员。
-        """
-        conf_dict = json.loads(conf_json)
-        self.conf = conf_dict
 
     def write_conf(self):
         content = ""

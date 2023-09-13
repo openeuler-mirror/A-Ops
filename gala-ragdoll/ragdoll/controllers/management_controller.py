@@ -5,6 +5,7 @@ import shutil
 import json
 import requests
 
+from ragdoll.log.log import LOGGER
 from ragdoll.models.base_response import BaseResponse  # noqa: E501
 from ragdoll.models.conf import Conf
 from ragdoll.models.confs import Confs
@@ -108,21 +109,26 @@ def add_management_confs_in_domain(body=None):  # noqa: E501
 
     # content is empty
     if len(contents_list_null) > 0:
-        conf_list = []
-        host_list = []
-
         # get the real conf in host
         print("############## get the real conf in host ##############")
         get_real_conf_body = {}
         get_real_conf_body_info = []
         print("contents_list_null is : {}".format(contents_list_null))
+        exist_host = dict()
         for d_conf in contents_list_null:
-            confs_list = []
-            confs = {}
-            confs["host_id"] = int(d_conf.host_id)
-            confs_list.append(d_conf.file_path)
-            confs["config_list"] = confs_list
+            host_id = int(d_conf.host_id)
+            if host_id in exist_host:
+                exist_host[host_id].append(d_conf.file_path)
+            else:
+                conf_list = list()
+                conf_list.append(d_conf.file_path)
+                exist_host[host_id] = conf_list
+        for k,v in exist_host:
+            confs = dict()
+            confs["host_id"] = k
+            confs["config_list"] = v
             get_real_conf_body_info.append(confs)
+
         get_real_conf_body["infos"] = get_real_conf_body_info
 
         url = conf_tools.load_url_by_conf().get("collect_url")
@@ -198,6 +204,105 @@ def add_management_confs_in_domain(body=None):  # noqa: E501
 
     return base_rsp, codeNum
 
+def upload_management_confs_in_domain(file=None):  # noqa: E501
+    """upload management configuration items and expected values in the domain
+
+    upload management configuration items and expected values in the domain # noqa: E501
+
+    :param body: file info
+    :type body: FileStorage
+
+    :rtype: BaseResponse
+    """
+    filePath = connexion.request.form.get("filePath")
+    domainName = connexion.request.form.get("domainName")
+
+    # check the input domainName
+    checkRes = Format.domainCheck(domainName)
+    if not checkRes:
+        num = 400
+        base_rsp = BaseResponse(num, "Failed to verify the input parameter, please check the input parameters.")
+        return base_rsp, num
+
+    # check whether the domainName exists
+    isExist = Format.isDomainExist(domainName)
+    if not isExist:
+        codeNum = 400
+        base_rsp = BaseResponse(codeNum, "The current domain does not exist, please create the domain first.")
+        return base_rsp, codeNum
+
+    # check whether the file is null
+    if file is None:
+        codeNum = 400
+        base_rsp = BaseResponse(codeNum, "The file of conf can't be empty")
+        return base_rsp, codeNum
+
+    # check whether the conf is null
+    if filePath is None:
+        codeNum = 400
+        base_rsp = BaseResponse(codeNum, "The conf body of conf can't be empty")
+        return base_rsp, codeNum
+
+    successConf = []
+    failedConf = []
+    object_parse = ObjectParse()
+    yang_module = YangModule()
+    conf_tools = ConfTools()
+
+    # content is file
+    if file:
+        if not filePath.strip():
+            codeNum = 400
+            base_rsp = BaseResponse(codeNum, "The input parameters are not compliant, " +
+                                    "please check the input parameters.")
+            return base_rsp, codeNum
+        try:
+            content = file.read().decode("utf-8")
+            line_content = content + "\n"
+        except OSError as err:
+            LOGGER.info("OS error: {}".format(err))
+            codeNum = 500
+            base_rsp = BaseResponse(codeNum, "OS error: {0}".format(err))
+            return base_rsp, codeNum
+
+        content_string = object_parse.parse_conf_to_json(filePath, line_content)
+        if not content_string or not json.loads(content_string):
+            failedConf.append(filePath)
+        else:
+            # create the file and expected value in domain
+            feature_path = yang_module.get_feature_by_real_path(domainName, filePath)
+            result = conf_tools.wirteFileInPath(feature_path, content_string + '\n')
+            if result:
+                successConf.append(filePath)
+            else:
+                failedConf.append(filePath)
+
+    # git commit message
+    if len(successConf) > 0:
+        git_tools = GitTools()
+        succ_conf = ""
+        for d_conf in successConf:
+            succ_conf = succ_conf + d_conf + " "
+        commit_code = git_tools.gitCommit("Add the conf in {} domian, ".format(domainName) +
+                                          "the path including : {}".format(succ_conf))
+
+    # Joinin together the returned codenum and codeMessage
+    print("*******************************************")
+    print("successConf is : {}".format(successConf))
+    print("failedConf is : {}".format(failedConf))
+    if len(successConf) == 0:
+        codeNum = 400
+        codeString = "All configurations failed to be added."
+    elif len(failedConf) > 0:
+        codeNum = 206
+        codeString = Format.splicErrorString("confs", "add management conf", successConf, failedConf)
+    else:
+        codeNum = 200
+        codeString = Format.spliceAllSuccString("confs", "add management conf", successConf)
+
+    base_rsp = BaseResponse(codeNum, codeString)
+
+    return base_rsp, codeNum
 
 def delete_management_confs_in_domain(body=None):  # noqa: E501
     """delete management configuration items and expected values in the domain
