@@ -82,7 +82,7 @@ class SyncStatus(Model):
         return self._host_status
 
     @host_status.setter
-    def host_status(self, sync_status: List[HostSyncStatus]):
+    def host_status(self, host_status: List[HostSyncStatus]):
         """Sets the sync_status of this SyncStatus.
 
 

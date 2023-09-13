@@ -1,0 +1,68 @@
+/******************************************************
+* Copyright (C) 2023 isoftstone Technologies Co., Ltd. All rights reserved.
+* Module description & tree structure
+******************************************************/
+module openEuler-limits.conf {
+  namespace "urn:huawei:yang:openEuler-limits.conf";
+  prefix "limits";
+
+  organization
+    "isoftstone";
+
+  contact
+    "Huawei Industrial Base
+     Bantian, Longgang
+     Shenzhen 518129
+     People's Republic of China
+     Website: http://www.huawei.com
+     Email: support@huawei.com";
+
+  description
+    "This module contains a collection of YANG definitions for
+     limits config.
+     The real path is : /etc/security/limits.conf";
+
+  revision 2023-07-11 {
+    description "Initial revision.";
+    reference "";
+  }
+
+  // extension statements
+  // feature statements
+  // identity statements
+  // typedef statements
+  // grouping statements
+  // data definition statements
+  // augment statements
+  // rpc statements
+  // notification statements
+
+  extension path{
+    argument "filePath";
+    description "The real path corresponding to the limits file.";
+  }
+
+  extension type{
+     argument "type";
+     description "The type of this configuration file.";
+  }
+
+  extension spacer{
+    argument "spacer";
+    description "Spacer between configuration item and configuration value.";
+  }
+
+  container limits {
+
+    description "the conf file in ld.so modules.";
+
+    container limits.conf {
+
+      description "The file name is limits.conf";
+
+      limits:path "openEuler:/etc/security/limits.conf";
+      limits:type "limits";
+      limits:spacer "";
+    }
+  }
+}

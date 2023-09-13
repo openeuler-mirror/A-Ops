@@ -10,28 +10,28 @@
 # See the Mulan PSL v2 for more details.
 # ******************************************************************************/
 """
-Time: 2023-07-19 11:23:00
-Author: liulei
-Description: text type config analyze
+Time: 2023-08-30 14:05:00
+Author: jiaosimao
+Description: bash type config analyze
 """
+
 from ragdoll.config_model.base_handler_config import BaseHandlerConfig
 
 
-class TextConfig(BaseHandlerConfig):
+class BashConfig(BaseHandlerConfig):
     @staticmethod
     def parse_conf_to_dict(conf_info):
         """
-        将配置信息conf_info转为list，但是并未校验配置项是否合法
+        将配置信息conf_info转为list
         """
         conf_dict_list = list()
 
         conf_list = conf_info.strip().splitlines()
         for line in conf_list:
-            if line is None or line.strip() == '' or line.strip()[0] in '#;':
+            if line is None or line.strip() == '':
                 continue
 
-            strip_line = str(line.strip()).replace("\t", " ")
-            conf_dict_list.append(strip_line)
+            conf_dict_list.append(line)
         return conf_dict_list
 
     def read_conf(self, conf_info):

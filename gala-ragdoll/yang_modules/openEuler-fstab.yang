@@ -1,0 +1,69 @@
+/******************************************************
+* Copyright (C) 2021 Huawei Technologies Co., Ltd. All rights reserved.
+* Module description & tree structure
+******************************************************/
+module openEuler-fstab {
+  namespace "urn:huawei:yang:openEuler-fstab";
+  prefix "fstab";
+
+  organization
+    "Huawei Technologies Co., Ltd.";
+
+  contact
+    "Huawei Industrial Base
+     Bantian, Longgang
+     Shenzhen 518129
+     People's Republic of China
+     Website: http://www.huawei.com
+     Email: support@huawei.com";
+
+  description
+    "This module contains a collection of YANG definitions for
+     fstab.
+     The real path is : /etc/fstab";
+
+  revision 2021-05-13 {
+    description "Initial revision.";
+    reference "";
+  }
+
+  // extension statements
+  // feature statements
+  // identity statements
+  // typedef statements
+  // grouping statements
+  // data definition statements
+  // augment statements
+  // rpc statements
+  // notification statements
+
+  extension path{
+    argument "filePath";
+    description "The real path corresponding to the fstab file.";
+  }
+
+  extension type{
+     argument "type";
+     description "The type of this configuration file.";
+  }
+
+  extension spacer{
+    argument "spacer";
+    description "Spacer between configuration item and configuration value.";
+  }
+
+  container fstab {
+
+    description "the repo file in fstab modules.";
+
+    container fstab.conf {
+
+      description "The file name is fstab";
+
+      fstab:path "openEuler:/etc/fstab";
+      fstab:type "fstab";
+      fstab:spacer "";
+    }
+  }
+
+}
