@@ -94,7 +94,7 @@ class ObjectParse(object):
 
         # load conf info(json) to model
         conf_model.read_json(json_list)
-        if conf_type == "ssh":
+        if conf_type == "sshd":
             conf_info = conf_model.write_conf(spacer_info)
         else:
             # to content

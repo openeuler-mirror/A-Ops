@@ -25,7 +25,6 @@ from ragdoll.utils.git_tools import GitTools
 from ragdoll.utils.yang_module import YangModule
 from ragdoll.utils.object_parse import ObjectParse
 
-
 TARGETDIR = GitTools().target_dir
 
 
@@ -79,7 +78,7 @@ def add_management_confs_in_domain(body=None):  # noqa: E501
         else:
             codeNum = 400
             base_rsp = BaseResponse(codeNum, "The input parameters are not compliant, " +
-                                             "please check the input parameters.")
+                                    "please check the input parameters.")
             return base_rsp, codeNum
 
     successConf = []
@@ -93,7 +92,7 @@ def add_management_confs_in_domain(body=None):  # noqa: E501
             if not d_conf.contents.strip():
                 codeNum = 400
                 base_rsp = BaseResponse(codeNum, "The input parameters are not compliant, " +
-                                                 "please check the input parameters.")
+                                        "please check the input parameters.")
                 return base_rsp, codeNum
             content_string = object_parse.parse_conf_to_json(d_conf.file_path, d_conf.contents)
             if not content_string or not json.loads(content_string):
@@ -123,7 +122,7 @@ def add_management_confs_in_domain(body=None):  # noqa: E501
                 conf_list = list()
                 conf_list.append(d_conf.file_path)
                 exist_host[host_id] = conf_list
-        for k,v in exist_host:
+        for k, v in exist_host.items():
             confs = dict()
             confs["host_id"] = k
             confs["config_list"] = v
@@ -134,7 +133,7 @@ def add_management_confs_in_domain(body=None):  # noqa: E501
         url = conf_tools.load_url_by_conf().get("collect_url")
         headers = {"Content-Type": "application/json"}
         response = requests.post(url, data=json.dumps(get_real_conf_body), headers=headers)  # post request
-        
+
         response_code = json.loads(response.text).get("code")
         if response_code == None:
             codeNum = 500
@@ -183,7 +182,7 @@ def add_management_confs_in_domain(body=None):  # noqa: E501
         succ_conf = ""
         for d_conf in successConf:
             succ_conf = succ_conf + d_conf + " "
-        commit_code = git_tools.gitCommit("Add the conf in {} domian, ".format(domain) + 
+        commit_code = git_tools.gitCommit("Add the conf in {} domian, ".format(domain) +
                                           "the path including : {}".format(succ_conf))
 
     # Joinin together the returned codenum and codeMessage
@@ -203,6 +202,7 @@ def add_management_confs_in_domain(body=None):  # noqa: E501
     base_rsp = BaseResponse(codeNum, codeString)
 
     return base_rsp, codeNum
+
 
 def upload_management_confs_in_domain(file=None):  # noqa: E501
     """upload management configuration items and expected values in the domain
@@ -304,6 +304,7 @@ def upload_management_confs_in_domain(file=None):  # noqa: E501
 
     return base_rsp, codeNum
 
+
 def delete_management_confs_in_domain(body=None):  # noqa: E501
     """delete management configuration items and expected values in the domain
 
@@ -332,7 +333,7 @@ def delete_management_confs_in_domain(body=None):  # noqa: E501
         codeNum = 400
         base_rsp = BaseResponse(codeNum, "The current domain does not exist")
         return base_rsp, codeNum
-    
+
     # Check whether path is null in advance
     conf_files = body.conf_files
     if len(conf_files) == 0:
@@ -369,7 +370,7 @@ def delete_management_confs_in_domain(body=None):  # noqa: E501
             try:
                 os.remove(features_path)
             except OSError as ex:
-                #logging.error("the path remove failed")
+                # logging.error("the path remove failed")
                 break
             successConf.append(conf.file_path)
         else:
@@ -381,7 +382,7 @@ def delete_management_confs_in_domain(body=None):  # noqa: E501
         succ_conf = ""
         for d_conf in successConf:
             succ_conf = succ_conf + d_conf + " "
-        commit_code = git_tools.gitCommit("delete the conf in {} domian, ".format(domain) + 
+        commit_code = git_tools.gitCommit("delete the conf in {} domian, ".format(domain) +
                                           "the path including : {}".format(succ_conf))
 
     # Joinin together the returned codenum and codeMessage
@@ -427,8 +428,8 @@ def get_management_confs_in_domain(body=None):  # noqa: E501
         return base_rsp, 400
 
     # The parameters of the initial return value assignment
-    expected_conf_lists = ConfFiles(domain_name = domain,
-                                    conf_files = [])
+    expected_conf_lists = ConfFiles(domain_name=domain,
+                                    conf_files=[])
 
     # get the path in domain
     domainPath = os.path.join(TARGETDIR, domain)
@@ -447,13 +448,13 @@ def get_management_confs_in_domain(body=None):  # noqa: E501
                 file_lists = yang_modules.getFilePathInModdule(yang_modules.module_list)
                 file_path = file_lists.get(d_module.name()).split(":")[-1]
 
-                conf = ConfFile(file_path = file_path, contents = contents)
+                conf = ConfFile(file_path=file_path, contents=contents)
                 expected_conf_lists.conf_files.append(conf)
     print("expected_conf_lists is :{}".format(expected_conf_lists))
 
     if len(expected_conf_lists.domain_name) > 0:
-        base_rsp = BaseResponse(200, "Get management configuration items and expected " + 
-                                     "values in the domain succeccfully")
+        base_rsp = BaseResponse(200, "Get management configuration items and expected " +
+                                "values in the domain succeccfully")
     else:
         base_rsp = BaseResponse(400, "The file is Null in this domain")
 
@@ -503,8 +504,8 @@ def query_changelog_of_management_confs_in_domain(body=None):  # noqa: E501
     success_conf = []
     failed_conf = []
     domain_path = os.path.join(TARGETDIR, domain)
-    expected_conf_lists = ExceptedConfInfo(domain_name = domain,
-                                           conf_base_infos = [])
+    expected_conf_lists = ExceptedConfInfo(domain_name=domain,
+                                           conf_base_infos=[])
     yang_modules = YangModule()
     for root, dirs, files in os.walk(domain_path):
         conf_base_infos = []
@@ -527,9 +528,9 @@ def query_changelog_of_management_confs_in_domain(body=None):  # noqa: E501
                     success_conf.append(file_path)
                 else:
                     failed_conf.append(file_path)
-                conf_base_info = ConfBaseInfo(file_path = file_path,
-                                              expected_contents = expectedValue,
-                                              change_log = gitMessage)
+                conf_base_info = ConfBaseInfo(file_path=file_path,
+                                              expected_contents=expectedValue,
+                                              change_log=gitMessage)
                 expected_conf_lists.conf_base_infos.append(conf_base_info)
 
     print("########################## expetedConfInfo ####################")
