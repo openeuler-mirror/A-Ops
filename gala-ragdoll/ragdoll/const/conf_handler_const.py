@@ -16,5 +16,13 @@
 @Author: JiaoSiMao
 Description:
 """
+import re
+
 NOT_SYNCHRONIZE = "NOT SYNCHRONIZE"
 SYNCHRONIZED = "SYNCHRONIZED"
+LIMITS_DOMAIN_RE = re.compile('(^[*]$)|(^[@|0-9A-Za-z]+[0-9A-Za-z]$)')
+LIMITS_TYPE_VALUE = "soft|hard|-|"
+LIMITS_ITEM_VALUE = "core|data|fsize|memlock|nofile|rss|stack|cpu|nproc|as|maxlogins|maxsyslogins|priority|locks|sigpending|" \
+             "msgqueue|nice|rtprio|"
+RESOLV_KEY_VALUE = "nameserver|domain|search|sortlist|"
+FSTAB_COLUMN_NUM = 6

@@ -27,6 +27,7 @@ from ragdoll.utils.conf_tools import ConfTools
 from ragdoll.utils.host_tools import HostTools
 from ragdoll.utils.object_parse import ObjectParse
 from ragdoll import util
+from ragdoll.const.conf_files import yang_conf_list
 
 TARGETDIR = GitTools().target_dir
 
@@ -509,3 +510,58 @@ def sync_conf_to_host_from_domain(body=None):  # noqa: E501
         sync_res.append(host_sync_result)
 
     return sync_res
+
+def query_supported_confs(body=None):
+    """
+        query supported configuration list # noqa: E501
+
+       :param body:
+       :type body: dict | bytes
+
+       :rtype: List
+    """
+    if connexion.request.is_json:
+        body = DomainName.from_dict(connexion.request.get_json())
+
+    domain = body.domain_name
+
+    check_res = Format.domainCheck(domain)
+    if not check_res:
+        code_num = 400
+        base_rsp = BaseResponse(code_num, "Failed to verify the input parameter, please check the input parameters.")
+        return base_rsp, code_num
+
+    is_exist = Format.isDomainExist(domain)
+    if not is_exist:
+        code_num = 404
+        base_rsp = BaseResponse(code_num, "The current domain does not exist, please create the domain first.")
+        return base_rsp, code_num
+
+    conf_tools = ConfTools()
+    port = conf_tools.load_port_by_conf()
+    url = "http://0.0.0.0:" + port + "/management/getManagementConf"
+    headers = {"Content-Type": "application/json"}
+    get_man_conf_body = DomainName(domain_name=domain)
+    print("body is : {}".format(get_man_conf_body))
+    response = requests.post(url, data=json.dumps(get_man_conf_body), headers=headers)  # post request
+    print("response is : {}".format(response.text))
+    res_code = response.status_code
+    res_json = json.loads(response.text)
+    print("return code is : {}".format(response.status_code))
+
+    if res_code != 200:
+        code_num = res_code
+        base_rsp = BaseResponse(code_num,
+                                "Failed to query the configuration items managed in the current domain. " +
+                                "The failure reason is:" + res_json)
+        return base_rsp, code_num
+
+    conf_files = res_json.get("confFiles")
+    if len(conf_files) == 0:
+        return yang_conf_list
+
+    exist_conf_list = []
+    for conf in conf_files:
+        exist_conf_list.append(conf.get('filePath'))
+
+    return list(set(yang_conf_list).difference(set(exist_conf_list)))
