@@ -31,6 +31,7 @@ from ragdoll.const.conf_files import yang_conf_list
 
 TARGETDIR = GitTools().target_dir
 
+
 def get_the_sync_status_of_domain(body=None):  # noqa: E501
     """
     get the status of the domain
@@ -64,8 +65,8 @@ def get_the_sync_status_of_domain(body=None):  # noqa: E501
     is_host_list_exist = Format.isHostInDomain(domain)
     if not is_host_list_exist:
         code_num = 404
-        base_rsp = BaseResponse(code_num, "The host information is not set in the current domain." + 
-                                          "Please add the host information first")
+        base_rsp = BaseResponse(code_num, "The host information is not set in the current domain." +
+                                "Please add the host information first")
         return base_rsp, code_num
 
     # get the host info in domain
@@ -83,15 +84,15 @@ def get_the_sync_status_of_domain(body=None):  # noqa: E501
 
     if res_code != 200:
         code_num = res_code
-        base_rsp = BaseResponse(code_num, "Failed to get host info in the current domain. " + 
-                                         "The failure reason is:" + res_text.get('msg'))
+        base_rsp = BaseResponse(code_num, "Failed to get host info in the current domain. " +
+                                "The failure reason is:" + res_text.get('msg'))
         return base_rsp, code_num
 
     if len(res_text) == 0:
         code_num = 404
 
-        base_rsp = BaseResponse(code_num, "The host currently controlled in the domain is empty." + 
-                                         "Please add host information to the domain.")
+        base_rsp = BaseResponse(code_num, "The host currently controlled in the domain is empty." +
+                                "Please add host information to the domain.")
         return base_rsp, code_num
 
     # get the host list from the git house
@@ -104,22 +105,24 @@ def get_the_sync_status_of_domain(body=None):  # noqa: E501
     get_man_conf_url = "http://0.0.0.0:" + port + "/management/getManagementConf"
     headers = {"Content-Type": "application/json"}
     get_man_conf_body = DomainName(domain_name=domain)
-    get_man_conf_res = requests.post(get_man_conf_url, data=json.dumps(get_man_conf_body), headers=headers)  # post request
+    get_man_conf_res = requests.post(get_man_conf_url, data=json.dumps(get_man_conf_body),
+                                     headers=headers)  # post request
     man_ronf_res_text = json.loads(get_man_conf_res.text)
     manage_confs = man_ronf_res_text.get("confFiles")
     print("manage_confs is : {}".format(manage_confs))
 
     if len(manage_confs) == 0:
         code_num = 404
-        base_rsp = BaseResponse(code_num, "The configuration is not set in the current domain." + 
-                                        "Please add the configuration information first.")
+        base_rsp = BaseResponse(code_num, "The configuration is not set in the current domain." +
+                                "Please add the configuration information first.")
         return base_rsp, code_num
 
     # query the real conf in host
     print("############## query the real conf ##############")
     get_real_conf_url = "http://0.0.0.0:" + port + "/confs/queryRealConfs"
     query_real_body = ConfHost(domain_name=domain, host_ids=host_ids)
-    get_res_conf_res = requests.post(get_real_conf_url, data=json.dumps(query_real_body), headers=headers)  # post request
+    get_res_conf_res = requests.post(get_real_conf_url, data=json.dumps(query_real_body),
+                                     headers=headers)  # post request
     real_conf_res_code = get_res_conf_res.status_code
     real_conf_res_text = json.loads(get_res_conf_res.text)
     print("real_conf_res_text is : {}".format(real_conf_res_text))
@@ -273,8 +276,8 @@ def query_real_confs(body=None):  # noqa: E501
     print("is_host_list_exist is : {}".format(is_host_list_exist))
     if not is_host_list_exist:
         code_num = 400
-        base_rsp = BaseResponse(code_num, "The host information is not set in the current domain." + 
-                                          "Please add the host information first")
+        base_rsp = BaseResponse(code_num, "The host information is not set in the current domain." +
+                                "Please add the host information first")
         return base_rsp, code_num
 
     # get all hosts managed by the current domain. 
@@ -300,8 +303,8 @@ def query_real_confs(body=None):  # noqa: E501
 
     if len(exist_host) == 0 or len(failed_host) == len(host_list):
         code_num = 400
-        base_rsp = BaseResponse(code_num, "The host information is not set in the current domain." + 
-                                          "Please add the host information first")
+        base_rsp = BaseResponse(code_num, "The host information is not set in the current domain." +
+                                "Please add the host information first")
         return base_rsp, code_num
 
     # get the management conf in domain
@@ -318,14 +321,14 @@ def query_real_confs(body=None):  # noqa: E501
 
     if res_code != 200:
         code_num = res_code
-        base_rsp = BaseResponse(code_num, "Failed to query the configuration items managed in the current domain. " + 
-                                         "The failure reason is:" + res_text)
+        base_rsp = BaseResponse(code_num, "Failed to query the configuration items managed in the current domain. " +
+                                "The failure reason is:" + res_text)
         return base_rsp, code_num
     conf_files = res_text.get("confFiles")
     if len(conf_files) == 0:
         code_num = 400
-        base_rsp = BaseResponse(code_num, "The configuration is not set in the current domain." + 
-                                        "Please add the configuration information first")
+        base_rsp = BaseResponse(code_num, "The configuration is not set in the current domain." +
+                                "Please add the configuration information first")
         return base_rsp, code_num
 
     res = []
@@ -407,7 +410,7 @@ def query_real_confs(body=None):  # noqa: E501
         code_num = 400
         res_text = "The real configuration does not found."
         base_rsp = BaseResponse(code_num, "Real configuration query failed." +
-                                        "The failure reason is : " + res_text)
+                                "The failure reason is : " + res_text)
         return base_rsp, code_num
 
     return res
@@ -469,8 +472,8 @@ def sync_conf_to_host_from_domain(body=None):  # noqa: E501
 
     if len(exist_host) == 0:
         code_num = 400
-        base_rsp = BaseResponse(code_num, "The host information is not set in the current domain." + 
-                                          "Please add the host information first")
+        base_rsp = BaseResponse(code_num, "The host information is not set in the current domain." +
+                                "Please add the host information first")
         return base_rsp, code_num
 
     # get the management conf in domain
@@ -478,7 +481,8 @@ def sync_conf_to_host_from_domain(body=None):  # noqa: E501
     get_man_conf_url = "http://0.0.0.0:" + port + "/management/getManagementConf"
     headers = {"Content-Type": "application/json"}
     get_man_conf_body = DomainName(domain_name=domain)
-    get_man_conf_res = requests.post(get_man_conf_url, data=json.dumps(get_man_conf_body), headers=headers)  # post request
+    get_man_conf_res = requests.post(get_man_conf_url, data=json.dumps(get_man_conf_body),
+                                     headers=headers)  # post request
     man_conf_res_text = json.loads(get_man_conf_res.text)
     manage_confs = man_conf_res_text.get("confFiles")
     print("manage_confs is : {}".format(manage_confs))
@@ -487,7 +491,7 @@ def sync_conf_to_host_from_domain(body=None):  # noqa: E501
     sync_res = []
     for d_host in exist_host:
         host_sync_result = HostSyncResult(host_id=d_host,
-                           sync_result=[])
+                                          sync_result=[])
         for d_man_conf in manage_confs:
             file_path = d_man_conf.get("filePath").split(":")[-1]
             contents = d_man_conf.get("contents")
@@ -510,6 +514,7 @@ def sync_conf_to_host_from_domain(body=None):  # noqa: E501
         sync_res.append(host_sync_result)
 
     return sync_res
+
 
 def query_supported_confs(body=None):
     """
