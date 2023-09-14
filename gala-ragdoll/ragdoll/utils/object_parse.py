@@ -71,7 +71,11 @@ class ObjectParse(object):
         conf_model.load_yang_model(yang_info)
 
         # load conf info
-        conf_model.read_conf(conf_info)
+        if conf_type == "kv":
+            spacer_type = self._yang_modules.getSpacerInModdule([yang_info])
+            conf_model.read_conf(conf_info, spacer_type, yang_info)
+        else:
+            conf_model.read_conf(conf_info)
 
         # to json
         conf_json = self.parse_model_to_json(conf_model)
@@ -94,8 +98,10 @@ class ObjectParse(object):
 
         # load conf info(json) to model
         conf_model.read_json(json_list)
-        if conf_type == "ssh":
+        if conf_type == "sshd":
             conf_info = conf_model.write_conf(spacer_info)
+        elif conf_type == "kv":
+            conf_info = conf_model.write_conf(spacer_info, yang_info)
         else:
             # to content
             conf_info = conf_model.write_conf()
