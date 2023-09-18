@@ -11,6 +11,7 @@ from ragdoll.models.domain_name import DomainName  # noqa: E501
 from ragdoll.models.excepted_conf_info import ExceptedConfInfo  # noqa: E501
 from ragdoll.models.expected_conf import ExpectedConf  # noqa: E501
 from ragdoll.models.real_conf_info import RealConfInfo  # noqa: E501
+from ragdoll.models.sync_req import SyncReq
 from ragdoll.models.sync_status import SyncStatus  # noqa: E501
 from ragdoll.models.conf_base_info import ConfBaseInfo
 from ragdoll.models.conf_is_synced import ConfIsSynced
@@ -28,6 +29,7 @@ from ragdoll.utils.host_tools import HostTools
 from ragdoll.utils.object_parse import ObjectParse
 from ragdoll import util
 from ragdoll.const.conf_files import yang_conf_list
+from ragdoll.log.log import LOGGER
 
 TARGETDIR = GitTools().target_dir
 
@@ -163,9 +165,11 @@ def get_the_sync_status_of_domain(body=None):  # noqa: E501
     man_conf_list = []
     for d_man_conf in manage_confs:
         man_conf_list.append(d_man_conf.get("filePath").split(":")[-1])
+    LOGGER.info("manage_confs is {}".format(manage_confs))
     for d_host in sync_status.host_status:
         d_sync_status = d_host.sync_status
         file_list = []
+        LOGGER.info("d_sync_status is {}".format(d_sync_status))
         for d_file in d_sync_status:
             file_path = d_file.file_path
             file_list.append(file_path)
@@ -426,10 +430,16 @@ def sync_conf_to_host_from_domain(body=None):  # noqa: E501
     :rtype: List[HostSyncResult]
     """
     if connexion.request.is_json:
-        body = ConfHost.from_dict(connexion.request.get_json())  # noqa: E501
+        body = SyncReq.from_dict(connexion.request.get_json())  # noqa: E501
 
     domain = body.domain_name
-    host_list = body.host_ids
+    sync_list = body.sync_list
+    LOGGER.info("sync_list is {}".format(sync_list))
+
+    host_sync_confs = dict()
+
+    for sync in sync_list:
+        host_sync_confs[sync.host_id] = sync.sync_configs
 
     # check the input domain
     check_res = Format.domainCheck(domain)
@@ -458,11 +468,12 @@ def sync_conf_to_host_from_domain(body=None):  # noqa: E501
 
     # Check whether the host is in the managed host list
     exist_host = []
-    if len(host_list) > 0:
-        for host in host_list:
+    if len(host_sync_confs) > 0:
+        host_ids = host_sync_confs.keys()
+        for host_id in host_ids:
             for d_host in res_host_text:
-                if host.get("hostId") == d_host.get("hostId"):
-                    exist_host.append(host)
+                if host_id == d_host.get("hostId"):
+                    exist_host.append(host_id)
     else:
         for d_host in res_host_text:
             temp_host = {}
@@ -489,28 +500,35 @@ def sync_conf_to_host_from_domain(body=None):  # noqa: E501
 
     # Deserialize and reverse parse the expected configuration
     sync_res = []
-    for d_host in exist_host:
-        host_sync_result = HostSyncResult(host_id=d_host,
+    for host_id in exist_host:
+        host_sync_result = HostSyncResult(host_id=host_id,
                                           sync_result=[])
+        sync_confs = host_sync_confs.get(host_id)
         for d_man_conf in manage_confs:
             file_path = d_man_conf.get("filePath").split(":")[-1]
-            contents = d_man_conf.get("contents")
-            object_parse = ObjectParse()
-            content = object_parse.parse_json_to_conf(file_path, contents)
-            # Configuration to the host
-            sync_conf_url = conf_tools.load_url_by_conf().get("sync_url")
-            headers = {"Content-Type": "application/json"}
-            data = {"host_id": d_host, "file_path": file_path, "content": content}
-            sync_response = requests.put(sync_conf_url, data=json.dumps(data), headers=headers)
+            if file_path in sync_confs:
+                file_path = d_man_conf.get("filePath").split(":")[-1]
+                contents = d_man_conf.get("contents")
+                object_parse = ObjectParse()
+                content = object_parse.parse_json_to_conf(file_path, contents)
+                LOGGER.info("content IS {}".format(content))
+                # Configuration to the host
+                sync_conf_url = conf_tools.load_url_by_conf().get("sync_url")
+                headers = {"Content-Type": "application/json"}
+                data = {"host_id": host_id, "file_path": file_path, "content": content}
+                sync_response = requests.put(sync_conf_url, data=json.dumps(data), headers=headers)
 
-            resp_status = json.loads(sync_response.text).get("status")
-            conf_sync_res = ConfSyncedRes(file_path=file_path,
-                                          result="")
-            if resp_status:
-                conf_sync_res.result = "SUCCESS"
-            else:
-                conf_sync_res.result = "FAILED"
-            host_sync_result.sync_result.append(conf_sync_res)
+                resp_code = json.loads(sync_response.text).get('code')
+                resp = json.loads(sync_response.text).get('data').get('resp')
+                LOGGER.info("resp_code IS {}".format(resp_code))
+                LOGGER.info("resp IS {}".format(resp))
+                conf_sync_res = ConfSyncedRes(file_path=file_path,
+                                              result="")
+                if resp_code == "200" and resp.get('sync_result') is True:
+                    conf_sync_res.result = "SUCCESS"
+                else:
+                    conf_sync_res.result = "FAILED"
+                host_sync_result.sync_result.append(conf_sync_res)
         sync_res.append(host_sync_result)
 
     return sync_res

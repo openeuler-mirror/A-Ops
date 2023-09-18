@@ -17,7 +17,7 @@ class HostSyncResult(Model):
     Do not edit the class manually.
     """
 
-    def __init__(self, host_id: str=None, sync_result: List[ConfSyncedRes]=None):  # noqa: E501
+    def __init__(self, host_id: int = None, sync_result: List[ConfSyncedRes] = None):  # noqa: E501
         """HostSyncResult - a model defined in Swagger
 
         :param host_id: The host_id of this HostSyncResult.  # noqa: E501
@@ -26,7 +26,7 @@ class HostSyncResult(Model):
         :type sync_result: List[ConfSyncedRes]
         """
         self.swagger_types = {
-            'host_id': str,
+            'host_id': int,
             'sync_result': List[ConfSyncedRes]
         }
 
@@ -50,7 +50,7 @@ class HostSyncResult(Model):
         return util.deserialize_model(dikt, cls)
 
     @property
-    def host_id(self) -> str:
+    def host_id(self) -> int:
         """Gets the host_id of this HostSyncResult.
 
         the id of host  # noqa: E501
@@ -61,7 +61,7 @@ class HostSyncResult(Model):
         return self._host_id
 
     @host_id.setter
-    def host_id(self, host_id: str):
+    def host_id(self, host_id: int):
         """Sets the host_id of this HostSyncResult.
 
         the id of host  # noqa: E501
