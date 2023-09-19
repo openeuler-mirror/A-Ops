@@ -62,7 +62,7 @@ module openEuler-sysctl.conf {
 
       sysctl:path "openEuler:/etc/sysctl.conf";
       sysctl:type "kv";
-      sysctl:spacer "";
+      sysctl:spacer "=";
     }
   }
 }

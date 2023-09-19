@@ -17,10 +17,12 @@ Description: sshd config analyze
 import json
 import re
 
+from ragdoll.config_model.base_handler_config import BaseHandlerConfig
 from ragdoll.utils.yang_module import YangModule
 from ragdoll.const.conf_handler_const import NOT_SYNCHRONIZE, SYNCHRONIZED
 
 SPACER_LIST = [' ', '\t']
+
 
 class SshConfig(BaseHandlerConfig):
 

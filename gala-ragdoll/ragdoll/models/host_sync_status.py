@@ -16,7 +16,7 @@ class HostSyncStatus(Model):
     Do not edit the class manually.
     """
 
-    def __init__(self, host_id: str=None, sync_status: List[ConfIsSynced]=None):  # noqa: E501
+    def __init__(self, host_id: int = None, sync_status: List[ConfIsSynced] = None):  # noqa: E501
         """SyncStatus - a model defined in Swagger
 
         :param host_id: The host_id of this HostSyncStatus.  # noqa: E501
@@ -25,7 +25,7 @@ class HostSyncStatus(Model):
         :type host_status: List[object]
         """
         self.swagger_types = {
-            'host_id': str,
+            'host_id': int,
             'sync_status': List[ConfIsSynced]
         }
 
@@ -49,7 +49,7 @@ class HostSyncStatus(Model):
         return util.deserialize_model(dikt, cls)
 
     @property
-    def host_id(self) -> str:
+    def host_id(self) -> int:
         """Gets the host_id of this HostSyncStatus.
 
         domain name  # noqa: E501
@@ -60,7 +60,7 @@ class HostSyncStatus(Model):
         return self._host_id
 
     @host_id.setter
-    def host_id(self, host_id: str):
+    def host_id(self, host_id: int):
         """Sets the host_id of this HostSyncStatus.
 
         host id  # noqa: E501

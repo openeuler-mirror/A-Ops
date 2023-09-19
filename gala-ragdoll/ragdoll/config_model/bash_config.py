@@ -30,7 +30,6 @@ class BashConfig(BaseHandlerConfig):
         for line in conf_list:
             if line is None or line.strip() == '':
                 continue
-
             conf_dict_list.append(line)
         return conf_dict_list
 
