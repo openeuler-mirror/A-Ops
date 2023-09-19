@@ -29,7 +29,6 @@ from ragdoll.utils.host_tools import HostTools
 from ragdoll.utils.object_parse import ObjectParse
 from ragdoll import util
 from ragdoll.const.conf_files import yang_conf_list
-from ragdoll.log.log import LOGGER
 
 TARGETDIR = GitTools().target_dir
 
@@ -39,7 +38,7 @@ def get_the_sync_status_of_domain(body=None):  # noqa: E501
     get the status of the domain
     get the status of whether the domain has been synchronized # noqa: E501
 
-    :param body: 
+    :param body:
     :type body: dict | bytes
 
     :rtype: SyncStatus
@@ -132,7 +131,7 @@ def get_the_sync_status_of_domain(body=None):  # noqa: E501
         code_num = real_conf_res_code
         base_rsp = BaseResponse(code_num, "Failed to get the real config of the all hosts in domain.")
         return base_rsp, code_num
-    # Match the actual configuration with the expected configuration, and output the 
+    # Match the actual configuration with the expected configuration, and output the
     # configuration in the same format that can be compared with the expected result.
     sync_status = SyncStatus(domain_name=domain,
                              host_status=[])
@@ -151,10 +150,10 @@ def get_the_sync_status_of_domain(body=None):  # noqa: E501
 
             comp_res = ""
             for d_man_conf in manage_confs:
-                if d_man_conf.get("filePath").split(":")[-1] == d_conf_path:
-                    # comp_res = conf_tools.compareManAndReal(d_conf.get("confContents"), d_man_conf.get("contents"))
-                    comp_res = conf_model.conf_compare(d_man_conf.get("contents"), d_conf.get("confContents"))
-                    break
+                if d_man_conf.get("filePath").split(":")[-1] != d_conf_path:
+                    continue
+                # comp_res = conf_tools.compareManAndReal(d_conf.get("confContents"), d_man_conf.get("contents"))
+                comp_res = conf_model.conf_compare(d_man_conf.get("contents"), d_conf.get("confContents"))
             conf_is_synced = ConfIsSynced(file_path=d_conf_path,
                                           is_synced=comp_res)
             host_sync_status.sync_status.append(conf_is_synced)
@@ -165,11 +164,9 @@ def get_the_sync_status_of_domain(body=None):  # noqa: E501
     man_conf_list = []
     for d_man_conf in manage_confs:
         man_conf_list.append(d_man_conf.get("filePath").split(":")[-1])
-    LOGGER.info("manage_confs is {}".format(manage_confs))
     for d_host in sync_status.host_status:
         d_sync_status = d_host.sync_status
         file_list = []
-        LOGGER.info("d_sync_status is {}".format(d_sync_status))
         for d_file in d_sync_status:
             file_path = d_file.file_path
             file_list.append(file_path)
@@ -251,7 +248,7 @@ def query_real_confs(body=None):  # noqa: E501
 
     query the real configuration value in the current hostId node # noqa: E501
 
-    :param body: 
+    :param body:
     :type body: dict | bytes
 
     :rtype: List[RealConfInfo]
@@ -284,7 +281,7 @@ def query_real_confs(body=None):  # noqa: E501
                                 "Please add the host information first")
         return base_rsp, code_num
 
-    # get all hosts managed by the current domain. 
+    # get all hosts managed by the current domain.
     # If host_list is empty, query all hosts in the current domain.
     # If host_list is not empty, the actual contents of the currently given host are queried.
     conf_tools = ConfTools()
@@ -424,7 +421,7 @@ def sync_conf_to_host_from_domain(body=None):  # noqa: E501
     """
     synchronize the configuration information of the configuration domain to the host # noqa: E501
 
-    :param body: 
+    :param body:
     :type body: dict | bytes
 
     :rtype: List[HostSyncResult]
@@ -434,7 +431,6 @@ def sync_conf_to_host_from_domain(body=None):  # noqa: E501
 
     domain = body.domain_name
     sync_list = body.sync_list
-    LOGGER.info("sync_list is {}".format(sync_list))
 
     host_sync_confs = dict()
 
@@ -511,7 +507,6 @@ def sync_conf_to_host_from_domain(body=None):  # noqa: E501
                 contents = d_man_conf.get("contents")
                 object_parse = ObjectParse()
                 content = object_parse.parse_json_to_conf(file_path, contents)
-                LOGGER.info("content IS {}".format(content))
                 # Configuration to the host
                 sync_conf_url = conf_tools.load_url_by_conf().get("sync_url")
                 headers = {"Content-Type": "application/json"}
@@ -520,8 +515,6 @@ def sync_conf_to_host_from_domain(body=None):  # noqa: E501
 
                 resp_code = json.loads(sync_response.text).get('code')
                 resp = json.loads(sync_response.text).get('data').get('resp')
-                LOGGER.info("resp_code IS {}".format(resp_code))
-                LOGGER.info("resp IS {}".format(resp))
                 conf_sync_res = ConfSyncedRes(file_path=file_path,
                                               result="")
                 if resp_code == "200" and resp.get('sync_result') is True:

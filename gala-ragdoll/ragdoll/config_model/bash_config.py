@@ -14,8 +14,10 @@ Time: 2023-08-30 14:05:00
 Author: jiaosimao
 Description: bash type config analyze
 """
+import json
 
 from ragdoll.config_model.base_handler_config import BaseHandlerConfig
+from ragdoll.const.conf_handler_const import SYNCHRONIZED, NOT_SYNCHRONIZE
 
 
 class BashConfig(BaseHandlerConfig):
@@ -45,3 +47,19 @@ class BashConfig(BaseHandlerConfig):
                 content = content + value + "\n"
         content = content + '\n'
         return content
+
+    @staticmethod
+    def conf_compare(src_conf, dst_conf):
+        """
+        desc: 比较dst_conf和src_conf是否相同，dst_conf和src_conf均为序列化后的配置信息。
+        return：dst_conf和src_conf相同返回SYNCHRONIZED
+                dst_conf和src_conf不同返回NOT_SYNCHRONIZE
+        """
+        res = SYNCHRONIZED
+        dst_conf_dict = json.loads(dst_conf)
+        src_conf_dict = json.loads(src_conf)
+        for src_conf in src_conf_dict:
+            if src_conf not in dst_conf_dict:
+                res = NOT_SYNCHRONIZE
+                break
+        return res
