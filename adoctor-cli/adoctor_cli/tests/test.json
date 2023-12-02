@@ -1,1 +1,0 @@
-{"check_items": [{"check_item": "check_item996", "condition": "$0>1", "data_list": [{"label": {"cpu": "1", "mode": "irq"}, "name": "node_cpu_seconds_total", "type": "kpi"}], "description": "aaa", "plugin": ""}]}

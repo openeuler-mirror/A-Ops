@@ -1,6 +1,0 @@
-elasticsearch_hosts:
-  hosts:
-    192.168.1.2:
-      ansible_host: 192.168.1.2
-      ansible_python_interpreter: /usr/bin/python3
-      elasticsearch_id: elasticsearch_node1

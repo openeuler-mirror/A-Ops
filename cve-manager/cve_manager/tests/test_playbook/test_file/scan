@@ -1,8 +1,0 @@
-total_hosts:
-  hosts:
-    a:
-      ansible_python_interpreter: /usr/bin/python3
-      ansible_host: ip1
-    b:
-      ansible_python_interpreter: /usr/bin/python3
-      ansible_host: ip2
