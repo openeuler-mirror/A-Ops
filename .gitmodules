@@ -1,0 +1,24 @@
+[submodule "projects/aops-apollo"]
+	path = projects/aops-apollo
+	url = https://gitee.com/openeuler/aops-apollo.git
+[submodule "projects/aops-zeus"]
+	path = projects/aops-zeus
+	url = https://gitee.com/openeuler/aops-zeus.git
+[submodule "projects/aops-ceres"]
+	path = projects/aops-ceres
+	url = https://gitee.com/openeuler/aops-ceres.git
+[submodule "projects/aops-diana"]
+	path = projects/aops-diana
+	url = https://gitee.com/openeuler/aops-diana.git
+[submodule "projects/aops-hermes"]
+	path = projects/aops-hermes
+	url = https://gitee.com/openeuler/aops-hermes.git
+[submodule "projects/aops-vulcanus"]
+	path = projects/aops-vulcanus
+	url = https://gitee.com/openeuler/aops-vulcanus.git
+[submodule "projects/gala-ragdoll"]
+	path = projects/gala-ragdoll
+	url = https://gitee.com/openeuler/gala-ragdoll.git
+[submodule "projects/gala-gopher"]
+	path = projects/gala-gopher
+	url = https://gitee.com/openeuler/gala-gopher.git
