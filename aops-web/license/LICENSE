@@ -1,4 +1,0 @@
-
-the main framework of this app is base on antdv-pro 2.0.
-most code of antdv-pro framework are put in the vendor/ant-design-pro Folder.
-you can find it's licenses in  @/vendor/ant-design/LICENSE file.

@@ -1,7 +1,0 @@
-# Checking the Service Status
-- name: Start Mysql
-  become: true
-  become_user: "{{ user }}"
-  service:
-    name: mysqld
-    state: restarted

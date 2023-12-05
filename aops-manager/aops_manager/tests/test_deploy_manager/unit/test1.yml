@@ -1,5 +1,0 @@
----
-- host: all
-  tasks:
-     - name: "helloworld"
-       shell: echo "Hello World" `date` by `hostname`

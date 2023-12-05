@@ -1,7 +1,0 @@
-- hosts: total_hosts
-  gather_facts: false
-  tasks:
-  - name: scan
-    become: true
-    become_user: root
-    shell: yum updateinfo list cves installed

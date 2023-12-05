@@ -1,1 +1,0 @@
-本仓已迁移至：https://gitee.com/openeuler/gala-ragdoll
