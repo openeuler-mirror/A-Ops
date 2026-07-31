@@ -27,7 +27,7 @@ the intelligent  ops toolkit for openEuler
 
 - aops-manager
 
-  A-Ops智能运维工具的基础服务层，提供主机管理功能与用户管理功能，以及与A-Ops其他服务模块交互的功能。A-Ops项目的整体[架构设计文档](https://atomgit.com/openeuler/aops-zeus/blob/master/doc/design/aops%E6%9E%B6%E6%9E%84%E8%AE%BE%E8%AE%A1%E6%96%87%E6%A1%A3.md)也存放于该仓库，可以通过查阅这份文档理解A-Ops项目的整体理架构和设计理念，以及进一步理解该服务模块在其中起到的作用。
+  A-Ops智能运维工具的基础服务层，提供主机管理功能与用户管理功能，以及与A-Ops其他服务模块交互的功能。A-Ops项目的整体[架构设计文档](https://atomgit.com/openeuler/aops-zeus/blob/master/docs/design/aops%E6%9E%B6%E6%9E%84%E8%AE%BE%E8%AE%A1%E6%96%87%E6%A1%A3.md)也存放于该仓库，可以通过查阅这份文档理解A-Ops项目的整体理架构和设计理念，以及进一步理解该服务模块在其中起到的作用。
 
   该仓库已更名为aops-zeus迁移至新仓库，迁移地址为：https://atomgit.com/openeuler/aops-zeus
 
