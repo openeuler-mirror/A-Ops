@@ -178,14 +178,14 @@ A-Ops的每个服务均有个相应的代码仓，每个服务均可独立进行
 
 | 代码仓链接                                | 逻辑元素      |
 | ----------------------------------------- | ------------- |
-| https://gitee.com/openeuler/aops-hermes   | aops-hermes   |
-| https://gitee.com/openeuler/aops-zeus     | aops-zeus     |
-| https://gitee.com/openeuler/aops-ceres    | aops-ceres    |
-| https://gitee.com/openeuler/aops-diana    | aops-diana    |
-| https://gitee.com/openeuler/aops-apollo   | aops-apollo   |
-| https://gitee.com/openeuler/aops-vulcanus | aops-vulcanus |
-| https://gitee.com/openeuler/gala-gopher   | gala-gopher   |
-| https://gitee.com/openeuler/gala-ragdoll  | gala-ragdoll  |
+| https://atomgit.com/openeuler/aops-hermes   | aops-hermes   |
+| https://atomgit.com/openeuler/aops-zeus     | aops-zeus     |
+| https://atomgit.com/openeuler/aops-ceres    | aops-ceres    |
+| https://atomgit.com/openeuler/aops-diana    | aops-diana    |
+| https://atomgit.com/openeuler/aops-apollo   | aops-apollo   |
+| https://atomgit.com/openeuler/aops-vulcanus | aops-vulcanus |
+| https://atomgit.com/openeuler/gala-gopher   | gala-gopher   |
+| https://atomgit.com/openeuler/gala-ragdoll  | gala-ragdoll  |
 
 
 
@@ -205,14 +205,14 @@ openEuler以rpm作为软件的管理，因此最终会构建生成例如aops-her
 
 | 构建元素      | 构建过程   | 对应的代码元素                            |
 | ------------- | ---------- | ----------------------------------------- |
-| aops-hermes   | yarn build | https://gitee.com/openeuler/aops-hermes   |
-| aops-zeus     | python     | https://gitee.com/openeuler/aops-zeus     |
-| aops-ceres    | python     | https://gitee.com/openeuler/aops-ceres    |
-| aops-diana    | python     | https://gitee.com/openeuler/aops-diana    |
-| aops-apollo   | python     | https://gitee.com/openeuler/aops-apollo   |
-| aops-vulcanus | python     | https://gitee.com/openeuler/aops-vulcanus |
-| gala-gopher   | gcc        | https://gitee.com/openeuler/gala-gopher   |
-| gala-ragdoll  | python     | https://gitee.com/openeuler/gala-rangdoll |
+| aops-hermes   | yarn build | https://atomgit.com/openeuler/aops-hermes   |
+| aops-zeus     | python     | https://atomgit.com/openeuler/aops-zeus     |
+| aops-ceres    | python     | https://atomgit.com/openeuler/aops-ceres    |
+| aops-diana    | python     | https://atomgit.com/openeuler/aops-diana    |
+| aops-apollo   | python     | https://atomgit.com/openeuler/aops-apollo   |
+| aops-vulcanus | python     | https://atomgit.com/openeuler/aops-vulcanus |
+| gala-gopher   | gcc        | https://atomgit.com/openeuler/gala-gopher   |
+| gala-ragdoll  | python     | https://atomgit.com/openeuler/gala-rangdoll |
 
 
 
