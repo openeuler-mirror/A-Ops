@@ -1,4 +1,5 @@
 # A-Ops
+[English](./README_EN.md) | 简体中文
 
 #### 介绍
 the intelligent  ops toolkit for openEuler
